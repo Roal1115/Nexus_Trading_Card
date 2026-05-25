@@ -63,25 +63,33 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  /* Geek Collector — e-sports premium */
+  --background: oklch(0.04 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.005 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.005 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.682 0.182 41.5);
+  --primary-foreground: oklch(0.04 0 0);
+  --secondary: oklch(0.25 0.005 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.21 0.005 0);
+  --muted-foreground: oklch(0.72 0.005 0);
+  --accent: oklch(0.682 0.182 41.5);
+  --accent-foreground: oklch(0.04 0 0);
+  --destructive: oklch(0.62 0.22 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.682 0.182 41.5);
+  --crimson: oklch(0.32 0.16 25);
+  --gold: oklch(0.82 0.16 85);
+  --silver: oklch(0.78 0.01 0);
+  --gradient-radial: radial-gradient(ellipse at center, #5C1010 0%, #1a0606 45%, #000000 100%);
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -140,5 +148,29 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .bg-radial-crimson {
+    background: var(--gradient-radial);
+    background-attachment: fixed;
+  }
+  .font-mono-stat {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .glass {
+    background-color: color-mix(in oklab, var(--card) 70%, transparent);
+    backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in oklab, white 10%, transparent);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
   }
 }
