@@ -99,12 +99,8 @@ function AdminPage() {
     return true;
   });
 
-  // Pending first, approved (undo window) sorted to bottom.
-  const sorted = [...filtered].sort((a, b) => {
-    const ap = approvedIds.has(a.id) ? 1 : 0;
-    const bp = approvedIds.has(b.id) ? 1 : 0;
-    return ap - bp;
-  });
+  const pending = filtered.filter((s) => !approvedIds.has(s.id));
+  const approved = filtered.filter((s) => approvedIds.has(s.id));
 
   const handleApprove = (id: string) => {
     setApprovedIds((prev) => new Set(prev).add(id));
@@ -201,26 +197,63 @@ function AdminPage() {
         </div>
       </div>
 
-      {sorted.length === 0 ? (
-        <div className="glass rounded-2xl py-20 text-center">
-          <ShieldCheck size={32} className="mx-auto text-primary" />
-          <h2 className="mt-3 text-lg font-semibold text-white">Queue is clear</h2>
-          <p className="mt-1 text-sm text-gray-500">No submissions match your current filters.</p>
+      {/* Pending Approvals */}
+      <section>
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="text-lg font-bold uppercase tracking-widest text-white">Pending Approvals</h2>
+          <span className="font-mono-stat text-xs text-gray-500">{pending.length} waiting</span>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {sorted.map((s) => (
-            <SubmissionCard
-              key={s.id}
-              submission={s}
-              approved={approvedIds.has(s.id)}
-              onApprove={() => handleApprove(s.id)}
-              onUndo={() => handleUndo(s.id)}
-              onDecline={() => handleDecline(s.id)}
-            />
-          ))}
+        {pending.length === 0 ? (
+          <div className="glass rounded-2xl py-16 text-center">
+            <ShieldCheck size={28} className="mx-auto text-primary" />
+            <h3 className="mt-3 text-base font-semibold text-white">Queue is clear</h3>
+            <p className="mt-1 text-sm text-gray-500">No submissions match your current filters.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {pending.map((s) => (
+              <SubmissionCard
+                key={s.id}
+                submission={s}
+                approved={false}
+                onApprove={() => handleApprove(s.id)}
+                onUndo={() => handleUndo(s.id)}
+                onDecline={() => handleDecline(s.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Recently Approved */}
+      <section className="mt-12 border-t border-white/10 pt-8">
+        <div className="mb-4 flex items-baseline justify-between">
+          <div>
+            <h2 className="text-lg font-bold uppercase tracking-widest text-white">Recently Approved</h2>
+            <p className="mt-1 text-xs text-gray-500">24-hour undo window before changes lock in.</p>
+          </div>
+          <span className="font-mono-stat text-xs text-emerald-400/80">{approved.length} processed</span>
         </div>
-      )}
+        {approved.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/10 py-12 text-center">
+            <Clock size={22} className="mx-auto text-gray-600" />
+            <p className="mt-2 text-sm text-gray-500">No tournaments approved yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {approved.map((s) => (
+              <SubmissionCard
+                key={s.id}
+                submission={s}
+                approved
+                onApprove={() => handleApprove(s.id)}
+                onUndo={() => handleUndo(s.id)}
+                onDecline={() => handleDecline(s.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
@@ -266,7 +299,7 @@ function SubmissionCard({
       className={[
         "glass rounded-2xl p-6 transition-all duration-500",
         approved
-          ? "opacity-80 border-emerald-400/40 shadow-[0_0_0_1px_rgba(52,211,153,0.25),0_0_40px_-10px_rgba(52,211,153,0.45)]"
+          ? "opacity-70 border-emerald-400/30 shadow-[0_0_0_1px_rgba(52,211,153,0.2),0_0_40px_-10px_rgba(52,211,153,0.35)]"
           : "",
       ].join(" ")}
     >
