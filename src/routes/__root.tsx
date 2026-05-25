@@ -74,14 +74,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Geek Collector — The National TCG Circuit" },
-      { name: "description", content: "Track your Geek Tag. Climb the National Circuit. The premier competitive ranking for One Piece, MTG and Pokémon." },
+      { title: "National Geek" },
+      { name: "description", content: "Geek Tag Circuit tracks physical TCG player rankings and tournament results." },
       { name: "author", content: "Geek Collector" },
-      { property: "og:title", content: "Geek Collector — The National TCG Circuit" },
-      { property: "og:description", content: "Track your Geek Tag. Climb the National Circuit." },
+      { property: "og:title", content: "National Geek" },
+      { property: "og:description", content: "Geek Tag Circuit tracks physical TCG player rankings and tournament results." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "National Geek" },
+      { name: "twitter:description", content: "Geek Tag Circuit tracks physical TCG player rankings and tournament results." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5734a5ef-190b-451e-9f10-94bd389d95b4/id-preview-e5f47e3e--2ac0e0f9-4b32-4438-b51b-c9d18a4ae341.lovable.app-1779740882975.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5734a5ef-190b-451e-9f10-94bd389d95b4/id-preview-e5f47e3e--2ac0e0f9-4b32-4438-b51b-c9d18a4ae341.lovable.app-1779740882975.png" },
     ],
     links: [
       {
