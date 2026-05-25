@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppStoreProvider } from "@/lib/mock-store";
 
 function NotFoundComponent() {
   return (
@@ -72,11 +74,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Geek Collector — The National TCG Circuit" },
+      { name: "description", content: "Track your Geek Tag. Climb the National Circuit. The premier competitive ranking for One Piece, MTG and Pokémon." },
+      { name: "author", content: "Geek Collector" },
+      { property: "og:title", content: "Geek Collector — The National TCG Circuit" },
+      { property: "og:description", content: "Track your Geek Tag. Climb the National Circuit." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -85,6 +87,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap",
       },
     ],
   }),
@@ -113,7 +121,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AppStoreProvider>
+        <div className="min-h-screen bg-radial-crimson">
+          <AppHeader />
+          <Outlet />
+        </div>
+      </AppStoreProvider>
     </QueryClientProvider>
   );
 }
