@@ -26,6 +26,7 @@ import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
+import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -112,6 +113,11 @@ const AdminApprovedRoute = AdminApprovedRouteImport.update({
   path: '/approved',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPlayersIdRoute = AdminPlayersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminPlayersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -124,13 +130,14 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
   '/admin/approved': typeof AdminApprovedRoute
-  '/admin/players': typeof AdminPlayersRoute
+  '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/stores': typeof AdminStoresRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/admin/players/$id': typeof AdminPlayersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,13 +148,14 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
   '/admin/approved': typeof AdminApprovedRoute
-  '/admin/players': typeof AdminPlayersRoute
+  '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/stores': typeof AdminStoresRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
+  '/admin/players/$id': typeof AdminPlayersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,13 +169,14 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
   '/admin/approved': typeof AdminApprovedRoute
-  '/admin/players': typeof AdminPlayersRoute
+  '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/stores': typeof AdminStoresRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/admin/players/$id': typeof AdminPlayersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/admin/'
     | '/organizer/'
+    | '/admin/players/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/admin'
     | '/organizer'
+    | '/admin/players/$id'
   id:
     | '__root__'
     | '/'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/admin/'
     | '/organizer/'
+    | '/admin/players/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -360,12 +372,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApprovedRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/players/$id': {
+      id: '/admin/players/$id'
+      path: '/$id'
+      fullPath: '/admin/players/$id'
+      preLoaderRoute: typeof AdminPlayersIdRouteImport
+      parentRoute: typeof AdminPlayersRoute
+    }
   }
 }
 
+interface AdminPlayersRouteChildren {
+  AdminPlayersIdRoute: typeof AdminPlayersIdRoute
+}
+
+const AdminPlayersRouteChildren: AdminPlayersRouteChildren = {
+  AdminPlayersIdRoute: AdminPlayersIdRoute,
+}
+
+const AdminPlayersRouteWithChildren = AdminPlayersRoute._addFileChildren(
+  AdminPlayersRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminApprovedRoute: typeof AdminApprovedRoute
-  AdminPlayersRoute: typeof AdminPlayersRoute
+  AdminPlayersRoute: typeof AdminPlayersRouteWithChildren
   AdminPublishRoute: typeof AdminPublishRoute
   AdminStoresRoute: typeof AdminStoresRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -373,7 +404,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminApprovedRoute: AdminApprovedRoute,
-  AdminPlayersRoute: AdminPlayersRoute,
+  AdminPlayersRoute: AdminPlayersRouteWithChildren,
   AdminPublishRoute: AdminPublishRoute,
   AdminStoresRoute: AdminStoresRoute,
   AdminIndexRoute: AdminIndexRoute,

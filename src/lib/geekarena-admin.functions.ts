@@ -279,28 +279,231 @@ export const createStore = createServerFn({ method: "POST" })
   });
 
 // ---------- Players ----------
+const PAGE_SIZE = 25;
+
 export const listPlayers = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; search?: string }) =>
-    z.object({
-      email: z.string().email(),
-      search: z.string().max(120).optional(),
-    }).parse(d),
+  .inputValidator(
+    (d: {
+      email: string;
+      search?: string;
+      role?: "all" | "player" | "organizer" | "admin";
+      active?: "all" | "true" | "false";
+      store_id?: string | null;
+      sort?: "recent" | "geek_tag" | "points";
+      page?: number;
+      include_last_sign_in?: boolean;
+    }) =>
+      z
+        .object({
+          email: z.string().email(),
+          search: z.string().max(120).optional(),
+          role: z.enum(["all", "player", "organizer", "admin"]).optional(),
+          active: z.enum(["all", "true", "false"]).optional(),
+          store_id: z.string().uuid().optional().nullable(),
+          sort: z.enum(["recent", "geek_tag", "points"]).optional(),
+          page: z.number().int().min(1).max(10000).optional(),
+          include_last_sign_in: z.boolean().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data }) => {
     const { admin } = await requireAdmin(data.email);
+    const page = data.page ?? 1;
+    const sort = data.sort ?? "recent";
+
+    // Points sort: precompute ordered ids from leaderboard_snapshots (YEAR slices)
+    let orderedIdsByPoints: string[] | null = null;
+    if (sort === "points") {
+      const { data: snaps, error: se } = await admin
+        .from("leaderboard_snapshots")
+        .select("player_id, total_points")
+        .eq("timeframe_type", "YEAR");
+      if (se) throw new Error(se.message);
+      const sum = new Map<string, number>();
+      for (const s of snaps ?? []) {
+        sum.set(s.player_id, (sum.get(s.player_id) ?? 0) + (s.total_points ?? 0));
+      }
+      orderedIdsByPoints = Array.from(sum.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([id]) => id);
+    }
+
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
     let q = admin
       .from("players")
-      .select("id, geek_tag, display_name, email, role, home_store_id, is_active, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (data.search) {
-      q = q.or(
-        `geek_tag.ilike.%${data.search}%,email.ilike.%${data.search}%,display_name.ilike.%${data.search}%`,
+      .select(
+        "id, geek_tag, display_name, email, role, home_store_id, is_active, created_at",
+        { count: "exact" },
       );
+
+    if (data.role && data.role !== "all") q = q.eq("role", data.role);
+    if (data.active && data.active !== "all") q = q.eq("is_active", data.active === "true");
+    if (data.store_id) q = q.eq("home_store_id", data.store_id);
+
+    if (data.search) {
+      const term = data.search.trim();
+      if (term.length > 0) {
+        const safe = term.replace(/[%,()]/g, "");
+        if (safe.includes("@")) {
+          q = q.ilike("email", `%${safe}%`);
+        } else {
+          q = q.ilike("geek_tag", `%${safe}%`);
+        }
+      }
     }
-    const { data: rows, error } = await q;
+
+    if (sort === "points" && orderedIdsByPoints) {
+      const idsForPage = orderedIdsByPoints.slice(from, to + 1);
+      if (idsForPage.length === 0) {
+        // still get count of filtered set
+        const { count } = await q;
+        return { players: [], total: count ?? 0, page, page_size: PAGE_SIZE };
+      }
+      q = q.in("id", idsForPage);
+      const { data: rows, error, count } = await q;
+      if (error) throw new Error(error.message);
+      const map = new Map((rows ?? []).map((r) => [r.id, r]));
+      const ordered = idsForPage.map((id) => map.get(id)).filter(Boolean);
+      return await withLastSignIn(admin, ordered, {
+        total: count ?? ordered.length,
+        page,
+        include: data.include_last_sign_in,
+      });
+    }
+
+    if (sort === "geek_tag") {
+      q = q.order("geek_tag", { ascending: true });
+    } else {
+      q = q.order("created_at", { ascending: false });
+    }
+    q = q.range(from, to);
+
+    const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
-    return { players: rows ?? [] };
+
+    return await withLastSignIn(admin, rows ?? [], {
+      total: count ?? 0,
+      page,
+      include: data.include_last_sign_in,
+    });
+  });
+
+async function withLastSignIn(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+  rows: any[],
+  meta: { total: number; page: number; include?: boolean },
+) {
+  let enriched = rows;
+  if (meta.include) {
+    enriched = await Promise.all(
+      rows.map(async (r) => {
+        if (!r?.email) return { ...r, last_sign_in_at: null };
+        try {
+          // Best-effort: list users filtered by email (Supabase admin API)
+          const { data } = await (admin as any).auth.admin.listUsers({
+            page: 1,
+            perPage: 1,
+            // some versions accept filter
+          });
+          const u = (data?.users ?? []).find((x: any) => x.email === r.email);
+          return { ...r, last_sign_in_at: u?.last_sign_in_at ?? null };
+        } catch {
+          return { ...r, last_sign_in_at: null };
+        }
+      }),
+    );
+  }
+  return {
+    players: enriched,
+    total: meta.total,
+    page: meta.page,
+    page_size: PAGE_SIZE,
+  };
+}
+
+export const setPlayerActive = createServerFn({ method: "POST" })
+  .inputValidator((d: { email: string; player_id: string; is_active: boolean }) =>
+    z
+      .object({
+        email: z.string().email(),
+        player_id: z.string().uuid(),
+        is_active: z.boolean(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { admin } = await requireAdmin(data.email);
+    const { error } = await admin
+      .from("players")
+      .update({ is_active: data.is_active })
+      .eq("id", data.player_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getPlayerDetail = createServerFn({ method: "POST" })
+  .inputValidator((d: { email: string; player_id: string }) =>
+    z
+      .object({
+        email: z.string().email(),
+        player_id: z.string().uuid(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { admin } = await requireAdmin(data.email);
+    const { data: player, error: pe } = await admin
+      .from("players")
+      .select(
+        "id, geek_tag, display_name, email, avatar_url, role, home_store_id, is_active, created_at",
+      )
+      .eq("id", data.player_id)
+      .maybeSingle();
+    if (pe) throw new Error(pe.message);
+    if (!player) throw new Error("Jugador no encontrado");
+
+    const [storeRes, resultsRes, snapsRes] = await Promise.all([
+      player.home_store_id
+        ? admin.from("stores").select("id, name, city, state").eq("id", player.home_store_id).maybeSingle()
+        : Promise.resolve({ data: null, error: null } as const),
+      admin
+        .from("tournament_results")
+        .select("tournament_id, rank, wins, losses, points_earned")
+        .eq("player_id", data.player_id),
+      admin
+        .from("leaderboard_snapshots")
+        .select("game_id, timeframe_type, timeframe_value, total_points, rank_position")
+        .eq("player_id", data.player_id)
+        .eq("timeframe_type", "YEAR")
+        .order("timeframe_value", { ascending: false }),
+    ]);
+
+    const tIds = Array.from(new Set((resultsRes.data ?? []).map((r) => r.tournament_id)));
+    const { data: tournaments } = tIds.length
+      ? await admin
+          .from("tournaments")
+          .select("id, tournament_date, game_id, store_id")
+          .in("id", tIds)
+      : { data: [] as any[] };
+
+    const totalPoints = (resultsRes.data ?? []).reduce(
+      (s, r) => s + (r.points_earned ?? 0),
+      0,
+    );
+    const wins = (resultsRes.data ?? []).filter((r) => r.rank === 1).length;
+
+    return {
+      player,
+      store: storeRes.data ?? null,
+      tournaments_played: tIds.length,
+      tournaments_won: wins,
+      total_points: totalPoints,
+      results: resultsRes.data ?? [],
+      tournaments: tournaments ?? [],
+      yearly_snapshots: snapsRes.data ?? [],
+    };
   });
 
 export const setPlayerRole = createServerFn({ method: "POST" })
