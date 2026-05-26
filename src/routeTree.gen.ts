@@ -22,6 +22,10 @@ import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
+import { Route as AdminStoresRouteImport } from './routes/admin.stores'
+import { Route as AdminPublishRouteImport } from './routes/admin.publish'
+import { Route as AdminPlayersRouteImport } from './routes/admin.players'
+import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -88,6 +92,26 @@ const OrganizerNewRoute = OrganizerNewRouteImport.update({
   path: '/new',
   getParentRoute: () => OrganizerRoute,
 } as any)
+const AdminStoresRoute = AdminStoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPublishRoute = AdminPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlayersRoute = AdminPlayersRouteImport.update({
+  id: '/players',
+  path: '/players',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminApprovedRoute = AdminApprovedRouteImport.update({
+  id: '/approved',
+  path: '/approved',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -99,6 +123,10 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/admin/approved': typeof AdminApprovedRoute
+  '/admin/players': typeof AdminPlayersRoute
+  '/admin/publish': typeof AdminPublishRoute
+  '/admin/stores': typeof AdminStoresRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
@@ -112,6 +140,10 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/admin/approved': typeof AdminApprovedRoute
+  '/admin/players': typeof AdminPlayersRoute
+  '/admin/publish': typeof AdminPublishRoute
+  '/admin/stores': typeof AdminStoresRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin': typeof AdminIndexRoute
@@ -128,6 +160,10 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/admin/approved': typeof AdminApprovedRoute
+  '/admin/players': typeof AdminPlayersRoute
+  '/admin/publish': typeof AdminPublishRoute
+  '/admin/stores': typeof AdminStoresRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
@@ -145,6 +181,10 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/upload'
+    | '/admin/approved'
+    | '/admin/players'
+    | '/admin/publish'
+    | '/admin/stores'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/admin/'
@@ -158,6 +198,10 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/upload'
+    | '/admin/approved'
+    | '/admin/players'
+    | '/admin/publish'
+    | '/admin/stores'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/admin'
@@ -173,6 +217,10 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/upload'
+    | '/admin/approved'
+    | '/admin/players'
+    | '/admin/publish'
+    | '/admin/stores'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/admin/'
@@ -284,14 +332,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerNewRouteImport
       parentRoute: typeof OrganizerRoute
     }
+    '/admin/stores': {
+      id: '/admin/stores'
+      path: '/stores'
+      fullPath: '/admin/stores'
+      preLoaderRoute: typeof AdminStoresRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/publish': {
+      id: '/admin/publish'
+      path: '/publish'
+      fullPath: '/admin/publish'
+      preLoaderRoute: typeof AdminPublishRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/players': {
+      id: '/admin/players'
+      path: '/players'
+      fullPath: '/admin/players'
+      preLoaderRoute: typeof AdminPlayersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/approved': {
+      id: '/admin/approved'
+      path: '/approved'
+      fullPath: '/admin/approved'
+      preLoaderRoute: typeof AdminApprovedRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminApprovedRoute: typeof AdminApprovedRoute
+  AdminPlayersRoute: typeof AdminPlayersRoute
+  AdminPublishRoute: typeof AdminPublishRoute
+  AdminStoresRoute: typeof AdminStoresRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminApprovedRoute: AdminApprovedRoute,
+  AdminPlayersRoute: AdminPlayersRoute,
+  AdminPublishRoute: AdminPublishRoute,
+  AdminStoresRoute: AdminStoresRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -327,3 +411,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
