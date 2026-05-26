@@ -19,12 +19,12 @@ export function AppHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm md:flex">
-          <NavItem to="/" icon={<Trophy size={14} />} label="Leaderboard" />
+          <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
           {currentUser && role !== "guest" && (
-            <NavItem to="/dashboard" icon={<User size={14} />} label="My Dashboard" />
+            <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
-          {role === "organizer" && <NavItem to="/upload" icon={<Upload size={14} />} label="Upload Results" />}
-          {role === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderation" />}
+          {role === "organizer" && <NavItem to="/upload" icon={<Upload size={14} />} label="Subir Resultados" />}
+          {role === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export function AppHeader() {
                 onClick={() => { logout(); navigate({ to: "/" }); }}
                 className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary"
               >
-                <LogOut size={12} /> Sign Out
+                <LogOut size={12} /> Cerrar Sesión
               </button>
             </>
           ) : (
@@ -46,7 +46,7 @@ export function AppHeader() {
               to="/login"
               className="rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
             >
-              Sign In
+              Iniciar Sesión
             </Link>
           )}
         </div>
