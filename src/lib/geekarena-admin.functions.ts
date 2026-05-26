@@ -191,7 +191,7 @@ export const publishTournaments = createServerFn({ method: "POST" })
     if (te) throw new Error(te.message);
 
     const publishable = (tournaments ?? []).filter(
-      (t) => t.status === "APPROVED" || t.status === "PENDING_REVIEW" || t.status === "DRAFT",
+      (t) => t.status === "APPROVED" || t.status === "DRAFT",
     );
     if (publishable.length === 0) {
       throw new Error("No hay torneos publicables en la selección");

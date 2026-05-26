@@ -50,7 +50,7 @@ function PendingTournaments() {
     setLoading(true);
     try {
       const res = await fetchList({
-        data: { email: em, statuses: ["DRAFT", "PENDING_REVIEW"] },
+        data: { email: em, statuses: ["DRAFT"] },
       });
       setRows(res.tournaments as Row[]);
     } catch (e) {
