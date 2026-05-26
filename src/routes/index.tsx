@@ -78,7 +78,7 @@ function LeaderboardPage() {
       {/* Filtros fijos */}
       <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Select label="TCG" value={tcg} onChange={(v) => setTcg(v as typeof tcg)} options={TCGS as readonly string[]} />
+          <Select label="TCG" value={tcg} onChange={setTcg} options={tcgOptions} />
           <Select label="Ciudad" value={city} onChange={setCity} options={cities} />
           <Select label="Mes" value={month} onChange={setMonth} options={MONTHS} />
           <div className="relative ml-auto min-w-[200px] flex-1 sm:flex-none">
