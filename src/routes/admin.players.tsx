@@ -70,7 +70,7 @@ type P = {
   created_at: string;
   last_sign_in_at?: string | null;
 };
-type Store = { id: string; name: string };
+type Store = { id: string; name: string; city: string | null };
 
 type Tab = "all" | "organizers" | "admins";
 
