@@ -12,6 +12,7 @@ import {
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppStoreProvider } from "@/lib/mock-store";
+import { Toaster } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -132,6 +133,16 @@ function RootComponent() {
         <div className="min-h-screen bg-radial-crimson">
           {!isPanel && <AppHeader />}
           <Outlet />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: "#1e2130",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#ffffff",
+              },
+            }}
+          />
         </div>
       </AppStoreProvider>
     </QueryClientProvider>
