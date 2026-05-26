@@ -20,6 +20,7 @@ const MONTHS = ["Mayo 2026", "Abril 2026", "Marzo 2026", "Febrero 2026"];
 function LeaderboardPage() {
   const { players } = useStore();
   const [games, setGames] = useState<Game[]>([]);
+  const [storeCities, setStoreCities] = useState<string[]>([]);
   const [tcg, setTcg] = useState<string>("Todos");
   const [city, setCity] = useState("Todas");
   const [month, setMonth] = useState(MONTHS[0]);
@@ -40,6 +41,26 @@ function LeaderboardPage() {
         }
         setGames((data ?? []) as Game[]);
       });
+
+    geekarena
+      .from("stores")
+      .select("city")
+      .eq("is_active", true)
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          toast.error("Error al cargar las tiendas. Intenta de nuevo.");
+          return;
+        }
+        const unique = Array.from(
+          new Set(
+            (data ?? [])
+              .map((s: { city: string | null }) => s.city)
+              .filter((c): c is string => !!c),
+          ),
+        ).sort((a, b) => a.localeCompare(b, "es-MX"));
+        setStoreCities(unique);
+      });
     return () => {
       mounted = false;
     };
@@ -47,7 +68,7 @@ function LeaderboardPage() {
 
   const tcgOptions = useMemo(() => ["Todos", ...games.map((g) => g.name)], [games]);
 
-  const cities = useMemo(() => ["Todas", ...Array.from(new Set(players.map((p) => p.city)))], [players]);
+  const cities = useMemo(() => ["Todas", ...storeCities], [storeCities]);
 
   const filtered = useMemo(() => {
     return players.filter((p) => {

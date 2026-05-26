@@ -224,7 +224,11 @@ export const listStoresWithOrganizers = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { admin } = context;
     const [storesRes, playersRes] = await Promise.all([
-      admin.from("stores").select("id, slug, name, city, state, is_active").order("name"),
+      admin
+        .from("stores")
+        .select("id, slug, name, city, state, is_active")
+        .order("city", { ascending: true })
+        .order("name", { ascending: true }),
       admin.from("players").select("id, geek_tag, email, role, home_store_id").in("role", ["organizer", "admin"]),
     ]);
     if (storesRes.error) throw new Error(storesRes.error.message);
@@ -236,26 +240,58 @@ export const listStoresWithOrganizers = createServerFn({ method: "POST" })
     };
   });
 
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80);
+}
+
 export const createStore = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { slug: string; name: string; city?: string; state?: string }) =>
+  .inputValidator((d: { name: string; city?: string; state?: string; slug?: string }) =>
     z.object({
-      slug: z.string().min(1).max(80).regex(/^[a-z0-9-]+$/i),
       name: z.string().min(1).max(120),
       city: z.string().max(120).optional(),
       state: z.string().max(120).optional(),
+      slug: z.string().max(80).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
+    const slug = (data.slug && data.slug.trim()) ? slugify(data.slug) : slugify(data.name);
+    if (!slug) throw new Error("Nombre inválido para generar slug");
     const { error } = await admin.from("stores").insert({
-      slug: data.slug.toLowerCase(),
+      slug,
       name: data.name,
       city: data.city || null,
       state: data.state || null,
       country: "MX",
       is_active: true,
     });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setStoreActive = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { store_id: string; is_active: boolean }) =>
+    z.object({
+      store_id: z.string().uuid(),
+      is_active: z.boolean(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { error } = await admin
+      .from("stores")
+      .update({ is_active: data.is_active })
+      .eq("id", data.store_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

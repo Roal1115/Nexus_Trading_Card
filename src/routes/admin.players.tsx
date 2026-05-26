@@ -70,7 +70,7 @@ type P = {
   created_at: string;
   last_sign_in_at?: string | null;
 };
-type Store = { id: string; name: string };
+type Store = { id: string; name: string; city: string | null };
 
 type Tab = "all" | "organizers" | "admins";
 
@@ -123,7 +123,7 @@ function AdminPlayersPage() {
     if (!email) return;
     fetchStores()
       .then((r) => setStores((r.stores as Store[]) ?? []))
-      .catch((e) => toast.error(String((e as Error).message ?? e)));
+      .catch(() => toast.error("Error al cargar las tiendas. Intenta de nuevo."));
   }, [email, fetchStores]);
 
   // tab presets — reset page when tab changes
@@ -351,7 +351,7 @@ function AdminPlayersPage() {
                 <SelectItem value="all">Todas las tiendas</SelectItem>
                 {stores.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
-                    {s.name}
+                    {s.name}{s.city ? ` — ${s.city}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -599,7 +599,7 @@ function AdminPlayersPage() {
                   <SelectItem value="__none">Sin tienda</SelectItem>
                   {stores.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name}
+                      {s.name}{s.city ? ` — ${s.city}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
