@@ -225,7 +225,7 @@ export const publishTournaments = createServerFn({ method: "POST" })
       await recomputeSnapshot(
         admin,
         game_id,
-        type as "MONTH" | "SEMESTER" | "YEAR",
+        type as "MONTHLY" | "SEMESTRAL",
         value,
         filter,
       );
