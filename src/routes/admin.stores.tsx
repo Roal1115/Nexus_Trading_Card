@@ -7,10 +7,12 @@ import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   listStoresWithOrganizers,
   createStore,
+  setStoreActive,
 } from "@/lib/geekarena-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -45,21 +47,23 @@ function AdminStoresPage() {
   const email = player?.email ?? null;
   const fetchAll = useServerFn(listStoresWithOrganizers);
   const create = useServerFn(createStore);
+  const toggleActive = useServerFn(setStoreActive);
 
   const [stores, setStores] = useState<Store[]>([]);
   const [organizers, setOrganizers] = useState<Organizer[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ slug: "", name: "", city: "", state: "" });
+  const [form, setForm] = useState({ name: "", city: "", state: "" });
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const refresh = async (em: string) => {
+  const refresh = async () => {
     setLoading(true);
     try {
       const res = await fetchAll();
       setStores(res.stores as Store[]);
       setOrganizers(res.organizers as Organizer[]);
-    } catch (e) {
-      toast.error(String((e as Error).message ?? e));
+    } catch {
+      toast.error("Error al cargar las tiendas. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -67,21 +71,36 @@ function AdminStoresPage() {
 
   useEffect(() => {
     if (!email) return;
-    refresh(email);
+    refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
 
   const submit = async () => {
     if (!email) return;
-    if (!form.slug || !form.name) return toast.error("Slug y nombre son obligatorios");
+    if (!form.name) return toast.error("El nombre es obligatorio");
     try {
-      await create({ data: { ...form } });
+      await create({ data: { name: form.name, city: form.city, state: form.state } });
       toast.success("Tienda creada");
       setOpen(false);
-      setForm({ slug: "", name: "", city: "", state: "" });
-      await refresh(email);
+      setForm({ name: "", city: "", state: "" });
+      await refresh();
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
+    }
+  };
+
+  const handleToggle = async (s: Store, next: boolean) => {
+    setTogglingId(s.id);
+    try {
+      await toggleActive({ data: { store_id: s.id, is_active: next } });
+      setStores((prev) =>
+        prev.map((it) => (it.id === s.id ? { ...it, is_active: next } : it)),
+      );
+      toast.success(next ? "Tienda activada" : "Tienda desactivada");
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -124,14 +143,6 @@ function AdminStoresPage() {
               <DialogTitle>Crear tienda</DialogTitle>
             </DialogHeader>
             <div className="grid gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-400">Slug</Label>
-                <Input
-                  placeholder="cdmx-centro"
-                  value={form.slug}
-                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                />
-              </div>
               <div className="space-y-1">
                 <Label className="text-xs text-gray-400">Nombre</Label>
                 <Input
@@ -178,9 +189,16 @@ function AdminStoresPage() {
                   <span className="text-gray-500">{s.slug}</span>
                 </p>
               </div>
-              <span className={`text-[10px] uppercase tracking-widest ${s.is_active ? "text-primary" : "text-gray-500"}`}>
-                {s.is_active ? "Activa" : "Inactiva"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] uppercase tracking-widest ${s.is_active ? "text-primary" : "text-gray-500"}`}>
+                  {s.is_active ? "Activa" : "Inactiva"}
+                </span>
+                <Switch
+                  checked={!!s.is_active}
+                  disabled={togglingId === s.id}
+                  onCheckedChange={(v) => handleToggle(s, v)}
+                />
+              </div>
             </div>
             <div className="mt-3 border-t border-white/10 pt-3">
               <p className="text-[10px] uppercase tracking-widest text-gray-500">
