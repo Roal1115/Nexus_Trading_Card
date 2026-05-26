@@ -10,6 +10,15 @@ export const Route = createFileRoute("/setup")({
 });
 
 function SetupPage() {
+  const router = useRouter();
+  const { role, loading: roleLoading } = useGeekarenaRole();
+
+  if (roleLoading) return null;
+  if (role !== "admin") {
+    router.navigate({ to: "/login" });
+    return null;
+  }
+
   const run = useServerFn(seedTestAccounts);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<
