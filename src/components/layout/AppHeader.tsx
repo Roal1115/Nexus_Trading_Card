@@ -19,12 +19,12 @@ export function AppHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm md:flex">
-          <NavItem to="/" icon={<Trophy size={14} />} label="Leaderboard" />
+          <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
           {currentUser && role !== "guest" && (
-            <NavItem to="/dashboard" icon={<User size={14} />} label="My Dashboard" />
+            <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
-          {role === "organizer" && <NavItem to="/upload" icon={<Upload size={14} />} label="Upload Results" />}
-          {role === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderation" />}
+          {role === "organizer" && <NavItem to="/upload" icon={<Upload size={14} />} label="Subir Resultados" />}
+          {role === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />}
         </nav>
 
         <div className="flex items-center gap-3">
