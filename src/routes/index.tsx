@@ -42,16 +42,16 @@ function LeaderboardPage() {
       {/* Hero */}
       <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-black/40 to-black/20 p-8 sm:p-12">
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Season III · Sponsored by Bandai · Wizards · TPCI</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Temporada III · Patrocinado por Bandai · Wizards · TPCI</p>
         <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl">
-          National <span className="text-primary">Circuit</span>
+          Circuito <span className="text-primary">Nacional</span>
         </h1>
         <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-          The official ranking system for competitive TCG. Climb the table. Earn your tickets to Worlds.
+          El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
         </p>
       </section>
 
-      {/* Sticky filters */}
+      {/* Filtros fijos */}
       <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <Select label="TCG" value={tcg} onChange={(v) => setTcg(v as typeof tcg)} options={TCGS as readonly string[]} />
