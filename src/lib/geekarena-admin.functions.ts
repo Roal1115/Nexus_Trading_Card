@@ -208,9 +208,9 @@ export const publishTournaments = createServerFn({ method: "POST" })
     const slices = new Set<string>();
     for (const t of publishable) {
       const tf = tfValues(t.qualifying_month, t.qualifying_semester, t.qualifying_year);
-      slices.add(`${t.game_id}|MONTH|${tf.MONTH}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
-      slices.add(`${t.game_id}|SEMESTER|${tf.SEMESTER}|y=${t.qualifying_year}|s=${t.qualifying_semester}`);
-      slices.add(`${t.game_id}|YEAR|${tf.YEAR}|y=${t.qualifying_year}`);
+      slices.add(`${t.game_id}|MONTHLY|${tf.MONTH}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
+      slices.add(`${t.game_id}|SEMESTRAL|${tf.SEMESTER}|y=${t.qualifying_year}|s=${t.qualifying_semester}`);
+      slices.add(`${t.game_id}|SEMESTRAL|${tf.YEAR}|y=${t.qualifying_year}`);
     }
 
     for (const key of slices) {
