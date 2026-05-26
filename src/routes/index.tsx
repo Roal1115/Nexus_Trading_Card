@@ -174,7 +174,7 @@ function LeaderboardTable({
               );
             })}
             {rows.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-10 text-center text-sm text-gray-500">No players match these filters.</td></tr>
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-sm text-gray-500">Ningún jugador coincide con estos filtros.</td></tr>
             )}
           </tbody>
         </table>
