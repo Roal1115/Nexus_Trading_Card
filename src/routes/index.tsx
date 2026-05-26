@@ -13,8 +13,8 @@ export const Route = createFileRoute("/")({
   component: LeaderboardPage,
 });
 
-const TCGS: ("All" | TCG)[] = ["All", "One Piece", "Magic: The Gathering", "Pokémon"];
-const MONTHS = ["May 2026", "April 2026", "March 2026", "February 2026"];
+const TCGS: ("Todos" | TCG)[] = ["Todos", "One Piece", "Magic: The Gathering", "Pokémon"];
+const MONTHS = ["Mayo 2026", "Abril 2026", "Marzo 2026", "Febrero 2026"];
 
 function LeaderboardPage() {
   const { players } = useStore();
