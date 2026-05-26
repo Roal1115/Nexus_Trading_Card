@@ -29,7 +29,7 @@ function tfValues(month: number, semester: number, year: number) {
 async function recomputeSnapshot(
   admin: ReturnType<typeof getGeekarenaAdmin>,
   game_id: string,
-  timeframe_type: "MONTH" | "SEMESTER" | "YEAR",
+  timeframe_type: "MONTHLY" | "SEMESTRAL",
   timeframe_value: string,
   filter: { year?: number; month?: number; semester?: number },
 ) {
