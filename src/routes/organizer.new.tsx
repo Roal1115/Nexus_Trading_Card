@@ -25,6 +25,45 @@ export const Route = createFileRoute("/organizer/new")({
 
 type Game = { id: string; name: string };
 
+interface ParsedRow {
+  geekTag: string;
+  points: number;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
+function parseCSV(text: string): ParsedRow[] {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const col = (keys: string[]) => {
+    for (const k of keys) {
+      const i = headers.indexOf(k);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+  const iTag = col(["geek tag", "geektag", "tag", "jugador", "player"]);
+  const iPts = col(["points", "puntos", "pts"]);
+  const iW = col(["wins", "victorias", "w"]);
+  const iL = col(["losses", "derrotas", "l"]);
+  const iD = col(["draws", "empates", "d"]);
+  return lines
+    .slice(1)
+    .map((line) => {
+      const c = line.split(",").map((x) => x.trim());
+      return {
+        geekTag: iTag !== -1 ? c[iTag] : c[0] ?? "",
+        points: Number(iPts !== -1 ? c[iPts] : c[1]) || 0,
+        wins: Number(iW !== -1 ? c[iW] : c[2]) || 0,
+        losses: Number(iL !== -1 ? c[iL] : c[3]) || 0,
+        draws: Number(iD !== -1 ? c[iD] : c[4]) || 0,
+      };
+    })
+    .filter((r) => r.geekTag.length > 0);
+}
+
 function NewTournamentPage() {
   const navigate = useNavigate();
   const { player, loading: roleLoading } = useGeekarenaRole();
