@@ -6,8 +6,8 @@ import { useStore, type Player, type TCG } from "@/lib/mock-store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "National Circuit Leaderboard — Geek Collector" },
-      { name: "description", content: "Live competitive rankings across One Piece, Magic: The Gathering and Pokémon TCG." },
+      { title: "Ranking del Circuito Nacional — Geek Arena" },
+      { name: "description", content: "Rankings competitivos en vivo de One Piece, Magic: The Gathering y Pokémon TCG." },
     ],
   }),
   component: LeaderboardPage,
