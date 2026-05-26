@@ -18,17 +18,17 @@ const MONTHS = ["Mayo 2026", "Abril 2026", "Marzo 2026", "Febrero 2026"];
 
 function LeaderboardPage() {
   const { players } = useStore();
-  const [tcg, setTcg] = useState<(typeof TCGS)[number]>("All");
-  const [city, setCity] = useState("All");
+  const [tcg, setTcg] = useState<(typeof TCGS)[number]>("Todos");
+  const [city, setCity] = useState("Todas");
   const [month, setMonth] = useState(MONTHS[0]);
   const [search, setSearch] = useState("");
 
-  const cities = useMemo(() => ["All", ...Array.from(new Set(players.map((p) => p.city)))], [players]);
+  const cities = useMemo(() => ["Todas", ...Array.from(new Set(players.map((p) => p.city)))], [players]);
 
   const filtered = useMemo(() => {
     return players.filter((p) => {
-      if (tcg !== "All" && p.tcg !== tcg) return false;
-      if (city !== "All" && p.city !== city) return false;
+      if (tcg !== "Todos" && p.tcg !== tcg) return false;
+      if (city !== "Todas" && p.city !== city) return false;
       if (search && !p.geekTag.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
