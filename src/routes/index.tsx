@@ -55,14 +55,14 @@ function LeaderboardPage() {
       <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <Select label="TCG" value={tcg} onChange={(v) => setTcg(v as typeof tcg)} options={TCGS as readonly string[]} />
-          <Select label="City" value={city} onChange={setCity} options={cities} />
-          <Select label="Month" value={month} onChange={setMonth} options={MONTHS} />
+          <Select label="Ciudad" value={city} onChange={setCity} options={cities} />
+          <Select label="Mes" value={month} onChange={setMonth} options={MONTHS} />
           <div className="relative ml-auto min-w-[200px] flex-1 sm:flex-none">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Geek Tag…"
+              placeholder="Buscar Geek Tag…"
               className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
           </div>
