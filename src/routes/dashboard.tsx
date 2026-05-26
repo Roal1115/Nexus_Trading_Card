@@ -66,7 +66,7 @@ function DashboardPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Your Geek Tag</p>
             <h1 className="mt-2 break-all text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
-            <p className="mt-2 text-sm text-gray-400">{player?.tcg ?? "Unranked"} · {player?.city ?? "—"}</p>
+            <p className="mt-2 text-sm text-gray-400">{player?.tcg ?? "Unranked"} · {storeCity ?? "—"}</p>
           </div>
           <div className="rounded-xl border border-primary/30 bg-black/40 px-6 py-4 text-center">
             <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary">
