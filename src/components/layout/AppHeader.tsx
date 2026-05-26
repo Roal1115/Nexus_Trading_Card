@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, Shield, Trophy, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/mock-store";
+import { useGeekarenaRole, homeRouteForRole } from "@/hooks/use-geekarena-role";
 
 export function AppHeader() {
   const { currentUser, logout } = useStore();
