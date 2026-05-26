@@ -1,28 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
-
-// ---------- helpers ----------
-async function requireOrganizer(email: string) {
-  const admin = getGeekarenaAdmin();
-  const { data, error } = await admin
-    .from("players")
-    .select("id, geek_tag, email, role, home_store_id")
-    .eq("email", email)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Jugador no encontrado");
-  if (data.role !== "organizer" && data.role !== "admin") {
-    throw new Error("No autorizado");
-  }
-  return { admin, player: data as {
-    id: string;
-    geek_tag: string;
-    email: string;
-    role: "organizer" | "admin";
-    home_store_id: string | null;
-  } };
-}
+import {
+  requireGeekarenaOrganizer,
+} from "./geekarena-auth.middleware";
 
 function computeQualifying(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -34,9 +14,9 @@ function computeQualifying(dateStr: string) {
 
 // ---------- Mi Tienda ----------
 export const getOrganizerOverview = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string }) => z.object({ email: z.string().email() }).parse(d))
-  .handler(async ({ data }) => {
-    const { admin, player } = await requireOrganizer(data.email);
+  .middleware([requireGeekarenaOrganizer])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
 
     const [storesRes, gamesRes, homeStoreRes] = await Promise.all([
       admin.from("stores").select("id, slug, name, city, state, country, is_active").order("name"),
@@ -59,11 +39,12 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
   });
 
 export const updateHomeStore = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; store_id: string }) =>
-    z.object({ email: z.string().email(), store_id: z.string().uuid() }).parse(d),
+  .middleware([requireGeekarenaOrganizer])
+  .inputValidator((d: { store_id: string }) =>
+    z.object({ store_id: z.string().uuid() }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin, player } = await requireOrganizer(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
     const { error } = await admin
       .from("players")
       .update({ home_store_id: data.store_id })
@@ -73,17 +54,17 @@ export const updateHomeStore = createServerFn({ method: "POST" })
   });
 
 export const updateStoreInfo = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; store_id: string; name: string; city: string; state: string }) =>
+  .middleware([requireGeekarenaOrganizer])
+  .inputValidator((d: { store_id: string; name: string; city: string; state: string }) =>
     z.object({
-      email: z.string().email(),
       store_id: z.string().uuid(),
       name: z.string().min(1).max(120),
       city: z.string().max(120),
       state: z.string().max(120),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin, player } = await requireOrganizer(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
     if (player.home_store_id !== data.store_id && player.role !== "admin") {
       throw new Error("Solo puedes editar tu tienda asignada");
     }
@@ -97,9 +78,9 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
 
 // ---------- Mis Torneos ----------
 export const getMyTournaments = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string }) => z.object({ email: z.string().email() }).parse(d))
-  .handler(async ({ data }) => {
-    const { admin, player } = await requireOrganizer(data.email);
+  .middleware([requireGeekarenaOrganizer])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
     if (!player.home_store_id) return { tournaments: [] };
 
     const { data: rows, error } = await admin
@@ -123,11 +104,12 @@ export const getMyTournaments = createServerFn({ method: "POST" })
   });
 
 export const deleteDraftTournament = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; tournament_id: string }) =>
-    z.object({ email: z.string().email(), tournament_id: z.string().uuid() }).parse(d),
+  .middleware([requireGeekarenaOrganizer])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin, player } = await requireOrganizer(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
     const { data: t, error: te } = await admin
       .from("tournaments")
       .select("id, store_id, status")
@@ -148,21 +130,20 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
 
 // ---------- Subir Torneo ----------
 export const createTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
   .inputValidator((d: {
-    email: string;
     game_id: string;
     tournament_date: string; // YYYY-MM-DD
     csv_url?: string | null;
   }) =>
     z.object({
-      email: z.string().email(),
       game_id: z.string().uuid(),
       tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       csv_url: z.string().url().max(2048).optional().nullable(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin, player } = await requireOrganizer(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
     if (!player.home_store_id) {
       throw new Error("Primero asigna una tienda en 'Mi Tienda'");
     }

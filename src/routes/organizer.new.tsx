@@ -47,7 +47,7 @@ function NewTournamentPage() {
     if (!email) return;
     (async () => {
       try {
-        const res = await fetchOverview({ data: { email } });
+        const res = await fetchOverview();
         setGames(res.games as Game[]);
         setHasStore(Boolean(res.homeStore));
         setStoreName(res.homeStore?.name ?? null);
@@ -82,9 +82,7 @@ function NewTournamentPage() {
     setSaving(true);
     try {
       await submit({
-        data: {
-          email,
-          game_id: gameId,
+        data: { game_id: gameId,
           tournament_date: date,
           csv_url: csvUrl || null,
         },

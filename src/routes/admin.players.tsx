@@ -121,7 +121,7 @@ function AdminPlayersPage() {
   // load stores once
   useEffect(() => {
     if (!email) return;
-    fetchStores({ data: { email } })
+    fetchStores()
       .then((r) => setStores((r.stores as Store[]) ?? []))
       .catch((e) => toast.error(String((e as Error).message ?? e)));
   }, [email, fetchStores]);
@@ -141,9 +141,7 @@ function AdminPlayersPage() {
     let cancelled = false;
     setLoading(true);
     fetchPlayers({
-      data: {
-        email,
-        search: search || undefined,
+      data: { search: search || undefined,
         role: effectiveRole,
         active: activeFilter,
         store_id: storeFilter !== "all" ? storeFilter : undefined,
@@ -171,9 +169,7 @@ function AdminPlayersPage() {
     setPage((p) => p);
     if (email) {
       fetchPlayers({
-        data: {
-          email,
-          search: search || undefined,
+        data: { search: search || undefined,
           role: effectiveRole,
           active: activeFilter,
           store_id: storeFilter !== "all" ? storeFilter : undefined,
@@ -221,7 +217,7 @@ function AdminPlayersPage() {
     setActing(true);
     try {
       await setRole({
-        data: { email, player_id: roleModal.p.id, role: roleModal.next },
+        data: { player_id: roleModal.p.id, role: roleModal.next },
       });
       toast.success("Rol actualizado");
       setRoleModal(null);
@@ -238,9 +234,7 @@ function AdminPlayersPage() {
     setActing(true);
     try {
       await setRole({
-        data: {
-          email,
-          player_id: storeModal.p.id,
+        data: { player_id: storeModal.p.id,
           role: storeModal.p.role,
           home_store_id: storeModal.next || null,
         },
@@ -260,7 +254,7 @@ function AdminPlayersPage() {
     setActing(true);
     try {
       await setActive({
-        data: { email, player_id: activeModal.id, is_active: !activeModal.is_active },
+        data: { player_id: activeModal.id, is_active: !activeModal.is_active },
       });
       toast.success(activeModal.is_active ? "Cuenta desactivada" : "Cuenta activada");
       setActiveModal(null);
@@ -494,7 +488,7 @@ function AdminPlayersPage() {
                           onToggleActive={() => {
                             if (p.is_active) setActiveModal(p);
                             else void setActive({
-                              data: { email: email!, player_id: p.id, is_active: true },
+                              data: { player_id: p.id, is_active: true },
                             }).then(() => {
                               toast.success("Cuenta activada");
                               refresh();

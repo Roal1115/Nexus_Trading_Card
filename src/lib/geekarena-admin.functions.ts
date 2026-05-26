@@ -1,20 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
-
-// ---------- helpers ----------
-async function requireAdmin(email: string) {
-  const admin = getGeekarenaAdmin();
-  const { data, error } = await admin
-    .from("players")
-    .select("id, geek_tag, email, role")
-    .eq("email", email)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Jugador no encontrado");
-  if (data.role !== "admin") throw new Error("No autorizado");
-  return { admin, player: data };
-}
+import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
 
 function tfValues(month: number, semester: number, year: number) {
   return {
@@ -33,7 +20,6 @@ async function recomputeSnapshot(
   timeframe_value: string,
   filter: { year?: number; month?: number; semester?: number },
 ) {
-  // fetch published tournaments matching the filter
   let q = admin
     .from("tournaments")
     .select("id, qualifying_year, qualifying_month, qualifying_semester")
@@ -47,7 +33,6 @@ async function recomputeSnapshot(
   if (te) throw new Error(te.message);
   const tIds = (tournaments ?? []).map((t) => t.id);
 
-  // delete previous snapshot rows for this slice
   const { error: de } = await admin
     .from("leaderboard_snapshots")
     .delete()
@@ -97,14 +82,14 @@ async function recomputeSnapshot(
 
 // ---------- Torneos pendientes / aprobados ----------
 export const listTournamentsByStatus = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; statuses: string[] }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { statuses: string[] }) =>
     z.object({
-      email: z.string().email(),
       statuses: z.array(z.string()).min(1).max(6),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const { data: rows, error } = await admin
       .from("tournaments")
       .select(
@@ -142,14 +127,14 @@ export const listTournamentsByStatus = createServerFn({ method: "POST" })
   });
 
 export const approveTournament = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; tournament_id: string }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { tournament_id: string }) =>
     z.object({
-      email: z.string().email(),
       tournament_id: z.string().uuid(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const { error } = await admin
       .from("tournaments")
       .update({ status: "APPROVED", approved_at: new Date().toISOString() })
@@ -159,14 +144,14 @@ export const approveTournament = createServerFn({ method: "POST" })
   });
 
 export const rejectTournament = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; tournament_id: string }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { tournament_id: string }) =>
     z.object({
-      email: z.string().email(),
       tournament_id: z.string().uuid(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const { error } = await admin
       .from("tournaments")
       .update({ status: "DRAFT" })
@@ -176,14 +161,14 @@ export const rejectTournament = createServerFn({ method: "POST" })
   });
 
 export const publishTournaments = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; tournament_ids: string[] }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { tournament_ids: string[] }) =>
     z.object({
-      email: z.string().email(),
       tournament_ids: z.array(z.string().uuid()).min(1).max(200),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const { data: tournaments, error: te } = await admin
       .from("tournaments")
       .select("id, game_id, qualifying_year, qualifying_month, qualifying_semester, status")
@@ -204,7 +189,6 @@ export const publishTournaments = createServerFn({ method: "POST" })
       .in("id", publishable.map((t) => t.id));
     if (ue) throw new Error(ue.message);
 
-    // recompute snapshots for each (game, timeframe) slice impacted
     const slices = new Set<string>();
     for (const t of publishable) {
       const tf = tfValues(t.qualifying_month, t.qualifying_semester, t.qualifying_year);
@@ -236,11 +220,9 @@ export const publishTournaments = createServerFn({ method: "POST" })
 
 // ---------- Stores ----------
 export const listStoresWithOrganizers = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string }) =>
-    z.object({ email: z.string().email() }).parse(d),
-  )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .middleware([requireGeekarenaAdmin])
+  .handler(async ({ context }) => {
+    const { admin } = context;
     const [storesRes, playersRes] = await Promise.all([
       admin.from("stores").select("id, slug, name, city, state, is_active").order("name"),
       admin.from("players").select("id, geek_tag, email, role, home_store_id").in("role", ["organizer", "admin"]),
@@ -255,17 +237,17 @@ export const listStoresWithOrganizers = createServerFn({ method: "POST" })
   });
 
 export const createStore = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; slug: string; name: string; city?: string; state?: string }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { slug: string; name: string; city?: string; state?: string }) =>
     z.object({
-      email: z.string().email(),
       slug: z.string().min(1).max(80).regex(/^[a-z0-9-]+$/i),
       name: z.string().min(1).max(120),
       city: z.string().max(120).optional(),
       state: z.string().max(120).optional(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const { error } = await admin.from("stores").insert({
       slug: data.slug.toLowerCase(),
       name: data.name,
@@ -282,9 +264,9 @@ export const createStore = createServerFn({ method: "POST" })
 const PAGE_SIZE = 25;
 
 export const listPlayers = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
   .inputValidator(
     (d: {
-      email: string;
       search?: string;
       role?: "all" | "player" | "organizer" | "admin";
       active?: "all" | "true" | "false";
@@ -295,7 +277,6 @@ export const listPlayers = createServerFn({ method: "POST" })
     }) =>
       z
         .object({
-          email: z.string().email(),
           search: z.string().max(120).optional(),
           role: z.enum(["all", "player", "organizer", "admin"]).optional(),
           active: z.enum(["all", "true", "false"]).optional(),
@@ -306,12 +287,11 @@ export const listPlayers = createServerFn({ method: "POST" })
         })
         .parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const page = data.page ?? 1;
     const sort = data.sort ?? "recent";
 
-    // Points sort: precompute ordered ids from leaderboard_snapshots (YEAR slices)
     let orderedIdsByPoints: string[] | null = null;
     if (sort === "points") {
       const { data: snaps, error: se } = await admin
@@ -357,7 +337,6 @@ export const listPlayers = createServerFn({ method: "POST" })
     if (sort === "points" && orderedIdsByPoints) {
       const idsForPage = orderedIdsByPoints.slice(from, to + 1);
       if (idsForPage.length === 0) {
-        // still get count of filtered set
         const { count } = await q;
         return { players: [], total: count ?? 0, page, page_size: PAGE_SIZE };
       }
@@ -401,11 +380,9 @@ async function withLastSignIn(
       rows.map(async (r) => {
         if (!r?.email) return { ...r, last_sign_in_at: null };
         try {
-          // Best-effort: list users filtered by email (Supabase admin API)
           const { data } = await (admin as any).auth.admin.listUsers({
             page: 1,
             perPage: 1,
-            // some versions accept filter
           });
           const u = (data?.users ?? []).find((x: any) => x.email === r.email);
           return { ...r, last_sign_in_at: u?.last_sign_in_at ?? null };
@@ -424,17 +401,17 @@ async function withLastSignIn(
 }
 
 export const setPlayerActive = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; player_id: string; is_active: boolean }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { player_id: string; is_active: boolean }) =>
     z
       .object({
-        email: z.string().email(),
         player_id: z.string().uuid(),
         is_active: z.boolean(),
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const { error } = await admin
       .from("players")
       .update({ is_active: data.is_active })
@@ -444,16 +421,16 @@ export const setPlayerActive = createServerFn({ method: "POST" })
   });
 
 export const getPlayerDetail = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; player_id: string }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { player_id: string }) =>
     z
       .object({
-        email: z.string().email(),
         player_id: z.string().uuid(),
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const { data: player, error: pe } = await admin
       .from("players")
       .select(
@@ -507,16 +484,16 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
   });
 
 export const setPlayerRole = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; player_id: string; role: "player" | "organizer" | "admin"; home_store_id?: string | null }) =>
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { player_id: string; role: "player" | "organizer" | "admin"; home_store_id?: string | null }) =>
     z.object({
-      email: z.string().email(),
       player_id: z.string().uuid(),
       role: z.enum(["player", "organizer", "admin"]),
       home_store_id: z.string().uuid().optional().nullable(),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { admin } = await requireAdmin(data.email);
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
     const update: Record<string, unknown> = { role: data.role };
     if (data.home_store_id !== undefined) update.home_store_id = data.home_store_id;
     const { error } = await admin
