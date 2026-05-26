@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { seedTestAccounts } from "@/lib/geekarena-setup.functions";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/setup")({
