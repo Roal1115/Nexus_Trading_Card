@@ -132,10 +132,10 @@ function LeaderboardTable({
             <tr>
               <th className="px-3 py-2 text-left">#</th>
               <th className="px-3 py-2 text-left">Geek Tag</th>
-              <th className="px-3 py-2 text-left">City</th>
+              <th className="px-3 py-2 text-left">Ciudad</th>
               <th className="px-3 py-2 text-right">Pts</th>
-              <th className="hidden px-3 py-2 text-right sm:table-cell">W</th>
-              <th className="hidden px-3 py-2 text-right sm:table-cell">L</th>
+              <th className="hidden px-3 py-2 text-right sm:table-cell">G</th>
+              <th className="hidden px-3 py-2 text-right sm:table-cell">P</th>
               <th className="hidden px-3 py-2 text-right sm:table-cell">OMW%</th>
             </tr>
           </thead>
