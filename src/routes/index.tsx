@@ -72,7 +72,7 @@ function LeaderboardPage() {
       {/* Tables */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <LeaderboardTable
-          title="Monthly Standings"
+          title="Ranking Mensual"
           subtitle={month}
           icon={<Trophy className="text-primary" size={18} />}
           rows={monthly}
@@ -80,8 +80,8 @@ function LeaderboardPage() {
           variant="monthly"
         />
         <LeaderboardTable
-          title="General Semiannual"
-          subtitle="H1 2026"
+          title="General Semestral"
+          subtitle="S1 2026"
           icon={<Medal className="text-primary" size={18} />}
           rows={semi}
           pointsKey="semiannualPoints"
