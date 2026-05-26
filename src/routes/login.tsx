@@ -74,8 +74,19 @@ function LoginPage() {
       data.user?.email?.split("@")[0] ??
       "jugador";
     storeLogin(data.user?.email ?? email, "player", geekTag);
+
+    // Redirect según rol leído desde la tabla players
+    const { data: playerRow } = await geekarena
+      .from("players")
+      .select("role")
+      .eq("email", data.user?.email ?? email)
+      .maybeSingle();
+    const role = (playerRow as { role?: string } | null)?.role;
+
     toast.success("¡Bienvenido de vuelta a la Arena!");
-    navigate({ to: "/dashboard" });
+    if (role === "admin") navigate({ to: "/admin" });
+    else if (role === "organizer") navigate({ to: "/organizer" });
+    else navigate({ to: "/dashboard" });
   };
 
   const resend = async () => {

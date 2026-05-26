@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckInboxRouteImport } from './routes/check-inbox'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -25,6 +28,11 @@ const UploadRoute = UploadRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerRoute = OrganizerRouteImport.update({
+  id: '/organizer',
+  path: '/organizer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -52,34 +60,51 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/organizer': typeof OrganizerRouteWithChildren
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/admin/': typeof AdminIndexRoute
+  '/organizer/': typeof OrganizerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/admin': typeof AdminIndexRoute
+  '/organizer': typeof OrganizerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/organizer': typeof OrganizerRouteWithChildren
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/admin/': typeof AdminIndexRoute
+  '/organizer/': typeof OrganizerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -89,17 +114,21 @@ export interface FileRouteTypes {
     | '/check-inbox'
     | '/dashboard'
     | '/login'
+    | '/organizer'
     | '/signup'
     | '/upload'
+    | '/admin/'
+    | '/organizer/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/check-inbox'
     | '/dashboard'
     | '/login'
     | '/signup'
     | '/upload'
+    | '/admin'
+    | '/organizer'
   id:
     | '__root__'
     | '/'
@@ -107,16 +136,20 @@ export interface FileRouteTypes {
     | '/check-inbox'
     | '/dashboard'
     | '/login'
+    | '/organizer'
     | '/signup'
     | '/upload'
+    | '/admin/'
+    | '/organizer/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CheckInboxRoute: typeof CheckInboxRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  OrganizerRoute: typeof OrganizerRouteWithChildren
   SignupRoute: typeof SignupRoute
   UploadRoute: typeof UploadRoute
 }
@@ -135,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer': {
+      id: '/organizer'
+      path: '/organizer'
+      fullPath: '/organizer'
+      preLoaderRoute: typeof OrganizerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -172,15 +212,52 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/organizer/': {
+      id: '/organizer/'
+      path: '/'
+      fullPath: '/organizer/'
+      preLoaderRoute: typeof OrganizerIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface OrganizerRouteChildren {
+  OrganizerIndexRoute: typeof OrganizerIndexRoute
+}
+
+const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerIndexRoute: OrganizerIndexRoute,
+}
+
+const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
+  OrganizerRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   CheckInboxRoute: CheckInboxRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  OrganizerRoute: OrganizerRouteWithChildren,
   SignupRoute: SignupRoute,
   UploadRoute: UploadRoute,
 }

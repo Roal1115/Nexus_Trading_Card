@@ -1,29 +1,21 @@
 import { useEffect } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  CheckCircle2,
-  Loader2,
-  ShieldCheck,
-  Store,
-  Trophy,
-  Users,
-  Upload,
-} from "lucide-react";
+import { Loader2, Store, Trophy, Upload, ListChecks } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 
-export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Panel Administrador — Geek Arena" }] }),
-  component: AdminLayout,
+export const Route = createFileRoute("/organizer")({
+  head: () => ({ meta: [{ title: "Panel del Organizador — Geek Arena" }] }),
+  component: OrganizerLayout,
 });
 
-function AdminLayout() {
+function OrganizerLayout() {
   const { role, player, loading } = useGeekarenaRole();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (loading) return;
-    if (role !== "admin") {
+    if (role !== "organizer" && role !== "admin") {
       navigate({ to: "/login" });
     }
   }, [loading, role, navigate]);
@@ -35,20 +27,18 @@ function AdminLayout() {
       </div>
     );
   }
-  if (role !== "admin") return null;
+  if (role !== "organizer" && role !== "admin") return null;
 
   return (
     <div className="flex min-h-screen">
       <PanelSidebar
-        title="Administración"
+        title="Organizador"
         subtitle="Panel"
-        userLabel={player?.geek_tag ?? "Admin"}
+        userLabel={player?.geek_tag ?? "Organizador"}
         items={[
-          { to: "/admin", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true },
-          { to: "/admin/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} /> },
-          { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
-          { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
-          { to: "/admin/publish", label: "Publicar Manualmente", icon: <Upload size={16} /> },
+          { to: "/organizer", label: "Mi Tienda", icon: <Store size={16} />, exact: true },
+          { to: "/organizer/tournaments", label: "Mis Torneos", icon: <ListChecks size={16} /> },
+          { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
           { to: "/", label: "Ranking Global", icon: <Trophy size={16} />, external: true },
         ]}
       />

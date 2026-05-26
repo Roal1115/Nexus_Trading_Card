@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -122,12 +123,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isPanel = pathname.startsWith("/admin") || pathname.startsWith("/organizer");
 
   return (
     <QueryClientProvider client={queryClient}>
       <AppStoreProvider>
         <div className="min-h-screen bg-radial-crimson">
-          <AppHeader />
+          {!isPanel && <AppHeader />}
           <Outlet />
         </div>
       </AppStoreProvider>
