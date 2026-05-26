@@ -37,17 +37,13 @@ type Row = {
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Borrador",
-  PENDING_REVIEW: "En revisión",
   APPROVED: "Aprobado",
   PUBLISHED: "Publicado",
-  REJECTED: "Rechazado",
 };
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   DRAFT: "secondary",
-  PENDING_REVIEW: "outline",
   APPROVED: "default",
   PUBLISHED: "default",
-  REJECTED: "destructive",
 };
 
 function TournamentsPage() {
