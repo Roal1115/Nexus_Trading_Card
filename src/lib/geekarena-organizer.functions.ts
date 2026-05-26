@@ -19,7 +19,12 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
     const { admin, player } = context;
 
     const [storesRes, gamesRes, homeStoreRes] = await Promise.all([
-      admin.from("stores").select("id, slug, name, city, state, country, is_active").order("name"),
+      admin
+        .from("stores")
+        .select("id, slug, name, city, state, country, is_active")
+        .eq("is_active", true)
+        .order("city", { ascending: true })
+        .order("name", { ascending: true }),
       admin.from("games").select("id, slug, name, publisher, logo_url, is_active").eq("is_active", true).order("name"),
       player.home_store_id
         ? admin.from("stores").select("id, slug, name, city, state, country, is_active").eq("id", player.home_store_id).maybeSingle()
