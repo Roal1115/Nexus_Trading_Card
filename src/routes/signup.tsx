@@ -172,7 +172,7 @@ function SignupPage() {
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
-      <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#1e2130] p-8 shadow-2xl">
+      <div className="glass w-full max-w-2xl rounded-2xl p-8 shadow-2xl">
         <div className="mb-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
             Únete al Circuito
