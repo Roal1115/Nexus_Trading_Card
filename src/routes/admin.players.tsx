@@ -351,7 +351,7 @@ function AdminPlayersPage() {
                 <SelectItem value="all">Todas las tiendas</SelectItem>
                 {stores.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
-                    {s.name}
+                    {s.name}{s.city ? ` — ${s.city}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
