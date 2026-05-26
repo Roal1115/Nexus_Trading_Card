@@ -317,7 +317,7 @@ export const listPlayers = createServerFn({ method: "POST" })
       const { data: snaps, error: se } = await admin
         .from("leaderboard_snapshots")
         .select("player_id, total_points")
-        .eq("timeframe_type", "YEAR");
+        .eq("timeframe_type", "SEMESTRAL");
       if (se) throw new Error(se.message);
       const sum = new Map<string, number>();
       for (const s of snaps ?? []) {
