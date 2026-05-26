@@ -169,7 +169,7 @@ export const rejectTournament = createServerFn({ method: "POST" })
     const { admin } = await requireAdmin(data.email);
     const { error } = await admin
       .from("tournaments")
-      .update({ status: "REJECTED" })
+      .update({ status: "DRAFT" })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
     return { ok: true };
