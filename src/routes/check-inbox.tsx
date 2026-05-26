@@ -26,7 +26,7 @@ function CheckInboxPage() {
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1e2130] p-10 text-center shadow-2xl">
-        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-violet-500/40 bg-violet-500/10 text-violet-300">
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary">
           <Mail size={24} />
         </div>
         <h1 className="text-2xl font-bold text-white">Check your inbox</h1>
@@ -39,14 +39,14 @@ function CheckInboxPage() {
         <button
           onClick={resend}
           disabled={!email || cooldown}
-          className="mt-6 w-full rounded-md border border-violet-500/40 bg-violet-500/10 py-3 text-sm font-bold uppercase tracking-widest text-violet-300 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-6 w-full rounded-md border border-primary/40 bg-primary/10 py-3 text-sm font-bold uppercase tracking-widest text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {cooldown ? "Sent — check again soon" : "Resend email"}
         </button>
 
         <Link
           to="/login"
-          className="mt-4 block text-xs uppercase tracking-wider text-gray-500 transition hover:text-violet-300"
+          className="mt-4 block text-xs uppercase tracking-wider text-gray-500 transition hover:text-primary"
         >
           ← Back to sign in
         </Link>
