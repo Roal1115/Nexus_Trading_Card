@@ -599,7 +599,7 @@ function AdminPlayersPage() {
                   <SelectItem value="__none">Sin tienda</SelectItem>
                   {stores.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name}
+                      {s.name}{s.city ? ` — ${s.city}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
