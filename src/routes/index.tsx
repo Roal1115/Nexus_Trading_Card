@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Medal, Search, Ticket, Trophy } from "lucide-react";
-import { useStore, type Player, type TCG } from "@/lib/mock-store";
+import { toast } from "sonner";
+import { useStore, type Player } from "@/lib/mock-store";
+import { geekarena, type Game } from "@/integrations/geekarena/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -13,15 +15,37 @@ export const Route = createFileRoute("/")({
   component: LeaderboardPage,
 });
 
-const TCGS: ("Todos" | TCG)[] = ["Todos", "One Piece", "Magic: The Gathering", "Pokémon"];
 const MONTHS = ["Mayo 2026", "Abril 2026", "Marzo 2026", "Febrero 2026"];
 
 function LeaderboardPage() {
   const { players } = useStore();
-  const [tcg, setTcg] = useState<(typeof TCGS)[number]>("Todos");
+  const [games, setGames] = useState<Game[]>([]);
+  const [tcg, setTcg] = useState<string>("Todos");
   const [city, setCity] = useState("Todas");
   const [month, setMonth] = useState(MONTHS[0]);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    geekarena
+      .from("games")
+      .select("*")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          toast.error("No se pudieron cargar los juegos");
+          return;
+        }
+        setGames((data ?? []) as Game[]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const tcgOptions = useMemo(() => ["Todos", ...games.map((g) => g.name)], [games]);
 
   const cities = useMemo(() => ["Todas", ...Array.from(new Set(players.map((p) => p.city)))], [players]);
 
