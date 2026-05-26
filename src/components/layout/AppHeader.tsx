@@ -28,7 +28,7 @@ export function AppHeader() {
           {currentUser && effectiveRole && (
             <NavItem to={panelRoute} icon={<User size={14} />} label="Mi Panel" />
           )}
-          {effectiveRole === "organizer" && <NavItem to="/upload" icon={<Upload size={14} />} label="Subir Resultados" />}
+          {effectiveRole === "organizer" && <NavItem to="/organizer/new" icon={<Upload size={14} />} label="Subir Resultados" />}
           {effectiveRole === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />}
         </nav>
 
