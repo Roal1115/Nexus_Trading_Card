@@ -507,12 +507,12 @@ function Step2({
                 onClick={() => toggle(g.id)}
                 className={`group relative flex h-28 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition ${
                   on
-                    ? "border-violet-500 bg-violet-500/10"
+                    ? "border-primary bg-primary/10"
                     : "border-white/10 bg-white/[0.03] hover:border-white/30"
                 }`}
               >
                 {on && (
-                  <span className="absolute right-2 top-2 rounded-full bg-violet-500 p-1 text-white">
+                  <span className="absolute right-2 top-2 rounded-full bg-primary p-1 text-primary-foreground">
                     <Check size={10} />
                   </span>
                 )}
@@ -563,7 +563,7 @@ function Step3({
             {games.map((g) => (
               <span
                 key={g.id}
-                className="rounded-full border border-violet-500/40 bg-violet-500/10 px-3 py-1 text-xs text-violet-200"
+                className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary/80"
               >
                 {g.name}
               </span>
@@ -577,11 +577,11 @@ function Step3({
           type="checkbox"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
-          className="mt-1 h-4 w-4 accent-violet-500"
+          className="mt-1 h-4 w-4 accent-primary"
         />
         <span>
           I agree to the{" "}
-          <a href="#" className="text-violet-300 hover:underline">
+          <a href="#" className="text-primary hover:underline">
             Terms & Conditions
           </a>{" "}
           and confirm I am a real human.
