@@ -1,95 +1,114 @@
 # Geek Arena
 
-A modern web application for managing competitive trading card game (TCG) tournaments and leaderboards across multiple games including One Piece, Magic: The Gathering, and Pokémon TCG.
+A Cloudflare Worker–hosted React application for managing a Mexican national TCG circuit. The app supports players, organizers, and admins for One Piece, Magic: The Gathering, and Pokémon TCG rankings and tournament workflows.
 
-## Overview
+## Project summary
 
-Geek Arena provides a centralized platform for tracking competitive rankings, tournament results, and player statistics across popular TCGs. Users can view leaderboards, manage tournaments, upload results, and explore player profiles in a rich, interactive interface.
+This repository contains a full-stack app built with TanStack Start and deployed to Cloudflare Workers. It combines a Supabase-backed auth/data integration with a large set of shadcn/Radix UI components and an in-memory mock data store for demo content.
 
-## Tech Stack
+## What’s included
 
-### Frontend
-- **React 19** - UI framework
-- **TanStack Router** - Type-safe routing
-- **TanStack Query (React Query)** - Data fetching and caching
-- **TanStack Start** - Full-stack React framework
-- **Tailwind CSS** - Utility-first CSS framework
-- **Radix UI** - Accessible component primitives
-- **TypeScript** - Type-safe development
-- **Vite** - Fast build tool and dev server
+- `src/` — application source code
+- `src/routes/` — TanStack Router pages and panel layouts
+- `src/components/` — reusable UI and layout components
+- `src/lib/` — helpers, server functions, mock store, and error handling
+- `src/integrations/` — Supabase / GeekArena integration clients
+- `supabase/` — Lovable Cloud project config and initial migration
+- `wrangler.jsonc` — Cloudflare Workers deployment config
+- `vite.config.ts` — Vite + TanStack + Tailwind + Cloudflare plugin config
 
-### Backend
-- **Cloudflare Workers** - Serverless runtime via Wrangler
-- **TanStack Start Server** - Custom SSR layer with error handling
+## Tech stack
 
-### Tooling
-- **ESLint** - Code linting
-- **Prettier** - Code formatting
-- **Bun** - Fast JavaScript runtime and package manager
+- React 19
+- TypeScript 5.8
+- Vite 7
+- TanStack Start 1.167 + TanStack Router 1.168
+- TanStack React Query 5.83
+- Tailwind CSS 4
+- Radix UI primitives via shadcn-style components
+- Cloudflare Workers deployment via `@cloudflare/vite-plugin`
+- Supabase Auth + database
 
-## Features
+## Key features
 
-- **Leaderboard System** - View competitive rankings across multiple TCGs
-- **Filtering & Search** - Filter by game, city, and time period; search for specific players
-- **Admin Dashboard** - Manage tournaments and results
-- **User Authentication** - Secure login system
-- **Tournament Uploads** - Submit and track tournament results
-- **Responsive Design** - Mobile-first UI using Tailwind CSS and Radix UI components
-- **Real-time Updates** - React Query integration for efficient data management
+- National leaderboard with monthly and semestral views
+- Player dashboard and profile information
+- Organizer flows for drafting tournaments
+- Admin moderation and publish workflows
+- Role-aware navigation for players, organizers, and admins
+- Responsive, Tailwind-based UI
 
-## Project Structure
+## Important notes
 
-```
+- The app uses both real Supabase integration and mock in-memory state from `src/lib/mock-store.tsx`.
+- Several data flows are currently mock-driven, especially leaderboard and dashboard content.
+- There is a branding mismatch in the codebase: the app title appears as `Geek Arena`, `GeekCollector`, and `National Geek` in different places.
+- The `supabase/migrations/` SQL migration is incomplete relative to the live app logic; some schema changes referenced in code are not present in the repo.
+- Route guards for `/admin/*` and `/organizer/*` are enforced client-side; server functions perform separate role checks but may still accept email from the request body rather than deriving it from a verified session.
+- `/setup` is a public route that seeds test accounts; it does not require authentication.
+
+## Routes overview
+
+- `/` — public leaderboard
+- `/login` — sign-in page
+- `/signup` — registration wizard
+- `/check-inbox` — email confirmation instructions
+- `/dashboard` — signed-in player dashboard
+- `/organizer` — organizer panel shell
+- `/organizer/tournaments` — organizer tournament list
+- `/organizer/new` — draft tournament creation
+- `/admin` — admin review queue
+- `/admin/approved` — publish approved tournaments
+- `/admin/stores` — store and organizer management
+- `/admin/players` — player/role management
+- `/setup` — test account seeder
+
+## Folder structure
+
+```text
 src/
-├── routes/              # TanStack Router route definitions
-│   ├── __root.tsx       # Root layout component
-│   ├── index.tsx        # Leaderboard page
-│   ├── admin.tsx        # Admin dashboard
-│   ├── dashboard.tsx    # User dashboard
-│   ├── login.tsx        # Authentication
-│   └── upload.tsx       # Tournament upload
-├── components/          # Reusable React components
-│   ├── layout/          # Layout components (AppHeader)
-│   └── ui/              # UI primitives from Radix UI (buttons, dialogs, forms, etc.)
-├── hooks/               # Custom React hooks (use-mobile)
-├── lib/                 # Utilities and helpers
-│   ├── mock-store.tsx   # State management with mock data
-│   ├── utils.ts         # Helper utilities
-│   ├── error-capture.ts # Error handling
-│   └── error-page.ts    # Error page components
-├── router.tsx           # Router configuration
-├── server.ts            # SSR server configuration
-├── start.ts             # Application entry point
-└── styles.css           # Global styles
+├── components/
+│   ├── layout/
+│   │   ├── AppHeader.tsx
+│   │   └── PanelSidebar.tsx
+│   └── ui/                 # shadcn Radix UI primitives
+├── hooks/                  # custom hooks
+├── integrations/           # Supabase and GeekArena client code
+│   ├── geekarena/
+│   └── supabase/
+├── lib/                    # helpers, mock store, server functions
+├── routes/                 # page routes and panel routes
+├── router.tsx              # router setup
+├── server.ts               # Cloudflare Worker entry
+├── start.ts                # TanStack Start setup
+└── styles.css              # global styles
 ```
 
-## Getting Started
+## Installation
+
+### Clone the repository
+
+```bash
+git clone https://github.com/<your-org>/remix-of-geek-tag-circuit-supabase.git
+cd remix-of-geek-tag-circuit-supabase
+```
 
 ### Prerequisites
-- **Node.js** 18+ or **Bun** runtime
-- **npm**, **yarn**, **bun**, or **pnpm** package manager
 
-### Installation
+- Node.js 18+ or Bun
+- `bun`, `npm`, or `pnpm`
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd geek-arena
-   ```
+### Install dependencies
 
-2. **Install dependencies**
-   ```bash
-   bun install
-   # or
-   npm install
-   ```
+```bash
+bun install
+# or
+npm install
+# or
+pnpm install
+```
 
-3. **Set up environment variables** (if needed)
-   Create a `.env.local` file in the root directory with any required API keys or configuration.
-
-### Development
-
-Start the development server:
+## Development
 
 ```bash
 bun run dev
@@ -97,11 +116,9 @@ bun run dev
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173` (or the configured Vite port).
+Then visit the Vite dev server URL displayed in the terminal.
 
-### Building
-
-Create a production build:
+## Build
 
 ```bash
 bun run build
@@ -109,7 +126,7 @@ bun run build
 npm run build
 ```
 
-Preview the production build locally:
+Preview locally:
 
 ```bash
 bun run preview
@@ -117,83 +134,63 @@ bun run preview
 npm run preview
 ```
 
-### Deployment
+## Deployment
 
-This project is configured to deploy to **Cloudflare Workers**. Deploy using Wrangler:
+Deploy to Cloudflare Workers:
 
 ```bash
 bun run build
 wrangler deploy
 ```
 
-## Scripts
+## Available scripts
 
-- `bun run dev` - Start development server
-- `bun run build` - Build for production
-- `bun run build:dev` - Build in development mode
-- `bun run preview` - Preview production build locally
-- `bun run lint` - Run ESLint
-- `bun run format` - Format code with Prettier
+- `bun run dev` — start development server
+- `bun run build` — production build
+- `bun run build:dev` — build in development mode
+- `bun run preview` — preview production build
+- `bun run lint` — run ESLint
+- `bun run format` — format with Prettier
 
-## Component Library
+## Dependencies
 
-The project includes a comprehensive set of UI components from Radix UI, including:
+Key runtime dependencies include:
 
-- Buttons, badges, and toggles
-- Forms, inputs, and select dropdowns
-- Dialogs, alerts, and modals
-- Cards, tables, and data displays
-- Navigation components
-- And many more...
+- `react`, `react-dom`
+- `@tanstack/react-router`
+- `@tanstack/react-query`
+- `@tanstack/react-start`
+- `@supabase/supabase-js`
+- `@cloudflare/vite-plugin`
+- `@tailwindcss/vite`
+- `tailwindcss`
+- `lucide-react`
+- `react-hook-form`
+- `sonner`
+- `zod`
 
-All components are pre-configured with Tailwind CSS styling and stored in `src/components/ui/`.
+## Configuration files
 
-## Key Dependencies
-
-- `@tanstack/react-router@^1.168` - Advanced routing
-- `@tanstack/react-query@^5.83` - Server state management
-- `@radix-ui/*` - Accessible UI components
-- `@tailwindcss/vite@^4.2` - CSS framework
-- `@hookform/resolvers@^5.2` - Form validation
-- `lucide-react` - Icon library
-- `@cloudflare/vite-plugin@^1.25` - Cloudflare integration
-
-## Configuration Files
-
-- `vite.config.ts` - Vite and build configuration
-- `tsconfig.json` - TypeScript configuration
-- `tailwind.config.js` - Tailwind CSS settings
-- `eslint.config.js` - ESLint rules
-- `wrangler.jsonc` - Cloudflare Workers configuration
-- `components.json` - shadcn/ui component configuration
+- `vite.config.ts` — Vite config
+- `tsconfig.json` — TS config
+- `eslint.config.js` — ESLint config
+- `wrangler.jsonc` — Cloudflare Workers config
+- `components.json` — shadcn component config
+- `supabase/config.toml` — Lovable Cloud project config
 
 ## Contributing
 
-1. Create a feature branch
-2. Make your changes
-3. Run linting and formatting:
-   ```bash
-   bun run lint
-   bun run format
-   ```
-4. Submit a pull request
+1. Create a feature branch.
+2. Make your changes.
+3. Run:
 
-## Troubleshooting
+```bash
+bun run lint
+bun run format
+```
 
-### Port Already in Use
-If port 5173 is in use, Vite will automatically try the next available port.
-
-### Build Errors
-- Clear `node_modules` and reinstall: `bun install --force`
-- Clear Vite cache: `rm -rf .vite`
-
-### Development Server Issues
-Restart the dev server with: `bun run dev`
+4. Open a pull request.
 
 ## License
 
-[Add your license information here]
-
-## Support
-
-For issues, questions, or contributions, please open an issue or contact the development team.
+Add license information here.
