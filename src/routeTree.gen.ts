@@ -20,6 +20,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -76,6 +77,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const OrganizerTournamentsRoute = OrganizerTournamentsRouteImport.update({
+  id: '/tournaments',
+  path: '/tournaments',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
 }
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
 }
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
+  '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
 }
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/upload'
+    | '/organizer/tournaments'
     | '/admin/'
     | '/organizer/'
   fileRoutesByTo: FileRoutesByTo
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/upload'
+    | '/organizer/tournaments'
     | '/admin'
     | '/organizer'
   id:
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/upload'
+    | '/organizer/tournaments'
     | '/admin/'
     | '/organizer/'
   fileRoutesById: FileRoutesById
@@ -246,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/organizer/tournaments': {
+      id: '/organizer/tournaments'
+      path: '/tournaments'
+      fullPath: '/organizer/tournaments'
+      preLoaderRoute: typeof OrganizerTournamentsRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
   }
 }
 
@@ -260,10 +279,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface OrganizerRouteChildren {
+  OrganizerTournamentsRoute: typeof OrganizerTournamentsRoute
   OrganizerIndexRoute: typeof OrganizerIndexRoute
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerTournamentsRoute: OrganizerTournamentsRoute,
   OrganizerIndexRoute: OrganizerIndexRoute,
 }
 
@@ -285,3 +306,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
