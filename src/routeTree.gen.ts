@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as OrganizerRouteImport } from './routes/organizer'
@@ -28,11 +27,6 @@ import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 
-const UploadRoute = UploadRouteImport.update({
-  id: '/upload',
-  path: '/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -128,7 +122,6 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
-  '/upload': typeof UploadRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -146,7 +139,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
-  '/upload': typeof UploadRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -167,7 +159,6 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
-  '/upload': typeof UploadRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -189,7 +180,6 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/setup'
     | '/signup'
-    | '/upload'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -207,7 +197,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup'
     | '/signup'
-    | '/upload'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -227,7 +216,6 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/setup'
     | '/signup'
-    | '/upload'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -248,18 +236,10 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
-  UploadRoute: typeof UploadRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/upload': {
-      id: '/upload'
-      path: '/upload'
-      fullPath: '/upload'
-      preLoaderRoute: typeof UploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -437,7 +417,6 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
-  UploadRoute: UploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
