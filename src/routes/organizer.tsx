@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, Store, Trophy, Upload, ListChecks } from "lucide-react";
+import { Loader2, Store, Upload, ListChecks } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 
@@ -39,7 +39,6 @@ function OrganizerLayout() {
           { to: "/organizer", label: "Mi Tienda", icon: <Store size={16} />, exact: true },
           { to: "/organizer/tournaments", label: "Mis Torneos", icon: <ListChecks size={16} /> },
           { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
-          { to: "/", label: "Ranking Global", icon: <Trophy size={16} />, external: true },
         ]}
       />
       <main className="min-w-0 flex-1 p-6 sm:p-8">

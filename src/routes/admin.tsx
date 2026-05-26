@@ -5,7 +5,6 @@ import {
   Loader2,
   ShieldCheck,
   Store,
-  Trophy,
   Users,
   Upload,
 } from "lucide-react";
@@ -49,7 +48,6 @@ function AdminLayout() {
           { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
           { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
           { to: "/admin/publish", label: "Publicar Manualmente", icon: <Upload size={16} /> },
-          { to: "/", label: "Ranking Global", icon: <Trophy size={16} />, external: true },
         ]}
       />
       <main className="min-w-0 flex-1 p-6 sm:p-8">

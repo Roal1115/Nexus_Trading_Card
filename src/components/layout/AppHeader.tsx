@@ -1,11 +1,16 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, Shield, Trophy, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/mock-store";
+import { useGeekarenaRole, homeRouteForRole } from "@/hooks/use-geekarena-role";
 
 export function AppHeader() {
   const { currentUser, logout } = useStore();
   const navigate = useNavigate();
-  const role = currentUser?.role;
+  const mockRole = currentUser?.role;
+  const { role: realRole } = useGeekarenaRole();
+
+  const effectiveRole = realRole ?? (mockRole !== "guest" ? (mockRole as "player" | "organizer" | "admin" | null) : null);
+  const panelRoute = homeRouteForRole(effectiveRole) || "/dashboard";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl">
@@ -20,11 +25,11 @@ export function AppHeader() {
 
         <nav className="hidden items-center gap-1 text-sm md:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
-          {currentUser && role !== "guest" && (
-            <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
+          {currentUser && effectiveRole && (
+            <NavItem to={panelRoute} icon={<User size={14} />} label="Mi Panel" />
           )}
-          {role === "organizer" && <NavItem to="/upload" icon={<Upload size={14} />} label="Subir Resultados" />}
-          {role === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />}
+          {effectiveRole === "organizer" && <NavItem to="/upload" icon={<Upload size={14} />} label="Subir Resultados" />}
+          {effectiveRole === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />}
         </nav>
 
         <div className="flex items-center gap-3">
