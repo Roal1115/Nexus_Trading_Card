@@ -123,7 +123,7 @@ function AdminPlayersPage() {
     if (!email) return;
     fetchStores()
       .then((r) => setStores((r.stores as Store[]) ?? []))
-      .catch((e) => toast.error(String((e as Error).message ?? e)));
+      .catch(() => toast.error("Error al cargar las tiendas. Intenta de nuevo."));
   }, [email, fetchStores]);
 
   // tab presets — reset page when tab changes
