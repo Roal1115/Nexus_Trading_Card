@@ -115,19 +115,47 @@ function NewTournamentPage() {
     };
   }, [date]);
 
+  const handleFile = (file: File | null) => {
+    if (!file) return;
+    if (!file.name.endsWith(".csv") && file.type !== "text/csv") {
+      toast.error("Solo se aceptan archivos .csv");
+      return;
+    }
+    setFileName(file.name);
+    setParsing(true);
+    setRows([]);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const parsed = parseCSV(e.target?.result as string);
+      if (parsed.length === 0) toast.error("No se encontraron filas válidas.");
+      setRows(parsed);
+      setParsing(false);
+    };
+    reader.onerror = () => {
+      toast.error("Error al leer el archivo.");
+      setParsing(false);
+    };
+    reader.readAsText(file);
+  };
+  const clearFile = () => {
+    setFileName(null);
+    setRows([]);
+    setParsing(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSubmit = async () => {
     if (!email) return;
     if (!gameId) return toast.error("Selecciona un juego (TCG)");
     if (!date) return toast.error("Selecciona una fecha");
-    if (csvUrl && !/^https?:\/\//i.test(csvUrl))
-      return toast.error("La URL del CSV debe iniciar con http(s)://");
 
     setSaving(true);
     try {
       await submit({
-        data: { game_id: gameId,
+        data: {
+          game_id: gameId,
           tournament_date: date,
-          csv_url: csvUrl || null,
+          csv_url: null,
         },
       });
       toast.success("Torneo creado como borrador");
