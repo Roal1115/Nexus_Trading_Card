@@ -19,13 +19,17 @@ function translateAuthError(msg: string): string {
   const m = msg.toLowerCase();
   if (m.includes("already registered") || m.includes("user already"))
     return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
+  if (m.includes("email address") && m.includes("invalid"))
+    return "Ese correo fue rechazado por el servidor. Usa un correo real (Gmail, Outlook, etc.) — no funciona test@…";
   if (m.includes("invalid email"))
     return "Ingresa un correo electrónico válido";
+  if (m.includes("email rate limit") || m.includes("over_email_send_rate_limit"))
+    return "Se enviaron demasiados correos. Espera ~1 hora antes de intentar de nuevo.";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Demasiados intentos. Espera un momento e intenta de nuevo";
   if (m.includes("password"))
     return "La contraseña debe tener mínimo 8 caracteres, un número y un carácter especial";
-  return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
+  return msg || "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
 }
 
 function SignupPage() {
