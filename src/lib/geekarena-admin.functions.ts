@@ -29,7 +29,7 @@ function tfValues(month: number, semester: number, year: number) {
 async function recomputeSnapshot(
   admin: ReturnType<typeof getGeekarenaAdmin>,
   game_id: string,
-  timeframe_type: "MONTH" | "SEMESTER" | "YEAR",
+  timeframe_type: "MONTHLY" | "SEMESTRAL",
   timeframe_value: string,
   filter: { year?: number; month?: number; semester?: number },
 ) {
@@ -208,9 +208,9 @@ export const publishTournaments = createServerFn({ method: "POST" })
     const slices = new Set<string>();
     for (const t of publishable) {
       const tf = tfValues(t.qualifying_month, t.qualifying_semester, t.qualifying_year);
-      slices.add(`${t.game_id}|MONTH|${tf.MONTH}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
-      slices.add(`${t.game_id}|SEMESTER|${tf.SEMESTER}|y=${t.qualifying_year}|s=${t.qualifying_semester}`);
-      slices.add(`${t.game_id}|YEAR|${tf.YEAR}|y=${t.qualifying_year}`);
+      slices.add(`${t.game_id}|MONTHLY|${tf.MONTH}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
+      slices.add(`${t.game_id}|SEMESTRAL|${tf.SEMESTER}|y=${t.qualifying_year}|s=${t.qualifying_semester}`);
+      slices.add(`${t.game_id}|SEMESTRAL|${tf.YEAR}|y=${t.qualifying_year}`);
     }
 
     for (const key of slices) {
@@ -225,7 +225,7 @@ export const publishTournaments = createServerFn({ method: "POST" })
       await recomputeSnapshot(
         admin,
         game_id,
-        type as "MONTH" | "SEMESTER" | "YEAR",
+        type as "MONTHLY" | "SEMESTRAL",
         value,
         filter,
       );
@@ -317,7 +317,7 @@ export const listPlayers = createServerFn({ method: "POST" })
       const { data: snaps, error: se } = await admin
         .from("leaderboard_snapshots")
         .select("player_id, total_points")
-        .eq("timeframe_type", "YEAR");
+        .eq("timeframe_type", "SEMESTRAL");
       if (se) throw new Error(se.message);
       const sum = new Map<string, number>();
       for (const s of snaps ?? []) {
@@ -476,7 +476,7 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
         .from("leaderboard_snapshots")
         .select("game_id, timeframe_type, timeframe_value, total_points, rank_position")
         .eq("player_id", data.player_id)
-        .eq("timeframe_type", "YEAR")
+        .eq("timeframe_type", "SEMESTRAL")
         .order("timeframe_value", { ascending: false }),
     ]);
 
