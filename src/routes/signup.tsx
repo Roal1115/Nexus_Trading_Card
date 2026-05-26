@@ -164,7 +164,7 @@ function SignupPage() {
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
       <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#1e2130] p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
             Join the Circuit
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
@@ -232,7 +232,7 @@ function SignupPage() {
           ) : (
             <Link
               to="/login"
-              className="text-xs uppercase tracking-wider text-gray-500 transition hover:text-violet-300"
+              className="text-xs uppercase tracking-wider text-gray-500 transition hover:text-primary"
             >
               Have an account? Sign in
             </Link>
@@ -245,7 +245,7 @@ function SignupPage() {
                 (step === 1 && !step1Valid) ||
                 (step === 2 && selected.size === 0)
               }
-              className="rounded-md bg-violet-600 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Continue →
             </button>
@@ -253,7 +253,7 @@ function SignupPage() {
             <button
               onClick={handleCreate}
               disabled={!agreed || submitting || cooldown}
-              className="flex items-center gap-2 rounded-md bg-violet-600 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
               Create My Account
@@ -275,8 +275,8 @@ function SignupPage() {
           transition: all 0.15s;
         }
         .input-base:focus {
-          border-color: #8b5cf6;
-          box-shadow: 0 0 0 3px rgba(139,92,246,0.25);
+          border-color: #E86A22;
+          box-shadow: 0 0 0 3px rgba(232,106,34,0.25);
         }
         /* Honeypot — visually hidden but still in the layout/tab tree for bots */
         .hp-field {
@@ -307,9 +307,9 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
             <div
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition ${
                 done
-                  ? "border-violet-500 bg-violet-500 text-white"
+                  ? "border-primary bg-primary text-primary-foreground"
                   : active
-                  ? "border-violet-500 bg-violet-500/10 text-violet-300"
+                  ? "border-primary bg-primary/10 text-primary"
                   : "border-white/10 bg-white/5 text-gray-500"
               }`}
             >
@@ -327,7 +327,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
             {i < 2 && (
               <div
                 className={`h-px flex-1 ${
-                  done ? "bg-violet-500" : "bg-white/10"
+                  done ? "bg-primary" : "bg-white/10"
                 }`}
               />
             )}
@@ -490,7 +490,7 @@ function Step2({
 
       {loading ? (
         <div className="flex justify-center py-10">
-          <Loader2 className="animate-spin text-violet-400" />
+          <Loader2 className="animate-spin text-primary" />
         </div>
       ) : games.length === 0 ? (
         <p className="rounded-md border border-white/10 bg-white/5 p-4 text-center text-sm text-gray-400">
@@ -507,12 +507,12 @@ function Step2({
                 onClick={() => toggle(g.id)}
                 className={`group relative flex h-28 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition ${
                   on
-                    ? "border-violet-500 bg-violet-500/10"
+                    ? "border-primary bg-primary/10"
                     : "border-white/10 bg-white/[0.03] hover:border-white/30"
                 }`}
               >
                 {on && (
-                  <span className="absolute right-2 top-2 rounded-full bg-violet-500 p-1 text-white">
+                  <span className="absolute right-2 top-2 rounded-full bg-primary p-1 text-primary-foreground">
                     <Check size={10} />
                   </span>
                 )}
@@ -563,7 +563,7 @@ function Step3({
             {games.map((g) => (
               <span
                 key={g.id}
-                className="rounded-full border border-violet-500/40 bg-violet-500/10 px-3 py-1 text-xs text-violet-200"
+                className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary/80"
               >
                 {g.name}
               </span>
@@ -577,11 +577,11 @@ function Step3({
           type="checkbox"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
-          className="mt-1 h-4 w-4 accent-violet-500"
+          className="mt-1 h-4 w-4 accent-primary"
         />
         <span>
           I agree to the{" "}
-          <a href="#" className="text-violet-300 hover:underline">
+          <a href="#" className="text-primary hover:underline">
             Terms & Conditions
           </a>{" "}
           and confirm I am a real human.

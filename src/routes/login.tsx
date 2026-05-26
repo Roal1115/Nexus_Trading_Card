@@ -76,7 +76,7 @@ function LoginPage() {
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1e2130] p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
             Geek Arena
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
@@ -97,7 +97,7 @@ function LoginPage() {
             </p>
             <button
               onClick={resend}
-              className="w-full rounded-md border border-violet-500/40 bg-violet-500/10 py-3 text-sm font-bold uppercase tracking-widest text-violet-300 transition hover:bg-violet-500/20"
+              className="w-full rounded-md border border-primary/40 bg-primary/10 py-3 text-sm font-bold uppercase tracking-widest text-primary transition hover:bg-primary/20"
             >
               Resend email
             </button>
@@ -146,7 +146,7 @@ function LoginPage() {
             <button
               type="submit"
               disabled={loading || cooldown}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-violet-600 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {forgotMode ? "Send reset link" : "Enter the Arena"}
@@ -156,14 +156,14 @@ function LoginPage() {
               <button
                 type="button"
                 onClick={() => setForgotMode((f) => !f)}
-                className="text-gray-500 transition hover:text-violet-300"
+                className="text-gray-500 transition hover:text-primary"
               >
                 {forgotMode ? "← Back to sign in" : "Forgot password?"}
               </button>
               {!forgotMode && (
                 <Link
                   to="/signup"
-                  className="font-semibold text-violet-300 hover:text-violet-200"
+                  className="font-semibold text-primary hover:text-primary/80"
                 >
                   No account? Join the Circuit →
                 </Link>
@@ -174,7 +174,7 @@ function LoginPage() {
 
         <Link
           to="/"
-          className="mt-6 block text-center text-xs uppercase tracking-wider text-gray-600 transition hover:text-violet-300"
+          className="mt-6 block text-center text-xs uppercase tracking-wider text-gray-600 transition hover:text-primary"
         >
           Continue as guest →
         </Link>
@@ -193,8 +193,8 @@ function LoginPage() {
           transition: all 0.15s;
         }
         .input-base:focus {
-          border-color: #8b5cf6;
-          box-shadow: 0 0 0 3px rgba(139,92,246,0.25);
+          border-color: #E86A22;
+          box-shadow: 0 0 0 3px rgba(232,106,34,0.25);
         }
       `}</style>
     </main>
