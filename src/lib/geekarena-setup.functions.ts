@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
 
 type SeedAccount = {
   email: string;
@@ -26,13 +27,19 @@ const ACCOUNTS: SeedAccount[] = [
   },
 ];
 
-export const seedTestAccounts = createServerFn({ method: "POST" }).handler(
-  async () => {
+export const seedTestAccounts = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .handler(async () => {
+    // Only callable by an authenticated admin (enforced by middleware).
+    // Additionally restrict to non-production environments to prevent
+    // accidental reset of canonical test-account passwords in prod.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Esta operación está deshabilitada en producción.");
+    }
     const admin = getGeekarenaAdmin();
     const results: Array<{ email: string; ok: boolean; message: string }> = [];
 
     for (const acc of ACCOUNTS) {
-      // 1) Buscar si ya existe en Auth
       const { data: list, error: listErr } = await admin.auth.admin.listUsers({
         page: 1,
         perPage: 200,
@@ -45,7 +52,6 @@ export const seedTestAccounts = createServerFn({ method: "POST" }).handler(
         (u) => u.email?.toLowerCase() === acc.email.toLowerCase(),
       );
 
-      // 2) Crear si no existe
       if (!user) {
         const { data: created, error: createErr } =
           await admin.auth.admin.createUser({
@@ -64,14 +70,12 @@ export const seedTestAccounts = createServerFn({ method: "POST" }).handler(
         }
         user = created.user;
       } else {
-        // Refrescar password por si cambió
         await admin.auth.admin.updateUserById(user.id, {
           password: acc.password,
           email_confirm: true,
         });
       }
 
-      // 3) Upsert en players (por email)
       const { error: upsertErr } = await admin
         .from("players")
         .upsert(
@@ -101,5 +105,4 @@ export const seedTestAccounts = createServerFn({ method: "POST" }).handler(
     }
 
     return { results };
-  },
-);
+  });
