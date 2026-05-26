@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena } from "@/integrations/geekarena/client";
+import { useStore } from "@/lib/mock-store";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — Geek Arena" }] }),
