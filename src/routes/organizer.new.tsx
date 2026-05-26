@@ -230,18 +230,62 @@ function NewTournamentPage() {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs text-gray-400">
-            URL del CSV de resultados (opcional)
+          <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-gray-400">
+            <UploadCloud size={13} className="text-primary" /> Resultados del torneo (CSV)
           </Label>
-          <Input
-            placeholder="https://..."
-            value={csvUrl}
-            onChange={(e) => setCsvUrl(e.target.value)}
-          />
-          <p className="text-xs text-gray-500">
-            Sube el archivo a tu almacenamiento y pega aquí el enlace. Más
-            adelante podrás cargarlo directamente.
-          </p>
+          {!fileName ? (
+            <label
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files?.[0] ?? null); }}
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition ${dragging ? "border-primary bg-primary/10" : "border-white/20 bg-white/[0.03] hover:border-primary/60 hover:bg-white/[0.05]"}`}
+            >
+              <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
+              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/30">
+                <UploadCloud size={28} className="text-primary" />
+              </div>
+              <p className="text-sm font-semibold text-white">Arrastra tu CSV aquí, o haz clic para buscar</p>
+              <p className="mt-1 text-xs text-gray-500">Formato: .csv · Columnas: Geek Tag, Points, Wins, Losses, Draws</p>
+            </label>
+          ) : (
+            <div className="rounded-xl border border-white/10 bg-black/30">
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  {parsing ? <Loader2 size={16} className="animate-spin text-primary" /> : <CheckCircle2 size={16} className="text-primary" />}
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-white"><FileSpreadsheet size={13} className="text-gray-400" />{fileName}</div>
+                    <div className="text-[11px] uppercase tracking-wider text-gray-500">{parsing ? "Leyendo archivo…" : `${rows.length} jugadores cargados`}</div>
+                  </div>
+                </div>
+                <button type="button" onClick={clearFile} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-gray-400 transition hover:border-red-500/40 hover:text-red-400">
+                  <X size={11} /> Quitar
+                </button>
+              </div>
+              {parsing ? (
+                <div className="flex flex-col items-center justify-center py-10"><Loader2 size={22} className="animate-spin text-primary" /><p className="mt-3 text-xs uppercase tracking-widest text-gray-500">Procesando…</p></div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                      <tr><th className="w-10 px-4 py-2 text-left">#</th><th className="px-4 py-2 text-left">Geek Tag</th><th className="px-4 py-2 text-right">Pts</th><th className="px-4 py-2 text-right">V</th><th className="px-4 py-2 text-right">D</th><th className="px-4 py-2 text-right">E</th></tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, i) => (
+                        <tr key={i} className="border-t border-white/5 hover:bg-white/5">
+                          <td className="px-4 py-2.5 font-mono text-xs text-primary">{String(i + 1).padStart(2, "0")}</td>
+                          <td className="px-4 py-2.5 font-medium text-white">{row.geekTag}</td>
+                          <td className="px-4 py-2.5 text-right font-mono font-semibold text-white">{row.points}</td>
+                          <td className="px-4 py-2.5 text-right font-mono text-xs text-gray-400">{row.wins}</td>
+                          <td className="px-4 py-2.5 text-right font-mono text-xs text-gray-400">{row.losses}</td>
+                          <td className="px-4 py-2.5 text-right font-mono text-xs text-gray-400">{row.draws}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {qualifying && (
