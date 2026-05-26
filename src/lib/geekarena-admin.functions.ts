@@ -476,7 +476,7 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
         .from("leaderboard_snapshots")
         .select("game_id, timeframe_type, timeframe_value, total_points, rank_position")
         .eq("player_id", data.player_id)
-        .eq("timeframe_type", "YEAR")
+        .eq("timeframe_type", "SEMESTRAL")
         .order("timeframe_value", { ascending: false }),
     ]);
 
