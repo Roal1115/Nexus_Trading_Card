@@ -55,7 +55,7 @@ function AdminStoresPage() {
   const refresh = async (em: string) => {
     setLoading(true);
     try {
-      const res = await fetchAll({ data: { email: em } });
+      const res = await fetchAll();
       setStores(res.stores as Store[]);
       setOrganizers(res.organizers as Organizer[]);
     } catch (e) {
@@ -75,7 +75,7 @@ function AdminStoresPage() {
     if (!email) return;
     if (!form.slug || !form.name) return toast.error("Slug y nombre son obligatorios");
     try {
-      await create({ data: { email, ...form } });
+      await create({ data: { ...form } });
       toast.success("Tienda creada");
       setOpen(false);
       setForm({ slug: "", name: "", city: "", state: "" });

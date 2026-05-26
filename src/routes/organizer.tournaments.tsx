@@ -58,7 +58,7 @@ function TournamentsPage() {
   const refresh = async (em: string) => {
     setLoading(true);
     try {
-      const res = await fetchList({ data: { email: em } });
+      const res = await fetchList();
       setRows(res.tournaments as Row[]);
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
@@ -76,7 +76,7 @@ function TournamentsPage() {
   const handleDelete = async (id: string) => {
     if (!email) return;
     try {
-      await removeDraft({ data: { email, tournament_id: id } });
+      await removeDraft({ data: { tournament_id: id } });
       toast.success("Torneo eliminado");
       await refresh(email);
     } catch (e) {

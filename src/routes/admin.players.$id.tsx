@@ -26,7 +26,7 @@ function PlayerDetailPage() {
   useEffect(() => {
     if (!email) return;
     setLoading(true);
-    fetchDetail({ data: { email, player_id: id } })
+    fetchDetail({ data: { player_id: id } })
       .then((r) => setData(r as Detail))
       .catch((e) => toast.error(String((e as Error).message ?? e)))
       .finally(() => setLoading(false));

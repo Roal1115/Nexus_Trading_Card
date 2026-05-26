@@ -53,7 +53,7 @@ function ApprovedTournaments() {
     setLoading(true);
     try {
       const res = await fetchList({
-        data: { email: em, statuses: ["APPROVED"] },
+        data: { statuses: ["APPROVED"] },
       });
       setRows(res.tournaments as Row[]);
       setSelected({});
@@ -79,7 +79,7 @@ function ApprovedTournaments() {
     setPublishing(true);
     try {
       const res = await publish({
-        data: { email, tournament_ids: selectedIds },
+        data: { tournament_ids: selectedIds },
       });
       toast.success(`${res.published} torneos publicados — leaderboard actualizado`);
       await refresh(email);

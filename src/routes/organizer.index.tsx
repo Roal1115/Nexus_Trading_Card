@@ -49,7 +49,7 @@ function OrganizerHome() {
   const refresh = async (em: string) => {
     setLoading(true);
     try {
-      const res = await fetchOverview({ data: { email: em } });
+      const res = await fetchOverview();
       setStores(res.stores);
       setHomeStore(res.homeStore);
       setSelectedStoreId(res.player.home_store_id ?? "");
@@ -77,7 +77,7 @@ function OrganizerHome() {
     if (!email || !selectedStoreId) return;
     setSaving(true);
     try {
-      await saveHomeStore({ data: { email, store_id: selectedStoreId } });
+      await saveHomeStore({ data: { store_id: selectedStoreId } });
       toast.success("Tienda asignada");
       await refresh(email);
     } catch (e) {
@@ -92,9 +92,7 @@ function OrganizerHome() {
     setSaving(true);
     try {
       await saveStoreInfo({
-        data: {
-          email,
-          store_id: homeStore.id,
+        data: { store_id: homeStore.id,
           name: form.name,
           city: form.city,
           state: form.state,

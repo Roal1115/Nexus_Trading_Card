@@ -50,7 +50,7 @@ function PendingTournaments() {
     setLoading(true);
     try {
       const res = await fetchList({
-        data: { email: em, statuses: ["DRAFT"] },
+        data: { statuses: ["DRAFT"] },
       });
       setRows(res.tournaments as Row[]);
     } catch (e) {
@@ -69,7 +69,7 @@ function PendingTournaments() {
   const onApprove = async (id: string) => {
     if (!email) return;
     try {
-      await approve({ data: { email, tournament_id: id } });
+      await approve({ data: { tournament_id: id } });
       toast.success("Torneo aprobado");
       await refresh(email);
     } catch (e) {
@@ -79,7 +79,7 @@ function PendingTournaments() {
   const onReject = async (id: string) => {
     if (!email) return;
     try {
-      await reject({ data: { email, tournament_id: id } });
+      await reject({ data: { tournament_id: id } });
       toast.success("Torneo rechazado");
       await refresh(email);
     } catch (e) {
