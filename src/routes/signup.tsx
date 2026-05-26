@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { geekarena, type Game } from "@/integrations/geekarena/client";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Join the Circuit — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Únete al Circuito — Geek Arena" }] }),
   component: SignupPage,
 });
 
@@ -15,11 +15,23 @@ const MIN_FORM_MS = 8000;
 
 type TagStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 
+function translateAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("already registered") || m.includes("user already"))
+    return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
+  if (m.includes("invalid email"))
+    return "Ingresa un correo electrónico válido";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return "Demasiados intentos. Espera un momento e intenta de nuevo";
+  if (m.includes("password"))
+    return "La contraseña debe tener mínimo 8 caracteres, un número y un carácter especial";
+  return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
+}
+
 function SignupPage() {
   const navigate = useNavigate();
   const renderedAt = useRef<number>(Date.now());
 
-  // step
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // step 1
@@ -30,7 +42,7 @@ function SignupPage() {
   const [showPass, setShowPass] = useState(false);
   const [tagStatus, setTagStatus] = useState<TagStatus>("idle");
 
-  // honeypot — visually hidden via CSS (NOT display:none, NOT type=hidden)
+  // honeypot
   const [hp, setHp] = useState("");
 
   // step 2
@@ -43,7 +55,6 @@ function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(false);
 
-  // ---------------- load games ----------------
   useEffect(() => {
     let mounted = true;
     geekarena
@@ -53,7 +64,7 @@ function SignupPage() {
       .order("name")
       .then(({ data, error }) => {
         if (!mounted) return;
-        if (error) toast.error("Could not load games");
+        if (error) toast.error("No se pudieron cargar los juegos");
         setGames((data ?? []) as Game[]);
         setGamesLoading(false);
       });
@@ -62,7 +73,6 @@ function SignupPage() {
     };
   }, []);
 
-  // ---------------- debounced tag uniqueness check ----------------
   useEffect(() => {
     if (!tag) {
       setTagStatus("idle");
@@ -88,15 +98,17 @@ function SignupPage() {
     return () => clearTimeout(handle);
   }, [tag]);
 
-  // ---------------- step 1 validation ----------------
   const step1Errors = useMemo(() => {
     const e: Record<string, string> = {};
-    if (email && !/^\S+@\S+\.\S+$/.test(email)) e.email = "Invalid email";
+    if (email && !/^\S+@\S+\.\S+$/.test(email))
+      e.email = "Ingresa un correo electrónico válido";
     if (tag && !TAG_RE.test(tag))
-      e.tag = "3–30 chars, letters / numbers / underscores only";
+      e.tag = "3 a 30 caracteres. Solo letras, números y guiones bajos";
     if (password && !PASS_RE.test(password))
-      e.password = "Min 8 chars, 1 number, 1 special character";
-    if (confirm && confirm !== password) e.confirm = "Passwords don't match";
+      e.password =
+        "La contraseña debe tener mínimo 8 caracteres, un número y un carácter especial";
+    if (confirm && confirm !== password)
+      e.confirm = "Las contraseñas no coinciden";
     return e;
   }, [email, tag, password, confirm]);
 
@@ -108,29 +120,25 @@ function SignupPage() {
     Object.keys(step1Errors).length === 0 &&
     tagStatus === "available";
 
-  // ---------------- submit ----------------
   const handleCreate = async () => {
     if (submitting || cooldown) return;
 
-    // honeypot
     if (hp.trim() !== "") {
-      // silently fake-succeed
       navigate({ to: "/check-inbox", search: { email } });
       return;
     }
 
-    // time-on-form check
     if (Date.now() - renderedAt.current < MIN_FORM_MS) {
-      toast.error("Slow down — that was too fast. Take a moment.");
+      toast.error("Algo salió mal. Intenta de nuevo.");
       return;
     }
 
     if (!agreed) {
-      toast.error("Please confirm the agreement");
+      toast.error("Debes aceptar los Términos y Condiciones");
       return;
     }
     if (selected.size === 0) {
-      toast.error("Pick at least one game");
+      toast.error("Debes seleccionar al menos un juego");
       return;
     }
 
@@ -151,24 +159,22 @@ function SignupPage() {
     setTimeout(() => setCooldown(false), 3000);
 
     if (error) {
-      toast.error(error.message || "Signup failed");
+      toast.error(translateAuthError(error.message));
       return;
     }
-    // Make sure no auto-session sticks around
     await geekarena.auth.signOut();
     navigate({ to: "/check-inbox", search: { email } });
   };
 
-  // ---------------- UI ----------------
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
       <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#1e2130] p-8 shadow-2xl">
         <div className="mb-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Join the Circuit
+            Únete al Circuito
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
-            Claim your Geek Tag
+            Reclama tu Geek Tag
           </h1>
         </div>
 
@@ -220,21 +226,20 @@ function SignupPage() {
           />
         )}
 
-        {/* nav */}
         <div className="mt-8 flex items-center justify-between">
           {step > 1 ? (
             <button
               onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
               className="text-xs uppercase tracking-wider text-gray-500 transition hover:text-white"
             >
-              ← Back
+              ← Atrás
             </button>
           ) : (
             <Link
               to="/login"
               className="text-xs uppercase tracking-wider text-gray-500 transition hover:text-primary"
             >
-              Have an account? Sign in
+              ¿Ya tienes cuenta? Inicia sesión
             </Link>
           )}
 
@@ -247,7 +252,7 @@ function SignupPage() {
               }
               className="rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Continue →
+              Continuar →
             </button>
           ) : (
             <button
@@ -256,7 +261,7 @@ function SignupPage() {
               className="flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
-              Create My Account
+              Crear mi cuenta
             </button>
           )}
         </div>
@@ -278,7 +283,6 @@ function SignupPage() {
           border-color: #E86A22;
           box-shadow: 0 0 0 3px rgba(232,106,34,0.25);
         }
-        /* Honeypot — visually hidden but still in the layout/tab tree for bots */
         .hp-field {
           position: absolute !important;
           left: -10000px !important;
@@ -292,10 +296,8 @@ function SignupPage() {
   );
 }
 
-// ---------------- pieces ----------------
-
 function Stepper({ step }: { step: 1 | 2 | 3 }) {
-  const labels = ["Identity", "Your Games", "Confirm"];
+  const labels = ["Identidad", "Tus Juegos", "Confirmación"];
   return (
     <div className="mb-8 flex items-center gap-3">
       {labels.map((label, i) => {
@@ -316,19 +318,13 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
               {done ? <Check size={14} /> : n}
             </div>
             <div className="hidden text-xs uppercase tracking-wider sm:block">
-              <span
-                className={
-                  active || done ? "text-white" : "text-gray-500"
-                }
-              >
+              <span className={active || done ? "text-white" : "text-gray-500"}>
                 {label}
               </span>
             </div>
             {i < 2 && (
               <div
-                className={`h-px flex-1 ${
-                  done ? "bg-primary" : "bg-white/10"
-                }`}
+                className={`h-px flex-1 ${done ? "bg-primary" : "bg-white/10"}`}
               />
             )}
           </div>
@@ -372,20 +368,20 @@ function Step1(props: {
   } = props;
   return (
     <div className="space-y-4">
-      <Field label="Email" error={step1Errors.email}>
+      <Field label="Correo electrónico" error={step1Errors.email}>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="player@geekarena.gg"
+          placeholder="jugador@geekarena.gg"
           className="input-base"
         />
       </Field>
 
-      {/* Honeypot — visually hidden, must stay empty */}
+      {/* Honeypot — oculto visualmente, debe permanecer vacío */}
       <div className="hp-field" aria-hidden="true">
         <label>
-          Website
+          Sitio web
           <input
             type="text"
             tabIndex={-1}
@@ -397,8 +393,8 @@ function Step1(props: {
       </div>
 
       <Field
-        label="Geek Tag"
-        hint="Your unique handle in the Arena. Letters, numbers, underscores."
+        label="Tu Geek Tag"
+        hint="Tu handle único en la Arena. Letras, números y guiones bajos."
         error={step1Errors.tag}
         rightHint={<TagBadge status={tagStatus} />}
       >
@@ -411,7 +407,7 @@ function Step1(props: {
         />
       </Field>
 
-      <Field label="Password" error={step1Errors.password}>
+      <Field label="Contraseña" error={step1Errors.password}>
         <div className="relative">
           <input
             type={showPass ? "text" : "password"}
@@ -424,13 +420,14 @@ function Step1(props: {
             type="button"
             onClick={() => setShowPass((s) => !s)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+            aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
           >
             {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
       </Field>
 
-      <Field label="Confirm password" error={step1Errors.confirm}>
+      <Field label="Confirmar contraseña" error={step1Errors.confirm}>
         <input
           type={showPass ? "text" : "password"}
           value={confirm}
@@ -448,22 +445,20 @@ function TagBadge({ status }: { status: TagStatus }) {
   if (status === "checking")
     return (
       <span className="flex items-center gap-1 text-[10px] text-gray-500">
-        <Loader2 size={10} className="animate-spin" /> Checking
+        <Loader2 size={10} className="animate-spin" /> Verificando
       </span>
     );
   if (status === "invalid")
-    return (
-      <span className="text-[10px] text-red-400">Invalid format</span>
-    );
+    return <span className="text-[10px] text-red-400">Formato inválido</span>;
   if (status === "available")
     return (
       <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-        <Check size={10} /> Available
+        <Check size={10} /> Disponible
       </span>
     );
   return (
     <span className="flex items-center gap-1 text-[10px] text-red-400">
-      <X size={10} /> Already taken
+      <X size={10} /> Ya está en uso
     </span>
   );
 }
@@ -482,10 +477,10 @@ function Step2({
   return (
     <div>
       <h2 className="mb-1 text-xl font-semibold text-white">
-        Which TCGs do you play?
+        ¿Qué TCGs juegas?
       </h2>
       <p className="mb-5 text-sm text-gray-400">
-        Pick at least one. You can add more later.
+        Selecciona todos los juegos en los que participas.
       </p>
 
       {loading ? (
@@ -494,7 +489,7 @@ function Step2({
         </div>
       ) : games.length === 0 ? (
         <p className="rounded-md border border-white/10 bg-white/5 p-4 text-center text-sm text-gray-400">
-          No games available yet.
+          Aún no hay juegos disponibles.
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -548,16 +543,14 @@ function Step3({
 }) {
   return (
     <div className="space-y-5">
-      <h2 className="text-xl font-semibold text-white">
-        Confirm your account
-      </h2>
+      <h2 className="text-xl font-semibold text-white">Revisa tu información</h2>
 
       <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
-        <Row label="Email" value={email} />
+        <Row label="Correo" value={email} />
         <Row label="Geek Tag" value={tag} />
         <div>
           <div className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">
-            Games
+            Juegos
           </div>
           <div className="flex flex-wrap gap-2">
             {games.map((g) => (
@@ -580,11 +573,11 @@ function Step3({
           className="mt-1 h-4 w-4 accent-primary"
         />
         <span>
-          I agree to the{" "}
+          Acepto los{" "}
           <a href="#" className="text-primary hover:underline">
-            Terms & Conditions
+            Términos y Condiciones
           </a>{" "}
-          and confirm I am a real human.
+          y confirmo que soy una persona real.
         </span>
       </label>
     </div>
