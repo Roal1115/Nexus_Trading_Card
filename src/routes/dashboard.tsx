@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Award, Crown, Swords, Target, TrendingUp } from "lucide-react";
 import { useStore } from "@/lib/mock-store";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { geekarena } from "@/integrations/geekarena/client";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "My Dashboard — Geek Collector" }] }),
@@ -9,6 +12,28 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const { currentUser, players, tournaments } = useStore();
+  const { player: gaPlayer } = useGeekarenaRole();
+  const [storeCity, setStoreCity] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!gaPlayer?.home_store_id) {
+      setStoreCity(null);
+      return;
+    }
+    geekarena
+      .from("stores")
+      .select("city")
+      .eq("id", gaPlayer.home_store_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!mounted) return;
+        setStoreCity((data?.city as string | null) ?? null);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [gaPlayer?.home_store_id]);
 
   if (!currentUser) {
     return (
