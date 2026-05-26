@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { seedTestAccounts } from "@/lib/geekarena-setup.functions";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/setup")({
@@ -9,6 +10,15 @@ export const Route = createFileRoute("/setup")({
 });
 
 function SetupPage() {
+  const router = useRouter();
+  const { role, loading: roleLoading } = useGeekarenaRole();
+
+  if (roleLoading) return null;
+  if (role !== "admin") {
+    router.navigate({ to: "/login" });
+    return null;
+  }
+
   const run = useServerFn(seedTestAccounts);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<
@@ -30,6 +40,9 @@ function SetupPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="glass rounded-2xl p-8 max-w-lg w-full space-y-4">
+        <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 rounded-lg p-3 text-sm font-medium">
+          ⚠️ Esta página es solo para desarrollo. No la uses en producción.
+        </div>
         <h1 className="text-2xl font-bold">Configuración inicial</h1>
         <p className="text-muted-foreground text-sm">
           Crea las cuentas de prueba <code>admin@test.com</code> y{" "}
