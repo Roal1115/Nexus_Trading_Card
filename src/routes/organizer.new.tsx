@@ -28,15 +28,16 @@ type Game = { id: string; name: string };
 interface ParsedRow {
   geekTag: string;
   points: number;
-  wins: number;
-  losses: number;
-  draws: number;
+  omw: string;
+  oomw: string;
 }
 
 function parseCSV(text: string): ParsedRow[] {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
+
   const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+
   const col = (keys: string[]) => {
     for (const k of keys) {
       const i = headers.indexOf(k);
@@ -44,21 +45,23 @@ function parseCSV(text: string): ParsedRow[] {
     }
     return -1;
   };
-  const iTag = col(["geek tag", "geektag", "tag", "jugador", "player"]);
-  const iPts = col(["points", "puntos", "pts"]);
-  const iW = col(["wins", "victorias", "w"]);
-  const iL = col(["losses", "derrotas", "l"]);
-  const iD = col(["draws", "empates", "d"]);
+
+  const iTag = col(["user name", "username", "geek tag", "geektag"]);
+  const iPts = col(["win points", "winpoints", "points", "puntos"]);
+  const iOmw = col(["omw %", "omw%", "omw"]);
+  const iOomw = col(["oomw %", "oomw%", "oomw"]);
+
+  if (iTag === -1 || iPts === -1) return [];
+
   return lines
     .slice(1)
     .map((line) => {
       const c = line.split(",").map((x) => x.trim());
       return {
-        geekTag: iTag !== -1 ? c[iTag] : c[0] ?? "",
-        points: Number(iPts !== -1 ? c[iPts] : c[1]) || 0,
-        wins: Number(iW !== -1 ? c[iW] : c[2]) || 0,
-        losses: Number(iL !== -1 ? c[iL] : c[3]) || 0,
-        draws: Number(iD !== -1 ? c[iD] : c[4]) || 0,
+        geekTag: c[iTag] ?? "",
+        points: Number(c[iPts]) || 0,
+        omw: iOmw !== -1 ? c[iOmw] ?? "—" : "—",
+        oomw: iOomw !== -1 ? c[iOomw] ?? "—" : "—",
       };
     })
     .filter((r) => r.geekTag.length > 0);
@@ -77,9 +80,9 @@ function NewTournamentPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [storeName, setStoreName] = useState<string | null>(null);
   const [hasStore, setHasStore] = useState(false);
-
   const [gameId, setGameId] = useState<string>("");
   const [date, setDate] = useState<string>("");
+
   const [fileName, setFileName] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
@@ -108,11 +111,7 @@ function NewTournamentPage() {
     const d = new Date(date + "T00:00:00");
     if (isNaN(d.getTime())) return null;
     const m = d.getMonth() + 1;
-    return {
-      month: m,
-      semester: m <= 6 ? 1 : 2,
-      year: d.getFullYear(),
-    };
+    return { month: m, semester: m <= 6 ? 1 : 2, year: d.getFullYear() };
   }, [date]);
 
   const handleFile = (file: File | null) => {
@@ -127,7 +126,8 @@ function NewTournamentPage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const parsed = parseCSV(e.target?.result as string);
-      if (parsed.length === 0) toast.error("No se encontraron filas válidas.");
+      if (parsed.length === 0)
+        toast.error("No se encontraron filas válidas. Verifica que el CSV tenga las columnas: User Name, Win Points.");
       setRows(parsed);
       setParsing(false);
     };
@@ -137,6 +137,7 @@ function NewTournamentPage() {
     };
     reader.readAsText(file);
   };
+
   const clearFile = () => {
     setFileName(null);
     setRows([]);
@@ -144,11 +145,20 @@ function NewTournamentPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const updateRow = (index: number, field: keyof ParsedRow, value: string) => {
+    setRows((prev) =>
+      prev.map((row, i) =>
+        i === index
+          ? { ...row, [field]: field === "points" ? Number(value) || 0 : value }
+          : row,
+      ),
+    );
+  };
+
   const handleSubmit = async () => {
     if (!email) return;
     if (!gameId) return toast.error("Selecciona un juego (TCG)");
     if (!date) return toast.error("Selecciona una fecha");
-
     setSaving(true);
     try {
       await submit({
@@ -235,53 +245,129 @@ function NewTournamentPage() {
           </Label>
           {!fileName ? (
             <label
-              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
               onDragLeave={() => setDragging(false)}
-              onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files?.[0] ?? null); }}
-              className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition ${dragging ? "border-primary bg-primary/10" : "border-white/20 bg-white/[0.03] hover:border-primary/60 hover:bg-white/[0.05]"}`}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                handleFile(e.dataTransfer.files?.[0] ?? null);
+              }}
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition ${
+                dragging
+                  ? "border-primary bg-primary/10"
+                  : "border-white/20 bg-white/[0.03] hover:border-primary/60 hover:bg-white/[0.05]"
+              }`}
             >
-              <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+              />
               <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/30">
                 <UploadCloud size={28} className="text-primary" />
               </div>
-              <p className="text-sm font-semibold text-white">Arrastra tu CSV aquí, o haz clic para buscar</p>
-              <p className="mt-1 text-xs text-gray-500">Formato: .csv · Columnas: Geek Tag, Points, Wins, Losses, Draws</p>
+              <p className="text-sm font-semibold text-white">
+                Arrastra tu CSV aquí, o haz clic para buscar
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Formato: .csv · Columnas requeridas: User Name, Win Points, OMW %, OOMW %
+              </p>
             </label>
           ) : (
             <div className="rounded-xl border border-white/10 bg-black/30">
               <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                 <div className="flex items-center gap-3">
-                  {parsing ? <Loader2 size={16} className="animate-spin text-primary" /> : <CheckCircle2 size={16} className="text-primary" />}
+                  {parsing ? (
+                    <Loader2 size={16} className="animate-spin text-primary" />
+                  ) : (
+                    <CheckCircle2 size={16} className="text-primary" />
+                  )}
                   <div>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-white"><FileSpreadsheet size={13} className="text-gray-400" />{fileName}</div>
-                    <div className="text-[11px] uppercase tracking-wider text-gray-500">{parsing ? "Leyendo archivo…" : `${rows.length} jugadores cargados`}</div>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                      <FileSpreadsheet size={13} className="text-gray-400" />
+                      {fileName}
+                    </div>
+                    <div className="text-[11px] uppercase tracking-wider text-gray-500">
+                      {parsing ? "Leyendo archivo…" : `${rows.length} jugadores cargados`}
+                    </div>
                   </div>
                 </div>
-                <button type="button" onClick={clearFile} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-gray-400 transition hover:border-red-500/40 hover:text-red-400">
+                <button
+                  type="button"
+                  onClick={clearFile}
+                  className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-gray-400 transition hover:border-red-500/40 hover:text-red-400"
+                >
                   <X size={11} /> Quitar
                 </button>
               </div>
+
               {parsing ? (
-                <div className="flex flex-col items-center justify-center py-10"><Loader2 size={22} className="animate-spin text-primary" /><p className="mt-3 text-xs uppercase tracking-widest text-gray-500">Procesando…</p></div>
+                <div className="flex flex-col items-center justify-center py-10">
+                  <Loader2 size={22} className="animate-spin text-primary" />
+                  <p className="mt-3 text-xs uppercase tracking-widest text-gray-500">
+                    Procesando…
+                  </p>
+                </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
-                      <tr><th className="w-10 px-4 py-2 text-left">#</th><th className="px-4 py-2 text-left">Geek Tag</th><th className="px-4 py-2 text-right">Pts</th><th className="px-4 py-2 text-right">V</th><th className="px-4 py-2 text-right">D</th><th className="px-4 py-2 text-right">E</th></tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row, i) => (
-                        <tr key={i} className="border-t border-white/5 hover:bg-white/5">
-                          <td className="px-4 py-2.5 font-mono text-xs text-primary">{String(i + 1).padStart(2, "0")}</td>
-                          <td className="px-4 py-2.5 font-medium text-white">{row.geekTag}</td>
-                          <td className="px-4 py-2.5 text-right font-mono font-semibold text-white">{row.points}</td>
-                          <td className="px-4 py-2.5 text-right font-mono text-xs text-gray-400">{row.wins}</td>
-                          <td className="px-4 py-2.5 text-right font-mono text-xs text-gray-400">{row.losses}</td>
-                          <td className="px-4 py-2.5 text-right font-mono text-xs text-gray-400">{row.draws}</td>
+                <div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                        <tr>
+                          <th className="w-10 px-4 py-2 text-left">#</th>
+                          <th className="px-4 py-2 text-left">Geek Tag</th>
+                          <th className="px-4 py-2 text-right">Win Pts</th>
+                          <th className="px-4 py-2 text-right">OMW%</th>
+                          <th className="px-4 py-2 text-right">OOMW%</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, i) => (
+                          <tr key={i} className="border-t border-white/5 hover:bg-white/5">
+                            <td className="px-4 py-2.5 font-mono text-xs text-primary">
+                              {String(i + 1).padStart(2, "0")}
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input
+                                value={row.geekTag}
+                                onChange={(e) => updateRow(i, "geekTag", e.target.value)}
+                                className="w-full rounded bg-transparent px-2 py-1 font-medium text-white outline-none ring-inset transition focus:bg-white/10 focus:ring-1 focus:ring-primary"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input
+                                value={row.points}
+                                onChange={(e) => updateRow(i, "points", e.target.value)}
+                                className="w-full rounded bg-transparent px-2 py-1 text-right font-mono font-semibold text-white outline-none ring-inset transition focus:bg-white/10 focus:ring-1 focus:ring-primary"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input
+                                value={row.omw}
+                                onChange={(e) => updateRow(i, "omw", e.target.value)}
+                                className="w-full rounded bg-transparent px-2 py-1 text-right font-mono text-xs text-gray-400 outline-none ring-inset transition focus:bg-white/10 focus:ring-1 focus:ring-primary"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input
+                                value={row.oomw}
+                                onChange={(e) => updateRow(i, "oomw", e.target.value)}
+                                className="w-full rounded bg-transparent px-2 py-1 text-right font-mono text-xs text-gray-400 outline-none ring-inset transition focus:bg-white/10 focus:ring-1 focus:ring-primary"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="px-4 py-2 text-[11px] uppercase tracking-wider text-gray-500">
+                    Haz clic en cualquier celda para editar manualmente.
+                  </p>
                 </div>
               )}
             </div>
@@ -291,9 +377,8 @@ function NewTournamentPage() {
         {qualifying && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-gray-400">
             Calificación calculada: mes <strong className="text-white">{qualifying.month}</strong>{" "}
-            · semestre{" "}
-            <strong className="text-white">{qualifying.semester}</strong> ·
-            año <strong className="text-white">{qualifying.year}</strong>
+            · semestre <strong className="text-white">{qualifying.semester}</strong> · año{" "}
+            <strong className="text-white">{qualifying.year}</strong>
           </div>
         )}
 
