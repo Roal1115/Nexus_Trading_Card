@@ -80,7 +80,11 @@ function NewTournamentPage() {
 
   const [gameId, setGameId] = useState<string>("");
   const [date, setDate] = useState<string>("");
-  const [csvUrl, setCsvUrl] = useState<string>("");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!email) return;
