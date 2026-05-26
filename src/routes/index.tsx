@@ -189,7 +189,7 @@ function TicketBadge({ tone }: { tone: "gold" | "silver" }) {
     : "bg-zinc-300/10 text-zinc-300 border-zinc-300/30";
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${colors}`}>
-      <Ticket size={9} /> {tone}
+      <Ticket size={9} /> {tone === "gold" ? "oro" : "plata"}
     </span>
   );
 }
