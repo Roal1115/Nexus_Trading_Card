@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, Store, Trophy, Upload, ListChecks } from "lucide-react";
+import { Loader2, Store, Upload, ListChecks } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 
