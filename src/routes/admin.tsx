@@ -5,7 +5,6 @@ import {
   Loader2,
   ShieldCheck,
   Store,
-  Trophy,
   Users,
   Upload,
 } from "lucide-react";
