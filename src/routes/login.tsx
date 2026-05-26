@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena } from "@/integrations/geekarena/client";
+import { useStore } from "@/lib/mock-store";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — Geek Arena" }] }),
@@ -31,6 +32,7 @@ function translateAuthError(msg: string): string {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login: storeLogin } = useStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -67,6 +69,11 @@ function LoginPage() {
       await geekarena.auth.signOut();
       return;
     }
+    const geekTag =
+      (data.user?.user_metadata as { geek_tag?: string } | undefined)?.geek_tag ??
+      data.user?.email?.split("@")[0] ??
+      "jugador";
+    storeLogin(data.user?.email ?? email, "player", geekTag);
     toast.success("¡Bienvenido de vuelta a la Arena!");
     navigate({ to: "/dashboard" });
   };
