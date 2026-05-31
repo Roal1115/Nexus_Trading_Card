@@ -21,6 +21,7 @@ import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
+import { Route as ApiDebugEnumRouteImport } from './routes/api/debug-enum'
 import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
@@ -87,6 +88,11 @@ const OrganizerNewRoute = OrganizerNewRouteImport.update({
   path: '/new',
   getParentRoute: () => OrganizerRoute,
 } as any)
+const ApiDebugEnumRoute = ApiDebugEnumRouteImport.update({
+  id: '/api/debug-enum',
+  path: '/api/debug-enum',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminStoresRoute = AdminStoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/stores': typeof AdminStoresRoute
+  '/api/debug-enum': typeof ApiDebugEnumRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/stores': typeof AdminStoresRoute
+  '/api/debug-enum': typeof ApiDebugEnumRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin': typeof AdminIndexRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/stores': typeof AdminStoresRoute
+  '/api/debug-enum': typeof ApiDebugEnumRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/admin/players'
     | '/admin/publish'
     | '/admin/stores'
+    | '/api/debug-enum'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/admin/'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/admin/players'
     | '/admin/publish'
     | '/admin/stores'
+    | '/api/debug-enum'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/admin'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/admin/players'
     | '/admin/publish'
     | '/admin/stores'
+    | '/api/debug-enum'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/admin/'
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
+  ApiDebugEnumRoute: typeof ApiDebugEnumRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/organizer/new'
       preLoaderRoute: typeof OrganizerNewRouteImport
       parentRoute: typeof OrganizerRoute
+    }
+    '/api/debug-enum': {
+      id: '/api/debug-enum'
+      path: '/api/debug-enum'
+      fullPath: '/api/debug-enum'
+      preLoaderRoute: typeof ApiDebugEnumRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/stores': {
       id: '/admin/stores'
@@ -417,7 +437,18 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
+  ApiDebugEnumRoute: ApiDebugEnumRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
