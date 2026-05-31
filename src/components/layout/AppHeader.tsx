@@ -1,16 +1,19 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, Shield, Trophy, Upload, User } from "lucide-react";
-import { useStore } from "@/lib/mock-store";
 import { useGeekarenaRole, homeRouteForRole } from "@/hooks/use-geekarena-role";
+import { geekarena } from "@/integrations/geekarena/client";
 
 export function AppHeader() {
-  const { currentUser, logout } = useStore();
   const navigate = useNavigate();
-  const mockRole = currentUser?.role;
-  const { role: realRole } = useGeekarenaRole();
+  const { role: effectiveRole, player } = useGeekarenaRole();
 
-  const effectiveRole = realRole ?? (mockRole !== "guest" ? (mockRole as "player" | "organizer" | "admin" | null) : null);
   const panelRoute = homeRouteForRole(effectiveRole) || "/dashboard";
+  const geekTag = player?.geek_tag ?? null;
+
+  const handleLogout = async () => {
+    await geekarena.auth.signOut();
+    navigate({ to: "/login" });
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl">
@@ -25,7 +28,7 @@ export function AppHeader() {
 
         <nav className="hidden items-center gap-1 text-sm md:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
-          {currentUser && effectiveRole && (
+          {player && effectiveRole && (
             <NavItem to={panelRoute} icon={<User size={14} />} label="Mi Panel" />
           )}
           {effectiveRole === "organizer" && <NavItem to="/organizer/new" icon={<Upload size={14} />} label="Subir Resultados" />}
@@ -33,14 +36,14 @@ export function AppHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          {currentUser ? (
+          {player ? (
             <>
               <div className="hidden text-right sm:block">
                 <div className="text-xs text-muted-foreground uppercase tracking-wider">Geek Tag</div>
-                <div className="font-mono-stat text-sm text-primary">{currentUser.geekTag}</div>
+                <div className="font-mono-stat text-sm text-primary">{geekTag}</div>
               </div>
               <button
-                onClick={() => { logout(); navigate({ to: "/" }); }}
+                onClick={handleLogout}
                 className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary"
               >
                 <LogOut size={12} /> Cerrar Sesión
