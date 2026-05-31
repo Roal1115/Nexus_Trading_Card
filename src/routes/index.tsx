@@ -2,8 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Medal, Search, Ticket, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { useStore, type Player } from "@/lib/mock-store";
 import { geekarena, type Game } from "@/integrations/geekarena/client";
+
+// TODO: connect to Supabase
+type Player = {
+  id: string;
+  geekTag: string;
+  tcg: string;
+  city: string;
+  monthlyPoints: number;
+  semiannualPoints: number;
+  wins: number;
+  losses: number;
+  omw: number;
+};
 
 export const Route = createFileRoute("/")({
   head: () => ({
