@@ -308,3 +308,19 @@ export const listActiveStores = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { stores: data ?? [] };
   });
+
+// ---------- Check existing player tags (for preview) ----------
+export const lookupPlayerTags = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
+  .inputValidator((d: { tags: string[] }) =>
+    z.object({ tags: z.array(z.string().min(1).max(120)).min(1).max(2000) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { data: rows, error } = await admin
+      .from("players")
+      .select("geek_tag")
+      .in("geek_tag", data.tags);
+    if (error) throw new Error(error.message);
+    return { existing: (rows ?? []).map((r) => r.geek_tag) };
+  });
