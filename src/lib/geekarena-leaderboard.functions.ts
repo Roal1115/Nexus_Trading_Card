@@ -133,7 +133,16 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         q = q.in("store_id", storeIds);
       }
       const { data: rows, error } = await q;
-      if (error) throw new Error(error.message);
+      if (error) {
+        // The enum value may not yet exist in the database. Don't crash the
+        // whole page — log it and return an empty bucket so the other table
+        // still renders.
+        console.error(
+          `[leaderboard] querySnapshots(${timeframeType}, ${timeframeValue}) failed:`,
+          error.message,
+        );
+        return [];
+      }
       return rows ?? [];
     }
 
