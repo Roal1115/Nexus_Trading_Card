@@ -14,13 +14,14 @@ function DashboardPage() {
   const [storeCity, setStoreCity] = useState<string | null>(null);
 
   // TODO: connect to Supabase
-  const playerData: {
+  type PlayerData = {
     tcg?: string;
     semiannualPoints?: number;
     wins?: number;
     losses?: number;
     tournamentsWon?: number;
-  } | null = null;
+  };
+  const playerData = null as PlayerData | null;
   const myEvents: Array<{
     id: string;
     date: string;
