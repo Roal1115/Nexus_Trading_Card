@@ -64,7 +64,7 @@ function DashboardPage() {
   }
 
   const tag = gaPlayer.geek_tag;
-  const player: typeof playerData = playerData;
+  const player: PlayerData | null = playerData;
 
   const totalPoints = player?.semiannualPoints ?? 0;
   const wins = player?.wins ?? 0;
