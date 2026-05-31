@@ -222,12 +222,18 @@ function LeaderboardPage() {
         <LeaderboardTable
           title="Ranking Mensual"
           badge={monthLbl.toUpperCase()}
+          subtitle={
+            selectedStore
+              ? `Mostrando: ${selectedStore.name}${selectedStore.city ? ` — ${selectedStore.city}` : ""}`
+              : null
+          }
           rows={filteredMonthly}
           loading={loading}
         />
         <LeaderboardTable
           title="General Semestral"
           badge={semesterLbl}
+          subtitle="Ranking general · no filtrado por tienda"
           rows={filteredSemestral}
           loading={loading}
         />
