@@ -133,12 +133,12 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ---------- Subir Torneo ----------
+// ---------- Subir Torneo (DRAFT vacío, legacy) ----------
 export const createTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
   .inputValidator((d: {
     game_id: string;
-    tournament_date: string; // YYYY-MM-DD
+    tournament_date: string;
     csv_url?: string | null;
   }) =>
     z.object({
@@ -167,4 +167,144 @@ export const createTournament = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     return { id: created.id };
+  });
+
+// ---------- Upload Tournament Results (CSV parsed client-side) ----------
+const ResultRowSchema = z.object({
+  rank: z.number().int().min(1),
+  geek_tag: z.string().min(1).max(120),
+  match_points: z.number().int().min(0).nullable(),
+  omw_percentage: z.number().min(0).max(100).nullable(),
+  wins: z.number().int().min(0).nullable(),
+  losses: z.number().int().min(0).nullable(),
+  draws: z.number().int().min(0).nullable(),
+  points_earned: z.number().int().min(0),
+});
+
+export const uploadTournamentResults = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
+  .inputValidator((d: {
+    store_id: string;
+    game_id: string;
+    tournament_date: string;
+    rows: Array<z.infer<typeof ResultRowSchema>>;
+  }) =>
+    z.object({
+      store_id: z.string().uuid(),
+      game_id: z.string().uuid(),
+      tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      rows: z.array(ResultRowSchema).min(1).max(2000),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (player.role !== "admin" && player.home_store_id !== data.store_id) {
+      throw new Error("No puedes subir un torneo para esta tienda");
+    }
+
+    const { data: existing, error: dupErr } = await admin
+      .from("tournaments")
+      .select("id")
+      .eq("store_id", data.store_id)
+      .eq("game_id", data.game_id)
+      .eq("tournament_date", data.tournament_date)
+      .maybeSingle();
+    if (dupErr) throw new Error(dupErr.message);
+    if (existing) {
+      throw new Error("Ya existe un torneo registrado para esta tienda, juego y fecha.");
+    }
+
+    const q = computeQualifying(data.tournament_date);
+    const { data: tournament, error: te } = await admin
+      .from("tournaments")
+      .insert({
+        store_id: data.store_id,
+        game_id: data.game_id,
+        tournament_date: data.tournament_date,
+        ...q,
+        status: "DRAFT",
+      })
+      .select("id")
+      .single();
+    if (te) throw new Error(te.message);
+    const tournamentId = tournament.id;
+
+    const cleanup = async (msg: string): Promise<never> => {
+      await admin.from("tournament_results").delete().eq("tournament_id", tournamentId);
+      await admin.from("tournaments").delete().eq("id", tournamentId);
+      throw new Error(msg);
+    };
+
+    const tags = Array.from(new Set(data.rows.map((r) => r.geek_tag.trim())));
+    const { data: existingPlayers, error: pe } = await admin
+      .from("players")
+      .select("id, geek_tag")
+      .in("geek_tag", tags);
+    if (pe) await cleanup(pe.message);
+
+    const tagToId = new Map(
+      (existingPlayers ?? []).map((p) => [p.geek_tag, p.id]),
+    );
+    const missingTags = tags.filter((t) => !tagToId.has(t));
+
+    if (missingTags.length > 0) {
+      const { data: created, error: ce } = await admin
+        .from("players")
+        .insert(
+          missingTags.map((t) => ({
+            geek_tag: t,
+            is_active: true,
+            role: "player",
+          })),
+        )
+        .select("id, geek_tag");
+      if (ce) await cleanup(ce.message);
+      for (const p of created ?? []) tagToId.set(p.geek_tag, p.id);
+    }
+
+    const baseRows = data.rows.map((r) => {
+      const pid = tagToId.get(r.geek_tag.trim());
+      if (!pid) throw new Error(`No se pudo resolver el jugador ${r.geek_tag}`);
+      return {
+        tournament_id: tournamentId,
+        player_id: pid,
+        rank: r.rank,
+        wins: r.wins,
+        losses: r.losses,
+        draws: r.draws ?? 0,
+        points_earned: r.points_earned,
+        match_points: r.match_points,
+        omw_percentage: r.omw_percentage,
+      };
+    });
+
+    let insertErr = (await admin.from("tournament_results").insert(baseRows)).error;
+    if (insertErr && /column .* does not exist/i.test(insertErr.message)) {
+      const stripped = baseRows.map(
+        ({ match_points: _m, omw_percentage: _o, ...rest }) => rest,
+      );
+      insertErr = (await admin.from("tournament_results").insert(stripped)).error;
+    }
+    if (insertErr) await cleanup(insertErr.message);
+
+    return {
+      id: tournamentId,
+      inserted: baseRows.length,
+      created_players: missingTags.length,
+    };
+  });
+
+// ---------- Stores list (organizer/admin) ----------
+export const listActiveStores = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
+  .handler(async ({ context }) => {
+    const { admin } = context;
+    const { data, error } = await admin
+      .from("stores")
+      .select("id, name, city")
+      .eq("is_active", true)
+      .order("city", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { stores: data ?? [] };
   });
