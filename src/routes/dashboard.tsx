@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Award, Crown, Swords, Target, TrendingUp } from "lucide-react";
-import { useStore } from "@/lib/mock-store";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { geekarena } from "@/integrations/geekarena/client";
 
