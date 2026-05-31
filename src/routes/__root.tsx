@@ -11,7 +11,6 @@ import {
 
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { AppStoreProvider } from "@/lib/mock-store";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
