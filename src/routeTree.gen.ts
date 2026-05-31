@@ -25,7 +25,6 @@ import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
-import { Route as ApiPublicDebugEnumRouteImport } from './routes/api/public/debug-enum'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 
 const SignupRoute = SignupRouteImport.update({
@@ -108,11 +107,6 @@ const AdminApprovedRoute = AdminApprovedRouteImport.update({
   path: '/approved',
   getParentRoute: () => AdminRoute,
 } as any)
-const ApiPublicDebugEnumRoute = ApiPublicDebugEnumRouteImport.update({
-  id: '/api/public/debug-enum',
-  path: '/api/public/debug-enum',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminPlayersIdRoute = AdminPlayersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -137,7 +131,6 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
-  '/api/public/debug-enum': typeof ApiPublicDebugEnumRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -155,7 +148,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
-  '/api/public/debug-enum': typeof ApiPublicDebugEnumRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -176,7 +168,6 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
-  '/api/public/debug-enum': typeof ApiPublicDebugEnumRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -198,7 +189,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/organizer/'
     | '/admin/players/$id'
-    | '/api/public/debug-enum'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -216,7 +206,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/organizer'
     | '/admin/players/$id'
-    | '/api/public/debug-enum'
   id:
     | '__root__'
     | '/'
@@ -236,7 +225,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/organizer/'
     | '/admin/players/$id'
-    | '/api/public/debug-enum'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -248,7 +236,6 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
-  ApiPublicDebugEnumRoute: typeof ApiPublicDebugEnumRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -365,13 +352,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApprovedRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/api/public/debug-enum': {
-      id: '/api/public/debug-enum'
-      path: '/api/public/debug-enum'
-      fullPath: '/api/public/debug-enum'
-      preLoaderRoute: typeof ApiPublicDebugEnumRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/players/$id': {
       id: '/admin/players/$id'
       path: '/$id'
@@ -437,8 +417,17 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
-  ApiPublicDebugEnumRoute: ApiPublicDebugEnumRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
