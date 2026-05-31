@@ -245,11 +245,13 @@ function LeaderboardPage() {
 function LeaderboardTable({
   title,
   badge,
+  subtitle,
   rows,
   loading,
 }: {
   title: string;
   badge: string;
+  subtitle?: string | null;
   rows: Row[];
   loading: boolean;
 }) {
@@ -258,15 +260,19 @@ function LeaderboardTable({
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
-      <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Trophy className="text-primary" size={18} />
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+      <header className="border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="text-primary" size={18} />
+            <h2 className="text-lg font-semibold text-white">{title}</h2>
+          </div>
+          <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+            {badge || "—"}
+          </span>
         </div>
-        <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-          {badge || "—"}
-        </span>
+        {subtitle && <p className="mt-2 text-xs text-gray-400">{subtitle}</p>}
       </header>
+
 
       <div className="max-h-[720px] overflow-y-auto">
         <table className="w-full text-sm">
