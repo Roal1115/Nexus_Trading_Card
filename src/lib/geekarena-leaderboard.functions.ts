@@ -44,6 +44,27 @@ export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(
   },
 );
 
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function getSemesterKey(monthValue: string): string {
+  const [year, month] = monthValue.split("-").map(Number);
+  const semester = month <= 6 ? 1 : 2;
+  return `${year}-S${semester}`;
+}
+
+function monthLabel(monthValue: string): string {
+  const [y, m] = monthValue.split("-").map(Number);
+  return `${MONTH_NAMES[m - 1]} ${y}`;
+}
+
+function semesterLabel(semesterKey: string): string {
+  const [year, s] = semesterKey.split("-");
+  return `${s} ${year}`;
+}
+
 export const getLeaderboard = createServerFn({ method: "POST" })
   .inputValidator((d: {
     game_id?: string | null;
@@ -61,18 +82,6 @@ export const getLeaderboard = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const admin = getGeekarenaAdmin();
 
-    // 1. Find tournaments matching filters (status approved/published)
-    let tq = admin
-      .from("tournaments")
-      .select("id, store_id, game_id, qualifying_month, qualifying_year")
-      .in("status", ["APPROVED", "PUBLISHED"]);
-
-    if (data.game_id) tq = tq.eq("game_id", data.game_id);
-    if (data.month) {
-      const [y, m] = data.month.split("-");
-      tq = tq.eq("qualifying_year", Number(y)).eq("qualifying_month", Number(m));
-    }
-
     // Resolve store filter (explicit store wins over city)
     let storeIds: string[] | null = null;
     if (data.store_id) {
@@ -85,33 +94,71 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         .eq("city", data.city);
       if (error) throw new Error(error.message);
       storeIds = (cityStores ?? []).map((s) => s.id);
-      if (storeIds.length === 0) return { rows: [] };
     }
-    if (storeIds) tq = tq.in("store_id", storeIds);
 
-    const { data: tournaments, error: te } = await tq;
-    if (te) throw new Error(te.message);
-    if (!tournaments || tournaments.length === 0) return { rows: [] };
+    // Resolve month: explicit or most recent available
+    let monthValue = data.month;
+    if (!monthValue) {
+      let q = admin
+        .from("tournaments")
+        .select("qualifying_year, qualifying_month")
+        .in("status", ["APPROVED", "PUBLISHED"])
+        .order("qualifying_year", { ascending: false })
+        .order("qualifying_month", { ascending: false })
+        .limit(1);
+      const { data: latest } = await q;
+      if (latest && latest.length > 0) {
+        monthValue = `${latest[0].qualifying_year}-${String(latest[0].qualifying_month).padStart(2, "0")}`;
+      } else {
+        const now = new Date();
+        monthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      }
+    }
+    const semesterKey = getSemesterKey(monthValue);
 
-    const tIds = tournaments.map((t) => t.id);
-    const tMap = new Map(tournaments.map((t) => [t.id, t]));
+    async function querySnapshots(
+      timeframeType: "MONTHLY" | "SEMESTRAL",
+      timeframeValue: string,
+    ) {
+      let q = admin
+        .from("leaderboard_snapshots")
+        .select(
+          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position",
+        )
+        .eq("timeframe_type", timeframeType)
+        .eq("timeframe_value", timeframeValue);
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+      if (storeIds) {
+        if (storeIds.length === 0) return [];
+        q = q.in("store_id", storeIds);
+      }
+      const { data: rows, error } = await q;
+      if (error) throw new Error(error.message);
+      return rows ?? [];
+    }
 
-    // 2. Fetch results for those tournaments
-    const { data: results, error: re } = await admin
-      .from("tournament_results")
-      .select("tournament_id, player_id, rank, wins, losses, points_earned")
-      .in("tournament_id", tIds);
-    if (re) throw new Error(re.message);
+    const [monthlyRaw, semestralRaw] = await Promise.all([
+      querySnapshots("MONTHLY", monthValue),
+      querySnapshots("SEMESTRAL", semesterKey),
+    ]);
 
-    // 3. Fetch players + stores for shaping
-    const playerIds = Array.from(new Set((results ?? []).map((r) => r.player_id)));
-    const storeIdsAll = Array.from(new Set(tournaments.map((t) => t.store_id)));
+    const playerIds = Array.from(
+      new Set([...monthlyRaw, ...semestralRaw].map((r) => r.player_id)),
+    );
+    const allStoreIds = Array.from(
+      new Set(
+        [...monthlyRaw, ...semestralRaw]
+          .map((r) => r.store_id)
+          .filter((v): v is string => !!v),
+      ),
+    );
+
     const [playersRes, storesRes] = await Promise.all([
       playerIds.length
         ? admin.from("players").select("id, geek_tag").in("id", playerIds)
         : Promise.resolve({ data: [], error: null } as const),
-      storeIdsAll.length
-        ? admin.from("stores").select("id, name, city").in("id", storeIdsAll)
+      allStoreIds.length
+        ? admin.from("stores").select("id, city").in("id", allStoreIds)
         : Promise.resolve({ data: [], error: null } as const),
     ]);
     if (playersRes.error) throw new Error(playersRes.error.message);
@@ -120,45 +167,46 @@ export const getLeaderboard = createServerFn({ method: "POST" })
     const playerMap = new Map((playersRes.data ?? []).map((p) => [p.id, p]));
     const storeMap = new Map((storesRes.data ?? []).map((s) => [s.id, s]));
 
-    // 4. Aggregate per player
-    type Agg = {
+    type Row = {
       player_id: string;
+      geek_tag: string;
+      city: string;
       points: number;
       tournaments_won: number;
       wins: number;
       losses: number;
-      cities: Set<string>;
     };
-    const agg = new Map<string, Agg>();
-    for (const r of results ?? []) {
-      const t = tMap.get(r.tournament_id);
-      if (!t) continue;
-      const city = storeMap.get(t.store_id)?.city ?? null;
-      let a = agg.get(r.player_id);
-      if (!a) {
-        a = {
-          player_id: r.player_id,
-          points: 0,
-          tournaments_won: 0,
-          wins: 0,
-          losses: 0,
-          cities: new Set(),
-        };
-        agg.set(r.player_id, a);
-      }
-      a.points += r.points_earned ?? 0;
-      if (r.rank === 1) a.tournaments_won += 1;
-      a.wins += r.wins ?? 0;
-      a.losses += r.losses ?? 0;
-      if (city) a.cities.add(city);
-    }
 
-    const rows = Array.from(agg.values())
-      .map((a) => {
-        const p = playerMap.get(a.player_id);
-        return {
-          player_id: a.player_id,
-          geek_tag: p?.geek_tag ?? "—",
+    function shape(
+      raws: Array<{
+        player_id: string;
+        store_id: string | null;
+        total_points: number | null;
+        tournaments_played: number | null;
+        tournaments_won: number | null;
+      }>,
+    ): Row[] {
+      // Aggregate by player (in case multiple store-scoped rows match)
+      const agg = new Map<
+        string,
+        { points: number; won: number; played: number; cities: Set<string> }
+      >();
+      for (const r of raws) {
+        let a = agg.get(r.player_id);
+        if (!a) {
+          a = { points: 0, won: 0, played: 0, cities: new Set() };
+          agg.set(r.player_id, a);
+        }
+        a.points += r.total_points ?? 0;
+        a.won += r.tournaments_won ?? 0;
+        a.played += r.tournaments_played ?? 0;
+        const city = r.store_id ? storeMap.get(r.store_id)?.city : null;
+        if (city) a.cities.add(city);
+      }
+      return Array.from(agg.entries())
+        .map(([pid, a]) => ({
+          player_id: pid,
+          geek_tag: playerMap.get(pid)?.geek_tag ?? "—",
           city:
             a.cities.size === 1
               ? Array.from(a.cities)[0]
@@ -166,12 +214,19 @@ export const getLeaderboard = createServerFn({ method: "POST" })
                 ? "Varias"
                 : "—",
           points: a.points,
-          tournaments_won: a.tournaments_won,
-          wins: a.wins,
-          losses: a.losses,
-        };
-      })
-      .sort((x, y) => y.points - x.points);
+          tournaments_won: a.won,
+          wins: a.played,
+          losses: 0,
+        }))
+        .sort((x, y) => y.points - x.points);
+    }
 
-    return { rows };
+    return {
+      monthly: shape(monthlyRaw),
+      semestral: shape(semestralRaw),
+      month_label: monthLabel(monthValue),
+      semester_label: semesterLabel(semesterKey),
+      month_value: monthValue,
+      semester_key: semesterKey,
+    };
   });
