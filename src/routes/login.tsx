@@ -67,12 +67,6 @@ function LoginPage() {
       await geekarena.auth.signOut();
       return;
     }
-    const geekTag =
-      (data.user?.user_metadata as { geek_tag?: string } | undefined)?.geek_tag ??
-      data.user?.email?.split("@")[0] ??
-      "jugador";
-    storeLogin(data.user?.email ?? email, "player", geekTag);
-
     // Redirect según rol leído desde la tabla players
     const { data: playerRow } = await geekarena
       .from("players")
