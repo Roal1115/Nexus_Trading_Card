@@ -183,6 +183,7 @@ function NewTournamentPage() {
   const fetchOverview = useServerFn(getOrganizerOverview);
   const fetchStores = useServerFn(listActiveStores);
   const submitUpload = useServerFn(uploadTournamentResults);
+  const lookupTags = useServerFn(lookupPlayerTags);
 
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
