@@ -36,13 +36,14 @@ type Row = {
 
 const ALL = "__all__";
 
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
 function monthLabel(m: string): string {
   const [y, mm] = m.split("-").map(Number);
-  const names = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-  ];
-  return `${names[mm - 1]} ${y}`;
+  return `${MONTH_NAMES[mm - 1]} ${y}`;
 }
 
 function LeaderboardPage() {
@@ -59,7 +60,10 @@ function LeaderboardPage() {
   const [month, setMonth] = useState<string>(ALL);
   const [search, setSearch] = useState("");
 
-  const [rows, setRows] = useState<Row[]>([]);
+  const [monthly, setMonthly] = useState<Row[]>([]);
+  const [semestral, setSemestral] = useState<Row[]>([]);
+  const [monthLbl, setMonthLbl] = useState<string>("");
+  const [semesterLbl, setSemesterLbl] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,7 +100,10 @@ function LeaderboardPage() {
     })
       .then((res) => {
         if (!mounted) return;
-        setRows(res.rows as Row[]);
+        setMonthly(res.monthly as Row[]);
+        setSemestral(res.semestral as Row[]);
+        setMonthLbl(res.month_label);
+        setSemesterLbl(res.semester_label);
       })
       .catch((e) => {
         toast.error("Error al cargar el ranking. Intenta de nuevo.");
@@ -122,22 +129,22 @@ function LeaderboardPage() {
     return stores.filter((s) => s.city === city);
   }, [stores, city]);
 
-  // Reset store filter when city changes if no longer valid
   useEffect(() => {
     if (storeId !== ALL && !visibleStores.some((s) => s.id === storeId)) {
       setStoreId(ALL);
     }
   }, [visibleStores, storeId]);
 
-  const filtered = useMemo(() => {
+  const applySearch = (rows: Row[]) => {
     if (!search) return rows;
     const q = search.toLowerCase();
     return rows.filter((r) => r.geek_tag.toLowerCase().includes(q));
-  }, [rows, search]);
+  };
+
+  const filteredMonthly = useMemo(() => applySearch(monthly), [monthly, search]);
+  const filteredSemestral = useMemo(() => applySearch(semestral), [semestral, search]);
 
   const selectedStore = stores.find((s) => s.id === storeId);
-  const omwFor = (r: Row) =>
-    r.wins + r.losses > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0;
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
@@ -185,7 +192,7 @@ function LeaderboardPage() {
             value={month}
             onChange={setMonth}
             options={[
-              { value: ALL, label: "Histórico" },
+              { value: ALL, label: "Más reciente" },
               ...months.map((m) => ({ value: m, label: monthLabel(m) })),
             ]}
           />
@@ -211,85 +218,117 @@ function LeaderboardPage() {
         </div>
       )}
 
-      <section className="glass overflow-hidden rounded-2xl">
-        <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <div className="flex items-center gap-2">
-            <Trophy className="text-primary" size={18} />
-            <h2 className="text-lg font-semibold text-white">Ranking</h2>
-          </div>
-          <span className="text-xs uppercase tracking-wider text-gray-500">
-            {month === ALL ? "Histórico" : monthLabel(month)}
-          </span>
-        </header>
-
-        <div className="max-h-[720px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
-              <tr>
-                <th className="px-3 py-2 text-left">#</th>
-                <th className="px-3 py-2 text-left">Geek Tag</th>
-                <th className="hidden px-3 py-2 text-left sm:table-cell">Ciudad</th>
-                <th className="px-3 py-2 text-right">Pts</th>
-                <th className="hidden px-3 py-2 text-right sm:table-cell">Torneos Ganados</th>
-                <th className="hidden px-3 py-2 text-right md:table-cell">Victorias</th>
-                <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
-                    Cargando ranking…
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
-                    No hay resultados para estos filtros todavía.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((r, i) => {
-                  const rank = i + 1;
-                  const podium = rank <= 3;
-                  return (
-                    <tr
-                      key={r.player_id}
-                      className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
-                    >
-                      <td className="px-3 py-2.5">
-                        <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
-                          {String(rank).padStart(2, "0")}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          {rank === 1 && <Medal className="text-amber-300" size={14} />}
-                          <span className="font-medium text-white">{r.geek_tag}</span>
-                        </div>
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
-                      <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
-                        {r.points.toLocaleString()}
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
-                        {r.tournaments_won}
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                        {r.wins}
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                        {omwFor(r)}%
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <LeaderboardTable
+          title="Ranking Mensual"
+          badge={monthLbl.toUpperCase()}
+          rows={filteredMonthly}
+          loading={loading}
+        />
+        <LeaderboardTable
+          title="General Semestral"
+          badge={semesterLbl}
+          rows={filteredSemestral}
+          loading={loading}
+        />
+      </div>
     </main>
+  );
+}
+
+function LeaderboardTable({
+  title,
+  badge,
+  rows,
+  loading,
+}: {
+  title: string;
+  badge: string;
+  rows: Row[];
+  loading: boolean;
+}) {
+  const omwFor = (r: Row) =>
+    r.wins + r.losses > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0;
+
+  return (
+    <section className="glass overflow-hidden rounded-2xl">
+      <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center gap-2">
+          <Trophy className="text-primary" size={18} />
+          <h2 className="text-lg font-semibold text-white">{title}</h2>
+        </div>
+        <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+          {badge || "—"}
+        </span>
+      </header>
+
+      <div className="max-h-[720px] overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
+            <tr>
+              <th className="px-3 py-2 text-left">#</th>
+              <th className="px-3 py-2 text-left">Geek Tag</th>
+              <th className="hidden px-3 py-2 text-left sm:table-cell">Ciudad</th>
+              <th className="px-3 py-2 text-right">Pts</th>
+              <th className="hidden px-3 py-2 text-right sm:table-cell">Torneos</th>
+              <th className="hidden px-3 py-2 text-right md:table-cell">Victorias</th>
+              <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
+                  Cargando ranking…
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
+                  No hay resultados para estos filtros todavía.
+                </td>
+              </tr>
+            ) : (
+              rows.map((r, i) => {
+                const rank = i + 1;
+                const podium = rank <= 3;
+                return (
+                  <tr
+                    key={r.player_id}
+                    className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
+                  >
+                    <td className="px-3 py-2.5">
+                      <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                        {String(rank).padStart(2, "0")}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        {rank === 1 && <Medal className="text-amber-300" size={14} />}
+                        <span className="font-medium text-white">{r.geek_tag}</span>
+                      </div>
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
+                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
+                      {r.points.toLocaleString()}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
+                      {r.tournaments_won}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                      {r.wins}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                      {omwFor(r)}%
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
