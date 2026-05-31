@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
 const MONTHS = ["Mayo 2026", "Abril 2026", "Marzo 2026", "Febrero 2026"];
 
 function LeaderboardPage() {
-  const { players } = useStore();
+  const [players, setPlayers] = useState<Player[]>([]);
   const [games, setGames] = useState<Game[]>([]);
   const [storeCities, setStoreCities] = useState<string[]>([]);
   const [tcg, setTcg] = useState<string>("Todos");
