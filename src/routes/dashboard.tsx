@@ -10,9 +10,27 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  const { currentUser, players, tournaments } = useStore();
   const { player: gaPlayer } = useGeekarenaRole();
   const [storeCity, setStoreCity] = useState<string | null>(null);
+
+  // TODO: connect to Supabase
+  const playerData: {
+    tcg?: string;
+    semiannualPoints?: number;
+    wins?: number;
+    losses?: number;
+    tournamentsWon?: number;
+  } | null = null;
+  const myEvents: Array<{
+    id: string;
+    date: string;
+    store: string;
+    city: string;
+    tcg: string;
+    placement: number;
+    pointsEarned: number;
+  }> = [];
+  const rank = 0;
 
   useEffect(() => {
     let mounted = true;
@@ -34,7 +52,7 @@ function DashboardPage() {
     };
   }, [gaPlayer?.home_store_id]);
 
-  if (!currentUser) {
+  if (!gaPlayer) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
         <h2 className="text-2xl font-bold text-white">Sign in required</h2>
@@ -44,11 +62,8 @@ function DashboardPage() {
     );
   }
 
-  const tag = currentUser.geekTag;
-  const sorted = [...players].sort((a, b) => b.semiannualPoints - a.semiannualPoints);
-  const rank = sorted.findIndex((p) => p.geekTag.toLowerCase() === tag.toLowerCase()) + 1;
-  const player = sorted.find((p) => p.geekTag.toLowerCase() === tag.toLowerCase());
-  const myEvents = tournaments.filter((t) => t.geekTag.toLowerCase() === tag.toLowerCase()).slice(0, 8);
+  const tag = gaPlayer.geek_tag;
+  const player = playerData;
 
   const totalPoints = player?.semiannualPoints ?? 0;
   const wins = player?.wins ?? 0;
