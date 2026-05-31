@@ -268,19 +268,14 @@ function NewTournamentPage() {
           return;
         }
         setRows(parsed);
-        // Verify which players exist
+        // Verify which players exist (via server fn — RLS-safe)
         toast.message("Verificando jugadores en el sistema...");
         const tags = Array.from(new Set(parsed.map((r) => r.geek_tag)));
-        const { data, error } = await geekarena
-          .from("players")
-          .select("geek_tag")
-          .in("geek_tag", tags);
-        if (error) {
-          toast.error("Error al verificar jugadores: " + error.message);
-        } else {
-          setRegisteredTags(
-            new Set((data ?? []).map((p: { geek_tag: string }) => p.geek_tag)),
-          );
+        try {
+          const res = await lookupTags({ data: { tags } });
+          setRegisteredTags(new Set(res.existing));
+        } catch (err) {
+          toast.error("Error al verificar jugadores: " + String((err as Error).message ?? err));
         }
       } catch (err) {
         toast.error(String((err as Error).message ?? err));
