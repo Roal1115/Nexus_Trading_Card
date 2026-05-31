@@ -82,31 +82,28 @@ export const getLeaderboard = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const admin = getGeekarenaAdmin();
 
-    // Resolve store filter (explicit store wins over city)
-    let storeIds: string[] | null = null;
-    if (data.store_id) {
-      storeIds = [data.store_id];
-    } else if (data.city) {
+    // Resolve city → set of stores (used by both queries when city is set)
+    let cityStoreIds: string[] | null = null;
+    if (data.city) {
       const { data: cityStores, error } = await admin
         .from("stores")
         .select("id")
         .eq("is_active", true)
         .eq("city", data.city);
       if (error) throw new Error(error.message);
-      storeIds = (cityStores ?? []).map((s) => s.id);
+      cityStoreIds = (cityStores ?? []).map((s) => s.id);
     }
 
     // Resolve month: explicit or most recent available
     let monthValue = data.month;
     if (!monthValue) {
-      let q = admin
+      const { data: latest } = await admin
         .from("tournaments")
         .select("qualifying_year, qualifying_month")
         .in("status", ["APPROVED", "PUBLISHED"])
         .order("qualifying_year", { ascending: false })
         .order("qualifying_month", { ascending: false })
         .limit(1);
-      const { data: latest } = await q;
       if (latest && latest.length > 0) {
         monthValue = `${latest[0].qualifying_year}-${String(latest[0].qualifying_month).padStart(2, "0")}`;
       } else {
@@ -119,6 +116,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
     async function querySnapshots(
       timeframeType: "MONTHLY" | "SEMESTRAL",
       timeframeValue: string,
+      opts: { applyStoreId: boolean },
     ) {
       let q = admin
         .from("leaderboard_snapshots")
@@ -128,15 +126,18 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         .eq("timeframe_type", timeframeType)
         .eq("timeframe_value", timeframeValue);
       if (data.game_id) q = q.eq("game_id", data.game_id);
-      if (storeIds) {
-        if (storeIds.length === 0) return [];
-        q = q.in("store_id", storeIds);
+
+      // store_id applies only to MONTHLY (explicit store filter)
+      if (opts.applyStoreId && data.store_id) {
+        q = q.eq("store_id", data.store_id);
+      } else if (cityStoreIds) {
+        // city filter applies to both tables
+        if (cityStoreIds.length === 0) return [];
+        q = q.in("store_id", cityStoreIds);
       }
+
       const { data: rows, error } = await q;
       if (error) {
-        // The enum value may not yet exist in the database. Don't crash the
-        // whole page — log it and return an empty bucket so the other table
-        // still renders.
         console.error(
           `[leaderboard] querySnapshots(${timeframeType}, ${timeframeValue}) failed:`,
           error.message,
@@ -147,8 +148,8 @@ export const getLeaderboard = createServerFn({ method: "POST" })
     }
 
     const [monthlyRaw, semestralRaw] = await Promise.all([
-      querySnapshots("MONTHLY", monthValue),
-      querySnapshots("SEMESTRAL", semesterKey),
+      querySnapshots("MONTHLY", monthValue, { applyStoreId: true }),
+      querySnapshots("SEMESTRAL", semesterKey, { applyStoreId: false }),
     ]);
 
     const playerIds = Array.from(
