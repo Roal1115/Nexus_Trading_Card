@@ -255,8 +255,7 @@ function LeaderboardTable({
   rows: Row[];
   loading: boolean;
 }) {
-  const omwFor = (r: Row) =>
-    r.wins + r.losses > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0;
+  const omwFor = (r: Row) => r.omw_percentage ?? 0;
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
