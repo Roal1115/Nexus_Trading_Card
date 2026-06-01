@@ -7,7 +7,6 @@ function tfValues(month: number, semester: number, year: number) {
   return {
     MONTH: `${year}-${String(month).padStart(2, "0")}`,
     SEMESTER: `${year}-S${semester}`,
-    YEAR: `${year}`,
   } as const;
 }
 
