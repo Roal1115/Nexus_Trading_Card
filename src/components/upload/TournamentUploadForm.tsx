@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -40,9 +40,14 @@ import {
 } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
 
-export const Route = createFileRoute("/organizer/new")({
-  component: NewTournamentPage,
-});
+export function TournamentUploadForm({
+  cancelTo = "/organizer/tournaments",
+  successTo = "/organizer/tournaments",
+}: {
+  cancelTo?: string;
+  successTo?: string;
+} = {}) {
+
 
 type Game = { id: string; slug: string; name: string };
 type Store = { id: string; name: string; city: string | null };
