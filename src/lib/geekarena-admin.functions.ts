@@ -16,15 +16,17 @@ function tfValues(month: number, semester: number, year: number) {
 async function recomputeSnapshot(
   admin: ReturnType<typeof getGeekarenaAdmin>,
   game_id: string,
+  store_id: string,
   timeframe_type: "MONTHLY" | "SEMESTRAL",
   timeframe_value: string,
   filter: { year?: number; month?: number; semester?: number },
 ) {
   let q = admin
     .from("tournaments")
-    .select("id, qualifying_year, qualifying_month, qualifying_semester")
+    .select("id, store_id, qualifying_year, qualifying_month, qualifying_semester")
     .eq("status", "PUBLISHED")
-    .eq("game_id", game_id);
+    .eq("game_id", game_id)
+    .eq("store_id", store_id);
   if (filter.year != null) q = q.eq("qualifying_year", filter.year);
   if (filter.month != null) q = q.eq("qualifying_month", filter.month);
   if (filter.semester != null) q = q.eq("qualifying_semester", filter.semester);
@@ -37,6 +39,7 @@ async function recomputeSnapshot(
     .from("leaderboard_snapshots")
     .delete()
     .eq("game_id", game_id)
+    .eq("store_id", store_id)
     .eq("timeframe_type", timeframe_type)
     .eq("timeframe_value", timeframe_value);
   if (de) throw new Error(de.message);
@@ -66,6 +69,7 @@ async function recomputeSnapshot(
   const rows = ranked.map((r, i) => ({
     player_id: r.player_id,
     game_id,
+    store_id,
     timeframe_type,
     timeframe_value,
     total_points: r.total_points,
