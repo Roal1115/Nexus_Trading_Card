@@ -147,9 +147,25 @@ function TournamentsPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-300">{r.game_name}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
-                        {STATUS_LABEL[r.status] ?? r.status}
-                      </Badge>
+                      {r.status === "DRAFT" && r.rejection_reason ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex cursor-help items-center gap-1 rounded-full border border-red-400/40 bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-200">
+                                Rechazado <Info size={12} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-xs font-semibold">Motivo del rechazo:</p>
+                              <p className="mt-1 text-xs">{r.rejection_reason}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
+                          {STATUS_LABEL[r.status] ?? r.status}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {r.csv_url ? (
