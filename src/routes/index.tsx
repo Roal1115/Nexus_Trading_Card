@@ -30,8 +30,8 @@ type Row = {
   city: string;
   points: number;
   tournaments_won: number;
-  wins: number;
-  losses: number;
+  tournaments_played: number;
+  omw_percentage: number;
 };
 
 const ALL = "__all__";
@@ -255,8 +255,7 @@ function LeaderboardTable({
   rows: Row[];
   loading: boolean;
 }) {
-  const omwFor = (r: Row) =>
-    r.wins + r.losses > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0;
+  const omwFor = (r: Row) => r.omw_percentage ?? 0;
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
@@ -325,10 +324,10 @@ function LeaderboardTable({
                       {r.points.toLocaleString()}
                     </td>
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
-                      {r.tournaments_won}
+                      {r.tournaments_played}
                     </td>
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                      {r.wins}
+                      {r.tournaments_won}
                     </td>
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
                       {omwFor(r)}%

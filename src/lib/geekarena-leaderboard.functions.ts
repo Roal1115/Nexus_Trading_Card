@@ -121,7 +121,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       let q = admin
         .from("leaderboard_snapshots")
         .select(
-          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position",
+          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position, omw_percentage",
         )
         .eq("timeframe_type", timeframeType)
         .eq("timeframe_value", timeframeValue);
@@ -183,8 +183,8 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       city: string;
       points: number;
       tournaments_won: number;
-      wins: number;
-      losses: number;
+      tournaments_played: number;
+      omw_percentage: number;
     };
 
     function shape(
@@ -194,22 +194,41 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         total_points: number | null;
         tournaments_played: number | null;
         tournaments_won: number | null;
+        omw_percentage: number | null;
       }>,
     ): Row[] {
       // Aggregate by player (in case multiple store-scoped rows match)
       const agg = new Map<
         string,
-        { points: number; won: number; played: number; cities: Set<string> }
+        {
+          points: number;
+          won: number;
+          played: number;
+          cities: Set<string>;
+          omw_sum: number;
+          omw_count: number;
+        }
       >();
       for (const r of raws) {
         let a = agg.get(r.player_id);
         if (!a) {
-          a = { points: 0, won: 0, played: 0, cities: new Set() };
+          a = {
+            points: 0,
+            won: 0,
+            played: 0,
+            cities: new Set(),
+            omw_sum: 0,
+            omw_count: 0,
+          };
           agg.set(r.player_id, a);
         }
         a.points += r.total_points ?? 0;
         a.won += r.tournaments_won ?? 0;
         a.played += r.tournaments_played ?? 0;
+        if (r.omw_percentage != null) {
+          a.omw_sum += Number(r.omw_percentage);
+          a.omw_count += 1;
+        }
         const city = r.store_id ? storeMap.get(r.store_id)?.city : null;
         if (city) a.cities.add(city);
       }
@@ -225,8 +244,11 @@ export const getLeaderboard = createServerFn({ method: "POST" })
                 : "—",
           points: a.points,
           tournaments_won: a.won,
-          wins: a.played,
-          losses: 0,
+          tournaments_played: a.played,
+          omw_percentage:
+            a.omw_count > 0
+              ? Math.round((a.omw_sum / a.omw_count) * 100) / 100
+              : 0,
         }))
         .sort((x, y) => y.points - x.points);
     }

@@ -7,7 +7,6 @@ function tfValues(month: number, semester: number, year: number) {
   return {
     MONTH: `${year}-${String(month).padStart(2, "0")}`,
     SEMESTER: `${year}-S${semester}`,
-    YEAR: `${year}`,
   } as const;
 }
 
@@ -48,17 +47,34 @@ async function recomputeSnapshot(
 
   const { data: results, error: re } = await admin
     .from("tournament_results")
-    .select("player_id, rank, points_earned")
+    .select("player_id, rank, points_earned, omw_percentage")
     .in("tournament_id", tIds);
   if (re) throw new Error(re.message);
 
-  type Agg = { total_points: number; played: number; won: number };
+  type Agg = {
+    total_points: number;
+    played: number;
+    won: number;
+    omw_sum: number;
+    omw_count: number;
+  };
   const agg = new Map<string, Agg>();
-  for (const r of results ?? []) {
-    const a = agg.get(r.player_id) ?? { total_points: 0, played: 0, won: 0 };
+  for (const r of (results ?? []) as Array<{
+    player_id: string;
+    rank: number | null;
+    points_earned: number | null;
+    omw_percentage: number | null;
+  }>) {
+    const a =
+      agg.get(r.player_id) ??
+      { total_points: 0, played: 0, won: 0, omw_sum: 0, omw_count: 0 };
     a.total_points += r.points_earned ?? 0;
     a.played += 1;
     if (r.rank === 1) a.won += 1;
+    if (r.omw_percentage != null) {
+      a.omw_sum += Number(r.omw_percentage);
+      a.omw_count += 1;
+    }
     agg.set(r.player_id, a);
   }
 
@@ -75,6 +91,10 @@ async function recomputeSnapshot(
     total_points: r.total_points,
     tournaments_played: r.played,
     tournaments_won: r.won,
+    omw_percentage:
+      r.omw_count > 0
+        ? Math.round((r.omw_sum / r.omw_count) * 100) / 100
+        : 0,
     rank_position: i + 1,
     last_updated_at: new Date().toISOString(),
   }));
@@ -139,9 +159,15 @@ export const approveTournament = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
+    const now = new Date();
+    const undoDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const { error } = await admin
       .from("tournaments")
-      .update({ status: "APPROVED", approved_at: new Date().toISOString() })
+      .update({
+        status: "APPROVED",
+        approved_at: now.toISOString(),
+        undo_deadline: undoDeadline.toISOString(),
+      })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -158,7 +184,11 @@ export const rejectTournament = createServerFn({ method: "POST" })
     const { admin } = context;
     const { error } = await admin
       .from("tournaments")
-      .update({ status: "DRAFT" })
+      .update({
+        status: "DRAFT",
+        approved_at: null,
+        undo_deadline: null,
+      })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -180,10 +210,10 @@ export const publishTournaments = createServerFn({ method: "POST" })
     if (te) throw new Error(te.message);
 
     const publishable = (tournaments ?? []).filter(
-      (t) => t.status === "APPROVED" || t.status === "DRAFT",
+      (t) => t.status === "APPROVED",
     );
     if (publishable.length === 0) {
-      throw new Error("No hay torneos publicables en la selección");
+      return { published: 0 };
     }
 
     const nowIso = new Date().toISOString();
@@ -198,7 +228,6 @@ export const publishTournaments = createServerFn({ method: "POST" })
       const tf = tfValues(t.qualifying_month, t.qualifying_semester, t.qualifying_year);
       slices.add(`${t.game_id}|${t.store_id}|MONTHLY|${tf.MONTH}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
       slices.add(`${t.game_id}|${t.store_id}|SEMESTRAL|${tf.SEMESTER}|y=${t.qualifying_year}|s=${t.qualifying_semester}`);
-      slices.add(`${t.game_id}|${t.store_id}|SEMESTRAL|${tf.YEAR}|y=${t.qualifying_year}`);
     }
 
     for (const key of slices) {
