@@ -857,3 +857,72 @@ export const undoApproveTournament = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Store edit & organizer assignment ----------
+export const updateStore = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator(
+    (d: {
+      store_id: string;
+      name: string;
+      slug: string;
+      city?: string;
+      state?: string;
+      country?: string;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          name: z.string().min(1).max(120),
+          slug: z.string().min(1).max(80),
+          city: z.string().max(120).optional(),
+          state: z.string().max(120).optional(),
+          country: z.string().min(2).max(2).optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const slug = slugify(data.slug);
+    if (!slug) throw new Error("Slug inválido");
+    const { error } = await admin
+      .from("stores")
+      .update({
+        name: data.name,
+        slug,
+        city: data.city || null,
+        state: data.state || null,
+        country: (data.country || "MX").toUpperCase(),
+      })
+      .eq("id", data.store_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const assignOrganizerToStore = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { store_id: string; player_id: string }) =>
+    z
+      .object({
+        store_id: z.string().uuid(),
+        player_id: z.string().uuid(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    // Clear any other organizers that currently point to this store
+    const { error: ce } = await admin
+      .from("players")
+      .update({ home_store_id: null })
+      .eq("home_store_id", data.store_id)
+      .neq("id", data.player_id);
+    if (ce) throw new Error(ce.message);
+
+    const { error } = await admin
+      .from("players")
+      .update({ home_store_id: data.store_id })
+      .eq("id", data.player_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
