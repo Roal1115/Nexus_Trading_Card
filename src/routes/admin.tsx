@@ -46,7 +46,7 @@ function AdminLayout() {
           {
             title: "Circuito",
             items: [
-              { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
+              { to: "/admin/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
           },
         ]}
