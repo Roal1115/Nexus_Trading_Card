@@ -341,7 +341,7 @@ export function TournamentUploadForm({
         },
       });
       toast.success("Torneo enviado correctamente. Un administrador lo revisará pronto.");
-      navigate({ to: "/organizer/tournaments" });
+      navigate({ to: r });
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
       if (msg.toLowerCase().includes("ya existe")) toast.error(msg);
@@ -452,7 +452,7 @@ export function TournamentUploadForm({
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
-              onClick={() => navigate({ to: "/organizer/tournaments" })}
+              onClick={() => navigate({ to: r })}
             >
               Cancelar
             </Button>
