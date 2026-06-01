@@ -11,15 +11,22 @@ export type SidebarItem = {
   external?: boolean;
 };
 
+export type SidebarSection = {
+  title: string;
+  items: SidebarItem[];
+};
+
 export function PanelSidebar({
   title,
   subtitle,
   items,
+  sections,
   userLabel,
 }: {
   title: string;
   subtitle: string;
-  items: SidebarItem[];
+  items?: SidebarItem[];
+  sections?: SidebarSection[];
   userLabel: string;
 }) {
   const navigate = useNavigate();
@@ -30,6 +37,32 @@ export function PanelSidebar({
     toast.success("Sesión cerrada");
     navigate({ to: "/login" });
   };
+
+  const renderItem = (item: SidebarItem) => {
+    const active = item.exact
+      ? pathname === item.to
+      : pathname === item.to || pathname.startsWith(item.to + "/");
+    const cls = `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
+      active
+        ? "bg-primary/15 text-primary"
+        : "text-gray-300 hover:bg-white/5 hover:text-white"
+    }`;
+    if (item.external) {
+      return (
+        <a key={item.to} href={item.to} className={cls}>
+          {item.icon} {item.label}
+        </a>
+      );
+    }
+    return (
+      <Link key={item.to} to={item.to} className={cls}>
+        {item.icon} {item.label}
+      </Link>
+    );
+  };
+
+  const resolvedSections: SidebarSection[] =
+    sections ?? (items ? [{ title, items }] : []);
 
   return (
     <aside className="glass sticky top-0 hidden h-screen w-64 shrink-0 flex-col rounded-none border-r border-white/10 p-4 md:flex">
@@ -45,33 +78,15 @@ export function PanelSidebar({
         </div>
       </Link>
 
-      <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
-        {title}
-      </div>
-
-      <nav className="flex flex-col gap-1">
-        {items.map((item) => {
-          const active = item.exact
-            ? pathname === item.to
-            : pathname === item.to || pathname.startsWith(item.to + "/");
-          const cls = `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
-            active
-              ? "bg-primary/15 text-primary"
-              : "text-gray-300 hover:bg-white/5 hover:text-white"
-          }`;
-          if (item.external) {
-            return (
-              <a key={item.to} href={item.to} className={cls}>
-                {item.icon} {item.label}
-              </a>
-            );
-          }
-          return (
-            <Link key={item.to} to={item.to} className={cls}>
-              {item.icon} {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex flex-col gap-4">
+        {resolvedSections.map((sec) => (
+          <div key={sec.title}>
+            <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+              {sec.title}
+            </div>
+            <div className="flex flex-col gap-1">{sec.items.map(renderItem)}</div>
+          </div>
+        ))}
       </nav>
 
       <div className="mt-auto space-y-2 border-t border-white/10 pt-4">
