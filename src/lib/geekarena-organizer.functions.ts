@@ -227,7 +227,12 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       .maybeSingle();
     if (dupErr) throw new Error(dupErr.message);
     if (existing) {
-      throw new Error("Ya existe un torneo registrado para esta tienda, juego y fecha.");
+      return {
+        ok: false as const,
+        reason: "duplicate" as const,
+        message:
+          "Ya existe un torneo registrado para esta tienda, juego y fecha.",
+      };
     }
 
     const q = computeQualifying(data.tournament_date);
