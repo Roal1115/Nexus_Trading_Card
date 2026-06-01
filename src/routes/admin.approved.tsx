@@ -207,6 +207,15 @@ function ApprovedTournaments() {
                         <span className="text-gray-500">—</span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        to="/admin/tournaments/$id"
+                        params={{ id: r.id }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Revisar
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
