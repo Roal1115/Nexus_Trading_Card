@@ -332,7 +332,7 @@ export function TournamentUploadForm({
         draws: r.draws,
         points_earned: r.points_earned,
       }));
-      await submitUpload({
+      const result = await submitUpload({
         data: {
           store_id: storeId,
           game_id: gameId,
@@ -340,6 +340,13 @@ export function TournamentUploadForm({
           rows: cleanRows,
         },
       });
+      if (result && (result as { ok?: boolean }).ok === false) {
+        toast.error(
+          (result as { message?: string }).message ??
+            "No se pudo subir el torneo.",
+        );
+        return;
+      }
       toast.success("Torneo enviado correctamente. Un administrador lo revisará pronto.");
       navigate({ to: successTo });
     } catch (e) {
