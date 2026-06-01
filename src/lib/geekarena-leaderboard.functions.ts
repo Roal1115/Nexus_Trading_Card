@@ -121,7 +121,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       let q = admin
         .from("leaderboard_snapshots")
         .select(
-          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position",
+          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position, omw_percentage",
         )
         .eq("timeframe_type", timeframeType)
         .eq("timeframe_value", timeframeValue);
