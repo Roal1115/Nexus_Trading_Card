@@ -1,13 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Shield, Trophy, Upload, User } from "lucide-react";
-import { useGeekarenaRole, homeRouteForRole } from "@/hooks/use-geekarena-role";
+import { LogOut, Shield, Trophy, User } from "lucide-react";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { geekarena } from "@/integrations/geekarena/client";
 
 export function AppHeader() {
   const navigate = useNavigate();
-  const { role: effectiveRole, player } = useGeekarenaRole();
-
-  const panelRoute = homeRouteForRole(effectiveRole) || "/dashboard";
+  const { role, player } = useGeekarenaRole();
   const geekTag = player?.geek_tag ?? null;
 
   const handleLogout = async () => {
@@ -28,11 +26,15 @@ export function AppHeader() {
 
         <nav className="hidden items-center gap-1 text-sm md:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
-          {player && effectiveRole && (
-            <NavItem to={panelRoute} icon={<User size={14} />} label="Mi Panel" />
+          {role === "player" && (
+            <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
-          {effectiveRole === "organizer" && <NavItem to="/organizer/new" icon={<Upload size={14} />} label="Subir Resultados" />}
-          {effectiveRole === "admin" && <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />}
+          {role === "organizer" && (
+            <NavItem to="/organizer" icon={<Shield size={14} />} label="Moderación" />
+          )}
+          {role === "admin" && (
+            <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
