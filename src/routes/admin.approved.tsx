@@ -39,6 +39,7 @@ type Row = {
 };
 
 function ApprovedTournaments() {
+  const navigate = useNavigate();
   const { player } = useGeekarenaRole();
   const email = player?.email ?? null;
   const fetchList = useServerFn(listTournamentsByStatus);
