@@ -20,15 +20,6 @@ function OrganizerLayout() {
     }
   }, [loading, role, navigate]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
-      </div>
-    );
-  }
-  if (role !== "organizer" && role !== "admin") return null;
-
   return (
     <div className="flex min-h-screen">
       <PanelSidebar
@@ -42,7 +33,13 @@ function OrganizerLayout() {
         ]}
       />
       <main className="min-w-0 flex-1 p-6 sm:p-8">
-        <Outlet />
+        {loading ? (
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <Loader2 className="animate-spin text-primary" />
+          </div>
+        ) : role !== "organizer" && role !== "admin" ? null : (
+          <Outlet />
+        )}
       </main>
     </div>
   );
