@@ -30,8 +30,8 @@ type Row = {
   city: string;
   points: number;
   tournaments_won: number;
-  wins: number;
-  losses: number;
+  tournaments_played: number;
+  omw_percentage: number;
 };
 
 const ALL = "__all__";
