@@ -309,6 +309,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     if (insertErr) await cleanup(insertErr.message);
 
     return {
+      ok: true as const,
       id: tournamentId,
       inserted: baseRows.length,
       created_players: missingTags.length,
