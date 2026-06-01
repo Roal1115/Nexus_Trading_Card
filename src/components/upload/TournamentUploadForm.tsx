@@ -341,7 +341,7 @@ export function TournamentUploadForm({
         },
       });
       toast.success("Torneo enviado correctamente. Un administrador lo revisará pronto.");
-      navigate({ to: r });
+      navigate({ to: successTo });
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
       if (msg.toLowerCase().includes("ya existe")) toast.error(msg);
