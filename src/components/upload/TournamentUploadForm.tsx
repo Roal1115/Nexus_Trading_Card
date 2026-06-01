@@ -43,11 +43,6 @@ import { Check, ChevronsUpDown } from "lucide-react";
 type Game = { id: string; slug: string; name: string };
 type Store = { id: string; name: string; city: string | null };
 
-
-
-type Game = { id: string; slug: string; name: string };
-type Store = { id: string; name: string; city: string | null };
-
 type Platform = "bandai" | "limitless" | "unknown";
 type ColumnMap = {
   platform: Platform;
