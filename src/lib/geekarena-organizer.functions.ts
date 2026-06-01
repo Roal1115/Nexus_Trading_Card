@@ -106,7 +106,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
         .select(baseCols)
         .eq("store_id", player.home_store_id)
         .order("tournament_date", { ascending: false });
-      rows = retry.data;
+      rows = retry.data as any[] | null;
       error = retry.error;
     }
     if (error) throw new Error(error.message);
