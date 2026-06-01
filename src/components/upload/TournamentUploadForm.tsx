@@ -452,7 +452,7 @@ export function TournamentUploadForm({
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
-              onClick={() => navigate({ to: r })}
+              onClick={() => navigate({ to: cancelTo })}
             >
               Cancelar
             </Button>
