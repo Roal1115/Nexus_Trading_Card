@@ -324,10 +324,10 @@ function LeaderboardTable({
                       {r.points.toLocaleString()}
                     </td>
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
-                      {r.tournaments_won}
+                      {r.tournaments_played}
                     </td>
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                      {r.wins}
+                      {r.tournaments_won}
                     </td>
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
                       {omwFor(r)}%
