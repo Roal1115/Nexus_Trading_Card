@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Upload, ExternalLink } from "lucide-react";
+import { Loader2, Upload, ExternalLink, Eye, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
@@ -39,6 +39,7 @@ type Row = {
 };
 
 function ApprovedTournaments() {
+  const navigate = useNavigate();
   const { player } = useGeekarenaRole();
   const email = player?.email ?? null;
   const fetchList = useServerFn(listTournamentsByStatus);
@@ -174,8 +175,12 @@ function ApprovedTournaments() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-white/5">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={r.id}
+                    onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })}
+                    className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
+                  >
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={!!selected[r.id]}
                         onCheckedChange={(v) =>
@@ -193,7 +198,7 @@ function ApprovedTournaments() {
                     <td className="px-4 py-3">
                       <Badge>{r.status}</Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       {r.csv_url ? (
                         <a
                           href={r.csv_url}
@@ -208,13 +213,17 @@ function ApprovedTournaments() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link
-                        to="/admin/tournaments/$id"
-                        params={{ id: r.id }}
-                        className="text-xs text-primary hover:underline"
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate({ to: "/admin/tournaments/$id", params: { id: r.id } });
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
                       >
+                        <Eye size={13} />
                         Revisar
-                      </Link>
+                        <ArrowRight size={13} />
+                      </button>
                     </td>
                   </tr>
                 ))}
