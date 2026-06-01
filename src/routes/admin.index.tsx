@@ -87,7 +87,11 @@ function PendingTournaments() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-white/5">
+                  <tr
+                    key={r.id}
+                    onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })}
+                    className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
+                  >
                     <td className="px-4 py-3 text-white">{r.tournament_date}</td>
                     <td className="px-4 py-3 text-gray-300">
                       {r.store.name}
@@ -102,7 +106,7 @@ function PendingTournaments() {
                     <td className="px-4 py-3">
                       <Badge variant="secondary">{r.status}</Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       {r.csv_url ? (
                         <a
                           href={r.csv_url}
@@ -117,11 +121,17 @@ function PendingTournaments() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button size="sm" asChild>
-                        <Link to="/admin/tournaments/$id" params={{ id: r.id }}>
-                          <Eye size={14} className="mr-1" /> Revisar
-                        </Link>
-                      </Button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate({ to: "/admin/tournaments/$id", params: { id: r.id } });
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                      >
+                        <Eye size={13} />
+                        Revisar
+                        <ArrowRight size={13} />
+                      </button>
                     </td>
                   </tr>
                 ))}
