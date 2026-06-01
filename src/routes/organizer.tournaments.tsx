@@ -33,6 +33,7 @@ type Row = {
   tournament_date: string;
   status: string;
   csv_url: string | null;
+  rejection_reason?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
