@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, Upload, ExternalLink } from "lucide-react";
@@ -169,6 +169,7 @@ function ApprovedTournaments() {
                   <th className="px-4 py-3">Periodo</th>
                   <th className="px-4 py-3">Estado</th>
                   <th className="px-4 py-3">CSV</th>
+                  <th className="px-4 py-3 text-right">Detalle</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,6 +206,15 @@ function ApprovedTournaments() {
                       ) : (
                         <span className="text-gray-500">—</span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        to="/admin/tournaments/$id"
+                        params={{ id: r.id }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Revisar
+                      </Link>
                     </td>
                   </tr>
                 ))}

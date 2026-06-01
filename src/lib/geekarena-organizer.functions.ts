@@ -88,11 +88,27 @@ export const getMyTournaments = createServerFn({ method: "POST" })
     const { admin, player } = context;
     if (!player.home_store_id) return { tournaments: [] };
 
-    const { data: rows, error } = await admin
-      .from("tournaments")
-      .select("id, store_id, game_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, status, csv_url, approved_at, published_at, created_at")
-      .eq("store_id", player.home_store_id)
-      .order("tournament_date", { ascending: false });
+    const baseCols = "id, store_id, game_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, status, csv_url, approved_at, published_at, created_at";
+    let rows: any[] | null = null;
+    let error: { message: string } | null = null;
+    {
+      const res = await admin
+        .from("tournaments")
+        .select(baseCols + ", rejection_reason")
+        .eq("store_id", player.home_store_id)
+        .order("tournament_date", { ascending: false });
+      rows = res.data as any[] | null;
+      error = res.error;
+    }
+    if (error && /column .*rejection_reason.* does not exist/i.test(error.message)) {
+      const retry = await admin
+        .from("tournaments")
+        .select(baseCols)
+        .eq("store_id", player.home_store_id)
+        .order("tournament_date", { ascending: false });
+      rows = retry.data as any[] | null;
+      error = retry.error;
+    }
     if (error) throw new Error(error.message);
 
     // join game names

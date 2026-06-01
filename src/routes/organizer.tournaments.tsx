@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, ExternalLink } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
@@ -10,6 +10,12 @@ import {
 } from "@/lib/geekarena-organizer.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +39,7 @@ type Row = {
   tournament_date: string;
   status: string;
   csv_url: string | null;
+  rejection_reason?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -140,9 +147,25 @@ function TournamentsPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-300">{r.game_name}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
-                        {STATUS_LABEL[r.status] ?? r.status}
-                      </Badge>
+                      {r.status === "DRAFT" && r.rejection_reason ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex cursor-help items-center gap-1 rounded-full border border-red-400/40 bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-200">
+                                Rechazado <Info size={12} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-xs font-semibold">Motivo del rechazo:</p>
+                              <p className="mt-1 text-xs">{r.rejection_reason}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
+                          {STATUS_LABEL[r.status] ?? r.status}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {r.csv_url ? (

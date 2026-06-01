@@ -1,27 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Check, X, ExternalLink } from "lucide-react";
+import { Loader2, Eye, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import {
-  listTournamentsByStatus,
-  approveTournament,
-  rejectTournament,
-} from "@/lib/geekarena-admin.functions";
+import { listTournamentsByStatus } from "@/lib/geekarena-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/admin/")({
   component: PendingTournaments,
@@ -40,52 +25,24 @@ function PendingTournaments() {
   const { player } = useGeekarenaRole();
   const email = player?.email ?? null;
   const fetchList = useServerFn(listTournamentsByStatus);
-  const approve = useServerFn(approveTournament);
-  const reject = useServerFn(rejectTournament);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const refresh = async (em: string) => {
-    setLoading(true);
-    try {
-      const res = await fetchList({
-        data: { statuses: ["DRAFT"] },
-      });
-      setRows(res.tournaments as Row[]);
-    } catch (e) {
-      toast.error(String((e as Error).message ?? e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!email) return;
-    refresh(email);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email]);
-
-  const onApprove = async (id: string) => {
-    if (!email) return;
-    try {
-      await approve({ data: { tournament_id: id } });
-      toast.success("Torneo aprobado");
-      await refresh(email);
-    } catch (e) {
-      toast.error(String((e as Error).message ?? e));
-    }
-  };
-  const onReject = async (id: string) => {
-    if (!email) return;
-    try {
-      await reject({ data: { tournament_id: id } });
-      toast.success("Torneo rechazado");
-      await refresh(email);
-    } catch (e) {
-      toast.error(String((e as Error).message ?? e));
-    }
-  };
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetchList({ data: { statuses: ["DRAFT"] } });
+        setRows(res.tournaments as Row[]);
+      } catch (e) {
+        toast.error(String((e as Error).message ?? e));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [email, fetchList]);
 
   if (loading) {
     return (
@@ -105,8 +62,8 @@ function PendingTournaments() {
           Torneos Pendientes
         </h1>
         <p className="mt-1 text-sm text-gray-400">
-          Revisa borradores y torneos enviados por organizadores. Al aprobar
-          pasarán a la cola para publicación.
+          Revisa borradores enviados por organizadores. Abre el detalle para
+          aprobar o rechazar.
         </p>
       </header>
 
@@ -160,35 +117,11 @@ function PendingTournaments() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" onClick={() => onApprove(r.id)}>
-                          <Check size={14} className="mr-1" /> Aprobar
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <X size={14} className="text-red-400" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                ¿Rechazar este torneo?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                El organizador deberá volver a subirlo si fue
-                                un error.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => onReject(r.id)}>
-                                Rechazar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                      <Button size="sm" asChild>
+                        <Link to="/admin/tournaments/$id" params={{ id: r.id }}>
+                          <Eye size={14} className="mr-1" /> Revisar
+                        </Link>
+                      </Button>
                     </td>
                   </tr>
                 ))}
