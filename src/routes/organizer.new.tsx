@@ -637,3 +637,72 @@ function NewTournamentPage() {
     </div>
   );
 }
+
+function StoreCombobox({
+  stores,
+  value,
+  onChange,
+}: {
+  stores: Store[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = stores.find((s) => s.id === value) ?? null;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm text-white transition hover:border-primary/40"
+        >
+          <span className={selected ? "text-white" : "text-gray-400"}>
+            {selected
+              ? `${selected.name} — ${selected.city ?? "—"}`
+              : "Buscar y seleccionar tienda..."}
+          </span>
+          <ChevronsUpDown size={14} className="ml-2 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0"
+        align="start"
+      >
+        <Command
+          filter={(val, search) => {
+            return val.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar por nombre o ciudad..." />
+          <CommandList>
+            <CommandEmpty>No se encontraron tiendas.</CommandEmpty>
+            <CommandGroup>
+              {stores.map((s) => {
+                const label = `${s.name} — ${s.city ?? "—"}`;
+                return (
+                  <CommandItem
+                    key={s.id}
+                    value={label}
+                    onSelect={() => {
+                      onChange(s.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      size={14}
+                      className={`mr-2 ${value === s.id ? "opacity-100" : "opacity-0"}`}
+                    />
+                    {label}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
