@@ -40,13 +40,9 @@ import {
 } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
 
-export function TournamentUploadForm({
-  cancelTo = "/organizer/tournaments",
-  successTo = "/organizer/tournaments",
-}: {
-  cancelTo?: string;
-  successTo?: string;
-} = {}) {
+type Game = { id: string; slug: string; name: string };
+type Store = { id: string; name: string; city: string | null };
+
 
 
 type Game = { id: string; slug: string; name: string };
