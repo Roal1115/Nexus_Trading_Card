@@ -181,7 +181,13 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
   return rows.sort((a, b) => a.rank - b.rank);
 }
 
-function NewTournamentPage() {
+export function TournamentUploadForm({
+  cancelTo = "/organizer/tournaments",
+  successTo = "/organizer/tournaments",
+}: {
+  cancelTo?: string;
+  successTo?: string;
+} = {}) {
   const navigate = useNavigate();
   const { player, loading: roleLoading } = useGeekarenaRole();
   const isAdmin = player?.role === "admin";
