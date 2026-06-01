@@ -389,21 +389,14 @@ function NewTournamentPage() {
               {isAdmin ? "Seleccionar tienda *" : "Tienda"}
             </Label>
             {isAdmin ? (
-              <Select value={storeId} onValueChange={setStoreId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una tienda" />
-                </SelectTrigger>
-                <SelectContent>
-                  {stores.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} — {s.city ?? "—"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <StoreCombobox
+                stores={stores}
+                value={storeId}
+                onChange={setStoreId}
+              />
             ) : (
               <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white">
-                {homeStore?.name} — {homeStore?.city ?? "—"}
+                Tienda: {homeStore?.name} — {homeStore?.city ?? "—"}
               </div>
             )}
             {isAdmin && !storeId && (
