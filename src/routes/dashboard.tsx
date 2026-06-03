@@ -17,6 +17,7 @@ function DashboardPage() {
   const fetchDashboard = useServerFn(getMyDashboard);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!gaPlayer) {
@@ -41,6 +42,12 @@ function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gaPlayer?.id]);
 
+  useEffect(() => {
+    if (data?.tcgStats?.length && !selectedTcg) {
+      setSelectedTcg(data.tcgStats[0].game_id);
+    }
+  }, [data, selectedTcg]);
+
   if (!gaPlayer) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
@@ -59,10 +66,12 @@ function DashboardPage() {
   }
 
   const tag = gaPlayer.geek_tag;
-  const totalPoints = data?.totalPoints ?? 0;
-  const tournamentsPlayed = data?.tournamentsPlayed ?? 0;
-  const tournamentsWon = data?.tournamentsWon ?? 0;
-  const rank = data?.rankPosition ?? 0;
+  const tcgStats = data?.tcgStats ?? [];
+  const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
+  const totalPoints = activeTcg?.total_points ?? 0;
+  const tournamentsPlayed = activeTcg?.tournaments_played ?? 0;
+  const tournamentsWon = activeTcg?.tournaments_won ?? 0;
+  const rank = activeTcg?.rank_position ?? 0;
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
@@ -91,12 +100,13 @@ function DashboardPage() {
               {tag}
             </h1>
             <p className="mt-2 text-sm text-gray-400">
-              {storeCity ?? "Sin ranking"}
+              {storeCity ?? "—"}
             </p>
           </div>
           <div className="rounded-xl border border-primary/30 bg-black/40 px-6 py-4 text-center">
             <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary">
-              <Crown size={12} /> Rank Nacional
+              <Crown size={12} />
+              {activeTcg ? `Rank · ${activeTcg.game_name}` : "Rank Nacional"}
             </div>
             <div className="font-mono-stat text-5xl font-bold text-white">
               {loading ? "…" : rank > 0 ? `#${rank}` : "—"}
@@ -105,12 +115,31 @@ function DashboardPage() {
         </div>
       </section>
 
+      {/* TCG selector */}
+      {tcgStats.length > 1 && (
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+          {tcgStats.map((tcg) => (
+            <button
+              key={tcg.game_id}
+              onClick={() => setSelectedTcg(tcg.game_id)}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
+                selectedTcg === tcg.game_id
+                  ? "bg-primary text-white"
+                  : "bg-white/5 text-gray-400 hover:bg-white/10"
+              }`}
+            >
+              {tcg.game_name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Stats */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           icon={<Target className="text-primary" size={18} />}
           label="Puntos Totales"
-          value={totalPoints.toLocaleString()}
+          value={Number(totalPoints).toFixed(2)}
           sub={semesterLabel || "—"}
         />
         <StatCard
@@ -185,7 +214,7 @@ function DashboardPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
-                      +{t.pointsEarned}
+                      +{Number(t.pointsEarned).toFixed(2)}
                     </td>
                   </tr>
                 ))
