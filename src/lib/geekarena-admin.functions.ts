@@ -1081,3 +1081,83 @@ export const assignOrganizerToStore = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Seasons ----------
+export const listSeasons = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.admin
+      .from("seasons")
+      .select("id, name, slug, start_date, end_date, is_active, status, created_at")
+      .order("start_date", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const createSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator(
+    (d: { name: string; slug: string; start_date: string; end_date: string }) =>
+      z
+        .object({
+          name: z.string().min(3).max(120),
+          slug: z
+            .string()
+            .min(3)
+            .max(80)
+            .regex(/^[a-z0-9-]+$/, "Slug inválido"),
+          start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.end_date < data.start_date) {
+      throw new Error("La fecha de fin debe ser posterior a la de inicio.");
+    }
+    const { error } = await context.admin.from("seasons").insert({
+      name: data.name,
+      slug: data.slug,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      is_active: false,
+      status: "UPCOMING",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const activateSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { season_id: string }) =>
+    z.object({ season_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { error: de } = await admin
+      .from("seasons")
+      .update({ is_active: false })
+      .neq("id", data.season_id);
+    if (de) throw new Error(de.message);
+    const { error } = await admin
+      .from("seasons")
+      .update({ is_active: true, status: "ACTIVE" })
+      .eq("id", data.season_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const closeSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { season_id: string }) =>
+    z.object({ season_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.admin
+      .from("seasons")
+      .update({ is_active: false, status: "CLOSED" })
+      .eq("id", data.season_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
