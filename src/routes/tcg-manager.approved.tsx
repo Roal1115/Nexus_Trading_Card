@@ -21,6 +21,7 @@ type Row = {
   status: string;
   approved_at: string | null;
   undo_deadline: string | null;
+  csv_url: string | null;
   store_id: string;
   game_id: string;
   stores: { name: string; city: string | null; state: string | null } | null;
