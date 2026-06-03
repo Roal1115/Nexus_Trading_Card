@@ -109,9 +109,9 @@ export function AppHeader() {
               </Link>
             )}
 
-            {(role === "organizer" || role === "admin") && (
+            {(role === "organizer" || role === "admin" || role === "tcg_manager") && (
               <Link
-                to={role === "admin" ? "/admin" : "/organizer"}
+                to={role === "admin" ? "/admin" : role === "tcg_manager" ? "/tcg-manager" : "/organizer"}
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
               >
