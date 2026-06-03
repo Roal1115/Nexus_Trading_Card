@@ -154,7 +154,7 @@ function DashboardPage() {
       )}
 
       {/* Stats */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard
           icon={<Target className="text-primary" size={18} />}
           label="Puntos Totales"
@@ -202,7 +202,9 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
             {events.length} torneos jugados
           </span>
         </header>
-        <div className="overflow-x-auto">
+
+        {/* Desktop — tabla normal */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
               <tr>
@@ -282,6 +284,70 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile — cards apiladas */}
+        <div className="sm:hidden flex flex-col divide-y divide-white/5">
+          {loading ? (
+            <p className="px-4 py-12 text-center text-gray-500">Cargando…</p>
+          ) : paginatedEvents.length === 0 ? (
+            <p className="px-4 py-12 text-center text-gray-500">
+              Aún no has participado en ningún torneo.
+            </p>
+          ) : (
+            <>
+              {paginatedEvents.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => openTournament(t.id)}
+                  className="flex items-center justify-between px-4 py-4 hover:bg-white/5 cursor-pointer transition"
+                >
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-mono-stat font-bold text-base ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
+                        #{t.placement}
+                      </span>
+                      <span className="text-white font-semibold text-sm truncate">
+                        {t.store}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>{t.city}</span>
+                      <span>·</span>
+                      <span>{t.tcg}</span>
+                      <span>·</span>
+                      <span>
+                        {new Date(t.date + "T12:00:00").toLocaleDateString("es-MX", {
+                          day: "numeric", month: "short"
+                        })}
+                      </span>
+                    </div>
+                    {t.wins != null && t.losses != null && (
+                      <span className="text-xs text-gray-400">
+                        {t.wins}V / {t.losses}D
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                    <span className="font-mono-stat font-semibold text-white text-sm">
+                      +{t.pointsEarned}
+                    </span>
+                    <ChevronRight size={14} className="text-gray-600" />
+                  </div>
+                </div>
+              ))}
+              {hasMore && (
+                <div className="px-4 py-4 text-center">
+                  <button
+                    onClick={() => setPage((p) => p + 1)}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Ver más torneos
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
@@ -453,7 +519,7 @@ function StatCard({
   };
 
   return (
-    <div className="glass rounded-2xl p-6 relative">
+    <div className="glass rounded-2xl p-4 sm:p-6 relative">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
           {icon} {label}
