@@ -69,10 +69,11 @@ type P = {
   is_active: boolean;
   created_at: string;
   last_sign_in_at?: string | null;
+  manager_games?: { game_id: string; games: { name: string } | null }[] | null;
 };
 type Store = { id: string; name: string; city: string | null };
 
-type Tab = "all" | "organizers" | "admins";
+type Tab = "all" | "organizers" | "managers" | "admins";
 
 const PAGE_SIZE = 25;
 
