@@ -130,6 +130,8 @@ function SignupPage() {
     Object.keys(step1Errors).length === 0 &&
     tagStatus === "available";
 
+  const signupFn = useServerFn(signupPlayer);
+
   const handleCreate = async () => {
     if (submitting || cooldown) return;
 
@@ -153,27 +155,38 @@ function SignupPage() {
     }
 
     setSubmitting(true);
-    const { error } = await geekarena.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+    try {
+      const result = await signupFn({
         data: {
+          email,
+          password,
           geek_tag: tag,
           game_ids: Array.from(selected),
         },
-      },
-    });
-    setSubmitting(false);
-    setCooldown(true);
-    setTimeout(() => setCooldown(false), 3000);
+      });
 
-    if (error) {
-      toast.error(translateAuthError(error.message));
-      return;
+      // Enviar correo de verificación
+      const { error: resendErr } = await geekarena.auth.resend({
+        type: "signup",
+        email: result.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+      if (resendErr) {
+        toast.error(translateAuthError(resendErr.message));
+        return;
+      }
+
+      await geekarena.auth.signOut();
+      navigate({ to: "/check-inbox", search: { email: result.email } });
+    } catch (err: any) {
+      toast.error(translateAuthError(err?.message ?? ""));
+    } finally {
+      setSubmitting(false);
+      setCooldown(true);
+      setTimeout(() => setCooldown(false), 3000);
     }
-    await geekarena.auth.signOut();
-    navigate({ to: "/check-inbox", search: { email } });
   };
 
   return (
