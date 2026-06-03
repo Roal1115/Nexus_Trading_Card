@@ -1,13 +1,40 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
-import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
+import {
+  requireGeekarenaAdmin,
+  requireGeekarenaUser,
+} from "./geekarena-auth.middleware";
 
-function tfValues(month: number, semester: number, year: number) {
-  return {
-    MONTH: `${year}-${String(month).padStart(2, "0")}`,
-    SEMESTER: `${year}-S${semester}`,
-  } as const;
+// ---------- Active season helper ----------
+export async function getActiveSeason(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+) {
+  const { data } = await admin
+    .from("seasons")
+    .select("id, name, slug, start_date, end_date, status")
+    .eq("is_active", true)
+    .maybeSingle();
+  return (data ?? null) as
+    | {
+        id: string;
+        name: string;
+        slug: string;
+        start_date: string;
+        end_date: string;
+        status: string;
+      }
+    | null;
+}
+
+export const fetchActiveSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .handler(async ({ context }) => {
+    return getActiveSeason(context.admin);
+  });
+
+function tfMonth(month: number, year: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
 // Returns ISO week key "YYYY-WNN" for a given date string "YYYY-MM-DD"
