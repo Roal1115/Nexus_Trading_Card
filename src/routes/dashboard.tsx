@@ -197,25 +197,30 @@ function DashboardPage() {
                 <th className="px-4 py-2 text-center">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
                 <th className="px-4 py-2 text-right">Pts Arena</th>
+                <th className="px-4 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                     Cargando…
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                     Aún no has participado en ningún torneo.
                   </td>
                 </tr>
               ) : (
                 <>
                   {paginatedEvents.map((t) => (
-                    <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
+                    <tr
+                      key={t.id}
+                      onClick={() => openTournament(t.id)}
+                      className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition"
+                    >
                       <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
                         {t.date}
                       </td>
@@ -241,11 +246,14 @@ function DashboardPage() {
                       <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
                         +{Number(t.pointsEarned).toFixed(2)}
                       </td>
+                      <td className="px-2 py-3 text-gray-500">
+                        <ChevronRight size={14} />
+                      </td>
                     </tr>
                   ))}
                   {hasMore && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-4 text-center">
+                      <td colSpan={7} className="px-4 py-4 text-center">
                         <button
                           onClick={() => setPage((p) => p + 1)}
                           className="text-xs text-primary hover:underline"
