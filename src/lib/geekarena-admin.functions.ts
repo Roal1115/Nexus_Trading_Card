@@ -402,7 +402,7 @@ export const listPlayers = createServerFn({ method: "POST" })
       z
         .object({
           search: z.string().max(120).optional(),
-          role: z.enum(["all", "player", "organizer", "admin"]).optional(),
+          role: z.enum(["all", "player", "organizer", "tcg_manager", "admin"]).optional(),
           active: z.enum(["all", "true", "false"]).optional(),
           store_id: z.string().uuid().optional().nullable(),
           sort: z.enum(["recent", "geek_tag", "points"]).optional(),
