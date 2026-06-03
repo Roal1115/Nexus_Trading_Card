@@ -33,9 +33,10 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
     const { data: results } = await admin
       .from("tournament_results")
-      .select("rank, points_earned, tournament_id")
+      .select("rank, points_earned, tournament_id, tournaments!inner(status, tournament_date)")
       .eq("player_id", player.id)
-      .order("tournament_id", { ascending: false })
+      .eq("tournaments.status", "PUBLISHED")
+      .order("tournaments(tournament_date)", { ascending: false })
       .limit(8);
 
     const tournamentIds = (results ?? []).map((r) => r.tournament_id);
@@ -93,20 +94,13 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       });
     }
 
-    const { count } = await admin
-      .from("leaderboard_snapshots")
-      .select("*", { count: "exact", head: true })
-      .eq("timeframe_type", "SEMESTRAL")
-      .eq("timeframe_value", semKey)
-      .is("store_id", null)
-      .gt("total_points", snapshot?.total_points ?? 0);
 
     return {
       storeCity: (storeRes.data as { city: string | null } | null)?.city ?? null,
       totalPoints: snapshot?.total_points ?? 0,
       tournamentsPlayed: snapshot?.tournaments_played ?? 0,
       tournamentsWon: snapshot?.tournaments_won ?? 0,
-      rankPosition: (count ?? 0) + 1,
+      rankPosition: snapshot?.rank_position ?? 0,
       semesterLabel: `S${semester} ${year}`,
       events,
     };
