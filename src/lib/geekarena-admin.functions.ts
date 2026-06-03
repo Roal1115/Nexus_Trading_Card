@@ -286,15 +286,35 @@ export const publishTournaments = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
+
+    const season = await getActiveSeason(admin);
+    if (!season) {
+      throw new Error(
+        "No hay una temporada activa. Crea una temporada antes de publicar torneos.",
+      );
+    }
+    const seasonStart = season.start_date;
+    const seasonEnd = season.end_date;
+
     const { data: tournaments, error: te } = await admin
       .from("tournaments")
-      .select("id, store_id, game_id, qualifying_year, qualifying_month, qualifying_semester, status")
+      .select(
+        "id, store_id, game_id, tournament_date, qualifying_year, qualifying_month, status",
+      )
       .in("id", data.tournament_ids);
     if (te) throw new Error(te.message);
 
-    const publishable = (tournaments ?? []).filter(
-      (t) => t.status === "APPROVED",
-    );
+    const approved = (tournaments ?? []).filter((t) => t.status === "APPROVED");
+    const publishable = approved.filter((t) => {
+      const d = t.tournament_date;
+      return d >= seasonStart && d <= seasonEnd;
+    });
+    const outOfSeason = approved.filter((t) => !publishable.includes(t));
+    if (outOfSeason.length > 0) {
+      throw new Error(
+        `${outOfSeason.length} torneo(s) tienen fecha fuera del rango de la temporada activa (${seasonStart} — ${seasonEnd}).`,
+      );
+    }
     if (publishable.length === 0) {
       return { published: 0 };
     }
@@ -302,33 +322,47 @@ export const publishTournaments = createServerFn({ method: "POST" })
     const nowIso = new Date().toISOString();
     const { error: ue } = await admin
       .from("tournaments")
-      .update({ status: "PUBLISHED", published_at: nowIso, approved_at: nowIso })
+      .update({
+        status: "PUBLISHED",
+        published_at: nowIso,
+        approved_at: nowIso,
+        season_id: season.id,
+      })
       .in("id", publishable.map((t) => t.id));
     if (ue) throw new Error(ue.message);
 
     const slices = new Set<string>();
     for (const t of publishable) {
-      const tf = tfValues(t.qualifying_month, t.qualifying_semester, t.qualifying_year);
-      slices.add(`${t.game_id}|${t.store_id}|MONTHLY|${tf.MONTH}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
-      slices.add(`${t.game_id}|${t.store_id}|SEMESTRAL|${tf.SEMESTER}|y=${t.qualifying_year}|s=${t.qualifying_semester}`);
+      const monthKey = tfMonth(t.qualifying_month, t.qualifying_year);
+      slices.add(
+        `${t.game_id}|${t.store_id}|MONTHLY|${monthKey}|y=${t.qualifying_year}|m=${t.qualifying_month}`,
+      );
+      slices.add(
+        `${t.game_id}|${t.store_id}|SEMESTRAL|${season.slug}|season_id=${season.id}`,
+      );
     }
 
     for (const key of slices) {
-      const [game_id, store_id, type, value, ...rest] = key.split("|");
-      const filter: { year?: number; month?: number; semester?: number } = {};
-      for (const p of rest) {
+      const parts = key.split("|");
+      const game_id = parts[0];
+      const store_id = parts[1];
+      const type = parts[2] as "MONTHLY" | "SEMESTRAL";
+      const value = parts[3];
+      const filter: { year?: number; month?: number; season_id?: string } = {};
+      for (const p of parts.slice(4)) {
         const [k, v] = p.split("=");
         if (k === "y") filter.year = Number(v);
         if (k === "m") filter.month = Number(v);
-        if (k === "s") filter.semester = Number(v);
+        if (k === "season_id") filter.season_id = v;
       }
       await recomputeSnapshot(
         admin,
         game_id,
         store_id,
-        type as "MONTHLY" | "SEMESTRAL",
+        type,
         value,
         filter,
+        type === "SEMESTRAL" ? season.id : undefined,
       );
     }
 
