@@ -92,14 +92,18 @@ function SignupPage() {
     const handle = setTimeout(async () => {
       const { data, error } = await geekarena
         .from("players")
-        .select("id")
+        .select("id, auth_user_id")
         .eq("geek_tag", tag)
         .maybeSingle();
       if (error && error.code !== "PGRST116") {
         setTagStatus("idle");
         return;
       }
-      setTagStatus(data ? "taken" : "available");
+      if (data && data.auth_user_id) {
+        setTagStatus("taken"); // cuenta real activa → bloqueado
+      } else {
+        setTagStatus("available"); // no existe o es auto-creada → disponible
+      }
     }, 500);
     return () => clearTimeout(handle);
   }, [tag]);
