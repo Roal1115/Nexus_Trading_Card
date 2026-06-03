@@ -122,6 +122,7 @@ function ManagerApprovedTournaments() {
                   <th className="px-4 py-3">Juego</th>
                   <th className="px-4 py-3">Ventana corrección</th>
                   <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3">CSV</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
