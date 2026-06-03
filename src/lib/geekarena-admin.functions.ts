@@ -112,13 +112,14 @@ async function recomputeSnapshot(
     const a: Agg = { total_points: 0, played: 0, won: 0, omw_sum: 0, omw_count: 0 };
 
     for (const weekResults of weekMap.values()) {
+      a.played += weekResults.length;
+
       const top2 = weekResults
         .sort((x, y) => (y.points_earned ?? 0) - (x.points_earned ?? 0))
         .slice(0, 2);
 
       for (const r of top2) {
         a.total_points += r.points_earned ?? 0;
-        a.played += 1;
         if (r.rank === 1) a.won += 1;
         if (r.omw_percentage != null) {
           a.omw_sum += Number(r.omw_percentage);
