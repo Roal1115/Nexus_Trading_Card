@@ -327,6 +327,7 @@ function AdminPlayersPage() {
                   <SelectItem value="all">Todos los roles</SelectItem>
                   <SelectItem value="player">Player</SelectItem>
                   <SelectItem value="organizer">Organizer</SelectItem>
+                  <SelectItem value="tcg_manager">TCG Manager</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
