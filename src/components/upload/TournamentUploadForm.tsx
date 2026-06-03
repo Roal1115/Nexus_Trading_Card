@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { geekarena } from "@/integrations/geekarena/client";
 import {
   getOrganizerOverview,
   listActiveStores,
