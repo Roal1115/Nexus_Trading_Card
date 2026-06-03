@@ -436,18 +436,18 @@ function StatCard({
   tooltip?: string;
 }) {
   return (
-    <div className="glass rounded-2xl p-6 relative">
+    <div className="glass rounded-2xl p-6 relative overflow-visible">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
           {icon} {label}
         </div>
         {tooltip && (
-          <div className="group relative">
+          <div className="relative group">
             <button className="text-gray-600 hover:text-primary transition" aria-label="Más información">
               <HelpCircle size={14} />
             </button>
-            <div className="pointer-events-none absolute right-0 top-6 z-50 w-72 max-w-[calc(100vw-2rem)] hidden group-hover:block group-focus-within:block">
-              <div className="glass rounded-xl border border-white/10 p-4 text-xs text-gray-300 leading-relaxed shadow-xl whitespace-pre-line">
+            <div className="pointer-events-none absolute right-0 bottom-6 z-[9999] w-72 max-w-[calc(100vw-2rem)] hidden group-hover:flex group-focus-within:flex flex-col">
+              <div className="glass rounded-xl border border-white/10 bg-black/90 p-4 text-xs text-gray-300 leading-relaxed shadow-2xl whitespace-pre-line">
                 {tooltip}
               </div>
             </div>
