@@ -27,8 +27,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       )
       .eq("player_id", player.id)
       .eq("timeframe_type", "SEMESTRAL")
-      .eq("timeframe_value", semKey)
-      .is("store_id", null);
+      .eq("timeframe_value", semKey);
 
     const snapGameIds = (snapshots ?? []).map((s) => s.game_id);
     const { data: snapGames } = snapGameIds.length
@@ -57,12 +56,28 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     const { data: results } = await admin
       .from("tournament_results")
       .select(
-        "rank, points_earned, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
+        "rank, points_earned, match_points, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
       )
       .eq("player_id", player.id)
       .eq("tournaments.status", "PUBLISHED")
       .order("tournaments(tournament_date)", { ascending: false })
-      .limit(8);
+      .limit(100);
+
+    const tournamentIds = Array.from(
+      new Set((results ?? []).map((r: any) => r.tournament_id)),
+    );
+
+    const { data: maxPoints } = tournamentIds.length
+      ? await admin
+          .from("tournament_results")
+          .select("tournament_id, match_points")
+          .in("tournament_id", tournamentIds)
+          .eq("rank", 1)
+      : { data: [] as Array<{ tournament_id: string; match_points: number | null }> };
+
+    const maxPointsMap = new Map(
+      (maxPoints ?? []).map((m: any) => [m.tournament_id, m.match_points ?? 0]),
+    );
 
     const storeIds = Array.from(
       new Set(
@@ -100,6 +115,24 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     const events = (results ?? []).map((r: any) => {
       const t = r.tournaments;
       const store = t ? (storeMap.get(t.store_id) as any) : null;
+      const maxMp = (maxPointsMap.get(r.tournament_id) as number | undefined) ?? 0;
+
+      let calculatedWins: number | null = null;
+      let calculatedLosses: number | null = null;
+      let totalRounds: number | null = null;
+
+      if (r.wins != null) {
+        calculatedWins = r.wins;
+        calculatedLosses = r.losses ?? 0;
+        totalRounds = (r.wins ?? 0) + (r.losses ?? 0) + (r.draws ?? 0);
+      } else if (r.match_points != null && maxMp > 0) {
+        totalRounds = Math.round(maxMp / 3);
+        calculatedWins = Math.floor((r.match_points ?? 0) / 3);
+        const remaining = (r.match_points ?? 0) % 3;
+        const draws = remaining === 1 ? 1 : 0;
+        calculatedLosses = totalRounds - calculatedWins - draws;
+      }
+
       return {
         id: r.tournament_id,
         date: t?.tournament_date ?? "—",
@@ -108,6 +141,11 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         tcg: t ? (gameMap.get(t.game_id) ?? "—") : "—",
         placement: r.rank,
         pointsEarned: Number(r.points_earned ?? 0),
+        matchPoints: r.match_points ?? null,
+        maxMatchPoints: maxMp > 0 ? maxMp : null,
+        wins: calculatedWins,
+        losses: calculatedLosses,
+        totalRounds,
       };
     });
 

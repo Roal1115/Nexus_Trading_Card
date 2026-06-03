@@ -18,6 +18,8 @@ function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     if (!gaPlayer) {
@@ -75,16 +77,8 @@ function DashboardPage() {
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
-
-  const winPct =
-    tournamentsPlayed === 0
-      ? 0
-      : Math.round((tournamentsWon / tournamentsPlayed) * 100);
-  const losses = Math.max(0, tournamentsPlayed - tournamentsWon);
-  const ratio =
-    losses === 0
-      ? tournamentsWon
-      : (tournamentsWon / losses).toFixed(2);
+  const paginatedEvents = events.slice(0, page * PAGE_SIZE);
+  const hasMore = events.length > page * PAGE_SIZE;
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
@@ -144,15 +138,15 @@ function DashboardPage() {
         />
         <StatCard
           icon={<Swords className="text-primary" size={18} />}
-          label="Victorias / Derrotas"
-          value={`${tournamentsWon} – ${losses}`}
-          sub={`${winPct}% win rate · ratio ${ratio}`}
+          label="Torneos Jugados"
+          value={String(tournamentsPlayed)}
+          sub="Esta temporada"
         />
         <StatCard
           icon={<Award className="text-primary" size={18} />}
           label="Torneos Ganados"
           value={String(tournamentsWon)}
-          sub="Histórico"
+          sub="1er lugar"
         />
       </section>
 
@@ -166,7 +160,7 @@ function DashboardPage() {
             </h2>
           </div>
           <span className="text-xs uppercase tracking-wider text-gray-500">
-            Últimos 8 eventos
+            {events.length} torneos jugados
           </span>
         </header>
         <div className="overflow-x-auto">
@@ -176,48 +170,68 @@ function DashboardPage() {
                 <th className="px-4 py-2 text-left">Fecha</th>
                 <th className="px-4 py-2 text-left">Tienda</th>
                 <th className="px-4 py-2 text-left">TCG</th>
+                <th className="px-4 py-2 text-center">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
-                <th className="px-4 py-2 text-right">Puntos</th>
+                <th className="px-4 py-2 text-right">Pts Arena</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
                     Cargando…
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
                     Aún no has participado en ningún torneo.
                   </td>
                 </tr>
               ) : (
-                events.map((t) => (
-                  <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
-                      {t.date}
-                    </td>
-                    <td className="px-4 py-3 text-white">
-                      {t.store}{" "}
-                      <span className="text-xs text-gray-500">· {t.city}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span
-                        className={`font-mono-stat text-sm font-semibold ${
-                          t.placement <= 3 ? "text-primary" : "text-white"
-                        }`}
-                      >
-                        #{t.placement}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
-                      +{Number(t.pointsEarned).toFixed(2)}
-                    </td>
-                  </tr>
-                ))
+                <>
+                  {paginatedEvents.map((t) => (
+                    <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
+                        {t.date}
+                      </td>
+                      <td className="px-4 py-3 text-white">
+                        {t.store}{" "}
+                        <span className="text-xs text-gray-500">· {t.city}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
+                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300">
+                        {t.wins != null && t.losses != null
+                          ? `${t.wins} / ${t.losses}`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={`font-mono-stat text-sm font-semibold ${
+                            t.placement <= 3 ? "text-primary" : "text-white"
+                          }`}
+                        >
+                          #{t.placement}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
+                        +{Number(t.pointsEarned).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                  {hasMore && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-4 text-center">
+                        <button
+                          onClick={() => setPage((p) => p + 1)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Ver más torneos
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>
