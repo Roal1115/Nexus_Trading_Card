@@ -170,6 +170,7 @@ async function recomputeSnapshot(
     store_id,
     timeframe_type,
     timeframe_value,
+    season_id: season_id ?? null,
     total_points: r.total_points,
     tournaments_played: r.played,
     tournaments_won: r.won,
