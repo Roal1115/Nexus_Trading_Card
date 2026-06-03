@@ -438,7 +438,7 @@ export const listPlayers = createServerFn({ method: "POST" })
     let q = admin
       .from("players")
       .select(
-        "id, geek_tag, display_name, email, role, home_store_id, is_active, created_at",
+        "id, geek_tag, display_name, email, role, home_store_id, is_active, created_at, manager_games(game_id, games(name))",
         { count: "exact" },
       );
 
