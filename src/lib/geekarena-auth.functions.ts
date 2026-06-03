@@ -37,28 +37,39 @@ export const signupPlayer = createServerFn({ method: "POST" })
     }
     const newAuthUserId = authUser.user.id;
 
-    // 2. Verificar si existe un player auto-creado desde CSV (sin auth_user_id)
-    const { data: existing } = await admin
+    // 2. Buscar player existente: puede haber sido creado por trigger
+    //    (handle_new_auth_user) usando auth_user_id, o auto-creado desde CSV
+    //    con el mismo geek_tag y sin auth_user_id.
+    const { data: byAuth } = await admin
       .from("players")
       .select("id")
-      .eq("geek_tag", data.geek_tag)
-      .is("auth_user_id", null)
+      .eq("auth_user_id", newAuthUserId)
       .maybeSingle();
+
+    const { data: byTag } = byAuth
+      ? { data: null as { id: string } | null }
+      : await admin
+          .from("players")
+          .select("id")
+          .eq("geek_tag", data.geek_tag)
+          .is("auth_user_id", null)
+          .maybeSingle();
+
+    const existing = byAuth ?? byTag;
 
     let playerId: string;
 
     if (existing) {
-      // Reclamar cuenta auto-creada — vincular auth_user_id y email
+      // Reclamar / completar el registro existente
       const { error: updateErr } = await admin
         .from("players")
         .update({
+          geek_tag: data.geek_tag,
           auth_user_id: newAuthUserId,
           email: data.email,
           is_active: false,
         })
-        .eq("id", existing.id)
-        .select("id")
-        .single();
+        .eq("id", existing.id);
       if (updateErr) throw new Error(updateErr.message);
       playerId = existing.id;
     } else {
@@ -77,6 +88,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
       if (insertErr) throw new Error(insertErr.message);
       playerId = created.id;
     }
+
 
     // 3. Insertar juegos seleccionados en player_games
     if (data.game_ids.length > 0) {
