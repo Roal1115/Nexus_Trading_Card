@@ -37,7 +37,7 @@ function ManagerPendingTournaments() {
       setLoading(true);
       try {
         const res = await fetchList();
-        setRows(res as Row[]);
+        setRows(res as unknown as Row[]);
       } catch (e) {
         toast.error(String((e as Error).message ?? e));
       } finally {
