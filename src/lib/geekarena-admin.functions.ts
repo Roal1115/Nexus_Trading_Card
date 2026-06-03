@@ -609,10 +609,10 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
 
 export const setPlayerRole = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { player_id: string; role: "player" | "organizer" | "admin"; home_store_id?: string | null }) =>
+  .inputValidator((d: { player_id: string; role: "player" | "organizer" | "tcg_manager" | "admin"; home_store_id?: string | null }) =>
     z.object({
       player_id: z.string().uuid(),
-      role: z.enum(["player", "organizer", "admin"]),
+      role: z.enum(["player", "organizer", "tcg_manager", "admin"]),
       home_store_id: z.string().uuid().optional().nullable(),
     }).parse(d),
   )
