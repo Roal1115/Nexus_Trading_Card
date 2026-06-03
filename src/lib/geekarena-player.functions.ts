@@ -166,7 +166,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       storeName:
         (storeRes.data as { name: string | null } | null)?.name ?? null,
       tcgStats,
-      semesterLabel: `S${semester} ${year}`,
+      semesterLabel,
       monthLabel: new Date(year, month - 1).toLocaleString("es-MX", {
         month: "long",
         year: "numeric",
