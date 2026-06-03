@@ -115,13 +115,15 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         monthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       }
     }
-    const semesterKey = getSemesterKey(monthValue);
+    const season = await getSeasonForMonth(admin, monthValue);
+    const seasonKey = season?.slug ?? "";
 
     async function querySnapshots(
       timeframeType: "MONTHLY" | "SEMESTRAL",
       timeframeValue: string,
       opts: { applyStoreId: boolean },
     ) {
+      if (!timeframeValue) return [];
       let q = admin
         .from("leaderboard_snapshots")
         .select(
@@ -153,7 +155,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
 
     const [monthlyRaw, semestralRaw] = await Promise.all([
       querySnapshots("MONTHLY", monthValue, { applyStoreId: true }),
-      querySnapshots("SEMESTRAL", semesterKey, { applyStoreId: false }),
+      querySnapshots("SEMESTRAL", seasonKey, { applyStoreId: false }),
     ]);
 
     const playerIds = Array.from(
