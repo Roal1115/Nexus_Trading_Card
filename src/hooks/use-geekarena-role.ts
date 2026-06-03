@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { geekarena } from "@/integrations/geekarena/client";
 
-export type AppRole = "player" | "organizer" | "admin";
+export type AppRole = "player" | "organizer" | "tcg_manager" | "admin";
 
 type PlayerRow = {
   id: string;

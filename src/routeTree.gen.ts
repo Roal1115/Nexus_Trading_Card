@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TcgManagerRouteImport } from './routes/tcg-manager'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as OrganizerRouteImport } from './routes/organizer'
@@ -29,6 +30,11 @@ import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 
+const TcgManagerRoute = TcgManagerRouteImport.update({
+  id: '/tcg-manager',
+  path: '/tcg-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/tcg-manager': typeof TcgManagerRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/tcg-manager': typeof TcgManagerRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/tcg-manager': typeof TcgManagerRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/setup'
     | '/signup'
+    | '/tcg-manager'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup'
     | '/signup'
+    | '/tcg-manager'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/setup'
     | '/signup'
+    | '/tcg-manager'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -260,10 +272,18 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
+  TcgManagerRoute: typeof TcgManagerRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tcg-manager': {
+      id: '/tcg-manager'
+      path: '/tcg-manager'
+      fullPath: '/tcg-manager'
+      preLoaderRoute: typeof TcgManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -459,6 +479,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
+  TcgManagerRoute: TcgManagerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
