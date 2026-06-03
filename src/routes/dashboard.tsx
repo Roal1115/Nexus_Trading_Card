@@ -159,6 +159,20 @@ function DashboardPage() {
           label="Puntos Totales"
           value={Number(totalPoints).toFixed(2)}
           sub={semesterLabel || "—"}
+          tooltip={`¿Cómo se calculan tus puntos?
+
+Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
+(tus match points ÷ match points del 1er lugar) × 100
+
+Ejemplo: Si el 1er lugar tuvo 12 pts y tú tuviste 9 pts → (9÷12)×100 = 75.00 Pts Arena
+
+Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard. Los torneos extra se descartan.
+
+Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
+
+Leaderboard de temporada: Suma acumulada de todos tus torneos durante la temporada completa, aplicando siempre la regla del top 2 por semana.
+
+Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneos ganados, luego por torneos jugados, y finalmente por OMW% promedio.`}
         />
         <StatCard
           icon={<Swords className="text-primary" size={18} />}
