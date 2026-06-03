@@ -291,6 +291,7 @@ function AdminPlayersPage() {
           {([
             { k: "all", label: "Todos" },
             { k: "organizers", label: "Organizadores" },
+            { k: "managers", label: "TCG Managers" },
             { k: "admins", label: "Administradores" },
           ] as { k: Tab; label: string }[]).map((t) => (
             <button
