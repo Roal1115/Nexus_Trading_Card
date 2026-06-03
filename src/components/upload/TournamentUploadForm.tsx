@@ -633,6 +633,9 @@ export function TournamentUploadForm({
                     </table>
                   </div>
                 )}
+                <p className="border-t border-white/5 px-4 py-2 text-[11px] text-gray-400">
+                  Los Puntos Arena se calculan como: (tus puntos / puntos del 1er lugar) × 100
+                </p>
                 {totalErrors > 0 && (
                   <p className="border-t border-white/5 px-4 py-2 text-xs text-red-300">
                     Hay {totalErrors} fila(s) con errores. Corrige el CSV antes de continuar.
