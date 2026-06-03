@@ -605,7 +605,7 @@ export function TournamentUploadForm({
                                 {r.omw_percentage != null ? `${r.omw_percentage}%` : "—"}
                               </td>
                               <td className="px-3 py-2 text-right font-mono font-semibold text-primary">
-                                {r.points_earned}
+                                {Number(r.points_earned).toFixed(2)}
                               </td>
                               <td className="px-3 py-2">
                                 {r.error ? (
