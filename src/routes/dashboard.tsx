@@ -79,9 +79,7 @@ function DashboardPage() {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
         <h2 className="text-2xl font-bold text-white">Debes iniciar sesión</h2>
-        <p className="mt-2 text-sm text-gray-400">
-          Tu dashboard muestra tu historial competitivo.
-        </p>
+        <p className="mt-2 text-sm text-gray-400">Tu dashboard muestra tu historial competitivo.</p>
         <Link
           to="/login"
           className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
@@ -112,15 +110,9 @@ function DashboardPage() {
         <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
         <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-              Tu Geek Tag
-            </p>
-            <h1 className="mt-2 break-all text-5xl font-bold text-white sm:text-7xl">
-              {tag}
-            </h1>
-            <p className="mt-2 text-sm text-gray-400">
-              {storeCity ?? "—"}
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Tu Geek Tag</p>
+            <h1 className="mt-2 break-all text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
+            <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
           </div>
           <div className="rounded-xl border border-primary/30 bg-black/40 px-6 py-4 text-center">
             <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary">
@@ -142,9 +134,7 @@ function DashboardPage() {
               key={tcg.game_id}
               onClick={() => setSelectedTcg(tcg.game_id)}
               className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
-                selectedTcg === tcg.game_id
-                  ? "bg-primary text-white"
-                  : "bg-white/5 text-gray-400 hover:bg-white/10"
+                selectedTcg === tcg.game_id ? "bg-primary text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
               }`}
             >
               {tcg.game_name}
@@ -154,7 +144,7 @@ function DashboardPage() {
       )}
 
       {/* Stats */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           icon={<Target className="text-primary" size={18} />}
           label="Puntos Totales"
@@ -194,23 +184,17 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
         <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="text-primary" size={18} />
-            <h2 className="text-lg font-semibold text-white">
-              Torneos Recientes
-            </h2>
+            <h2 className="text-lg font-semibold text-white">Torneos Recientes</h2>
           </div>
-          <span className="text-xs uppercase tracking-wider text-gray-500">
-            {events.length} torneos jugados
-          </span>
+          <span className="text-xs uppercase tracking-wider text-gray-500">{events.length} torneos jugados</span>
         </header>
-
-        {/* Desktop — tabla normal */}
-        <div className="hidden sm:block overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="px-4 py-2 text-left">Fecha</th>
-                <th className="px-4 py-2 text-left">TCG</th>
                 <th className="px-4 py-2 text-left">Tienda</th>
+                <th className="px-4 py-2 text-left">TCG</th>
                 <th className="px-4 py-2 text-center">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
                 <th className="px-4 py-2 text-right">Pts Arena</th>
@@ -238,18 +222,13 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                       onClick={() => openTournament(t.id)}
                       className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition"
                     >
-                      <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
-                        {t.date}
+                      <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">{t.date}</td>
+                      <td className="px-4 py-3 text-white">
+                        {t.store} <span className="text-xs text-gray-500">· {t.city}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
-                      <td className="px-4 py-3 text-white">
-                        {t.store}{" "}
-                        <span className="text-xs text-gray-500">· {t.city}</span>
-                      </td>
                       <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300">
-                        {t.wins != null && t.losses != null
-                          ? `${t.wins} / ${t.losses}`
-                          : "—"}
+                        {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span
@@ -271,10 +250,7 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                   {hasMore && (
                     <tr>
                       <td colSpan={7} className="px-4 py-4 text-center">
-                        <button
-                          onClick={() => setPage((p) => p + 1)}
-                          className="text-xs text-primary hover:underline"
-                        >
+                        <button onClick={() => setPage((p) => p + 1)} className="text-xs text-primary hover:underline">
                           Ver más torneos
                         </button>
                       </td>
@@ -284,73 +260,6 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
               )}
             </tbody>
           </table>
-        </div>
-
-        {/* Mobile — cards apiladas */}
-        <div className="sm:hidden flex flex-col divide-y divide-white/5">
-          {loading ? (
-            <p className="px-4 py-12 text-center text-gray-500">Cargando…</p>
-          ) : paginatedEvents.length === 0 ? (
-            <p className="px-4 py-12 text-center text-gray-500">
-              Aún no has participado en ningún torneo.
-            </p>
-          ) : (
-            <>
-              {paginatedEvents.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => openTournament(t.id)}
-                  className="flex items-center justify-between px-4 py-4 hover:bg-white/5 cursor-pointer transition"
-                >
-                  <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`font-mono-stat font-bold text-base flex-shrink-0 ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
-                        #{t.placement}
-                      </span>
-                      <span className="text-white font-semibold text-sm">
-                        {t.tcg}
-                      </span>
-                      <span className="text-gray-500 text-sm">—</span>
-                      <span className="text-gray-300 text-sm truncate">
-                        {t.store}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
-                      <span>{t.city}</span>
-                      <span>·</span>
-                      <span>
-                        {new Date(t.date + "T12:00:00").toLocaleDateString("es-MX", {
-                          day: "numeric", month: "short", year: "numeric"
-                        })}
-                      </span>
-                      {t.wins != null && t.losses != null && (
-                        <>
-                          <span>·</span>
-                          <span>{t.wins}V / {t.losses}D</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                    <span className="font-mono-stat font-semibold text-white text-sm">
-                      +{t.pointsEarned}
-                    </span>
-                    <ChevronRight size={14} className="text-gray-600" />
-                  </div>
-                </div>
-              ))}
-              {hasMore && (
-                <div className="px-4 py-4 text-center">
-                  <button
-                    onClick={() => setPage((p) => p + 1)}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Ver más torneos
-                  </button>
-                </div>
-              )}
-            </>
-          )}
         </div>
       </section>
 
@@ -365,11 +274,9 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
           >
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                  Detalle del Torneo
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Detalle del Torneo</p>
                 <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
-                  {loadingDetail ? "Cargando…" : tournamentDetail?.game?.name ?? "—"}
+                  {loadingDetail ? "Cargando…" : (tournamentDetail?.game?.name ?? "—")}
                 </h2>
               </div>
               <button
@@ -382,9 +289,7 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
             </div>
 
             {loadingDetail ? (
-              <div className="py-16 text-center text-sm text-gray-500">
-                Cargando detalles…
-              </div>
+              <div className="py-16 text-center text-sm text-gray-500">Cargando detalles…</div>
             ) : tournamentDetail ? (
               <div className="mt-5 space-y-6">
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -431,20 +336,15 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                         <tr>
                           <th className="px-3 py-2 text-left">#</th>
                           <th className="px-3 py-2 text-left">Geek Tag</th>
-                          <th className="px-3 py-2 text-center whitespace-nowrap">V/D</th>
-                          <th className="px-3 py-2 text-right whitespace-nowrap">OMW%</th>
-                          <th className="px-3 py-2 text-right whitespace-nowrap">Pts Arena</th>
+                          <th className="px-3 py-2 text-center">V / D</th>
+                          <th className="px-3 py-2 text-right">OMW%</th>
+                          <th className="px-3 py-2 text-right">Pts Arena</th>
                         </tr>
                       </thead>
                       <tbody>
                         {tournamentDetail.rankings.map((r) => (
-                          <tr
-                            key={r.player_id}
-                            className={`border-t border-white/5 ${
-                              r.is_me ? "bg-primary/15" : ""
-                            }`}
-                          >
-                            <td className="px-3 py-2.5">
+                          <tr key={r.player_id} className={`border-t border-white/5 ${r.is_me ? "bg-primary/15" : ""}`}>
+                            <td className="px-3 py-2">
                               <span
                                 className={`font-mono-stat text-sm font-semibold ${
                                   r.rank <= 3 ? "text-primary" : "text-white"
@@ -453,7 +353,7 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                                 {String(r.rank).padStart(2, "0")}
                               </span>
                             </td>
-                            <td className="px-3 py-2.5 text-white">
+                            <td className="px-3 py-2 text-white">
                               {r.geek_tag}
                               {r.is_me && (
                                 <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
@@ -461,15 +361,13 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                                 </span>
                               )}
                             </td>
-                            <td className="px-3 py-2.5 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
-                              {r.wins != null && r.losses != null ? `${r.wins}/${r.losses}` : "—"}
+                            <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
+                              {r.wins != null && r.losses != null ? `${r.wins} / ${r.losses}` : "—"}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-mono-stat text-xs text-gray-400 whitespace-nowrap">
-                              {r.omw_percentage != null
-                                ? `${Number(r.omw_percentage).toFixed(1)}%`
-                                : "—"}
+                            <td className="px-3 py-2 text-right font-mono-stat text-xs text-gray-400">
+                              {r.omw_percentage != null ? `${Number(r.omw_percentage).toFixed(1)}%` : "—"}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-mono-stat font-semibold text-white whitespace-nowrap">
+                            <td className="px-3 py-2 text-right font-mono-stat font-semibold text-white">
                               {r.points_earned}
                             </td>
                           </tr>
@@ -480,20 +378,21 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                 </div>
               </div>
             ) : (
-              <div className="py-16 text-center text-sm text-gray-500">
-                No se pudo cargar el torneo.
-              </div>
+              <div className="py-16 text-center text-sm text-gray-500">No se pudo cargar el torneo.</div>
             )}
           </div>
         </div>
       )}
     </main>
-
   );
 }
 
 function StatCard({
-  icon, label, value, sub, tooltip
+  icon,
+  label,
+  value,
+  sub,
+  tooltip,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -509,10 +408,7 @@ function StatCard({
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const tooltipWidth = Math.min(window.innerWidth * 0.5, 600);
-      const leftPos = Math.min(
-        rect.left + window.scrollX,
-        window.innerWidth - tooltipWidth - 16
-      );
+      const leftPos = Math.min(rect.left + window.scrollX, window.innerWidth - tooltipWidth - 16);
       setTooltipPos({
         top: rect.bottom + window.scrollY + 8,
         left: Math.max(leftPos, 16),
@@ -522,7 +418,7 @@ function StatCard({
   };
 
   return (
-    <div className="glass rounded-2xl p-4 sm:p-6 relative">
+    <div className="glass rounded-2xl p-6 relative">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
           {icon} {label}
@@ -538,31 +434,29 @@ function StatCard({
             >
               <HelpCircle size={14} />
             </button>
-            {showTooltip && ReactDOM.createPortal(
-              <div
-                className="fixed z-[99999]"
-                style={{
-                  top: tooltipPos.top,
-                  left: tooltipPos.left,
-                  width: `min(50vw, 600px)`,
-                }}
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-              >
-                <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
-                  {tooltip}
-                </div>
-              </div>,
-              document.body
-            )}
+            {showTooltip &&
+              ReactDOM.createPortal(
+                <div
+                  className="fixed z-[99999]"
+                  style={{
+                    top: tooltipPos.top,
+                    left: tooltipPos.left,
+                    width: `min(50vw, 600px)`,
+                  }}
+                  onMouseEnter={() => setShowTooltip(true)}
+                  onMouseLeave={() => setShowTooltip(false)}
+                >
+                  <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
+                    {tooltip}
+                  </div>
+                </div>,
+                document.body,
+              )}
           </>
         )}
       </div>
-      <div className="mt-3 font-mono-stat text-4xl font-bold text-white">
-        {value}
-      </div>
+      <div className="mt-3 font-mono-stat text-4xl font-bold text-white">{value}</div>
       <div className="mt-1 text-xs text-gray-500">{sub}</div>
     </div>
   );
 }
-
