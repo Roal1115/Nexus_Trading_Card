@@ -194,7 +194,7 @@ const ResultRowSchema = z.object({
   wins: z.number().int().min(0).nullable(),
   losses: z.number().int().min(0).nullable(),
   draws: z.number().int().min(0).nullable(),
-  points_earned: z.number().int().min(0),
+  points_earned: z.number().min(0),
 });
 
 export const uploadTournamentResults = createServerFn({ method: "POST" })
