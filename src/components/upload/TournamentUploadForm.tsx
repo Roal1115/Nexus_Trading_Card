@@ -71,14 +71,23 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   "magic-the-gathering": { platform: "unknown" },
 };
 
-function calcularPuntosArena(rank: number): number {
-  if (rank === 1) return 100;
-  if (rank === 2) return 85;
-  if (rank === 3 || rank === 4) return 70;
-  if (rank >= 5 && rank <= 8) return 50;
-  if (rank >= 9 && rank <= 16) return 30;
-  if (rank >= 17 && rank <= 32) return 15;
-  return 5;
+function normalizarPuntos(rows: ParsedRow[]): ParsedRow[] {
+  // El máximo es el match_points del jugador en rank 1
+  const rank1 = rows.find((r) => r.rank === 1);
+  const maxPoints = rank1?.match_points ?? 0;
+
+  // Si el máximo es 0 o no existe, no se puede normalizar
+  if (maxPoints <= 0) {
+    return rows.map((r) => ({ ...r, points_earned: 0 }));
+  }
+
+  return rows.map((r) => ({
+    ...r,
+    points_earned:
+      r.match_points != null && r.match_points > 0
+        ? Math.round((r.match_points / maxPoints) * 10000) / 100
+        : 0,
+  }));
 }
 
 type ParsedRow = {
