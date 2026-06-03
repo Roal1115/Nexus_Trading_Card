@@ -160,7 +160,7 @@ function DashboardPage() {
             </h2>
           </div>
           <span className="text-xs uppercase tracking-wider text-gray-500">
-            Últimos 8 eventos
+            {events.length} torneos jugados
           </span>
         </header>
         <div className="overflow-x-auto">
@@ -170,48 +170,68 @@ function DashboardPage() {
                 <th className="px-4 py-2 text-left">Fecha</th>
                 <th className="px-4 py-2 text-left">Tienda</th>
                 <th className="px-4 py-2 text-left">TCG</th>
+                <th className="px-4 py-2 text-center">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
-                <th className="px-4 py-2 text-right">Puntos</th>
+                <th className="px-4 py-2 text-right">Pts Arena</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
                     Cargando…
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
                     Aún no has participado en ningún torneo.
                   </td>
                 </tr>
               ) : (
-                events.map((t) => (
-                  <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
-                      {t.date}
-                    </td>
-                    <td className="px-4 py-3 text-white">
-                      {t.store}{" "}
-                      <span className="text-xs text-gray-500">· {t.city}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span
-                        className={`font-mono-stat text-sm font-semibold ${
-                          t.placement <= 3 ? "text-primary" : "text-white"
-                        }`}
-                      >
-                        #{t.placement}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
-                      +{Number(t.pointsEarned).toFixed(2)}
-                    </td>
-                  </tr>
-                ))
+                <>
+                  {paginatedEvents.map((t) => (
+                    <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
+                        {t.date}
+                      </td>
+                      <td className="px-4 py-3 text-white">
+                        {t.store}{" "}
+                        <span className="text-xs text-gray-500">· {t.city}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
+                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300">
+                        {t.wins != null && t.losses != null
+                          ? `${t.wins} / ${t.losses}`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={`font-mono-stat text-sm font-semibold ${
+                            t.placement <= 3 ? "text-primary" : "text-white"
+                          }`}
+                        >
+                          #{t.placement}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
+                        +{Number(t.pointsEarned).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                  {hasMore && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-4 text-center">
+                        <button
+                          onClick={() => setPage((p) => p + 1)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Ver más torneos
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>
