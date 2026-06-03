@@ -625,6 +625,15 @@ export const setPlayerRole = createServerFn({ method: "POST" })
       .update(update)
       .eq("id", data.player_id);
     if (error) throw new Error(error.message);
+
+    // Limpiar TCGs asignados si el rol ya no es tcg_manager
+    if (data.role !== "tcg_manager") {
+      await admin
+        .from("manager_games")
+        .delete()
+        .eq("player_id", data.player_id);
+    }
+
     return { ok: true };
   });
 
