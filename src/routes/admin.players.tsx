@@ -58,7 +58,7 @@ export const Route = createFileRoute("/admin/players")({
   component: AdminPlayersPage,
 });
 
-type Role = "player" | "organizer" | "admin";
+type Role = "player" | "organizer" | "tcg_manager" | "admin";
 type P = {
   id: string;
   geek_tag: string;
@@ -327,6 +327,7 @@ function AdminPlayersPage() {
                   <SelectItem value="all">Todos los roles</SelectItem>
                   <SelectItem value="player">Player</SelectItem>
                   <SelectItem value="organizer">Organizer</SelectItem>
+                  <SelectItem value="tcg_manager">TCG Manager</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
@@ -655,13 +656,16 @@ function RowActions({
   onChangeRole,
   onAssignStore,
   onToggleActive,
+  onAssignGames,
 }: {
   p: P;
   onChangeRole: (next: Role) => void;
   onAssignStore: () => void;
   onToggleActive: () => void;
+  onAssignGames: () => void;
 }) {
   const canAssignStore = p.role === "organizer";
+  const canAssignGames = p.role === "tcg_manager";
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -682,6 +686,9 @@ function RowActions({
         <DropdownMenuItem onClick={() => onChangeRole("organizer")}>
           <UserCog size={14} className="mr-2" /> Cambiar a organizer
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onChangeRole("tcg_manager")}>
+          <UserCog size={14} className="mr-2" /> Cambiar a TCG Manager
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onChangeRole("admin")}>
           <ShieldCheck size={14} className="mr-2" /> Cambiar a admin
         </DropdownMenuItem>
@@ -700,6 +707,22 @@ function RowActions({
               </div>
             </TooltipTrigger>
             <TooltipContent>Solo disponible para organizadores</TooltipContent>
+          </Tooltip>
+        )}
+        {canAssignGames ? (
+          <DropdownMenuItem onClick={onAssignGames}>
+            <ShieldCheck size={14} className="mr-2" /> Asignar TCGs
+          </DropdownMenuItem>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DropdownMenuItem disabled>
+                  <ShieldCheck size={14} className="mr-2" /> Asignar TCGs
+                </DropdownMenuItem>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Solo disponible para TCG Managers</TooltipContent>
           </Tooltip>
         )}
         <DropdownMenuSeparator />

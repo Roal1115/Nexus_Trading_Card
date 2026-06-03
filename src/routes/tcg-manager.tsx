@@ -1,0 +1,78 @@
+import { useEffect, useState } from "react";
+import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  CheckCircle2,
+  Loader2,
+  Menu,
+  ShieldCheck,
+  Upload,
+} from "lucide-react";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { PanelSidebar } from "@/components/layout/PanelSidebar";
+
+export const Route = createFileRoute("/tcg-manager")({
+  head: () => ({ meta: [{ title: "Panel TCG Manager — Geek Arena" }] }),
+  component: TcgManagerLayout,
+});
+
+function TcgManagerLayout() {
+  const { role, player, loading } = useGeekarenaRole();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (role !== "tcg_manager" && role !== "admin") {
+      navigate({ to: "/login" });
+    }
+  }, [loading, role, navigate]);
+
+  return (
+    <div className="flex min-h-screen">
+      <PanelSidebar
+        title="TCG Manager"
+        subtitle="Panel"
+        userLabel={player?.geek_tag ?? "Manager"}
+        mobileOpen={menuOpen}
+        onMobileClose={() => setMenuOpen(false)}
+        sections={[
+          {
+            title: "Moderación",
+            items: [
+              { to: "/tcg-manager", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true },
+              { to: "/tcg-manager/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} /> },
+            ],
+          },
+          {
+            title: "Circuito",
+            items: [
+              { to: "/tcg-manager/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
+            ],
+          },
+        ]}
+      />
+      <main className="min-w-0 flex-1">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:hidden">
+          <div className="text-sm font-semibold text-white">Panel TCG Manager</div>
+          <button
+            className="p-1 text-gray-400 transition hover:text-white"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu size={22} />
+          </button>
+        </div>
+
+        <div className="p-6 sm:p-8">
+          {loading ? (
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <Loader2 className="animate-spin text-primary" />
+            </div>
+          ) : role !== "tcg_manager" && role !== "admin" ? null : (
+            <Outlet />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

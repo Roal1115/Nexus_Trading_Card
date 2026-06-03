@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TcgManagerRouteImport } from './routes/tcg-manager'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as OrganizerRouteImport } from './routes/organizer'
@@ -17,8 +18,11 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckInboxRouteImport } from './routes/check-inbox'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
+import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
@@ -26,9 +30,15 @@ import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
+import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 
+const TcgManagerRoute = TcgManagerRouteImport.update({
+  id: '/tcg-manager',
+  path: '/tcg-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -69,6 +79,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TcgManagerIndexRoute = TcgManagerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
 const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -78,6 +93,16 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const TcgManagerUploadRoute = TcgManagerUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerApprovedRoute = TcgManagerApprovedRouteImport.update({
+  id: '/approved',
+  path: '/approved',
+  getParentRoute: () => TcgManagerRoute,
 } as any)
 const OrganizerTournamentsRoute = OrganizerTournamentsRouteImport.update({
   id: '/tournaments',
@@ -114,6 +139,11 @@ const AdminApprovedRoute = AdminApprovedRouteImport.update({
   path: '/approved',
   getParentRoute: () => AdminRoute,
 } as any)
+const TcgManagerTournamentsIdRoute = TcgManagerTournamentsIdRouteImport.update({
+  id: '/tournaments/$id',
+  path: '/tournaments/$id',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
 const AdminTournamentsIdRoute = AdminTournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
@@ -134,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -141,10 +172,14 @@ export interface FileRoutesByFullPath {
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
+  '/tcg-manager/approved': typeof TcgManagerApprovedRoute
+  '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -160,10 +195,14 @@ export interface FileRoutesByTo {
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
+  '/tcg-manager/approved': typeof TcgManagerApprovedRoute
+  '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
+  '/tcg-manager': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -175,6 +214,7 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -182,10 +222,14 @@ export interface FileRoutesById {
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
+  '/tcg-manager/approved': typeof TcgManagerApprovedRoute
+  '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -198,6 +242,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/setup'
     | '/signup'
+    | '/tcg-manager'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -205,10 +250,14 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/organizer/new'
     | '/organizer/tournaments'
+    | '/tcg-manager/approved'
+    | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
+    | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/tcg-manager/tournaments/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -224,10 +273,14 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/organizer/new'
     | '/organizer/tournaments'
+    | '/tcg-manager/approved'
+    | '/tcg-manager/upload'
     | '/admin'
     | '/organizer'
+    | '/tcg-manager'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/tcg-manager/tournaments/$id'
   id:
     | '__root__'
     | '/'
@@ -238,6 +291,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/setup'
     | '/signup'
+    | '/tcg-manager'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -245,10 +299,14 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/organizer/new'
     | '/organizer/tournaments'
+    | '/tcg-manager/approved'
+    | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
+    | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/tcg-manager/tournaments/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -260,10 +318,18 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
+  TcgManagerRoute: typeof TcgManagerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tcg-manager': {
+      id: '/tcg-manager'
+      path: '/tcg-manager'
+      fullPath: '/tcg-manager'
+      preLoaderRoute: typeof TcgManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -320,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tcg-manager/': {
+      id: '/tcg-manager/'
+      path: '/'
+      fullPath: '/tcg-manager/'
+      preLoaderRoute: typeof TcgManagerIndexRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
     '/organizer/': {
       id: '/organizer/'
       path: '/'
@@ -333,6 +406,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/tcg-manager/upload': {
+      id: '/tcg-manager/upload'
+      path: '/upload'
+      fullPath: '/tcg-manager/upload'
+      preLoaderRoute: typeof TcgManagerUploadRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/approved': {
+      id: '/tcg-manager/approved'
+      path: '/approved'
+      fullPath: '/tcg-manager/approved'
+      preLoaderRoute: typeof TcgManagerApprovedRouteImport
+      parentRoute: typeof TcgManagerRoute
     }
     '/organizer/tournaments': {
       id: '/organizer/tournaments'
@@ -382,6 +469,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/approved'
       preLoaderRoute: typeof AdminApprovedRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/tcg-manager/tournaments/$id': {
+      id: '/tcg-manager/tournaments/$id'
+      path: '/tournaments/$id'
+      fullPath: '/tcg-manager/tournaments/$id'
+      preLoaderRoute: typeof TcgManagerTournamentsIdRouteImport
+      parentRoute: typeof TcgManagerRoute
     }
     '/admin/tournaments/$id': {
       id: '/admin/tournaments/$id'
@@ -450,6 +544,24 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
   OrganizerRouteChildren,
 )
 
+interface TcgManagerRouteChildren {
+  TcgManagerApprovedRoute: typeof TcgManagerApprovedRoute
+  TcgManagerUploadRoute: typeof TcgManagerUploadRoute
+  TcgManagerIndexRoute: typeof TcgManagerIndexRoute
+  TcgManagerTournamentsIdRoute: typeof TcgManagerTournamentsIdRoute
+}
+
+const TcgManagerRouteChildren: TcgManagerRouteChildren = {
+  TcgManagerApprovedRoute: TcgManagerApprovedRoute,
+  TcgManagerUploadRoute: TcgManagerUploadRoute,
+  TcgManagerIndexRoute: TcgManagerIndexRoute,
+  TcgManagerTournamentsIdRoute: TcgManagerTournamentsIdRoute,
+}
+
+const TcgManagerRouteWithChildren = TcgManagerRoute._addFileChildren(
+  TcgManagerRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -459,6 +571,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
+  TcgManagerRoute: TcgManagerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

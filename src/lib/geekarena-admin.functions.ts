@@ -392,7 +392,7 @@ export const listPlayers = createServerFn({ method: "POST" })
   .inputValidator(
     (d: {
       search?: string;
-      role?: "all" | "player" | "organizer" | "admin";
+      role?: "all" | "player" | "organizer" | "tcg_manager" | "admin";
       active?: "all" | "true" | "false";
       store_id?: string | null;
       sort?: "recent" | "geek_tag" | "points";
@@ -402,7 +402,7 @@ export const listPlayers = createServerFn({ method: "POST" })
       z
         .object({
           search: z.string().max(120).optional(),
-          role: z.enum(["all", "player", "organizer", "admin"]).optional(),
+          role: z.enum(["all", "player", "organizer", "tcg_manager", "admin"]).optional(),
           active: z.enum(["all", "true", "false"]).optional(),
           store_id: z.string().uuid().optional().nullable(),
           sort: z.enum(["recent", "geek_tag", "points"]).optional(),
@@ -609,10 +609,10 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
 
 export const setPlayerRole = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { player_id: string; role: "player" | "organizer" | "admin"; home_store_id?: string | null }) =>
+  .inputValidator((d: { player_id: string; role: "player" | "organizer" | "tcg_manager" | "admin"; home_store_id?: string | null }) =>
     z.object({
       player_id: z.string().uuid(),
-      role: z.enum(["player", "organizer", "admin"]),
+      role: z.enum(["player", "organizer", "tcg_manager", "admin"]),
       home_store_id: z.string().uuid().optional().nullable(),
     }).parse(d),
   )

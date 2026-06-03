@@ -77,6 +77,7 @@ function LoginPage() {
 
     toast.success("¡Bienvenido de vuelta a la Arena!");
     if (role === "admin") navigate({ to: "/admin" });
+    else if (role === "tcg_manager") navigate({ to: "/tcg-manager" });
     else if (role === "organizer") navigate({ to: "/organizer" });
     else navigate({ to: "/dashboard" });
   };
