@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, Crown, Swords, Target, TrendingUp } from "lucide-react";
+import { Award, ChevronRight, Crown, Swords, Target, TrendingUp, X } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getMyDashboard } from "@/lib/geekarena-player.functions";
+import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Mi Panel — Geek Arena" }] }),
@@ -11,15 +11,39 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 type DashboardData = Awaited<ReturnType<typeof getMyDashboard>>;
+type TournamentDetail = Awaited<ReturnType<typeof getTournamentDetail>>;
 
 function DashboardPage() {
   const { player: gaPlayer } = useGeekarenaRole();
   const fetchDashboard = useServerFn(getMyDashboard);
+  const fetchTournamentDetail = useServerFn(getTournamentDetail);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+  const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const openTournament = async (tournament_id: string) => {
+    setSelectedTournamentId(tournament_id);
+    setLoadingDetail(true);
+    setTournamentDetail(null);
+    try {
+      const detail = await fetchTournamentDetail({ data: { tournament_id } });
+      setTournamentDetail(detail);
+    } catch {
+      setTournamentDetail(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedTournamentId(null);
+    setTournamentDetail(null);
+  };
 
   useEffect(() => {
     if (!gaPlayer) {
