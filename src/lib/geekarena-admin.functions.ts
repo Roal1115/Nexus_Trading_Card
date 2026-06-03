@@ -392,7 +392,7 @@ export const listPlayers = createServerFn({ method: "POST" })
   .inputValidator(
     (d: {
       search?: string;
-      role?: "all" | "player" | "organizer" | "admin";
+      role?: "all" | "player" | "organizer" | "tcg_manager" | "admin";
       active?: "all" | "true" | "false";
       store_id?: string | null;
       sort?: "recent" | "geek_tag" | "points";
