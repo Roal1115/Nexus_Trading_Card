@@ -134,7 +134,13 @@ function AdminPlayersPage() {
 
   // effective role based on tab
   const effectiveRole: "all" | Role =
-    tab === "organizers" ? "organizer" : tab === "admins" ? "admin" : roleFilter;
+    tab === "organizers"
+      ? "organizer"
+      : tab === "managers"
+        ? "tcg_manager"
+        : tab === "admins"
+          ? "admin"
+          : roleFilter;
 
   // fetch players
   useEffect(() => {
