@@ -229,6 +229,8 @@ export function TournamentUploadForm({
     if (!player) return;
     (async () => {
       try {
+        const { data: sess } = await geekarena.auth.getSession();
+        if (!sess.session) return;
         const ov = await fetchOverview();
         setGames(ov.games as Game[]);
         setHomeStore((ov.homeStore as Store) ?? null);
