@@ -58,7 +58,7 @@ export const Route = createFileRoute("/admin/players")({
   component: AdminPlayersPage,
 });
 
-type Role = "player" | "organizer" | "admin";
+type Role = "player" | "organizer" | "tcg_manager" | "admin";
 type P = {
   id: string;
   geek_tag: string;
