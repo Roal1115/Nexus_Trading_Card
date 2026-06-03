@@ -200,6 +200,7 @@ export async function loadTournamentDetail(
       published_at: t.published_at,
       created_at: t.created_at,
       rejection_reason: (t as any).rejection_reason ?? null,
+      csv_url: (t as any).csv_url ?? null,
     },
     store: storeRes.data ?? { id: t.store_id, name: "—", city: null, state: null },
     game: gameRes.data ?? { id: t.game_id, name: "—", slug: "" },
