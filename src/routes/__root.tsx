@@ -124,7 +124,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isPanel = pathname.startsWith("/admin") || pathname.startsWith("/organizer");
+  const isPanel =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/organizer") ||
+    pathname.startsWith("/tcg-manager");
 
   return (
     <QueryClientProvider client={queryClient}>
