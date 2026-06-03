@@ -116,6 +116,24 @@ function ManagerPendingTournaments() {
                     <td className="px-4 py-3">
                       <Badge variant="secondary">{r.status}</Badge>
                     </td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      {r.csv_url ? (
+                        <a
+                          href={r.csv_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          <FileDown size={12} />
+                          Ver CSV
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                          <FileX size={12} />
+                          Sin archivo
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={(e) => {
