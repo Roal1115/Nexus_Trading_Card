@@ -46,6 +46,7 @@ function AdminLayout() {
               { to: "/admin/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} /> },
               { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
               { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
+              { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
             ],
           },
           {
