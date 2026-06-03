@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, ChevronRight, Crown, Swords, Target, TrendingUp, X } from "lucide-react";
+import { Award, ChevronRight, Crown, HelpCircle, Swords, Target, TrendingUp, X } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
 
@@ -159,6 +159,20 @@ function DashboardPage() {
           label="Puntos Totales"
           value={Number(totalPoints).toFixed(2)}
           sub={semesterLabel || "—"}
+          tooltip={`¿Cómo se calculan tus puntos?
+
+Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
+(tus match points ÷ match points del 1er lugar) × 100
+
+Ejemplo: Si el 1er lugar tuvo 12 pts y tú tuviste 9 pts → (9÷12)×100 = 75.00 Pts Arena
+
+Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard. Los torneos extra se descartan.
+
+Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
+
+Leaderboard de temporada: Suma acumulada de todos tus torneos durante la temporada completa, aplicando siempre la regla del top 2 por semana.
+
+Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneos ganados, luego por torneos jugados, y finalmente por OMW% promedio.`}
         />
         <StatCard
           icon={<Swords className="text-primary" size={18} />}
@@ -413,16 +427,32 @@ function StatCard({
   label,
   value,
   sub,
+  tooltip,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   sub: string;
+  tooltip?: string;
 }) {
   return (
-    <div className="glass rounded-2xl p-6">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
-        {icon} {label}
+    <div className="glass rounded-2xl p-6 relative">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
+          {icon} {label}
+        </div>
+        {tooltip && (
+          <div className="group relative">
+            <button className="text-gray-600 hover:text-primary transition" aria-label="Más información">
+              <HelpCircle size={14} />
+            </button>
+            <div className="pointer-events-none absolute right-0 top-6 z-50 w-72 max-w-[calc(100vw-2rem)] hidden group-hover:block group-focus-within:block">
+              <div className="glass rounded-xl border border-white/10 p-4 text-xs text-gray-300 leading-relaxed shadow-xl whitespace-pre-line">
+                {tooltip}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="mt-3 font-mono-stat text-4xl font-bold text-white">
         {value}
@@ -431,3 +461,4 @@ function StatCard({
     </div>
   );
 }
+
