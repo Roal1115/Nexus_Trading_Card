@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena, type Game } from "@/integrations/geekarena/client";
+import { signupPlayer } from "@/lib/geekarena-auth.functions";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Únete al Circuito — Geek Arena" }] }),
@@ -90,14 +92,18 @@ function SignupPage() {
     const handle = setTimeout(async () => {
       const { data, error } = await geekarena
         .from("players")
-        .select("id")
+        .select("id, auth_user_id")
         .eq("geek_tag", tag)
         .maybeSingle();
       if (error && error.code !== "PGRST116") {
         setTagStatus("idle");
         return;
       }
-      setTagStatus(data ? "taken" : "available");
+      if (data && data.auth_user_id) {
+        setTagStatus("taken"); // cuenta real activa → bloqueado
+      } else {
+        setTagStatus("available"); // no existe o es auto-creada → disponible
+      }
     }, 500);
     return () => clearTimeout(handle);
   }, [tag]);
@@ -124,6 +130,8 @@ function SignupPage() {
     Object.keys(step1Errors).length === 0 &&
     tagStatus === "available";
 
+  const signupFn = useServerFn(signupPlayer);
+
   const handleCreate = async () => {
     if (submitting || cooldown) return;
 
@@ -147,27 +155,38 @@ function SignupPage() {
     }
 
     setSubmitting(true);
-    const { error } = await geekarena.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+    try {
+      const result = await signupFn({
         data: {
+          email,
+          password,
           geek_tag: tag,
           game_ids: Array.from(selected),
         },
-      },
-    });
-    setSubmitting(false);
-    setCooldown(true);
-    setTimeout(() => setCooldown(false), 3000);
+      });
 
-    if (error) {
-      toast.error(translateAuthError(error.message));
-      return;
+      // Enviar correo de verificación
+      const { error: resendErr } = await geekarena.auth.resend({
+        type: "signup",
+        email: result.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+      if (resendErr) {
+        toast.error(translateAuthError(resendErr.message));
+        return;
+      }
+
+      await geekarena.auth.signOut();
+      navigate({ to: "/check-inbox", search: { email: result.email } });
+    } catch (err: any) {
+      toast.error(translateAuthError(err?.message ?? ""));
+    } finally {
+      setSubmitting(false);
+      setCooldown(true);
+      setTimeout(() => setCooldown(false), 3000);
     }
-    await geekarena.auth.signOut();
-    navigate({ to: "/check-inbox", search: { email } });
   };
 
   return (
