@@ -263,8 +263,8 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       monthly: shape(monthlyRaw),
       semestral: shape(semestralRaw),
       month_label: monthLabel(monthValue),
-      semester_label: semesterLabel(semesterKey),
+      semester_label: season?.name ?? "Sin temporada activa",
       month_value: monthValue,
-      semester_key: semesterKey,
+      semester_key: seasonKey,
     };
   });
