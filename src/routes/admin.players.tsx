@@ -440,6 +440,21 @@ function AdminPlayersPage() {
                             {p.display_name}
                           </span>
                         ) : null}
+                        {p.role === "tcg_manager" &&
+                        p.manager_games &&
+                        p.manager_games.length > 0 ? (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {p.manager_games.map((mg) => (
+                              <Badge
+                                key={mg.game_id}
+                                variant="outline"
+                                className="border-primary/40 text-[10px] text-primary"
+                              >
+                                {mg.games?.name ?? mg.game_id}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-gray-300">{p.email ?? "—"}</td>
                       <td className="px-4 py-3">
