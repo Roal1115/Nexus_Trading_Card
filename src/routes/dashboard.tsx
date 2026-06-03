@@ -427,16 +427,32 @@ function StatCard({
   label,
   value,
   sub,
+  tooltip,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   sub: string;
+  tooltip?: string;
 }) {
   return (
-    <div className="glass rounded-2xl p-6">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
-        {icon} {label}
+    <div className="glass rounded-2xl p-6 relative">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
+          {icon} {label}
+        </div>
+        {tooltip && (
+          <div className="group relative">
+            <button className="text-gray-600 hover:text-primary transition" aria-label="Más información">
+              <HelpCircle size={14} />
+            </button>
+            <div className="pointer-events-none absolute right-0 top-6 z-50 w-72 max-w-[calc(100vw-2rem)] hidden group-hover:block group-focus-within:block">
+              <div className="glass rounded-xl border border-white/10 p-4 text-xs text-gray-300 leading-relaxed shadow-xl whitespace-pre-line">
+                {tooltip}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="mt-3 font-mono-stat text-4xl font-bold text-white">
         {value}
@@ -445,3 +461,4 @@ function StatCard({
     </div>
   );
 }
+
