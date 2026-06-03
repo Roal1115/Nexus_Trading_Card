@@ -583,6 +583,7 @@ function AdminPlayersPage() {
                 <SelectContent>
                   <SelectItem value="player">player</SelectItem>
                   <SelectItem value="organizer">organizer</SelectItem>
+                  <SelectItem value="tcg_manager">tcg_manager</SelectItem>
                   <SelectItem value="admin">admin</SelectItem>
                 </SelectContent>
               </Select>
