@@ -1,0 +1,96 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { getGeekarenaAdmin } from "./geekarena-admin.server";
+
+export const signupPlayer = createServerFn({ method: "POST" })
+  .inputValidator((d: {
+    email: string;
+    password: string;
+    geek_tag: string;
+    game_ids: string[];
+  }) =>
+    z
+      .object({
+        email: z.string().email(),
+        password: z.string().min(8),
+        geek_tag: z.string().min(3).max(30).regex(/^[A-Za-z0-9_]+$/),
+        game_ids: z.array(z.string().uuid()).min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const admin = getGeekarenaAdmin();
+
+    // 1. Crear usuario de auth
+    const { data: authUser, error: authErr } =
+      await admin.auth.admin.createUser({
+        email: data.email,
+        password: data.password,
+        email_confirm: false,
+        user_metadata: {
+          geek_tag: data.geek_tag,
+          game_ids: data.game_ids,
+        },
+      });
+    if (authErr || !authUser?.user) {
+      throw new Error(authErr?.message ?? "No se pudo crear el usuario");
+    }
+    const newAuthUserId = authUser.user.id;
+
+    // 2. Verificar si existe un player auto-creado desde CSV (sin auth_user_id)
+    const { data: existing } = await admin
+      .from("players")
+      .select("id")
+      .eq("geek_tag", data.geek_tag)
+      .is("auth_user_id", null)
+      .maybeSingle();
+
+    let playerId: string;
+
+    if (existing) {
+      // Reclamar cuenta auto-creada — vincular auth_user_id y email
+      const { error: updateErr } = await admin
+        .from("players")
+        .update({
+          auth_user_id: newAuthUserId,
+          email: data.email,
+          is_active: false,
+        })
+        .eq("id", existing.id)
+        .select("id")
+        .single();
+      if (updateErr) throw new Error(updateErr.message);
+      playerId = existing.id;
+    } else {
+      // Crear player nuevo
+      const { data: created, error: insertErr } = await admin
+        .from("players")
+        .insert({
+          geek_tag: data.geek_tag,
+          email: data.email,
+          auth_user_id: newAuthUserId,
+          is_active: false,
+          role: "player",
+        })
+        .select("id")
+        .single();
+      if (insertErr) throw new Error(insertErr.message);
+      playerId = created.id;
+    }
+
+    // 3. Insertar juegos seleccionados en player_games
+    if (data.game_ids.length > 0) {
+      const { error: pgErr } = await admin.from("player_games").insert(
+        data.game_ids.map((game_id) => ({
+          player_id: playerId,
+          game_id,
+        })),
+      );
+      // Ignorar duplicados silenciosamente
+      if (pgErr && !/duplicate/i.test(pgErr.message)) {
+        throw new Error(pgErr.message);
+      }
+    }
+
+    return { ok: true as const, email: data.email };
+  });
