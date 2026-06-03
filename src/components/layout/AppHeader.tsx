@@ -45,6 +45,9 @@ export function AppHeader() {
           {role === "organizer" && (
             <NavItem to="/organizer" icon={<Shield size={14} />} label="Moderación" />
           )}
+          {role === "tcg_manager" && (
+            <NavItem to="/tcg-manager" icon={<Shield size={14} />} label="Moderación" />
+          )}
           {role === "admin" && (
             <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />
           )}
