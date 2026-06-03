@@ -16,6 +16,7 @@ type Row = {
   tournament_date: string;
   status: string;
   created_at: string;
+  csv_url: string | null;
   store_id: string;
   game_id: string;
   stores: { name: string; city: string | null; state: string | null } | null;
