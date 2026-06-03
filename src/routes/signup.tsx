@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena, type Game } from "@/integrations/geekarena/client";
+import { signupPlayer } from "@/lib/geekarena-auth.functions";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Únete al Circuito — Geek Arena" }] }),
