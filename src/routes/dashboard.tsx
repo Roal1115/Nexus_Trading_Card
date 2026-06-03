@@ -138,15 +138,15 @@ function DashboardPage() {
         />
         <StatCard
           icon={<Swords className="text-primary" size={18} />}
-          label="Victorias / Derrotas"
-          value={`${tournamentsWon} – ${losses}`}
-          sub={`${winPct}% win rate · ratio ${ratio}`}
+          label="Torneos Jugados"
+          value={String(tournamentsPlayed)}
+          sub="Esta temporada"
         />
         <StatCard
           icon={<Award className="text-primary" size={18} />}
           label="Torneos Ganados"
           value={String(tournamentsWon)}
-          sub="Histórico"
+          sub="1er lugar"
         />
       </section>
 
