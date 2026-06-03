@@ -5,7 +5,7 @@ import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
-type AppRole = "player" | "organizer" | "admin";
+type AppRole = "player" | "organizer" | "tcg_manager" | "admin";
 
 type PlayerCtx = {
   id: string;
@@ -31,7 +31,6 @@ async function resolveCaller(): Promise<{
   if (!token) throw new Error("Unauthorized: Empty token");
 
   const admin = getGeekarenaAdmin();
-  // Validates the JWT against the GeekArena Auth server.
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data?.user?.email) {
     throw new Error("Unauthorized: Invalid token");
@@ -57,10 +56,24 @@ export const requireGeekarenaAdmin = createMiddleware({ type: "function" }).serv
   },
 );
 
+export const requireGeekarenaManager = createMiddleware({ type: "function" }).server(
+  async ({ next }) => {
+    const { admin, player } = await resolveCaller();
+    if (player.role !== "tcg_manager" && player.role !== "admin") {
+      throw new Error("No autorizado");
+    }
+    return next({ context: { admin, player } });
+  },
+);
+
 export const requireGeekarenaOrganizer = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
     const { admin, player } = await resolveCaller();
-    if (player.role !== "organizer" && player.role !== "admin") {
+    if (
+      player.role !== "organizer" &&
+      player.role !== "tcg_manager" &&
+      player.role !== "admin"
+    ) {
       throw new Error("No autorizado");
     }
     return next({ context: { admin, player } });
