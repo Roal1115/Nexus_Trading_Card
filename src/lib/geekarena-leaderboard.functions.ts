@@ -49,20 +49,24 @@ const MONTH_NAMES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
-function getSemesterKey(monthValue: string): string {
+async function getSeasonForMonth(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+  monthValue: string,
+): Promise<{ id: string; slug: string; name: string } | null> {
   const [year, month] = monthValue.split("-").map(Number);
-  const semester = month <= 6 ? 1 : 2;
-  return `${year}-S${semester}`;
+  const firstDay = `${year}-${String(month).padStart(2, "0")}-01`;
+  const { data } = await admin
+    .from("seasons")
+    .select("id, slug, name")
+    .lte("start_date", firstDay)
+    .gte("end_date", firstDay)
+    .maybeSingle();
+  return (data as { id: string; slug: string; name: string } | null) ?? null;
 }
 
 function monthLabel(monthValue: string): string {
   const [y, m] = monthValue.split("-").map(Number);
   return `${MONTH_NAMES[m - 1]} ${y}`;
-}
-
-function semesterLabel(semesterKey: string): string {
-  const [year, s] = semesterKey.split("-");
-  return `${s} ${year}`;
 }
 
 export const getLeaderboard = createServerFn({ method: "POST" })
