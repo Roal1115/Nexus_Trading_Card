@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Eye, ArrowRight } from "lucide-react";
+import { Loader2, Eye, ArrowRight, FileDown, FileX } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getManagerPendingTournaments } from "@/lib/geekarena-manager.functions";
