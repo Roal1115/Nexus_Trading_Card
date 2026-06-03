@@ -18,6 +18,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckInboxRouteImport } from './routes/check-inbox'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
@@ -74,6 +75,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TcgManagerIndexRoute = TcgManagerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TcgManagerRoute,
 } as any)
 const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
   id: '/',
@@ -140,7 +146,7 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
-  '/tcg-manager': typeof TcgManagerRoute
+  '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
 }
@@ -160,7 +167,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
-  '/tcg-manager': typeof TcgManagerRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -170,6 +176,7 @@ export interface FileRoutesByTo {
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
+  '/tcg-manager': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
 }
@@ -183,7 +190,7 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteWithChildren
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
-  '/tcg-manager': typeof TcgManagerRoute
+  '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -193,6 +200,7 @@ export interface FileRoutesById {
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
 }
@@ -217,6 +225,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/admin/'
     | '/organizer/'
+    | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -227,7 +236,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup'
     | '/signup'
-    | '/tcg-manager'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -237,6 +245,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/admin'
     | '/organizer'
+    | '/tcg-manager'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
   id:
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/admin/'
     | '/organizer/'
+    | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
   fileRoutesById: FileRoutesById
@@ -272,7 +282,7 @@ export interface RootRouteChildren {
   OrganizerRoute: typeof OrganizerRouteWithChildren
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
-  TcgManagerRoute: typeof TcgManagerRoute
+  TcgManagerRoute: typeof TcgManagerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -339,6 +349,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/tcg-manager/': {
+      id: '/tcg-manager/'
+      path: '/'
+      fullPath: '/tcg-manager/'
+      preLoaderRoute: typeof TcgManagerIndexRouteImport
+      parentRoute: typeof TcgManagerRoute
     }
     '/organizer/': {
       id: '/organizer/'
@@ -470,6 +487,18 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
   OrganizerRouteChildren,
 )
 
+interface TcgManagerRouteChildren {
+  TcgManagerIndexRoute: typeof TcgManagerIndexRoute
+}
+
+const TcgManagerRouteChildren: TcgManagerRouteChildren = {
+  TcgManagerIndexRoute: TcgManagerIndexRoute,
+}
+
+const TcgManagerRouteWithChildren = TcgManagerRoute._addFileChildren(
+  TcgManagerRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -479,8 +508,18 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizerRoute: OrganizerRouteWithChildren,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
-  TcgManagerRoute: TcgManagerRoute,
+  TcgManagerRoute: TcgManagerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
