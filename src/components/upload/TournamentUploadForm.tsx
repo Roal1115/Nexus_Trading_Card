@@ -182,7 +182,7 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
       wins,
       losses,
       draws,
-      points_earned: isFinite(rank) && rank >= 1 ? calcularPuntosArena(rank) : 0,
+      points_earned: 0, // se calculará después con normalizarPuntos()
       dropped,
       error,
     });
