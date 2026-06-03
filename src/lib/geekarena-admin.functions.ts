@@ -10,6 +10,22 @@ function tfValues(month: number, semester: number, year: number) {
   } as const;
 }
 
+// Returns ISO week key "YYYY-WNN" for a given date string "YYYY-MM-DD"
+// Week starts on Monday
+function getWeekKey(dateStr: string): string {
+  const date = new Date(dateStr + "T12:00:00Z");
+  const day = date.getUTCDay(); // 0=Sun, 1=Mon ... 6=Sat
+  const diff = (day === 0 ? -6 : 1 - day); // adjust to Monday
+  const monday = new Date(date);
+  monday.setUTCDate(date.getUTCDate() + diff);
+  const year = monday.getUTCFullYear();
+  const startOfYear = new Date(Date.UTC(year, 0, 1));
+  const weekNum = Math.ceil(
+    ((monday.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getUTCDay() + 1) / 7
+  );
+  return `${year}-W${String(weekNum).padStart(2, "0")}`;
+}
+
 // Recompute leaderboard snapshots for a given game+timeframe based on
 // PUBLISHED tournaments in that period.
 async function recomputeSnapshot(
@@ -22,7 +38,7 @@ async function recomputeSnapshot(
 ) {
   let q = admin
     .from("tournaments")
-    .select("id, store_id, qualifying_year, qualifying_month, qualifying_semester")
+    .select("id, store_id, tournament_date, qualifying_year, qualifying_month, qualifying_semester")
     .eq("status", "PUBLISHED")
     .eq("game_id", game_id)
     .eq("store_id", store_id);
@@ -47,10 +63,42 @@ async function recomputeSnapshot(
 
   const { data: results, error: re } = await admin
     .from("tournament_results")
-    .select("player_id, rank, points_earned, omw_percentage")
+    .select("player_id, rank, points_earned, omw_percentage, tournament_id")
     .in("tournament_id", tIds);
   if (re) throw new Error(re.message);
 
+  // Build a map from tournament_id -> tournament_date
+  const tournamentDateMap = new Map<string, string>(
+    (tournaments ?? []).map((t) => [t.id, t.tournament_date])
+  );
+
+  // Group results by player_id -> week -> list of results
+  type RawResult = {
+    player_id: string;
+    rank: number | null;
+    points_earned: number | null;
+    omw_percentage: number | null;
+    tournament_id: string;
+  };
+
+  const playerWeekMap = new Map<string, Map<string, RawResult[]>>();
+
+  for (const r of (results ?? []) as RawResult[]) {
+    const date = tournamentDateMap.get(r.tournament_id);
+    if (!date) continue;
+    const weekKey = getWeekKey(date);
+
+    if (!playerWeekMap.has(r.player_id)) {
+      playerWeekMap.set(r.player_id, new Map());
+    }
+    const weekMap = playerWeekMap.get(r.player_id)!;
+    if (!weekMap.has(weekKey)) {
+      weekMap.set(weekKey, []);
+    }
+    weekMap.get(weekKey)!.push(r);
+  }
+
+  // For each player, apply top-2-per-week rule and aggregate
   type Agg = {
     total_points: number;
     played: number;
@@ -59,24 +107,29 @@ async function recomputeSnapshot(
     omw_count: number;
   };
   const agg = new Map<string, Agg>();
-  for (const r of (results ?? []) as Array<{
-    player_id: string;
-    rank: number | null;
-    points_earned: number | null;
-    omw_percentage: number | null;
-  }>) {
-    const a =
-      agg.get(r.player_id) ??
-      { total_points: 0, played: 0, won: 0, omw_sum: 0, omw_count: 0 };
-    a.total_points += r.points_earned ?? 0;
-    a.played += 1;
-    if (r.rank === 1) a.won += 1;
-    if (r.omw_percentage != null) {
-      a.omw_sum += Number(r.omw_percentage);
-      a.omw_count += 1;
+
+  for (const [player_id, weekMap] of playerWeekMap.entries()) {
+    const a: Agg = { total_points: 0, played: 0, won: 0, omw_sum: 0, omw_count: 0 };
+
+    for (const weekResults of weekMap.values()) {
+      const top2 = weekResults
+        .sort((x, y) => (y.points_earned ?? 0) - (x.points_earned ?? 0))
+        .slice(0, 2);
+
+      for (const r of top2) {
+        a.total_points += r.points_earned ?? 0;
+        a.played += 1;
+        if (r.rank === 1) a.won += 1;
+        if (r.omw_percentage != null) {
+          a.omw_sum += Number(r.omw_percentage);
+          a.omw_count += 1;
+        }
+      }
     }
-    agg.set(r.player_id, a);
+
+    agg.set(player_id, a);
   }
+
 
   const ranked = Array.from(agg.entries())
     .map(([player_id, a]) => ({ player_id, ...a }))
