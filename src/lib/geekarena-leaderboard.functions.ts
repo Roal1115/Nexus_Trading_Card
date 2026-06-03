@@ -49,20 +49,24 @@ const MONTH_NAMES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
-function getSemesterKey(monthValue: string): string {
+async function getSeasonForMonth(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+  monthValue: string,
+): Promise<{ id: string; slug: string; name: string } | null> {
   const [year, month] = monthValue.split("-").map(Number);
-  const semester = month <= 6 ? 1 : 2;
-  return `${year}-S${semester}`;
+  const firstDay = `${year}-${String(month).padStart(2, "0")}-01`;
+  const { data } = await admin
+    .from("seasons")
+    .select("id, slug, name")
+    .lte("start_date", firstDay)
+    .gte("end_date", firstDay)
+    .maybeSingle();
+  return (data as { id: string; slug: string; name: string } | null) ?? null;
 }
 
 function monthLabel(monthValue: string): string {
   const [y, m] = monthValue.split("-").map(Number);
   return `${MONTH_NAMES[m - 1]} ${y}`;
-}
-
-function semesterLabel(semesterKey: string): string {
-  const [year, s] = semesterKey.split("-");
-  return `${s} ${year}`;
 }
 
 export const getLeaderboard = createServerFn({ method: "POST" })
@@ -111,13 +115,15 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         monthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       }
     }
-    const semesterKey = getSemesterKey(monthValue);
+    const season = await getSeasonForMonth(admin, monthValue);
+    const seasonKey = season?.slug ?? "";
 
     async function querySnapshots(
       timeframeType: "MONTHLY" | "SEMESTRAL",
       timeframeValue: string,
       opts: { applyStoreId: boolean },
     ) {
+      if (!timeframeValue) return [];
       let q = admin
         .from("leaderboard_snapshots")
         .select(
@@ -149,7 +155,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
 
     const [monthlyRaw, semestralRaw] = await Promise.all([
       querySnapshots("MONTHLY", monthValue, { applyStoreId: true }),
-      querySnapshots("SEMESTRAL", semesterKey, { applyStoreId: false }),
+      querySnapshots("SEMESTRAL", seasonKey, { applyStoreId: false }),
     ]);
 
     const playerIds = Array.from(
@@ -257,8 +263,8 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       monthly: shape(monthlyRaw),
       semestral: shape(semestralRaw),
       month_label: monthLabel(monthValue),
-      semester_label: semesterLabel(semesterKey),
+      semester_label: season?.name ?? "Sin temporada activa",
       month_value: monthValue,
-      semester_key: semesterKey,
+      semester_key: seasonKey,
     };
   });

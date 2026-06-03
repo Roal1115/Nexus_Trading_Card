@@ -27,6 +27,7 @@ import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tou
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
 import { Route as AdminStoresRouteImport } from './routes/admin.stores'
+import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
@@ -124,6 +125,11 @@ const AdminStoresRoute = AdminStoresRouteImport.update({
   path: '/stores',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSeasonsRoute = AdminSeasonsRouteImport.update({
+  id: '/seasons',
+  path: '/seasons',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPublishRoute = AdminPublishRouteImport.update({
   id: '/publish',
   path: '/publish',
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
+  '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
+  '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
+  '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
+    | '/admin/seasons'
     | '/admin/stores'
     | '/admin/upload'
     | '/organizer/new'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
+    | '/admin/seasons'
     | '/admin/stores'
     | '/admin/upload'
     | '/organizer/new'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
+    | '/admin/seasons'
     | '/admin/stores'
     | '/admin/upload'
     | '/organizer/new'
@@ -449,6 +461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStoresRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/seasons': {
+      id: '/admin/seasons'
+      path: '/seasons'
+      fullPath: '/admin/seasons'
+      preLoaderRoute: typeof AdminSeasonsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/publish': {
       id: '/admin/publish'
       path: '/publish'
@@ -510,6 +529,7 @@ interface AdminRouteChildren {
   AdminApprovedRoute: typeof AdminApprovedRoute
   AdminPlayersRoute: typeof AdminPlayersRouteWithChildren
   AdminPublishRoute: typeof AdminPublishRoute
+  AdminSeasonsRoute: typeof AdminSeasonsRoute
   AdminStoresRoute: typeof AdminStoresRoute
   AdminUploadRoute: typeof AdminUploadRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -520,6 +540,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminApprovedRoute: AdminApprovedRoute,
   AdminPlayersRoute: AdminPlayersRouteWithChildren,
   AdminPublishRoute: AdminPublishRoute,
+  AdminSeasonsRoute: AdminSeasonsRoute,
   AdminStoresRoute: AdminStoresRoute,
   AdminUploadRoute: AdminUploadRoute,
   AdminIndexRoute: AdminIndexRoute,

@@ -1,13 +1,40 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
-import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
+import {
+  requireGeekarenaAdmin,
+  requireGeekarenaUser,
+} from "./geekarena-auth.middleware";
 
-function tfValues(month: number, semester: number, year: number) {
-  return {
-    MONTH: `${year}-${String(month).padStart(2, "0")}`,
-    SEMESTER: `${year}-S${semester}`,
-  } as const;
+// ---------- Active season helper ----------
+export async function getActiveSeason(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+) {
+  const { data } = await admin
+    .from("seasons")
+    .select("id, name, slug, start_date, end_date, status")
+    .eq("is_active", true)
+    .maybeSingle();
+  return (data ?? null) as
+    | {
+        id: string;
+        name: string;
+        slug: string;
+        start_date: string;
+        end_date: string;
+        status: string;
+      }
+    | null;
+}
+
+export const fetchActiveSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .handler(async ({ context }) => {
+    return getActiveSeason(context.admin);
+  });
+
+function tfMonth(month: number, year: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
 // Returns ISO week key "YYYY-WNN" for a given date string "YYYY-MM-DD"
@@ -34,17 +61,18 @@ async function recomputeSnapshot(
   store_id: string,
   timeframe_type: "MONTHLY" | "SEMESTRAL",
   timeframe_value: string,
-  filter: { year?: number; month?: number; semester?: number },
+  filter: { year?: number; month?: number; season_id?: string },
+  season_id?: string,
 ) {
   let q = admin
     .from("tournaments")
-    .select("id, store_id, tournament_date, qualifying_year, qualifying_month, qualifying_semester")
+    .select("id, store_id, tournament_date, qualifying_year, qualifying_month")
     .eq("status", "PUBLISHED")
     .eq("game_id", game_id)
     .eq("store_id", store_id);
   if (filter.year != null) q = q.eq("qualifying_year", filter.year);
   if (filter.month != null) q = q.eq("qualifying_month", filter.month);
-  if (filter.semester != null) q = q.eq("qualifying_semester", filter.semester);
+  if (filter.season_id != null) q = q.eq("season_id", filter.season_id);
 
   const { data: tournaments, error: te } = await q;
   if (te) throw new Error(te.message);
@@ -142,6 +170,7 @@ async function recomputeSnapshot(
     store_id,
     timeframe_type,
     timeframe_value,
+    season_id: season_id ?? null,
     total_points: r.total_points,
     tournaments_played: r.played,
     tournaments_won: r.won,
@@ -257,15 +286,35 @@ export const publishTournaments = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
+
+    const season = await getActiveSeason(admin);
+    if (!season) {
+      throw new Error(
+        "No hay una temporada activa. Crea una temporada antes de publicar torneos.",
+      );
+    }
+    const seasonStart = season.start_date;
+    const seasonEnd = season.end_date;
+
     const { data: tournaments, error: te } = await admin
       .from("tournaments")
-      .select("id, store_id, game_id, qualifying_year, qualifying_month, qualifying_semester, status")
+      .select(
+        "id, store_id, game_id, tournament_date, qualifying_year, qualifying_month, status",
+      )
       .in("id", data.tournament_ids);
     if (te) throw new Error(te.message);
 
-    const publishable = (tournaments ?? []).filter(
-      (t) => t.status === "APPROVED",
-    );
+    const approved = (tournaments ?? []).filter((t) => t.status === "APPROVED");
+    const publishable = approved.filter((t) => {
+      const d = t.tournament_date;
+      return d >= seasonStart && d <= seasonEnd;
+    });
+    const outOfSeason = approved.filter((t) => !publishable.includes(t));
+    if (outOfSeason.length > 0) {
+      throw new Error(
+        `${outOfSeason.length} torneo(s) tienen fecha fuera del rango de la temporada activa (${seasonStart} — ${seasonEnd}).`,
+      );
+    }
     if (publishable.length === 0) {
       return { published: 0 };
     }
@@ -273,33 +322,47 @@ export const publishTournaments = createServerFn({ method: "POST" })
     const nowIso = new Date().toISOString();
     const { error: ue } = await admin
       .from("tournaments")
-      .update({ status: "PUBLISHED", published_at: nowIso, approved_at: nowIso })
+      .update({
+        status: "PUBLISHED",
+        published_at: nowIso,
+        approved_at: nowIso,
+        season_id: season.id,
+      })
       .in("id", publishable.map((t) => t.id));
     if (ue) throw new Error(ue.message);
 
     const slices = new Set<string>();
     for (const t of publishable) {
-      const tf = tfValues(t.qualifying_month, t.qualifying_semester, t.qualifying_year);
-      slices.add(`${t.game_id}|${t.store_id}|MONTHLY|${tf.MONTH}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
-      slices.add(`${t.game_id}|${t.store_id}|SEMESTRAL|${tf.SEMESTER}|y=${t.qualifying_year}|s=${t.qualifying_semester}`);
+      const monthKey = tfMonth(t.qualifying_month, t.qualifying_year);
+      slices.add(
+        `${t.game_id}|${t.store_id}|MONTHLY|${monthKey}|y=${t.qualifying_year}|m=${t.qualifying_month}`,
+      );
+      slices.add(
+        `${t.game_id}|${t.store_id}|SEMESTRAL|${season.slug}|season_id=${season.id}`,
+      );
     }
 
     for (const key of slices) {
-      const [game_id, store_id, type, value, ...rest] = key.split("|");
-      const filter: { year?: number; month?: number; semester?: number } = {};
-      for (const p of rest) {
+      const parts = key.split("|");
+      const game_id = parts[0];
+      const store_id = parts[1];
+      const type = parts[2] as "MONTHLY" | "SEMESTRAL";
+      const value = parts[3];
+      const filter: { year?: number; month?: number; season_id?: string } = {};
+      for (const p of parts.slice(4)) {
         const [k, v] = p.split("=");
         if (k === "y") filter.year = Number(v);
         if (k === "m") filter.month = Number(v);
-        if (k === "s") filter.semester = Number(v);
+        if (k === "season_id") filter.season_id = v;
       }
       await recomputeSnapshot(
         admin,
         game_id,
         store_id,
-        type as "MONTHLY" | "SEMESTRAL",
+        type,
         value,
         filter,
+        type === "SEMESTRAL" ? season.id : undefined,
       );
     }
 
@@ -1018,3 +1081,83 @@ export const assignOrganizerToStore = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Seasons ----------
+export const listSeasons = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.admin
+      .from("seasons")
+      .select("id, name, slug, start_date, end_date, is_active, status, created_at")
+      .order("start_date", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const createSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator(
+    (d: { name: string; slug: string; start_date: string; end_date: string }) =>
+      z
+        .object({
+          name: z.string().min(3).max(120),
+          slug: z
+            .string()
+            .min(3)
+            .max(80)
+            .regex(/^[a-z0-9-]+$/, "Slug inválido"),
+          start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.end_date < data.start_date) {
+      throw new Error("La fecha de fin debe ser posterior a la de inicio.");
+    }
+    const { error } = await context.admin.from("seasons").insert({
+      name: data.name,
+      slug: data.slug,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      is_active: false,
+      status: "UPCOMING",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const activateSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { season_id: string }) =>
+    z.object({ season_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { error: de } = await admin
+      .from("seasons")
+      .update({ is_active: false })
+      .neq("id", data.season_id);
+    if (de) throw new Error(de.message);
+    const { error } = await admin
+      .from("seasons")
+      .update({ is_active: true, status: "ACTIVE" })
+      .eq("id", data.season_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const closeSeason = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { season_id: string }) =>
+    z.object({ season_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.admin
+      .from("seasons")
+      .update({ is_active: false, status: "CLOSED" })
+      .eq("id", data.season_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
