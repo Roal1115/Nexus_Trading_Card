@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Eye, ArrowRight } from "lucide-react";
+import { Loader2, Eye, ArrowRight, FileDown, FileX } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
@@ -21,6 +21,7 @@ type Row = {
   status: string;
   approved_at: string | null;
   undo_deadline: string | null;
+  csv_url: string | null;
   store_id: string;
   game_id: string;
   stores: { name: string; city: string | null; state: string | null } | null;
@@ -121,6 +122,7 @@ function ManagerApprovedTournaments() {
                   <th className="px-4 py-3">Juego</th>
                   <th className="px-4 py-3">Ventana corrección</th>
                   <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3">CSV</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -146,6 +148,24 @@ function ManagerApprovedTournaments() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge>{r.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {r.csv_url ? (
+                          <a
+                            href={r.csv_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <FileDown size={12} />
+                            Ver CSV
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                            <FileX size={12} />
+                            Sin archivo
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-2">

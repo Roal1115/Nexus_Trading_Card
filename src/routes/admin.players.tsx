@@ -69,10 +69,11 @@ type P = {
   is_active: boolean;
   created_at: string;
   last_sign_in_at?: string | null;
+  manager_games?: { game_id: string; games: { name: string } | null }[] | null;
 };
 type Store = { id: string; name: string; city: string | null };
 
-type Tab = "all" | "organizers" | "admins";
+type Tab = "all" | "organizers" | "managers" | "admins";
 
 const PAGE_SIZE = 25;
 
@@ -133,7 +134,13 @@ function AdminPlayersPage() {
 
   // effective role based on tab
   const effectiveRole: "all" | Role =
-    tab === "organizers" ? "organizer" : tab === "admins" ? "admin" : roleFilter;
+    tab === "organizers"
+      ? "organizer"
+      : tab === "managers"
+        ? "tcg_manager"
+        : tab === "admins"
+          ? "admin"
+          : roleFilter;
 
   // fetch players
   useEffect(() => {
@@ -284,6 +291,7 @@ function AdminPlayersPage() {
           {([
             { k: "all", label: "Todos" },
             { k: "organizers", label: "Organizadores" },
+            { k: "managers", label: "TCG Managers" },
             { k: "admins", label: "Administradores" },
           ] as { k: Tab; label: string }[]).map((t) => (
             <button
@@ -432,6 +440,21 @@ function AdminPlayersPage() {
                             {p.display_name}
                           </span>
                         ) : null}
+                        {p.role === "tcg_manager" &&
+                        p.manager_games &&
+                        p.manager_games.length > 0 ? (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {p.manager_games.map((mg) => (
+                              <Badge
+                                key={mg.game_id}
+                                variant="outline"
+                                className="border-primary/40 text-[10px] text-primary"
+                              >
+                                {mg.games?.name ?? mg.game_id}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-gray-300">{p.email ?? "—"}</td>
                       <td className="px-4 py-3">
@@ -560,6 +583,7 @@ function AdminPlayersPage() {
                 <SelectContent>
                   <SelectItem value="player">player</SelectItem>
                   <SelectItem value="organizer">organizer</SelectItem>
+                  <SelectItem value="tcg_manager">tcg_manager</SelectItem>
                   <SelectItem value="admin">admin</SelectItem>
                 </SelectContent>
               </Select>

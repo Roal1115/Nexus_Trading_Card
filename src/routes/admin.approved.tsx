@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Upload, ExternalLink, Eye, ArrowRight } from "lucide-react";
+import { Loader2, Upload, Eye, ArrowRight, FileDown, FileX } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
@@ -203,13 +203,17 @@ function ApprovedTournaments() {
                         <a
                           href={r.csv_url}
                           target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                         >
-                          Ver <ExternalLink size={12} />
+                          <FileDown size={12} />
+                          Ver CSV
                         </a>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                          <FileX size={12} />
+                          Sin archivo
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
