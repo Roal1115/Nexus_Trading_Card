@@ -61,17 +61,18 @@ async function recomputeSnapshot(
   store_id: string,
   timeframe_type: "MONTHLY" | "SEMESTRAL",
   timeframe_value: string,
-  filter: { year?: number; month?: number; semester?: number },
+  filter: { year?: number; month?: number; season_id?: string },
+  season_id?: string,
 ) {
   let q = admin
     .from("tournaments")
-    .select("id, store_id, tournament_date, qualifying_year, qualifying_month, qualifying_semester")
+    .select("id, store_id, tournament_date, qualifying_year, qualifying_month")
     .eq("status", "PUBLISHED")
     .eq("game_id", game_id)
     .eq("store_id", store_id);
   if (filter.year != null) q = q.eq("qualifying_year", filter.year);
   if (filter.month != null) q = q.eq("qualifying_month", filter.month);
-  if (filter.semester != null) q = q.eq("qualifying_semester", filter.semester);
+  if (filter.season_id != null) q = q.eq("season_id", filter.season_id);
 
   const { data: tournaments, error: te } = await q;
   if (te) throw new Error(te.message);
