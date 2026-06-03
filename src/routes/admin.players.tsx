@@ -495,6 +495,9 @@ function AdminPlayersPage() {
                               refresh();
                             });
                           }}
+                          onAssignGames={() => {
+                            toast.info("Asignación de TCGs próximamente");
+                          }}
                         />
                       </td>
                     </tr>
