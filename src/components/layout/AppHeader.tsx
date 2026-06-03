@@ -59,7 +59,7 @@ export function AppHeader() {
               </div>
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary"
               >
                 <LogOut size={12} /> Cerrar Sesión
               </button>
