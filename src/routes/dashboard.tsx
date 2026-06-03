@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, ChevronRight, Crown, Swords, Target, TrendingUp, X } from "lucide-react";
+import { Award, ChevronRight, Crown, HelpCircle, Swords, Target, TrendingUp, X } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
 
