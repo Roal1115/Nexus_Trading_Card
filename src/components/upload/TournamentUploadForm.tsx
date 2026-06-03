@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   FileSpreadsheet,
+  FileText,
   Loader2,
   Upload,
   UploadCloud,
@@ -485,20 +486,32 @@ export function TournamentUploadForm({
 
       {step === 2 && (
         <section className="glass space-y-5 rounded-2xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-gray-400">
-            <div>
-              Tienda: <span className="text-white">{selectedStore?.name}</span> ·{" "}
-              TCG: <span className="text-white">{selectedGame?.name}</span> ·{" "}
-              Fecha: <span className="text-white">{date}</span>
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3 sm:p-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs">
+                <span>
+                  <span className="text-gray-500">Tienda: </span>
+                  <span className="text-white font-semibold">{selectedStore?.name}</span>
+                </span>
+                <span className="hidden sm:inline text-gray-600">·</span>
+                <span>
+                  <span className="text-gray-500">TCG: </span>
+                  <span className="text-white font-semibold">{selectedGame?.name}</span>
+                </span>
+                <span className="hidden sm:inline text-gray-600">·</span>
+                <span>
+                  <span className="text-gray-500">Fecha: </span>
+                  <span className="text-white font-semibold">{date}</span>
+                </span>
+              </div>
+              <button
+                onClick={() => setStep(1)}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition self-start sm:self-auto"
+              >
+                <ArrowLeft size={12} />
+                Editar
+              </button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setStep(1)}
-              disabled={saving}
-            >
-              <ArrowLeft size={14} className="mr-1" /> Editar
-            </Button>
           </div>
 
           <div className="space-y-2">
@@ -542,31 +555,37 @@ export function TournamentUploadForm({
               </label>
             ) : (
               <div className="rounded-xl border border-white/10 bg-black/30">
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-start justify-between gap-3 border-b border-white/10 p-3">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
                     {parsing ? (
-                      <Loader2 size={16} className="animate-spin text-primary" />
+                      <Loader2 size={16} className="animate-spin text-primary flex-shrink-0 mt-0.5" />
                     ) : (
-                      <CheckCircle2 size={16} className="text-primary" />
+                      <FileText size={16} className="text-primary flex-shrink-0 mt-0.5" />
                     )}
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                        <FileSpreadsheet size={13} className="text-gray-400" />
+                    <div className="flex flex-col min-w-0">
+                      <span
+                        className="text-sm text-white font-medium truncate max-w-[180px] sm:max-w-none"
+                        title={fileName}
+                      >
                         {fileName}
-                      </div>
-                      <div className="text-[11px] uppercase tracking-wider text-gray-500">
+                      </span>
+                      <span className="text-xs text-gray-400 mt-0.5">
                         {parsing
                           ? "Procesando…"
-                          : `${rows.length} participantes · ${newPlayers} nuevos jugadores serán creados automáticamente`}
-                      </div>
+                          : `${rows.length} participantes`}
+                        {!parsing && newPlayers > 0 && (
+                          <> · <span className="text-orange-400">{newPlayers} nuevos</span></>
+                        )}
+                      </span>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={clearFile}
-                    className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-gray-400 transition hover:border-red-500/40 hover:text-red-400"
+                    className="flex-shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-red-400 border border-white/10 hover:border-red-400/40 rounded px-2 py-1 transition"
                   >
-                    <X size={11} /> Quitar
+                    <X size={10} />
+                    Quitar
                   </button>
                 </div>
 
