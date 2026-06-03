@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { geekarena } from "@/integrations/geekarena/client";
 import {
   getOrganizerOverview,
   listActiveStores,
@@ -228,6 +229,8 @@ export function TournamentUploadForm({
     if (!player) return;
     (async () => {
       try {
+        const { data: sess } = await geekarena.auth.getSession();
+        if (!sess.session) return;
         const ov = await fetchOverview();
         setGames(ov.games as Game[]);
         setHomeStore((ov.homeStore as Store) ?? null);
