@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
 
 export const getMyDashboard = createServerFn({ method: "POST" })
@@ -161,5 +162,107 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         year: "numeric",
       }),
       events,
+    };
+  });
+
+export const getTournamentDetail = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { data: tournament } = await admin
+      .from("tournaments")
+      .select(
+        "id, tournament_date, qualifying_month, qualifying_year, qualifying_semester, game_id, store_id, status",
+      )
+      .eq("id", data.tournament_id)
+      .eq("status", "PUBLISHED")
+      .single();
+
+    if (!tournament) throw new Error("Torneo no encontrado");
+
+    const [{ data: store }, { data: game }, { data: results }] = await Promise.all([
+      admin
+        .from("stores")
+        .select("name, city, state, country")
+        .eq("id", tournament.store_id)
+        .single(),
+      admin
+        .from("games")
+        .select("name, publisher")
+        .eq("id", tournament.game_id)
+        .single(),
+      admin
+        .from("tournament_results")
+        .select(
+          "player_id, rank, match_points, points_earned, omw_percentage, wins, losses, draws",
+        )
+        .eq("tournament_id", data.tournament_id)
+        .order("rank", { ascending: true }),
+    ]);
+
+    const playerIds = (results ?? []).map((r: any) => r.player_id);
+    const { data: players } = playerIds.length
+      ? await admin
+          .from("players")
+          .select("id, geek_tag")
+          .in("id", playerIds)
+      : { data: [] as Array<{ id: string; geek_tag: string }> };
+
+    const playerMap = new Map(
+      (players ?? []).map((p: any) => [p.id, p.geek_tag]),
+    );
+
+    const maxMatchPoints = Math.max(
+      0,
+      ...(results ?? []).map((r: any) => r.match_points ?? 0),
+    );
+
+    const rankings = (results ?? []).map((r: any) => {
+      let calcWins: number | null = r.wins ?? null;
+      let calcLosses: number | null = r.losses ?? null;
+
+      if (r.wins == null && r.match_points != null && maxMatchPoints > 0) {
+        const totalRounds = Math.round(maxMatchPoints / 3);
+        calcWins = Math.floor((r.match_points ?? 0) / 3);
+        const draws = (r.match_points ?? 0) % 3 === 1 ? 1 : 0;
+        calcLosses = totalRounds - calcWins - draws;
+      }
+
+      return {
+        rank: r.rank,
+        geek_tag: (playerMap.get(r.player_id) as string | undefined) ?? "—",
+        player_id: r.player_id,
+        match_points: r.match_points,
+        points_earned: Number(r.points_earned ?? 0).toFixed(2),
+        omw_percentage: r.omw_percentage,
+        wins: calcWins,
+        losses: calcLosses,
+        draws: r.draws ?? 0,
+        is_me: r.player_id === player.id,
+      };
+    });
+
+    return {
+      tournament_id: tournament.id,
+      date: tournament.tournament_date,
+      month: tournament.qualifying_month,
+      year: tournament.qualifying_year,
+      semester: tournament.qualifying_semester,
+      store: {
+        name: (store as any)?.name ?? "—",
+        city: (store as any)?.city ?? "—",
+        state: (store as any)?.state ?? "—",
+      },
+      game: {
+        name: (game as any)?.name ?? "—",
+        publisher: (game as any)?.publisher ?? "—",
+      },
+      total_participants: rankings.length,
+      my_rank: rankings.find((r) => r.is_me)?.rank ?? null,
+      rankings,
     };
   });

@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, Crown, Swords, Target, TrendingUp } from "lucide-react";
+import { Award, ChevronRight, Crown, Swords, Target, TrendingUp, X } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getMyDashboard } from "@/lib/geekarena-player.functions";
+import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Mi Panel — Geek Arena" }] }),
@@ -11,15 +11,39 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 type DashboardData = Awaited<ReturnType<typeof getMyDashboard>>;
+type TournamentDetail = Awaited<ReturnType<typeof getTournamentDetail>>;
 
 function DashboardPage() {
   const { player: gaPlayer } = useGeekarenaRole();
   const fetchDashboard = useServerFn(getMyDashboard);
+  const fetchTournamentDetail = useServerFn(getTournamentDetail);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+  const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const openTournament = async (tournament_id: string) => {
+    setSelectedTournamentId(tournament_id);
+    setLoadingDetail(true);
+    setTournamentDetail(null);
+    try {
+      const detail = await fetchTournamentDetail({ data: { tournament_id } });
+      setTournamentDetail(detail);
+    } catch {
+      setTournamentDetail(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedTournamentId(null);
+    setTournamentDetail(null);
+  };
 
   useEffect(() => {
     if (!gaPlayer) {
@@ -173,25 +197,30 @@ function DashboardPage() {
                 <th className="px-4 py-2 text-center">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
                 <th className="px-4 py-2 text-right">Pts Arena</th>
+                <th className="px-4 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                     Cargando…
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                     Aún no has participado en ningún torneo.
                   </td>
                 </tr>
               ) : (
                 <>
                   {paginatedEvents.map((t) => (
-                    <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
+                    <tr
+                      key={t.id}
+                      onClick={() => openTournament(t.id)}
+                      className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition"
+                    >
                       <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
                         {t.date}
                       </td>
@@ -217,11 +246,14 @@ function DashboardPage() {
                       <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
                         +{Number(t.pointsEarned).toFixed(2)}
                       </td>
+                      <td className="px-2 py-3 text-gray-500">
+                        <ChevronRight size={14} />
+                      </td>
                     </tr>
                   ))}
                   {hasMore && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-4 text-center">
+                      <td colSpan={7} className="px-4 py-4 text-center">
                         <button
                           onClick={() => setPage((p) => p + 1)}
                           className="text-xs text-primary hover:underline"
@@ -237,7 +269,142 @@ function DashboardPage() {
           </table>
         </div>
       </section>
+
+      {selectedTournamentId && (
+        <div
+          onClick={closeModal}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-6 sm:p-8"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                  Detalle del Torneo
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
+                  {loadingDetail ? "Cargando…" : tournamentDetail?.game?.name ?? "—"}
+                </h2>
+              </div>
+              <button
+                onClick={closeModal}
+                className="rounded-md p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {loadingDetail ? (
+              <div className="py-16 text-center text-sm text-gray-500">
+                Cargando detalles…
+              </div>
+            ) : tournamentDetail ? (
+              <div className="mt-5 space-y-6">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Tienda</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{tournamentDetail.store.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {tournamentDetail.store.city}, {tournamentDetail.store.state}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Fecha</p>
+                    <p className="mt-1 text-sm font-semibold text-white">
+                      {new Date(tournamentDetail.date + "T12:00:00").toLocaleDateString("es-MX", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      S{tournamentDetail.semester} {tournamentDetail.year}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Editorial</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{tournamentDetail.game.publisher}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Participantes</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{tournamentDetail.total_participants}</p>
+                    {tournamentDetail.my_rank && (
+                      <p className="text-xs text-primary">Tu posición: #{tournamentDetail.my_rank}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">
+                    Resultados del torneo
+                  </h3>
+                  <div className="overflow-x-auto rounded-xl border border-white/10">
+                    <table className="w-full text-sm">
+                      <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                        <tr>
+                          <th className="px-3 py-2 text-left">#</th>
+                          <th className="px-3 py-2 text-left">Geek Tag</th>
+                          <th className="px-3 py-2 text-center">V / D</th>
+                          <th className="px-3 py-2 text-right">OMW%</th>
+                          <th className="px-3 py-2 text-right">Pts Arena</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tournamentDetail.rankings.map((r) => (
+                          <tr
+                            key={r.player_id}
+                            className={`border-t border-white/5 ${
+                              r.is_me ? "bg-primary/15" : ""
+                            }`}
+                          >
+                            <td className="px-3 py-2">
+                              <span
+                                className={`font-mono-stat text-sm font-semibold ${
+                                  r.rank <= 3 ? "text-primary" : "text-white"
+                                }`}
+                              >
+                                {String(r.rank).padStart(2, "0")}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-white">
+                              {r.geek_tag}
+                              {r.is_me && (
+                                <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
+                                  Tú
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
+                              {r.wins != null && r.losses != null ? `${r.wins} / ${r.losses}` : "—"}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono-stat text-xs text-gray-400">
+                              {r.omw_percentage != null
+                                ? `${Number(r.omw_percentage).toFixed(1)}%`
+                                : "—"}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono-stat font-semibold text-white">
+                              {r.points_earned}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-sm text-gray-500">
+                No se pudo cargar el torneo.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
+
   );
 }
 
