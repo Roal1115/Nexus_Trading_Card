@@ -446,8 +446,8 @@ function StatCard({
             <button className="text-gray-600 hover:text-primary transition" aria-label="Más información">
               <HelpCircle size={14} />
             </button>
-            <div className="pointer-events-none absolute right-0 bottom-6 z-[9999] w-72 max-w-[calc(100vw-2rem)] hidden group-hover:flex group-focus-within:flex flex-col">
-              <div className="glass rounded-xl border border-white/10 bg-black/90 p-4 text-xs text-gray-300 leading-relaxed shadow-2xl whitespace-pre-line">
+            <div className="pointer-events-none absolute left-0 top-6 z-[9999] w-80 max-w-[90vw] hidden group-hover:block">
+              <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
                 {tooltip}
               </div>
             </div>
