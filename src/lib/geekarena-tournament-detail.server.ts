@@ -18,7 +18,7 @@ export async function loadTournamentDetail(
   const { data: t, error: te } = await admin
     .from("tournaments")
     .select(
-      "id, store_id, game_id, status, tournament_date, qualifying_month, qualifying_semester, qualifying_year, approved_at, undo_deadline, published_at, created_at, rejection_reason",
+      "id, store_id, game_id, status, tournament_date, qualifying_month, qualifying_semester, qualifying_year, approved_at, undo_deadline, published_at, created_at, rejection_reason, csv_url",
     )
     .eq("id", tournament_id)
     .maybeSingle();
