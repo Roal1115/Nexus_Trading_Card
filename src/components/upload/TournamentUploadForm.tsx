@@ -281,7 +281,8 @@ export function TournamentUploadForm({
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const parsed = parseCSV(e.target?.result as string, colMap);
+        const rawParsed = parseCSV(e.target?.result as string, colMap);
+        const parsed = normalizarPuntos(rawParsed);
         if (parsed.length === 0) {
           toast.error(
             "No se encontraron filas válidas. Verifica las columnas requeridas.",
