@@ -209,8 +209,8 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
             <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="px-4 py-2 text-left">Fecha</th>
-                <th className="px-4 py-2 text-left">Tienda</th>
                 <th className="px-4 py-2 text-left">TCG</th>
+                <th className="px-4 py-2 text-left">Tienda</th>
                 <th className="px-4 py-2 text-center">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
                 <th className="px-4 py-2 text-right">Pts Arena</th>
@@ -241,11 +241,11 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                       <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
                         {t.date}
                       </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
                       <td className="px-4 py-3 text-white">
                         {t.store}{" "}
                         <span className="text-xs text-gray-500">· {t.city}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
                       <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300">
                         {t.wins != null && t.losses != null
                           ? `${t.wins} / ${t.losses}`
@@ -303,30 +303,33 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                   className="flex items-center justify-between px-4 py-4 hover:bg-white/5 cursor-pointer transition"
                 >
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-mono-stat font-bold text-base ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`font-mono-stat font-bold text-base flex-shrink-0 ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
                         #{t.placement}
                       </span>
-                      <span className="text-white font-semibold text-sm truncate">
+                      <span className="text-white font-semibold text-sm">
+                        {t.tcg}
+                      </span>
+                      <span className="text-gray-500 text-sm">—</span>
+                      <span className="text-gray-300 text-sm truncate">
                         {t.store}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                       <span>{t.city}</span>
-                      <span>·</span>
-                      <span>{t.tcg}</span>
                       <span>·</span>
                       <span>
                         {new Date(t.date + "T12:00:00").toLocaleDateString("es-MX", {
-                          day: "numeric", month: "short"
+                          day: "numeric", month: "short", year: "numeric"
                         })}
                       </span>
+                      {t.wins != null && t.losses != null && (
+                        <>
+                          <span>·</span>
+                          <span>{t.wins}V / {t.losses}D</span>
+                        </>
+                      )}
                     </div>
-                    {t.wins != null && t.losses != null && (
-                      <span className="text-xs text-gray-400">
-                        {t.wins}V / {t.losses}D
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                     <span className="font-mono-stat font-semibold text-white text-sm">
@@ -428,9 +431,9 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                         <tr>
                           <th className="px-3 py-2 text-left">#</th>
                           <th className="px-3 py-2 text-left">Geek Tag</th>
-                          <th className="px-3 py-2 text-center">V / D</th>
-                          <th className="px-3 py-2 text-right">OMW%</th>
-                          <th className="px-3 py-2 text-right">Pts Arena</th>
+                          <th className="px-3 py-2 text-center whitespace-nowrap">V/D</th>
+                          <th className="px-3 py-2 text-right whitespace-nowrap">OMW%</th>
+                          <th className="px-3 py-2 text-right whitespace-nowrap">Pts Arena</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -441,7 +444,7 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                               r.is_me ? "bg-primary/15" : ""
                             }`}
                           >
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2.5">
                               <span
                                 className={`font-mono-stat text-sm font-semibold ${
                                   r.rank <= 3 ? "text-primary" : "text-white"
@@ -450,7 +453,7 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                                 {String(r.rank).padStart(2, "0")}
                               </span>
                             </td>
-                            <td className="px-3 py-2 text-white">
+                            <td className="px-3 py-2.5 text-white">
                               {r.geek_tag}
                               {r.is_me && (
                                 <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
@@ -458,15 +461,15 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                                 </span>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
-                              {r.wins != null && r.losses != null ? `${r.wins} / ${r.losses}` : "—"}
+                            <td className="px-3 py-2.5 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
+                              {r.wins != null && r.losses != null ? `${r.wins}/${r.losses}` : "—"}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono-stat text-xs text-gray-400">
+                            <td className="px-3 py-2.5 text-right font-mono-stat text-xs text-gray-400 whitespace-nowrap">
                               {r.omw_percentage != null
                                 ? `${Number(r.omw_percentage).toFixed(1)}%`
                                 : "—"}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono-stat font-semibold text-white">
+                            <td className="px-3 py-2.5 text-right font-mono-stat font-semibold text-white whitespace-nowrap">
                               {r.points_earned}
                             </td>
                           </tr>
