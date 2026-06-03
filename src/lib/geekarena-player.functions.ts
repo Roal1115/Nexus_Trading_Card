@@ -17,18 +17,28 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
     const now = new Date();
     const month = now.getMonth() + 1;
-    const semester = month <= 6 ? 1 : 2;
     const year = now.getFullYear();
-    const semKey = `${year}-S${semester}`;
 
-    const { data: snapshots } = await admin
-      .from("leaderboard_snapshots")
-      .select(
-        "game_id, total_points, tournaments_played, tournaments_won, rank_position",
-      )
-      .eq("player_id", player.id)
-      .eq("timeframe_type", "SEMESTRAL")
-      .eq("timeframe_value", semKey);
+    const { data: activeSeason } = await admin
+      .from("seasons")
+      .select("id, name, slug, start_date, end_date")
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const semKey = (activeSeason?.slug as string | undefined) ?? null;
+    const semesterLabel = (activeSeason?.name as string | undefined) ?? "Sin temporada";
+
+    const snapshotsRes = semKey
+      ? await admin
+          .from("leaderboard_snapshots")
+          .select(
+            "game_id, total_points, tournaments_played, tournaments_won, rank_position",
+          )
+          .eq("player_id", player.id)
+          .eq("timeframe_type", "SEMESTRAL")
+          .eq("timeframe_value", semKey)
+      : { data: [] as any[] };
+    const snapshots = snapshotsRes.data;
 
     const snapGameIds = (snapshots ?? []).map((s) => s.game_id);
     const { data: snapGames } = snapGameIds.length
