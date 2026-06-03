@@ -77,16 +77,8 @@ function DashboardPage() {
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
-
-  const winPct =
-    tournamentsPlayed === 0
-      ? 0
-      : Math.round((tournamentsWon / tournamentsPlayed) * 100);
-  const losses = Math.max(0, tournamentsPlayed - tournamentsWon);
-  const ratio =
-    losses === 0
-      ? tournamentsWon
-      : (tournamentsWon / losses).toFixed(2);
+  const paginatedEvents = events.slice(0, page * PAGE_SIZE);
+  const hasMore = events.length > page * PAGE_SIZE;
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
