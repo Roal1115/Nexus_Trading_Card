@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
+  Activity,
   Calendar,
   CheckCircle2,
   Loader2,
@@ -47,6 +48,7 @@ function AdminLayout() {
               { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
               { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
+              { to: "/admin/activity", label: "Activity Center", icon: <Activity size={16} /> },
             ],
           },
           {

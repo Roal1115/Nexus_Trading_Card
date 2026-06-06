@@ -5,6 +5,7 @@ import {
   requireGeekarenaAdmin,
 } from "./geekarena-auth.middleware";
 import { loadTournamentDetail } from "./geekarena-tournament-detail.server";
+import { logAction } from "./geekarena-admin.functions";
 
 async function getManagerGameIds(
   admin: any,
@@ -144,6 +145,15 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_APPROVED",
+      "tournament",
+      data.tournament_id,
+      `${tournament.game_id} — ${data.tournament_id}`,
+      { approved_by_role: player.role },
+    );
     return { success: true };
   });
 
@@ -177,6 +187,15 @@ export const managerRejectTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${tournament.game_id} — ${data.tournament_id}`,
+      { reason: data.reason, rejected_by_role: player.role },
+    );
     return { success: true };
   });
 
@@ -208,6 +227,15 @@ export const managerUndoApproval = createServerFn({ method: "POST" })
       .update({ status: "DRAFT", approved_at: null, undo_deadline: null })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "APPROVAL_UNDONE",
+      "tournament",
+      data.tournament_id,
+      data.tournament_id,
+      { undone_by_role: player.role },
+    );
     return { success: true };
   });
 

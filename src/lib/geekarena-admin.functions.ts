@@ -6,6 +6,32 @@ import {
   requireGeekarenaUser,
 } from "./geekarena-auth.middleware";
 
+// ---------- Audit log helper ----------
+export async function logAction(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+  player: { id: string; role: string; geek_tag: string },
+  action: string,
+  target_type: string,
+  target_id: string | null,
+  target_label: string,
+  metadata?: Record<string, unknown>,
+) {
+  try {
+    await admin.from("admin_audit_log").insert({
+      actor_id: player.id,
+      actor_role: player.role,
+      actor_tag: player.geek_tag,
+      action,
+      target_type,
+      target_id: target_id ?? undefined,
+      target_label,
+      metadata: metadata ?? null,
+    });
+  } catch (e) {
+    console.error("audit log error:", e);
+  }
+}
+
 // ---------- Active season helper ----------
 export async function getActiveSeason(
   admin: ReturnType<typeof getGeekarenaAdmin>,
@@ -241,7 +267,7 @@ export const approveTournament = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const now = new Date();
     const undoDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const { error } = await admin
@@ -253,6 +279,23 @@ export const approveTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("tournament_date, store_id, game_id, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    const game = (t as any)?.games;
+    const store = (t as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_APPROVED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${t?.tournament_date ?? ""}`,
+      { store_id: t?.store_id, game_id: t?.game_id },
+    );
     return { ok: true };
   });
 
@@ -264,7 +307,12 @@ export const rejectTournament = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("tournament_date, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
     const { error } = await admin
       .from("tournaments")
       .update({
@@ -274,6 +322,17 @@ export const rejectTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    const game = (t as any)?.games;
+    const store = (t as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${t?.tournament_date ?? ""}`,
+      {},
+    );
     return { ok: true };
   });
 
@@ -285,7 +344,7 @@ export const publishTournaments = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
 
     const season = await getActiveSeason(admin);
     if (!season) {
@@ -366,6 +425,18 @@ export const publishTournaments = createServerFn({ method: "POST" })
       );
     }
 
+    for (const t of publishable) {
+      await logAction(
+        admin,
+        player,
+        "TOURNAMENT_PUBLISHED",
+        "tournament",
+        t.id,
+        `${t.game_id} — ${t.store_id} — ${t.tournament_date}`,
+        { season_id: season.id },
+      );
+    }
+
     return { published: publishable.length };
   });
 
@@ -414,18 +485,27 @@ export const createStore = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const slug = (data.slug && data.slug.trim()) ? slugify(data.slug) : slugify(data.name);
     if (!slug) throw new Error("Nombre inválido para generar slug");
-    const { error } = await admin.from("stores").insert({
+    const { data: newStore, error } = await admin.from("stores").insert({
       slug,
       name: data.name,
       city: data.city || null,
       state: data.state || null,
       country: "MX",
       is_active: true,
-    });
+    }).select("id").maybeSingle();
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "STORE_CREATED",
+      "store",
+      newStore?.id ?? null,
+      data.name,
+      { city: data.city },
+    );
     return { ok: true };
   });
 
@@ -680,7 +760,12 @@ export const setPlayerRole = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
+    const { data: targetPlayer } = await admin
+      .from("players")
+      .select("geek_tag, role")
+      .eq("id", data.player_id)
+      .maybeSingle();
     const update: Record<string, unknown> = { role: data.role };
     if (data.home_store_id !== undefined) update.home_store_id = data.home_store_id;
     const { error } = await admin
@@ -697,6 +782,15 @@ export const setPlayerRole = createServerFn({ method: "POST" })
         .eq("player_id", data.player_id);
     }
 
+    await logAction(
+      admin,
+      player,
+      "ROLE_CHANGED",
+      "player",
+      data.player_id,
+      targetPlayer?.geek_tag ?? data.player_id,
+      { old_role: targetPlayer?.role, new_role: data.role },
+    );
     return { ok: true };
   });
 
@@ -925,7 +1019,12 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
+    const { data: tBefore } = await admin
+      .from("tournaments")
+      .select("tournament_date, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
     const update: Record<string, unknown> = {
       status: "DRAFT",
       approved_at: null,
@@ -946,6 +1045,17 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
       error = retry.error;
     }
     if (error) throw new Error(error.message);
+    const game = (tBefore as any)?.games;
+    const store = (tBefore as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${tBefore?.tournament_date ?? ""}`,
+      { reason: data.reason },
+    );
     return { ok: true };
   });
 
@@ -955,7 +1065,7 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const now = new Date();
     const deadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const { error } = await admin
@@ -982,6 +1092,22 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
         throw new Error(error.message);
       }
     }
+    const { data: tAfter } = await admin
+      .from("tournaments")
+      .select("tournament_date, store_id, game_id, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    const game = (tAfter as any)?.games;
+    const store = (tAfter as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_APPROVED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${tAfter?.tournament_date ?? ""}`,
+      { store_id: tAfter?.store_id, game_id: tAfter?.game_id },
+    );
     return { ok: true };
   });
 
@@ -1037,7 +1163,7 @@ export const updateStore = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const slug = slugify(data.slug);
     if (!slug) throw new Error("Slug inválido");
     const { error } = await admin
@@ -1051,6 +1177,15 @@ export const updateStore = createServerFn({ method: "POST" })
       })
       .eq("id", data.store_id);
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "STORE_UPDATED",
+      "store",
+      data.store_id,
+      data.name,
+      { changes: data as unknown as Record<string, unknown> },
+    );
     return { ok: true };
   });
 
@@ -1065,7 +1200,7 @@ export const assignOrganizerToStore = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     // Clear any other organizers that currently point to this store
     const { error: ce } = await admin
       .from("players")
@@ -1079,6 +1214,26 @@ export const assignOrganizerToStore = createServerFn({ method: "POST" })
       .update({ home_store_id: data.store_id })
       .eq("id", data.player_id);
     if (error) throw new Error(error.message);
+
+    const { data: store } = await admin
+      .from("stores")
+      .select("name")
+      .eq("id", data.store_id)
+      .maybeSingle();
+    const { data: targetPlayer } = await admin
+      .from("players")
+      .select("geek_tag")
+      .eq("id", data.player_id)
+      .maybeSingle();
+    await logAction(
+      admin,
+      player,
+      "ORGANIZER_ASSIGNED",
+      "store",
+      data.store_id,
+      store?.name ?? data.store_id,
+      { player_id: data.player_id, geek_tag: targetPlayer?.geek_tag },
+    );
     return { ok: true };
   });
 
@@ -1112,18 +1267,28 @@ export const createSeason = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const { admin, player } = context;
     if (data.end_date < data.start_date) {
       throw new Error("La fecha de fin debe ser posterior a la de inicio.");
     }
-    const { error } = await context.admin.from("seasons").insert({
+    const { data: newSeason, error } = await admin.from("seasons").insert({
       name: data.name,
       slug: data.slug,
       start_date: data.start_date,
       end_date: data.end_date,
       is_active: false,
       status: "UPCOMING",
-    });
+    }).select("id").maybeSingle();
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "SEASON_CREATED",
+      "season",
+      newSeason?.id ?? null,
+      data.name,
+      { start_date: data.start_date, end_date: data.end_date },
+    );
     return { ok: true };
   });
 
@@ -1133,7 +1298,7 @@ export const activateSeason = createServerFn({ method: "POST" })
     z.object({ season_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const { error: de } = await admin
       .from("seasons")
       .update({ is_active: false })
@@ -1144,6 +1309,19 @@ export const activateSeason = createServerFn({ method: "POST" })
       .update({ is_active: true, status: "ACTIVE" })
       .eq("id", data.season_id);
     if (error) throw new Error(error.message);
+    const { data: season } = await admin
+      .from("seasons")
+      .select("name")
+      .eq("id", data.season_id)
+      .maybeSingle();
+    await logAction(
+      admin,
+      player,
+      "SEASON_ACTIVATED",
+      "season",
+      data.season_id,
+      season?.name ?? data.season_id,
+    );
     return { ok: true };
   });
 
@@ -1153,11 +1331,86 @@ export const closeSeason = createServerFn({ method: "POST" })
     z.object({ season_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.admin
+    const { admin, player } = context;
+    const { error } = await admin
       .from("seasons")
       .update({ is_active: false, status: "CLOSED" })
       .eq("id", data.season_id);
     if (error) throw new Error(error.message);
+    const { data: season } = await admin
+      .from("seasons")
+      .select("name")
+      .eq("id", data.season_id)
+      .maybeSingle();
+    await logAction(
+      admin,
+      player,
+      "SEASON_CLOSED",
+      "season",
+      data.season_id,
+      season?.name ?? data.season_id,
+    );
     return { ok: true };
   });
+
+// ---------- Audit log ----------
+export const listAuditLog = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: {
+    action?: string;
+    actor_role?: string;
+    target_type?: string;
+    date_from?: string;
+    date_to?: string;
+    page?: number;
+  }) => z.object({
+    action: z.string().optional(),
+    actor_role: z.string().optional(),
+    target_type: z.string().optional(),
+    date_from: z.string().optional(),
+    date_to: z.string().optional(),
+    page: z.number().min(1).default(1),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const PAGE_SIZE = 50;
+    const page = data.page ?? 1;
+    const offset = (page - 1) * PAGE_SIZE;
+
+    let q = admin
+      .from("admin_audit_log")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (data.action) q = q.eq("action", data.action);
+    if (data.actor_role) q = q.eq("actor_role", data.actor_role);
+    if (data.target_type) q = q.eq("target_type", data.target_type);
+    if (data.date_from) q = q.gte("created_at", data.date_from);
+    if (data.date_to) q = q.lte("created_at", data.date_to + "T23:59:59Z");
+
+    const { data: logs, count, error } = await q;
+    if (error) throw new Error(error.message);
+
+    return {
+      logs: (logs ?? []) as AuditLogRow[],
+      total: count ?? 0,
+      page,
+      page_size: PAGE_SIZE,
+    };
+  });
+
+export type AuditLogRow = {
+  id: string;
+  actor_id: string;
+  actor_role: string;
+  actor_tag: string;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  target_label: string;
+  metadata: { [key: string]: string | number | boolean | null | undefined } | null;
+  created_at: string;
+};
+
 

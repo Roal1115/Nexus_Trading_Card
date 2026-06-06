@@ -31,6 +31,7 @@ import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
+import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
@@ -145,6 +146,11 @@ const AdminApprovedRoute = AdminApprovedRouteImport.update({
   path: '/approved',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminActivityRoute = AdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
 const TcgManagerTournamentsIdRoute = TcgManagerTournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/tcg-manager': typeof TcgManagerRouteWithChildren
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/tcg-manager': typeof TcgManagerRouteWithChildren
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/tcg-manager'
+    | '/admin/activity'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup'
     | '/signup'
+    | '/admin/activity'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/tcg-manager'
+    | '/admin/activity'
     | '/admin/approved'
     | '/admin/players'
     | '/admin/publish'
@@ -489,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApprovedRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/activity': {
+      id: '/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AdminActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/tcg-manager/tournaments/$id': {
       id: '/tcg-manager/tournaments/$id'
       path: '/tournaments/$id'
@@ -526,6 +545,7 @@ const AdminPlayersRouteWithChildren = AdminPlayersRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminActivityRoute: typeof AdminActivityRoute
   AdminApprovedRoute: typeof AdminApprovedRoute
   AdminPlayersRoute: typeof AdminPlayersRouteWithChildren
   AdminPublishRoute: typeof AdminPublishRoute
@@ -537,6 +557,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminActivityRoute: AdminActivityRoute,
   AdminApprovedRoute: AdminApprovedRoute,
   AdminPlayersRoute: AdminPlayersRouteWithChildren,
   AdminPublishRoute: AdminPublishRoute,
