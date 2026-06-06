@@ -145,6 +145,15 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_APPROVED",
+      "tournament",
+      data.tournament_id,
+      `${tournament.game_id} — ${data.tournament_id}`,
+      { approved_by_role: player.role },
+    );
     return { success: true };
   });
 
