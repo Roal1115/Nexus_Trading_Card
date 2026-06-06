@@ -318,11 +318,7 @@ function AdminHistoryPage() {
                   <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.approved_at)}</td>
                   <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.published_at)}</td>
                   <td className="px-3 py-2">
-                    {r.csv_url ? (
-                      <a href={r.csv_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                        Ver <ExternalLink size={10} />
-                      </a>
-                    ) : <span className="text-gray-500">—</span>}
+                    <FileLink url={r.csv_url} />
                   </td>
                   <td className="px-3 py-2">
                     <Link
