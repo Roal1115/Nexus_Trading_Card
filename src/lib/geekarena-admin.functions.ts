@@ -1402,7 +1402,7 @@ export const listAuditLog = createServerFn({ method: "POST" })
         target_type: string;
         target_id: string | null;
         target_label: string;
-        metadata: Record<string, unknown> | null;
+        metadata: unknown;
         created_at: string;
       }>,
       total: count ?? 0,
