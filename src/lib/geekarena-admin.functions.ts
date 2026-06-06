@@ -485,18 +485,27 @@ export const createStore = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const slug = (data.slug && data.slug.trim()) ? slugify(data.slug) : slugify(data.name);
     if (!slug) throw new Error("Nombre inválido para generar slug");
-    const { error } = await admin.from("stores").insert({
+    const { data: newStore, error } = await admin.from("stores").insert({
       slug,
       name: data.name,
       city: data.city || null,
       state: data.state || null,
       country: "MX",
       is_active: true,
-    });
+    }).select("id").maybeSingle();
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "STORE_CREATED",
+      "store",
+      newStore?.id ?? null,
+      data.name,
+      { city: data.city },
+    );
     return { ok: true };
   });
 
