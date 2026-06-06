@@ -62,7 +62,6 @@ function TcgManagerLayout() {
       />
       <main className="min-w-0 flex-1">
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:hidden">
-          <div className="text-sm font-semibold text-white">Panel TCG Manager</div>
           <button
             className="p-1 text-gray-400 transition hover:text-white"
             onClick={() => setMenuOpen(true)}
@@ -70,6 +69,7 @@ function TcgManagerLayout() {
           >
             <Menu size={22} />
           </button>
+          <div className="text-sm font-semibold text-white">Panel Manager</div>
         </div>
 
         <div className="p-6 sm:p-8">

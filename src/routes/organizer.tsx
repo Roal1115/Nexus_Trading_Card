@@ -44,7 +44,6 @@ function OrganizerLayout() {
       <main className="min-w-0 flex-1">
         {/* Header mobile con hamburger */}
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:hidden">
-          <div className="text-sm font-semibold text-white">Panel Organizador</div>
           <button
             className="p-1 text-gray-400 transition hover:text-white"
             onClick={() => setMenuOpen(true)}
@@ -52,6 +51,7 @@ function OrganizerLayout() {
           >
             <Menu size={22} />
           </button>
+          <div className="text-sm font-semibold text-white">Panel Organizador</div>
         </div>
 
         <div className="p-6 sm:p-8">

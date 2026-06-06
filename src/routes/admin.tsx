@@ -66,7 +66,7 @@ function AdminLayout() {
                 icon: <CheckCircle2 size={16} />,
                 badge: counts?.approvedActive ?? 0,
               },
-              { to: "/admin/history", label: "Historial Torneos", icon: <History size={16} /> },
+              { to: "/admin/history", label: "Historial de Torneos", icon: <History size={16} /> },
               { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
               { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
@@ -95,7 +95,6 @@ function AdminLayout() {
       <main className="min-w-0 flex-1">
         {/* Header mobile con hamburger */}
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:hidden">
-          <div className="text-sm font-semibold text-white">Panel Admin</div>
           <button
             className="p-1 text-gray-400 transition hover:text-white"
             onClick={() => setMenuOpen(true)}
@@ -103,6 +102,7 @@ function AdminLayout() {
           >
             <Menu size={22} />
           </button>
+          <div className="text-sm font-semibold text-white">Panel Admin</div>
         </div>
 
         <div className="p-6 sm:p-8">
