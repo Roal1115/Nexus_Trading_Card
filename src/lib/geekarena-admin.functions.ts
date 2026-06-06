@@ -1393,22 +1393,24 @@ export const listAuditLog = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     return {
-      logs: (logs ?? []) as Array<{
-        id: string;
-        actor_id: string;
-        actor_role: string;
-        actor_tag: string;
-        action: string;
-        target_type: string;
-        target_id: string | null;
-        target_label: string;
-        metadata: unknown;
-        created_at: string;
-      }>,
+      logs: (logs ?? []) as AuditLogRow[],
       total: count ?? 0,
       page,
       page_size: PAGE_SIZE,
     };
   });
+
+export type AuditLogRow = {
+  id: string;
+  actor_id: string;
+  actor_role: string;
+  actor_tag: string;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  target_label: string;
+  metadata: { [key: string]: string | number | boolean | null | undefined } | null;
+  created_at: string;
+};
 
 
