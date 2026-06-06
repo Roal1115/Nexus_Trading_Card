@@ -5,6 +5,7 @@ import {
   Activity,
   Calendar,
   CheckCircle2,
+  History,
   Loader2,
   Menu,
   ShieldCheck,
