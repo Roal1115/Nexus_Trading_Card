@@ -6,6 +6,32 @@ import {
   requireGeekarenaUser,
 } from "./geekarena-auth.middleware";
 
+// ---------- Audit log helper ----------
+export async function logAction(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+  player: { id: string; role: string; geek_tag: string },
+  action: string,
+  target_type: string,
+  target_id: string | null,
+  target_label: string,
+  metadata?: Record<string, unknown>,
+) {
+  try {
+    await admin.from("admin_audit_log").insert({
+      actor_id: player.id,
+      actor_role: player.role,
+      actor_tag: player.geek_tag,
+      action,
+      target_type,
+      target_id: target_id ?? undefined,
+      target_label,
+      metadata: metadata ?? null,
+    });
+  } catch (e) {
+    console.error("audit log error:", e);
+  }
+}
+
 // ---------- Active season helper ----------
 export async function getActiveSeason(
   admin: ReturnType<typeof getGeekarenaAdmin>,
