@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Menu, Store, Trophy, Upload, ListChecks } from "lucide-react";
+import { Loader2, Menu, Store, Trophy, Upload } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts } from "@/hooks/use-badge-counts";
