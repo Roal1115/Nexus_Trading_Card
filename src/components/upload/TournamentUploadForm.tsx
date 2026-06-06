@@ -136,10 +136,9 @@ function parsePct(raw: string | undefined, platform: Platform): number | null {
   return Math.round(n * 100) / 100;
 }
 
-function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
-  const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return [];
-  const headers = splitCsvLine(lines[0]);
+function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
+  if (rows.length < 2) return [];
+  const headers = (rows[0] ?? []).map((h) => String(h ?? "").trim());
   const idx = (key: string | undefined) =>
     key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1;
 
@@ -150,10 +149,10 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
   const iRec = idx(map.record);
   const iSt = idx(map.status);
 
-  const rows: ParsedRow[] = [];
-  for (let li = 1; li < lines.length; li++) {
-    const cols = splitCsvLine(lines[li]);
-    const tag = (iTag !== -1 ? cols[iTag] : "").trim();
+  const out: ParsedRow[] = [];
+  for (let li = 1; li < rows.length; li++) {
+    const cols = (rows[li] ?? []).map((c) => String(c ?? "").trim());
+    const tag = (iTag !== -1 ? cols[iTag] : "")?.trim() ?? "";
     if (!tag) continue;
 
     let wins: number | null = null;
@@ -177,7 +176,7 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
     if (!isFinite(rank) || rank < 1) error = "Ranking inválido";
     else if (!isFinite(mp)) error = "Match Points inválido";
 
-    rows.push({
+    out.push({
       rank: isFinite(rank) ? rank : 0,
       geek_tag: tag,
       match_points: isFinite(mp) ? mp : null,
@@ -185,12 +184,79 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
       wins,
       losses,
       draws,
-      points_earned: 0, // se calculará después con normalizarPuntos()
+      points_earned: 0,
       dropped,
       error,
     });
   }
-  return rows.sort((a, b) => a.rank - b.rank);
+  return out.sort((a, b) => a.rank - b.rank);
+}
+
+function csvTextToRows(text: string): string[][] {
+  return text
+    .replace(/\r/g, "")
+    .split("\n")
+    .filter((l) => l.trim().length > 0)
+    .map((l) => splitCsvLine(l));
+}
+
+async function readFileToRows(file: File): Promise<string[][]> {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext === "csv") {
+    const text = await file.text();
+    return csvTextToRows(text);
+  }
+  const buf = await file.arrayBuffer();
+  try {
+    const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      raw: false,
+      defval: "",
+      blankrows: false,
+    }) as unknown as string[][];
+    return rows;
+  } catch {
+    throw new Error(
+      "No se pudo leer el archivo. Verifica que sea un archivo Excel válido.",
+    );
+  }
+}
+
+const ALLOWED_EXTENSIONS = ["csv", "xls", "xlsx"];
+const ALLOWED_TYPES = new Set([
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "", // some browsers report empty mime for csv
+]);
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+async function uploadFileToStorage(
+  file: File,
+  tournamentId: string,
+): Promise<string | null> {
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "csv";
+    const path = `tournaments/${tournamentId}.${ext}`;
+    const { error } = await geekarena.storage
+      .from("tournament-files")
+      .upload(path, file, { upsert: true, contentType: file.type || undefined });
+    if (error) {
+      console.error("Storage upload error:", error.message);
+      return null;
+    }
+    const { data } = await geekarena.storage
+      .from("tournament-files")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    return data?.signedUrl ?? null;
+  } catch (e) {
+    console.error("Storage error:", e);
+    return null;
+  }
 }
 
 export function TournamentUploadForm({
