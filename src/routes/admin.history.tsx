@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Info, ExternalLink, Eye } from "lucide-react";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/admin/history")({
-  head: () => ({ meta: [{ title: "Historial Global — Admin" }] }),
+  head: () => ({ meta: [{ title: "Historial de Torneos — Admin" }] }),
   component: AdminHistoryPage,
 });
 
@@ -84,6 +84,7 @@ function fmtDate(s?: string | null) {
 }
 
 function AdminHistoryPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>(INITIAL);
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
@@ -145,7 +146,7 @@ function AdminHistoryPage() {
     <div className="space-y-6">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Admin</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Historial Global de Torneos</h1>
+        <h1 className="mt-2 text-3xl font-bold text-white">Historial de Torneos</h1>
         <p className="mt-1 text-sm text-gray-400">
           Todos los torneos de todas las tiendas y TCGs.
         </p>
