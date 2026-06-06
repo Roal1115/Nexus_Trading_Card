@@ -22,6 +22,7 @@ import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
+import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
 import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
@@ -99,6 +100,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const TcgManagerUploadRoute = TcgManagerUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerHistoryRoute = TcgManagerHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => TcgManagerRoute,
 } as any)
 const TcgManagerApprovedRoute = TcgManagerApprovedRouteImport.update({
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
+  '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
+  '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
+  '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/tcg-manager/approved'
+    | '/tcg-manager/history'
     | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/tcg-manager/approved'
+    | '/tcg-manager/history'
     | '/tcg-manager/upload'
     | '/admin'
     | '/organizer'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/tcg-manager/approved'
+    | '/tcg-manager/history'
     | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
@@ -436,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/tcg-manager/upload'
       preLoaderRoute: typeof TcgManagerUploadRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/history': {
+      id: '/tcg-manager/history'
+      path: '/history'
+      fullPath: '/tcg-manager/history'
+      preLoaderRoute: typeof TcgManagerHistoryRouteImport
       parentRoute: typeof TcgManagerRoute
     }
     '/tcg-manager/approved': {
@@ -588,6 +607,7 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
 
 interface TcgManagerRouteChildren {
   TcgManagerApprovedRoute: typeof TcgManagerApprovedRoute
+  TcgManagerHistoryRoute: typeof TcgManagerHistoryRoute
   TcgManagerUploadRoute: typeof TcgManagerUploadRoute
   TcgManagerIndexRoute: typeof TcgManagerIndexRoute
   TcgManagerTournamentsIdRoute: typeof TcgManagerTournamentsIdRoute
@@ -595,6 +615,7 @@ interface TcgManagerRouteChildren {
 
 const TcgManagerRouteChildren: TcgManagerRouteChildren = {
   TcgManagerApprovedRoute: TcgManagerApprovedRoute,
+  TcgManagerHistoryRoute: TcgManagerHistoryRoute,
   TcgManagerUploadRoute: TcgManagerUploadRoute,
   TcgManagerIndexRoute: TcgManagerIndexRoute,
   TcgManagerTournamentsIdRoute: TcgManagerTournamentsIdRoute,
@@ -618,3 +639,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
