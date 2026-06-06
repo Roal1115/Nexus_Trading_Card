@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
+  Activity,
   Calendar,
   CheckCircle2,
   Loader2,
