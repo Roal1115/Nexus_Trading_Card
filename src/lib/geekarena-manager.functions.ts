@@ -227,6 +227,15 @@ export const managerUndoApproval = createServerFn({ method: "POST" })
       .update({ status: "DRAFT", approved_at: null, undo_deadline: null })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "APPROVAL_UNDONE",
+      "tournament",
+      data.tournament_id,
+      data.tournament_id,
+      { undone_by_role: player.role },
+    );
     return { success: true };
   });
 
