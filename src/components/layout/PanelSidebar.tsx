@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut, Trophy, X } from "lucide-react";
 import { geekarena } from "@/integrations/geekarena/client";
 import { toast } from "sonner";
+import { NotificationBadge } from "@/components/ui/NotificationBadge";
 
 export type SidebarItem = {
   to: string;
@@ -9,6 +10,7 @@ export type SidebarItem = {
   icon: React.ReactNode;
   exact?: boolean;
   external?: boolean;
+  badge?: number;
 };
 
 export type SidebarSection = {
@@ -59,13 +61,17 @@ export function PanelSidebar({
     if (item.external) {
       return (
         <a key={item.to} href={item.to} className={cls} onClick={closeMobile}>
-          {item.icon} {item.label}
+          {item.icon}
+          <span className="flex-1">{item.label}</span>
+          <NotificationBadge count={item.badge ?? 0} />
         </a>
       );
     }
     return (
       <Link key={item.to} to={item.to} className={cls} onClick={closeMobile}>
-        {item.icon} {item.label}
+        {item.icon}
+        <span className="flex-1">{item.label}</span>
+        <NotificationBadge count={item.badge ?? 0} />
       </Link>
     );
   };
