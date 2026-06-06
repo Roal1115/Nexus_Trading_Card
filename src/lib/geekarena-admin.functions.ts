@@ -1436,6 +1436,11 @@ export const getAdminBadgeCounts = createServerFn({ method: "POST" })
       .eq("status", "APPROVED")
       .lt("undo_deadline", nowIso);
 
+    const approvedActiveP = admin
+      .from("tournaments")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "APPROVED");
+
     let activityQ = admin
       .from("admin_audit_log")
       .select("*", { count: "exact", head: true });
@@ -1443,15 +1448,17 @@ export const getAdminBadgeCounts = createServerFn({ method: "POST" })
       activityQ = activityQ.gt("created_at", data.activity_last_seen);
     }
 
-    const [pending, readyToPublish, activityCount] = await Promise.all([
+    const [pending, readyToPublish, approvedActive, activityCount] = await Promise.all([
       pendingP,
       readyP,
+      approvedActiveP,
       activityQ,
     ]);
 
     return {
       pending: pending.count ?? 0,
       readyToPublish: readyToPublish.count ?? 0,
+      approvedActive: approvedActive.count ?? 0,
       activity: activityCount.count ?? 0,
     };
   });
