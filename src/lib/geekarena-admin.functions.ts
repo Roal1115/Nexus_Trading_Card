@@ -1065,7 +1065,7 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const now = new Date();
     const deadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const { error } = await admin
@@ -1092,6 +1092,22 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
         throw new Error(error.message);
       }
     }
+    const { data: tAfter } = await admin
+      .from("tournaments")
+      .select("tournament_date, store_id, game_id, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    const game = (tAfter as any)?.games;
+    const store = (tAfter as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_APPROVED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${tAfter?.tournament_date ?? ""}`,
+      { store_id: tAfter?.store_id, game_id: tAfter?.game_id },
+    );
     return { ok: true };
   });
 
