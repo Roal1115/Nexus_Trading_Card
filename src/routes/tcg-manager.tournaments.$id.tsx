@@ -16,6 +16,7 @@ import {
   FileDown,
   FileX,
 } from "lucide-react";
+import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import {
   getManagerTournamentDetail,
