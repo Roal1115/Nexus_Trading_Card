@@ -307,7 +307,12 @@ export const rejectTournament = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("tournament_date, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
     const { error } = await admin
       .from("tournaments")
       .update({
@@ -317,6 +322,17 @@ export const rejectTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    const game = (t as any)?.games;
+    const store = (t as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${t?.tournament_date ?? ""}`,
+      {},
+    );
     return { ok: true };
   });
 
