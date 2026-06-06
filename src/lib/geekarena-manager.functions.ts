@@ -297,3 +297,47 @@ export const assignManagerGames = createServerFn({ method: "POST" })
     }
     return { success: true };
   });
+
+// ---------- Badge counts ----------
+export const getManagerBadgeCounts = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    let gameIds: string[] = [];
+    if (player.role === "admin") {
+      const { data } = await admin
+        .from("games")
+        .select("id")
+        .eq("is_active", true);
+      gameIds = (data ?? []).map((g: any) => g.id);
+    } else {
+      const { data } = await admin
+        .from("manager_games")
+        .select("game_id")
+        .eq("player_id", player.id);
+      gameIds = (data ?? []).map((d: any) => d.game_id);
+    }
+
+    if (gameIds.length === 0) return { pending: 0, approved: 0 };
+
+    const nowIso = new Date().toISOString();
+    const [pending, approved] = await Promise.all([
+      admin
+        .from("tournaments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "DRAFT")
+        .in("game_id", gameIds),
+      admin
+        .from("tournaments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "APPROVED")
+        .in("game_id", gameIds)
+        .lt("undo_deadline", nowIso),
+    ]);
+
+    return {
+      pending: pending.count ?? 0,
+      approved: approved.count ?? 0,
+    };
+  });

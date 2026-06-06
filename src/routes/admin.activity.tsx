@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Filter } from "lucide-react";
 import { listAuditLog, type AuditLogRow } from "@/lib/geekarena-admin.functions";
+import { useActivityLastSeen } from "@/hooks/use-badge-counts";
 
 export const Route = createFileRoute("/admin/activity")({
   head: () => ({ meta: [{ title: "Activity Center — Geek Arena" }] }),
@@ -56,6 +57,12 @@ function ActivityPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const fetchLogs = useServerFn(listAuditLog);
+  const { markSeen } = useActivityLastSeen();
+
+  useEffect(() => {
+    markSeen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const load = async (overrides: Partial<Filters> = {}) => {
     const f = { ...filters, ...overrides };

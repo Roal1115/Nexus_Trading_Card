@@ -1414,3 +1414,44 @@ export type AuditLogRow = {
 };
 
 
+
+// ---------- Badge counts ----------
+export const getAdminBadgeCounts = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { activity_last_seen?: string }) =>
+    z.object({ activity_last_seen: z.string().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const nowIso = new Date().toISOString();
+
+    const pendingP = admin
+      .from("tournaments")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "DRAFT");
+
+    const readyP = admin
+      .from("tournaments")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "APPROVED")
+      .lt("undo_deadline", nowIso);
+
+    let activityQ = admin
+      .from("admin_audit_log")
+      .select("*", { count: "exact", head: true });
+    if (data.activity_last_seen) {
+      activityQ = activityQ.gt("created_at", data.activity_last_seen);
+    }
+
+    const [pending, readyToPublish, activityCount] = await Promise.all([
+      pendingP,
+      readyP,
+      activityQ,
+    ]);
+
+    return {
+      pending: pending.count ?? 0,
+      readyToPublish: readyToPublish.count ?? 0,
+      activity: activityCount.count ?? 0,
+    };
+  });

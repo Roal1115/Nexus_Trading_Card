@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, Menu, Store, Upload, ListChecks } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Menu, Store, Trophy, Upload } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
+import { useBadgeCounts } from "@/hooks/use-badge-counts";
+import { getOrganizerBadgeCounts } from "@/lib/geekarena-organizer.functions";
 
 export const Route = createFileRoute("/organizer")({
   head: () => ({ meta: [{ title: "Panel del Organizador — Geek Arena" }] }),
@@ -13,6 +16,9 @@ function OrganizerLayout() {
   const { role, player, loading } = useGeekarenaRole();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const fetchCounts = useServerFn(getOrganizerBadgeCounts);
+  const { counts } = useBadgeCounts(fetchCounts);
 
   useEffect(() => {
     if (loading) return;
@@ -31,7 +37,7 @@ function OrganizerLayout() {
         onMobileClose={() => setMenuOpen(false)}
         items={[
           { to: "/organizer", label: "Mi Tienda", icon: <Store size={16} />, exact: true },
-          { to: "/organizer/tournaments", label: "Mis Torneos", icon: <ListChecks size={16} /> },
+          { to: "/organizer/tournaments", label: "Mis Torneos", icon: <Trophy size={16} />, badge: counts?.pending ?? 0 },
           { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
         ]}
       />

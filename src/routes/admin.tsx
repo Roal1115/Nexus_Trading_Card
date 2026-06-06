@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
   Calendar,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
+import { useBadgeCounts, useActivityLastSeen } from "@/hooks/use-badge-counts";
+import { getAdminBadgeCounts } from "@/lib/geekarena-admin.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Panel Administrador — Geek Arena" }] }),
@@ -23,6 +26,12 @@ function AdminLayout() {
   const { role, player, loading } = useGeekarenaRole();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const { get: getLastSeen } = useActivityLastSeen();
+  const fetchCounts = useServerFn(getAdminBadgeCounts);
+  const { counts } = useBadgeCounts(fetchCounts, () => ({
+    activity_last_seen: getLastSeen(),
+  }));
 
   useEffect(() => {
     if (loading) return;
@@ -43,17 +52,18 @@ function AdminLayout() {
           {
             title: "Administración",
             items: [
-              { to: "/admin", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true },
+              { to: "/admin", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true, badge: counts?.pending ?? 0 },
               { to: "/admin/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} /> },
               { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
               { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
-              { to: "/admin/activity", label: "Activity Center", icon: <Activity size={16} /> },
+              { to: "/admin/activity", label: "Activity Center", icon: <Activity size={16} />, badge: counts?.activity ?? 0 },
             ],
           },
           {
             title: "Circuito",
             items: [
+              { to: "/admin/publish", label: "Publicar Manualmente", icon: <Upload size={16} />, badge: counts?.readyToPublish ?? 0 },
               { to: "/admin/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
           },
