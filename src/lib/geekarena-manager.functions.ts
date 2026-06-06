@@ -187,6 +187,15 @@ export const managerRejectTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${tournament.game_id} — ${data.tournament_id}`,
+      { reason: data.reason, rejected_by_role: player.role },
+    );
     return { success: true };
   });
 
