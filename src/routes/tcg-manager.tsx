@@ -3,6 +3,7 @@ import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CheckCircle2,
+  History,
   Loader2,
   Menu,
   ShieldCheck,
@@ -48,6 +49,7 @@ function TcgManagerLayout() {
             items: [
               { to: "/tcg-manager", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true, badge: counts?.pending ?? 0 },
               { to: "/tcg-manager/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} />, badge: counts?.approved ?? 0 },
+              { to: "/tcg-manager/history", label: "Mi Historial", icon: <History size={16} /> },
             ],
           },
           {

@@ -5,6 +5,7 @@ import {
   Activity,
   Calendar,
   CheckCircle2,
+  History,
   Loader2,
   Menu,
   ShieldCheck,
@@ -54,6 +55,7 @@ function AdminLayout() {
             items: [
               { to: "/admin", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true, badge: counts?.pending ?? 0 },
               { to: "/admin/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} />, badge: counts?.approvedActive ?? 0 },
+              { to: "/admin/history", label: "Historial Global", icon: <History size={16} /> },
               { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
               { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },

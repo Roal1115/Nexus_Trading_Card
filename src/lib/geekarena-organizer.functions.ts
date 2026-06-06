@@ -84,43 +84,123 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
 // ---------- Mis Torneos ----------
 export const getMyTournaments = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .handler(async ({ context }) => {
+  .inputValidator((d: {
+    status?: string;
+    game_id?: string;
+    date_from?: string;
+    date_to?: string;
+  }) =>
+    z.object({
+      status: z.string().optional(),
+      game_id: z.string().optional(),
+      date_from: z.string().optional(),
+      date_to: z.string().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    if (!player.home_store_id) return { tournaments: [] };
+    if (!player.home_store_id)
+      return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
 
-    const baseCols = "id, store_id, game_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, status, csv_url, approved_at, published_at, created_at";
+    const { data: store } = await admin
+      .from("stores")
+      .select("name, city")
+      .eq("id", player.home_store_id)
+      .maybeSingle();
+
+    const baseCols =
+      "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
+    const extraCols = ", rejection_reason, approved_by";
+
     let rows: any[] | null = null;
-    let error: { message: string } | null = null;
+    let err: { message: string } | null = null;
     {
-      const res = await admin
+      let q = admin
         .from("tournaments")
-        .select(baseCols + ", rejection_reason")
+        .select(baseCols + extraCols)
         .eq("store_id", player.home_store_id)
         .order("tournament_date", { ascending: false });
+      if (data.status) q = q.eq("status", data.status);
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+      if (data.date_from) q = q.gte("tournament_date", data.date_from);
+      if (data.date_to) q = q.lte("tournament_date", data.date_to);
+      const res = await q;
       rows = res.data as any[] | null;
-      error = res.error;
+      err = res.error;
     }
-    if (error && /column .*rejection_reason.* does not exist/i.test(error.message)) {
-      const retry = await admin
+    if (err && /column .* does not exist/i.test(err.message)) {
+      let q = admin
         .from("tournaments")
         .select(baseCols)
         .eq("store_id", player.home_store_id)
         .order("tournament_date", { ascending: false });
-      rows = retry.data as any[] | null;
-      error = retry.error;
+      if (data.status) q = q.eq("status", data.status);
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+      if (data.date_from) q = q.gte("tournament_date", data.date_from);
+      if (data.date_to) q = q.lte("tournament_date", data.date_to);
+      const res = await q;
+      rows = res.data as any[] | null;
+      err = res.error;
     }
-    if (error) throw new Error(error.message);
+    if (err) throw new Error(err.message);
 
-    // join game names
+    const tournamentIds = (rows ?? []).map((r) => r.id);
     const gameIds = Array.from(new Set((rows ?? []).map((r) => r.game_id)));
-    let gamesMap: Record<string, string> = {};
-    if (gameIds.length > 0) {
-      const { data: gms } = await admin.from("games").select("id, name").in("id", gameIds);
-      gamesMap = Object.fromEntries((gms ?? []).map((g) => [g.id, g.name]));
-    }
+    const approverIds = Array.from(
+      new Set(
+        (rows ?? [])
+          .filter((r) => r.approved_by)
+          .map((r) => r.approved_by as string),
+      ),
+    );
+
+    const [gmsRes, approversRes, resultsRes] = await Promise.all([
+      gameIds.length
+        ? admin.from("games").select("id, name").in("id", gameIds)
+        : Promise.resolve({ data: [] as any[] }),
+      approverIds.length
+        ? admin.from("players").select("id, geek_tag").in("id", approverIds)
+        : Promise.resolve({ data: [] as any[] }),
+      tournamentIds.length
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id")
+            .in("tournament_id", tournamentIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const gamesMap = Object.fromEntries(
+      (gmsRes.data ?? []).map((g: any) => [g.id, g.name]),
+    );
+    const approversMap = Object.fromEntries(
+      (approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]),
+    );
+    const participantMap = (resultsRes.data ?? []).reduce(
+      (acc: Record<string, number>, r: any) => {
+        acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+
+    const stats = (rows ?? []).reduce(
+      (acc: Record<string, number>, t: any) => {
+        const key = t.rejection_reason && t.status === "DRAFT" ? "REJECTED" : t.status;
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
 
     return {
-      tournaments: (rows ?? []).map((r) => ({ ...r, game_name: gamesMap[r.game_id] ?? "—" })),
+      store_name: store ? `${store.name} — ${store.city ?? ""}`.trim() : null,
+      stats,
+      tournaments: (rows ?? []).map((r: any) => ({
+        ...r,
+        game_name: gamesMap[r.game_id] ?? "—",
+        approved_by_tag: r.approved_by ? approversMap[r.approved_by] ?? "—" : null,
+        participants: participantMap[r.id] ?? 0,
+      })),
     };
   });
 

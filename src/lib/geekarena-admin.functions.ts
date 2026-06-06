@@ -1462,3 +1462,145 @@ export const getAdminBadgeCounts = createServerFn({ method: "POST" })
       activity: activityCount.count ?? 0,
     };
   });
+
+// ---------- Historial Global de Torneos ----------
+export const getAdminTournamentHistory = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: {
+    status?: string;
+    game_id?: string;
+    store_id?: string;
+    date_from?: string;
+    date_to?: string;
+    season_id?: string;
+    page?: number;
+  }) =>
+    z.object({
+      status: z.string().optional(),
+      game_id: z.string().optional(),
+      store_id: z.string().optional(),
+      date_from: z.string().optional(),
+      date_to: z.string().optional(),
+      season_id: z.string().optional(),
+      page: z.number().min(1).default(1),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const PAGE_SIZE = 25;
+    const page = data.page ?? 1;
+    const offset = (page - 1) * PAGE_SIZE;
+
+    const baseCols =
+      "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
+    const extraCols = ", rejection_reason, approved_by, season_id";
+
+    const build = (cols: string) => {
+      let q = admin
+        .from("tournaments")
+        .select(cols, { count: "exact" })
+        .order("tournament_date", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (data.status) q = q.eq("status", data.status);
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+      if (data.store_id) q = q.eq("store_id", data.store_id);
+      if (data.date_from) q = q.gte("tournament_date", data.date_from);
+      if (data.date_to) q = q.lte("tournament_date", data.date_to);
+      if (data.season_id) q = q.eq("season_id", data.season_id);
+      return q;
+    };
+
+    let res = await build(baseCols + extraCols);
+    if (res.error && /column .* does not exist/i.test(res.error.message)) {
+      res = await build(baseCols);
+    }
+    if (res.error) throw new Error(res.error.message);
+
+    const rows = (res.data ?? []) as any[];
+    const count = res.count;
+    const gameIds = Array.from(new Set(rows.map((r) => r.game_id)));
+    const storeIds = Array.from(new Set(rows.map((r) => r.store_id)));
+    const approverIds = Array.from(
+      new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)),
+    );
+    const tournamentIds = rows.map((r) => r.id);
+
+    const [gmsRes, storesRes, approversRes, resultsRes, allStatsRes] = await Promise.all([
+      gameIds.length
+        ? admin.from("games").select("id, name").in("id", gameIds)
+        : Promise.resolve({ data: [] as any[] }),
+      storeIds.length
+        ? admin.from("stores").select("id, name, city").in("id", storeIds)
+        : Promise.resolve({ data: [] as any[] }),
+      approverIds.length
+        ? admin.from("players").select("id, geek_tag, role").in("id", approverIds)
+        : Promise.resolve({ data: [] as any[] }),
+      tournamentIds.length
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id")
+            .in("tournament_id", tournamentIds)
+        : Promise.resolve({ data: [] as any[] }),
+      admin.from("tournaments").select("status"),
+    ]);
+
+    const gamesMap = Object.fromEntries(
+      (gmsRes.data ?? []).map((g: any) => [g.id, g.name]),
+    );
+    const storesMap = Object.fromEntries(
+      (storesRes.data ?? []).map((s: any) => [s.id, s]),
+    );
+    const approversMap = Object.fromEntries(
+      (approversRes.data ?? []).map((p: any) => [p.id, p]),
+    );
+    const participantMap = (resultsRes.data ?? []).reduce(
+      (acc: Record<string, number>, r: any) => {
+        acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+    const globalStats = (allStatsRes.data ?? []).reduce(
+      (acc: Record<string, number>, t: any) => {
+        acc[t.status] = (acc[t.status] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+
+    return {
+      total: count ?? 0,
+      page,
+      stats: globalStats,
+      tournaments: rows.map((r) => {
+        const store: any = storesMap[r.store_id];
+        const approver: any = r.approved_by ? approversMap[r.approved_by] : null;
+        return {
+          ...r,
+          game_name: gamesMap[r.game_id] ?? "—",
+          store_name: store?.name ?? "—",
+          store_city: store?.city ?? "—",
+          approved_by_tag: approver?.geek_tag ?? null,
+          approved_by_role: approver?.role ?? null,
+          participants: participantMap[r.id] ?? 0,
+        };
+      }),
+    };
+  });
+
+// ---------- Filter dropdowns (admin history page) ----------
+export const getAdminFilterOptions = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .handler(async ({ context }) => {
+    const { admin } = context;
+    const [gamesRes, storesRes, seasonsRes] = await Promise.all([
+      admin.from("games").select("id, name").eq("is_active", true).order("name"),
+      admin.from("stores").select("id, name, city").eq("is_active", true).order("city").order("name"),
+      admin.from("seasons").select("id, name, slug, status").order("start_date", { ascending: false }),
+    ]);
+    return {
+      games: gamesRes.data ?? [],
+      stores: storesRes.data ?? [],
+      seasons: seasonsRes.data ?? [],
+    };
+  });
