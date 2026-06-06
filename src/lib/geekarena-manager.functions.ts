@@ -341,3 +341,73 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
       approved: approved.count ?? 0,
     };
   });
+
+// ---------- Mi Historial ----------
+export const getManagerHistory = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: {
+    action_type?: string;
+    date_from?: string;
+    date_to?: string;
+    page?: number;
+  }) =>
+    z.object({
+      action_type: z.string().optional(),
+      date_from: z.string().optional(),
+      date_to: z.string().optional(),
+      page: z.number().min(1).default(1),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const PAGE_SIZE = 25;
+    const page = data.page ?? 1;
+    const offset = (page - 1) * PAGE_SIZE;
+
+    let q = admin
+      .from("admin_audit_log")
+      .select("*", { count: "exact" })
+      .eq("actor_id", player.id)
+      .in("action", ["TOURNAMENT_APPROVED", "TOURNAMENT_REJECTED", "APPROVAL_UNDONE"])
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (data.action_type === "approved") q = q.eq("action", "TOURNAMENT_APPROVED");
+    if (data.action_type === "rejected") q = q.eq("action", "TOURNAMENT_REJECTED");
+    if (data.date_from) q = q.gte("created_at", data.date_from);
+    if (data.date_to) q = q.lte("created_at", data.date_to + "T23:59:59Z");
+
+    const { data: logs, count, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const tournamentIds = Array.from(
+      new Set((logs ?? []).filter((l: any) => l.target_id).map((l: any) => l.target_id as string)),
+    );
+    const { data: tournaments } = tournamentIds.length
+      ? await admin
+          .from("tournaments")
+          .select("id, tournament_date, game_id, store_id, status, stores(name, city), games(name)")
+          .in("id", tournamentIds)
+      : { data: [] as any[] };
+    const tournamentMap = new Map((tournaments ?? []).map((t: any) => [t.id, t]));
+
+    return {
+      total: count ?? 0,
+      page,
+      entries: (logs ?? []).map((log: any) => {
+        const t: any = tournamentMap.get(log.target_id);
+        return {
+          id: log.id,
+          action: log.action,
+          created_at: log.created_at,
+          reason: log.metadata?.reason ?? null,
+          tournament_id: log.target_id,
+          tournament_date: t?.tournament_date ?? null,
+          game_name: t?.games?.name ?? "—",
+          store_name: t?.stores?.name ?? "—",
+          store_city: t?.stores?.city ?? "—",
+          tournament_status: t?.status ?? null,
+        };
+      }),
+    };
+  });
