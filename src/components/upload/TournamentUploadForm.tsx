@@ -619,7 +619,7 @@ export function TournamentUploadForm({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv,text/csv"
+                  accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   className="hidden"
                   onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
                 />
@@ -627,7 +627,7 @@ export function TournamentUploadForm({
                   <UploadCloud size={28} className="text-primary" />
                 </div>
                 <p className="text-sm font-semibold text-white">
-                  Arrastra tu CSV aquí, o haz clic para buscar
+                  Arrastra tu archivo aquí, o haz clic para buscar
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
                   Formato detectado: {colMap?.platform === "bandai" ? "Bandai TCG+" : "Limitless"}
