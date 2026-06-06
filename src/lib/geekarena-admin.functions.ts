@@ -760,7 +760,12 @@ export const setPlayerRole = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
+    const { data: targetPlayer } = await admin
+      .from("players")
+      .select("geek_tag, role")
+      .eq("id", data.player_id)
+      .maybeSingle();
     const update: Record<string, unknown> = { role: data.role };
     if (data.home_store_id !== undefined) update.home_store_id = data.home_store_id;
     const { error } = await admin
@@ -777,6 +782,15 @@ export const setPlayerRole = createServerFn({ method: "POST" })
         .eq("player_id", data.player_id);
     }
 
+    await logAction(
+      admin,
+      player,
+      "ROLE_CHANGED",
+      "player",
+      data.player_id,
+      targetPlayer?.geek_tag ?? data.player_id,
+      { old_role: targetPlayer?.role, new_role: data.role },
+    );
     return { ok: true };
   });
 
