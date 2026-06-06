@@ -286,6 +286,7 @@ export function TournamentUploadForm({
   const [date, setDate] = useState<string>("");
 
   const [fileName, setFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [registeredTags, setRegisteredTags] = useState<Set<string>>(new Set());
