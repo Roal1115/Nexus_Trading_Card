@@ -267,7 +267,7 @@ export const approveTournament = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const now = new Date();
     const undoDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const { error } = await admin
@@ -279,6 +279,23 @@ export const approveTournament = createServerFn({ method: "POST" })
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
+
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("tournament_date, store_id, game_id, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    const game = (t as any)?.games;
+    const store = (t as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_APPROVED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${t?.tournament_date ?? ""}`,
+      { store_id: t?.store_id, game_id: t?.game_id },
+    );
     return { ok: true };
   });
 
