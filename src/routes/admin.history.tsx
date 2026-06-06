@@ -343,12 +343,10 @@ function AdminHistoryPage() {
           ) : rows.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-gray-400">Sin registros.</p>
           ) : rows.map((r) => (
-            <div key={r.id} className="px-4 py-3 space-y-1.5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="text-sm font-semibold text-white">{r.game_name}</div>
-                  <div className="text-xs text-gray-400">{r.tournament_date} · {r.store_name} ({r.store_city})</div>
-                </div>
+            <div key={r.id} className="px-4 py-3 space-y-2">
+              {/* Row 1 — TCG + Status badge */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">{r.game_name}</span>
                 {r.status === "DRAFT" && r.rejection_reason ? (
                   <span className="text-xs inline-flex items-center gap-1 rounded-full border border-red-400/40 bg-red-500/15 px-2 py-0.5 font-semibold text-red-200">
                     Rechazado
@@ -359,34 +357,38 @@ function AdminHistoryPage() {
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-1 text-xs">
+
+              {/* Row 2 — Store + City + Date */}
+              <div className="text-xs text-gray-400">
+                {r.store_name} · {r.store_city} · {new Date(r.tournament_date + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+              </div>
+
+              {/* Row 3 — Stats grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                 <div><span className="text-gray-500">Participantes:</span> <span className="text-gray-200">{r.participants}</span></div>
-                <div><span className="text-gray-500">Aprobado:</span> <span className="text-gray-200">{fmtDate(r.approved_at)}</span></div>
-                <div className="col-span-2">
-                  <span className="text-gray-500">Aprobado por: </span>
-                  <span className="text-gray-200">{r.approved_by_tag ?? "—"}</span>
-                  {r.approved_by_role && (
-                    <span className="ml-1 text-[10px] px-1 py-0 rounded border border-white/10 text-gray-300">
-                      {ROLE_LABEL[r.approved_by_role] ?? r.approved_by_role}
-                    </span>
-                  )}
-                </div>
-                {r.rejection_reason && (
-                  <div className="col-span-2 text-red-400/80">"{r.rejection_reason}"</div>
+                <div><span className="text-gray-500">Subido:</span> <span className="text-gray-200">{new Date(r.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}</span></div>
+                {r.approved_at && (
+                  <div><span className="text-gray-500">Aprobado:</span> <span className="text-gray-200">{new Date(r.approved_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}</span></div>
+                )}
+                {r.approved_by_tag && (
+                  <div className="col-span-2"><span className="text-gray-500">Por:</span> <span className="text-gray-200">{r.approved_by_tag}</span> {r.approved_by_role && (<span className="text-[10px] text-gray-400">({r.approved_by_role === "admin" ? "Admin" : "Manager"})</span>)}</div>
                 )}
               </div>
+
+              {/* Row 4 — File + Action */}
               <div className="flex items-center justify-between pt-1">
-                {r.csv_url ? (
-                  <FileLink url={r.csv_url} label="Descargar" />
-                ) : <span className="text-xs text-gray-500">Sin archivo</span>}
-                <Link
-                  to="/admin/tournaments/$id"
-                  params={{ id: r.id }}
-                  className="text-xs inline-flex items-center gap-1 text-primary"
-                >
+                <FileLink url={r.csv_url} />
+                <button onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })} className="flex items-center gap-1 text-xs text-primary hover:underline">
                   <Eye size={12} /> Ver detalle
-                </Link>
+                </button>
               </div>
+
+              {/* Rejection reason if present */}
+              {r.rejection_reason && (
+                <div className="text-xs text-red-400/80 bg-red-500/10 rounded-lg px-2 py-1">
+                  Motivo: "{r.rejection_reason}"
+                </div>
+              )}
             </div>
           ))}
         </div>
