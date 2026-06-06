@@ -48,6 +48,7 @@ function AdminLayout() {
               { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
               { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
+              { to: "/admin/activity", label: "Activity Center", icon: <Activity size={16} /> },
             ],
           },
           {
