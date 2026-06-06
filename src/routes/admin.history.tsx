@@ -376,10 +376,8 @@ function AdminHistoryPage() {
               </div>
               <div className="flex items-center justify-between pt-1">
                 {r.csv_url ? (
-                  <a href={r.csv_url} target="_blank" rel="noreferrer" className="text-xs inline-flex items-center gap-1 text-primary">
-                    CSV <ExternalLink size={10} />
-                  </a>
-                ) : <span className="text-xs text-gray-500">Sin CSV</span>}
+                  <FileLink url={r.csv_url} label="Descargar" />
+                ) : <span className="text-xs text-gray-500">Sin archivo</span>}
                 <Link
                   to="/admin/tournaments/$id"
                   params={{ id: r.id }}
