@@ -1019,7 +1019,12 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
+    const { data: tBefore } = await admin
+      .from("tournaments")
+      .select("tournament_date, stores(name), games(name)")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
     const update: Record<string, unknown> = {
       status: "DRAFT",
       approved_at: null,
@@ -1040,6 +1045,17 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
       error = retry.error;
     }
     if (error) throw new Error(error.message);
+    const game = (tBefore as any)?.games;
+    const store = (tBefore as any)?.stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${tBefore?.tournament_date ?? ""}`,
+      { reason: data.reason },
+    );
     return { ok: true };
   });
 
