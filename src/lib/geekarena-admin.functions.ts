@@ -425,6 +425,18 @@ export const publishTournaments = createServerFn({ method: "POST" })
       );
     }
 
+    for (const t of publishable) {
+      await logAction(
+        admin,
+        player,
+        "TOURNAMENT_PUBLISHED",
+        "tournament",
+        t.id,
+        `${t.game_id} — ${t.store_id} — ${t.tournament_date}`,
+        { season_id: season.id },
+      );
+    }
+
     return { published: publishable.length };
   });
 
