@@ -346,3 +346,30 @@ export const lookupPlayerTags = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { existing: (rows ?? []).map((r) => r.geek_tag) };
   });
+
+// ---------- Badge counts ----------
+export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    if (!player.home_store_id) return { pending: 0, approved: 0 };
+
+    const [pending, approved] = await Promise.all([
+      admin
+        .from("tournaments")
+        .select("*", { count: "exact", head: true })
+        .eq("store_id", player.home_store_id)
+        .eq("status", "DRAFT"),
+      admin
+        .from("tournaments")
+        .select("*", { count: "exact", head: true })
+        .eq("store_id", player.home_store_id)
+        .eq("status", "APPROVED"),
+    ]);
+
+    return {
+      pending: pending.count ?? 0,
+      approved: approved.count ?? 0,
+    };
+  });
