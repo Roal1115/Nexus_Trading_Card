@@ -340,54 +340,58 @@ export function TournamentUploadForm({
   ).length;
   const canSubmit = rows.length > 0 && totalErrors === 0 && !saving;
 
-  const handleFile = (file: File | null) => {
+  const handleFile = async (file: File | null) => {
     if (!file || !colMap || colMap.platform === "unknown") return;
-    if (!file.name.endsWith(".csv") && file.type !== "text/csv") {
-      toast.error("Solo se aceptan archivos .csv");
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ALLOWED_EXTENSIONS.includes(ext) || !ALLOWED_TYPES.has(file.type)) {
+      toast.error("Formato no válido. Solo se aceptan archivos .csv, .xls o .xlsx");
       return;
     }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("El archivo no puede pesar más de 5 MB");
+      return;
+    }
+
     setFileName(file.name);
+    setSelectedFile(file);
     setParsing(true);
     setRows([]);
     setRegisteredTags(new Set());
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const rawParsed = parseCSV(e.target?.result as string, colMap);
-        const parsed = normalizarPuntos(rawParsed);
-        if (parsed.length === 0) {
-          toast.error(
-            "No se encontraron filas válidas. Verifica las columnas requeridas.",
-          );
-          setParsing(false);
-          return;
-        }
-        setRows(parsed);
-        // Verify which players exist (via server fn — RLS-safe)
-        toast.message("Verificando jugadores en el sistema...");
-        const tags = Array.from(new Set(parsed.map((r) => r.geek_tag)));
-        try {
-          const res = await lookupTags({ data: { tags } });
-          setRegisteredTags(new Set(res.existing));
-        } catch (err) {
-          toast.error("Error al verificar jugadores: " + String((err as Error).message ?? err));
-        }
-      } catch (err) {
-        toast.error(String((err as Error).message ?? err));
-      } finally {
-        setParsing(false);
-      }
-    };
-    reader.onerror = () => {
-      toast.error("Error al leer el archivo.");
-      setParsing(false);
-    };
     toast.message("Analizando archivo...");
-    reader.readAsText(file);
+    try {
+      const tableRows = await readFileToRows(file);
+      const rawParsed = parseTable(tableRows, colMap);
+      const parsed = normalizarPuntos(rawParsed);
+      if (parsed.length === 0) {
+        toast.error(
+          "No se encontraron filas válidas. Verifica las columnas requeridas.",
+        );
+        setParsing(false);
+        return;
+      }
+      setRows(parsed);
+      toast.message("Verificando jugadores en el sistema...");
+      const tags = Array.from(new Set(parsed.map((r) => r.geek_tag)));
+      try {
+        const res = await lookupTags({ data: { tags } });
+        setRegisteredTags(new Set(res.existing));
+      } catch (err) {
+        toast.error(
+          "Error al verificar jugadores: " +
+            String((err as Error).message ?? err),
+        );
+      }
+    } catch (err) {
+      toast.error(String((err as Error).message ?? err));
+    } finally {
+      setParsing(false);
+    }
   };
 
   const clearFile = () => {
     setFileName(null);
+    setSelectedFile(null);
     setRows([]);
     setRegisteredTags(new Set());
     setParsing(false);
@@ -414,12 +418,20 @@ export function TournamentUploadForm({
         draws: r.draws,
         points_earned: r.points_earned,
       }));
+
+      const tournamentId = crypto.randomUUID();
+      const csvUrl = selectedFile
+        ? await uploadFileToStorage(selectedFile, tournamentId)
+        : null;
+
       const result = await submitUpload({
         data: {
           store_id: storeId,
           game_id: gameId,
           tournament_date: date,
           rows: cleanRows,
+          tournament_id: tournamentId,
+          csv_url: csvUrl,
         },
       });
       if (result && (result as { ok?: boolean }).ok === false) {
