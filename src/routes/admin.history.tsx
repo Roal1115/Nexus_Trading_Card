@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Info, ExternalLink, Eye } from "lucide-react";
+import { FileLink } from "@/components/ui/FileLink";
 import {
   getAdminTournamentHistory,
   getAdminFilterOptions,
@@ -317,11 +318,7 @@ function AdminHistoryPage() {
                   <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.approved_at)}</td>
                   <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.published_at)}</td>
                   <td className="px-3 py-2">
-                    {r.csv_url ? (
-                      <a href={r.csv_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                        Ver <ExternalLink size={10} />
-                      </a>
-                    ) : <span className="text-gray-500">—</span>}
+                    <FileLink url={r.csv_url} />
                   </td>
                   <td className="px-3 py-2">
                     <Link
@@ -379,10 +376,8 @@ function AdminHistoryPage() {
               </div>
               <div className="flex items-center justify-between pt-1">
                 {r.csv_url ? (
-                  <a href={r.csv_url} target="_blank" rel="noreferrer" className="text-xs inline-flex items-center gap-1 text-primary">
-                    CSV <ExternalLink size={10} />
-                  </a>
-                ) : <span className="text-xs text-gray-500">Sin CSV</span>}
+                  <FileLink url={r.csv_url} label="Descargar" />
+                ) : <span className="text-xs text-gray-500">Sin archivo</span>}
                 <Link
                   to="/admin/tournaments/$id"
                   params={{ id: r.id }}

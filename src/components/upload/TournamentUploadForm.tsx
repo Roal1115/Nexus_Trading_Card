@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import {
   AlertCircle,
   ArrowLeft,
@@ -135,10 +136,9 @@ function parsePct(raw: string | undefined, platform: Platform): number | null {
   return Math.round(n * 100) / 100;
 }
 
-function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
-  const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return [];
-  const headers = splitCsvLine(lines[0]);
+function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
+  if (rows.length < 2) return [];
+  const headers = (rows[0] ?? []).map((h) => String(h ?? "").trim());
   const idx = (key: string | undefined) =>
     key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1;
 
@@ -149,10 +149,10 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
   const iRec = idx(map.record);
   const iSt = idx(map.status);
 
-  const rows: ParsedRow[] = [];
-  for (let li = 1; li < lines.length; li++) {
-    const cols = splitCsvLine(lines[li]);
-    const tag = (iTag !== -1 ? cols[iTag] : "").trim();
+  const out: ParsedRow[] = [];
+  for (let li = 1; li < rows.length; li++) {
+    const cols = (rows[li] ?? []).map((c) => String(c ?? "").trim());
+    const tag = (iTag !== -1 ? cols[iTag] : "")?.trim() ?? "";
     if (!tag) continue;
 
     let wins: number | null = null;
@@ -176,7 +176,7 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
     if (!isFinite(rank) || rank < 1) error = "Ranking inválido";
     else if (!isFinite(mp)) error = "Match Points inválido";
 
-    rows.push({
+    out.push({
       rank: isFinite(rank) ? rank : 0,
       geek_tag: tag,
       match_points: isFinite(mp) ? mp : null,
@@ -184,12 +184,79 @@ function parseCSV(text: string, map: ColumnMap): ParsedRow[] {
       wins,
       losses,
       draws,
-      points_earned: 0, // se calculará después con normalizarPuntos()
+      points_earned: 0,
       dropped,
       error,
     });
   }
-  return rows.sort((a, b) => a.rank - b.rank);
+  return out.sort((a, b) => a.rank - b.rank);
+}
+
+function csvTextToRows(text: string): string[][] {
+  return text
+    .replace(/\r/g, "")
+    .split("\n")
+    .filter((l) => l.trim().length > 0)
+    .map((l) => splitCsvLine(l));
+}
+
+async function readFileToRows(file: File): Promise<string[][]> {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext === "csv") {
+    const text = await file.text();
+    return csvTextToRows(text);
+  }
+  const buf = await file.arrayBuffer();
+  try {
+    const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      raw: false,
+      defval: "",
+      blankrows: false,
+    }) as unknown as string[][];
+    return rows;
+  } catch {
+    throw new Error(
+      "No se pudo leer el archivo. Verifica que sea un archivo Excel válido.",
+    );
+  }
+}
+
+const ALLOWED_EXTENSIONS = ["csv", "xls", "xlsx"];
+const ALLOWED_TYPES = new Set([
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "", // some browsers report empty mime for csv
+]);
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+async function uploadFileToStorage(
+  file: File,
+  tournamentId: string,
+): Promise<string | null> {
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "csv";
+    const path = `tournaments/${tournamentId}.${ext}`;
+    const { error } = await geekarena.storage
+      .from("tournament-files")
+      .upload(path, file, { upsert: true, contentType: file.type || undefined });
+    if (error) {
+      console.error("Storage upload error:", error.message);
+      return null;
+    }
+    const { data } = await geekarena.storage
+      .from("tournament-files")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    return data?.signedUrl ?? null;
+  } catch (e) {
+    console.error("Storage error:", e);
+    return null;
+  }
 }
 
 export function TournamentUploadForm({
@@ -219,6 +286,7 @@ export function TournamentUploadForm({
   const [date, setDate] = useState<string>("");
 
   const [fileName, setFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [registeredTags, setRegisteredTags] = useState<Set<string>>(new Set());
@@ -272,54 +340,58 @@ export function TournamentUploadForm({
   ).length;
   const canSubmit = rows.length > 0 && totalErrors === 0 && !saving;
 
-  const handleFile = (file: File | null) => {
+  const handleFile = async (file: File | null) => {
     if (!file || !colMap || colMap.platform === "unknown") return;
-    if (!file.name.endsWith(".csv") && file.type !== "text/csv") {
-      toast.error("Solo se aceptan archivos .csv");
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ALLOWED_EXTENSIONS.includes(ext) || !ALLOWED_TYPES.has(file.type)) {
+      toast.error("Formato no válido. Solo se aceptan archivos .csv, .xls o .xlsx");
       return;
     }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("El archivo no puede pesar más de 5 MB");
+      return;
+    }
+
     setFileName(file.name);
+    setSelectedFile(file);
     setParsing(true);
     setRows([]);
     setRegisteredTags(new Set());
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const rawParsed = parseCSV(e.target?.result as string, colMap);
-        const parsed = normalizarPuntos(rawParsed);
-        if (parsed.length === 0) {
-          toast.error(
-            "No se encontraron filas válidas. Verifica las columnas requeridas.",
-          );
-          setParsing(false);
-          return;
-        }
-        setRows(parsed);
-        // Verify which players exist (via server fn — RLS-safe)
-        toast.message("Verificando jugadores en el sistema...");
-        const tags = Array.from(new Set(parsed.map((r) => r.geek_tag)));
-        try {
-          const res = await lookupTags({ data: { tags } });
-          setRegisteredTags(new Set(res.existing));
-        } catch (err) {
-          toast.error("Error al verificar jugadores: " + String((err as Error).message ?? err));
-        }
-      } catch (err) {
-        toast.error(String((err as Error).message ?? err));
-      } finally {
-        setParsing(false);
-      }
-    };
-    reader.onerror = () => {
-      toast.error("Error al leer el archivo.");
-      setParsing(false);
-    };
     toast.message("Analizando archivo...");
-    reader.readAsText(file);
+    try {
+      const tableRows = await readFileToRows(file);
+      const rawParsed = parseTable(tableRows, colMap);
+      const parsed = normalizarPuntos(rawParsed);
+      if (parsed.length === 0) {
+        toast.error(
+          "No se encontraron filas válidas. Verifica las columnas requeridas.",
+        );
+        setParsing(false);
+        return;
+      }
+      setRows(parsed);
+      toast.message("Verificando jugadores en el sistema...");
+      const tags = Array.from(new Set(parsed.map((r) => r.geek_tag)));
+      try {
+        const res = await lookupTags({ data: { tags } });
+        setRegisteredTags(new Set(res.existing));
+      } catch (err) {
+        toast.error(
+          "Error al verificar jugadores: " +
+            String((err as Error).message ?? err),
+        );
+      }
+    } catch (err) {
+      toast.error(String((err as Error).message ?? err));
+    } finally {
+      setParsing(false);
+    }
   };
 
   const clearFile = () => {
     setFileName(null);
+    setSelectedFile(null);
     setRows([]);
     setRegisteredTags(new Set());
     setParsing(false);
@@ -346,12 +418,20 @@ export function TournamentUploadForm({
         draws: r.draws,
         points_earned: r.points_earned,
       }));
+
+      const tournamentId = crypto.randomUUID();
+      const csvUrl = selectedFile
+        ? await uploadFileToStorage(selectedFile, tournamentId)
+        : null;
+
       const result = await submitUpload({
         data: {
           store_id: storeId,
           game_id: gameId,
           tournament_date: date,
           rows: cleanRows,
+          tournament_id: tournamentId,
+          csv_url: csvUrl,
         },
       });
       if (result && (result as { ok?: boolean }).ok === false) {
@@ -516,7 +596,7 @@ export function TournamentUploadForm({
 
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-gray-400">
-              <UploadCloud size={13} className="text-primary" /> Resultados (CSV)
+              <UploadCloud size={13} className="text-primary" /> Resultados (CSV, XLS o XLSX)
             </Label>
             {!fileName ? (
               <label
@@ -539,7 +619,7 @@ export function TournamentUploadForm({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv,text/csv"
+                  accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   className="hidden"
                   onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
                 />
@@ -547,7 +627,7 @@ export function TournamentUploadForm({
                   <UploadCloud size={28} className="text-primary" />
                 </div>
                 <p className="text-sm font-semibold text-white">
-                  Arrastra tu CSV aquí, o haz clic para buscar
+                  Arrastra tu archivo aquí, o haz clic para buscar
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
                   Formato detectado: {colMap?.platform === "bandai" ? "Bandai TCG+" : "Limitless"}

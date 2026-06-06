@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Trash2, ExternalLink, Info, Filter } from "lucide-react";
+import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
@@ -326,18 +327,7 @@ function TournamentsPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-300">{r.participants ?? 0}</td>
                       <td className="px-4 py-3">
-                        {r.csv_url ? (
-                          <a
-                            href={r.csv_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                          >
-                            Ver <ExternalLink size={12} />
-                          </a>
-                        ) : (
-                          <span className="text-gray-500">—</span>
-                        )}
+                        <FileLink url={r.csv_url} />
                       </td>
                       <td className="px-4 py-3 text-right">
                         {r.status === "DRAFT" ? (
@@ -399,20 +389,9 @@ function TournamentsPage() {
                     <div className="text-gray-200">{r.participants ?? 0}</div>
                   </div>
                   <div>
-                    <div className="text-gray-500">CSV</div>
+                    <div className="text-gray-500">Archivo</div>
                     <div>
-                      {r.csv_url ? (
-                        <a
-                          href={r.csv_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-primary"
-                        >
-                          Ver <ExternalLink size={12} />
-                        </a>
-                      ) : (
-                        <span className="text-gray-500">—</span>
-                      )}
+                      <FileLink url={r.csv_url} />
                     </div>
                   </div>
                 </div>
