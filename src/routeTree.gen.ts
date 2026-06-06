@@ -31,6 +31,7 @@ import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
+import { Route as AdminHistoryRouteImport } from './routes/admin.history'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
@@ -147,6 +148,11 @@ const AdminPlayersRoute = AdminPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHistoryRoute = AdminHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminApprovedRoute = AdminApprovedRouteImport.update({
   id: '/approved',
   path: '/approved',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/activity': typeof AdminActivityRoute
   '/admin/approved': typeof AdminApprovedRoute
+  '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/approved': typeof AdminApprovedRoute
+  '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/activity': typeof AdminActivityRoute
   '/admin/approved': typeof AdminApprovedRoute
+  '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/tcg-manager'
     | '/admin/activity'
     | '/admin/approved'
+    | '/admin/history'
     | '/admin/players'
     | '/admin/publish'
     | '/admin/seasons'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin/activity'
     | '/admin/approved'
+    | '/admin/history'
     | '/admin/players'
     | '/admin/publish'
     | '/admin/seasons'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/tcg-manager'
     | '/admin/activity'
     | '/admin/approved'
+    | '/admin/history'
     | '/admin/players'
     | '/admin/publish'
     | '/admin/seasons'
@@ -513,6 +525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPlayersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/history': {
+      id: '/admin/history'
+      path: '/history'
+      fullPath: '/admin/history'
+      preLoaderRoute: typeof AdminHistoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/approved': {
       id: '/admin/approved'
       path: '/approved'
@@ -566,6 +585,7 @@ const AdminPlayersRouteWithChildren = AdminPlayersRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminActivityRoute: typeof AdminActivityRoute
   AdminApprovedRoute: typeof AdminApprovedRoute
+  AdminHistoryRoute: typeof AdminHistoryRoute
   AdminPlayersRoute: typeof AdminPlayersRouteWithChildren
   AdminPublishRoute: typeof AdminPublishRoute
   AdminSeasonsRoute: typeof AdminSeasonsRoute
@@ -578,6 +598,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminActivityRoute: AdminActivityRoute,
   AdminApprovedRoute: AdminApprovedRoute,
+  AdminHistoryRoute: AdminHistoryRoute,
   AdminPlayersRoute: AdminPlayersRouteWithChildren,
   AdminPublishRoute: AdminPublishRoute,
   AdminSeasonsRoute: AdminSeasonsRoute,
