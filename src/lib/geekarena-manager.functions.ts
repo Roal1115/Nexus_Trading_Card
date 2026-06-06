@@ -5,6 +5,7 @@ import {
   requireGeekarenaAdmin,
 } from "./geekarena-auth.middleware";
 import { loadTournamentDetail } from "./geekarena-tournament-detail.server";
+import { logAction } from "./geekarena-admin.functions";
 
 async function getManagerGameIds(
   admin: any,
