@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   CheckCircle2,
   Loader2,
@@ -9,6 +10,8 @@ import {
 } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
+import { useBadgeCounts } from "@/hooks/use-badge-counts";
+import { getManagerBadgeCounts } from "@/lib/geekarena-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager")({
   head: () => ({ meta: [{ title: "Panel TCG Manager — Geek Arena" }] }),
@@ -19,6 +22,21 @@ function TcgManagerLayout() {
   const { role, player, loading } = useGeekarenaRole();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (role !== "tcg_manager" && role !== "admin") {
+      navigate({ to: "/login" });
+    }
+  }, [loading, role, navigate]);
+
+function TcgManagerLayout() {
+  const { role, player, loading } = useGeekarenaRole();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const fetchCounts = useServerFn(getManagerBadgeCounts);
+  const { counts } = useBadgeCounts(fetchCounts);
 
   useEffect(() => {
     if (loading) return;
@@ -39,8 +57,8 @@ function TcgManagerLayout() {
           {
             title: "Moderación",
             items: [
-              { to: "/tcg-manager", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true },
-              { to: "/tcg-manager/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} /> },
+              { to: "/tcg-manager", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true, badge: counts?.pending ?? 0 },
+              { to: "/tcg-manager/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} />, badge: counts?.approved ?? 0 },
             ],
           },
           {
