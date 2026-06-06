@@ -52,17 +52,18 @@ function AdminLayout() {
           {
             title: "Administración",
             items: [
-              { to: "/admin", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true },
+              { to: "/admin", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true, badge: counts?.pending ?? 0 },
               { to: "/admin/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} /> },
               { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
               { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
-              { to: "/admin/activity", label: "Activity Center", icon: <Activity size={16} /> },
+              { to: "/admin/activity", label: "Activity Center", icon: <Activity size={16} />, badge: counts?.activity ?? 0 },
             ],
           },
           {
             title: "Circuito",
             items: [
+              { to: "/admin/publish", label: "Publicar Manualmente", icon: <Upload size={16} />, badge: counts?.readyToPublish ?? 0 },
               { to: "/admin/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
           },
