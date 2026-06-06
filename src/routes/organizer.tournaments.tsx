@@ -327,18 +327,7 @@ function TournamentsPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-300">{r.participants ?? 0}</td>
                       <td className="px-4 py-3">
-                        {r.csv_url ? (
-                          <a
-                            href={r.csv_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                          >
-                            Ver <ExternalLink size={12} />
-                          </a>
-                        ) : (
-                          <span className="text-gray-500">—</span>
-                        )}
+                        <FileLink url={r.csv_url} />
                       </td>
                       <td className="px-4 py-3 text-right">
                         {r.status === "DRAFT" ? (
