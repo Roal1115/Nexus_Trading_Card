@@ -276,6 +276,7 @@ export const approveTournament = createServerFn({ method: "POST" })
         status: "APPROVED",
         approved_at: now.toISOString(),
         undo_deadline: undoDeadline.toISOString(),
+        approved_by: player.id,
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
@@ -1075,6 +1076,7 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
         approved_at: now.toISOString(),
         undo_deadline: deadline.toISOString(),
         rejection_reason: null,
+        approved_by: player.id,
       })
       .eq("id", data.tournament_id);
     if (error) {
@@ -1085,6 +1087,7 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
             status: "APPROVED",
             approved_at: now.toISOString(),
             undo_deadline: deadline.toISOString(),
+            approved_by: player.id,
           })
           .eq("id", data.tournament_id);
         if (retry.error) throw new Error(retry.error.message);

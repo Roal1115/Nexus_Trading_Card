@@ -142,6 +142,7 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
         approved_at: now.toISOString(),
         undo_deadline: undoDeadline.toISOString(),
         rejection_reason: null,
+        approved_by: player.id,
       })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
