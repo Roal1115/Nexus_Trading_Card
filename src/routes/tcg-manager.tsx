@@ -1,0 +1,87 @@
+import { useEffect, useState } from "react";
+import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  CheckCircle2,
+  History,
+  Loader2,
+  Menu,
+  ShieldCheck,
+  Upload,
+} from "lucide-react";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { PanelSidebar } from "@/components/layout/PanelSidebar";
+import { useBadgeCounts } from "@/hooks/use-badge-counts";
+import { getManagerBadgeCounts } from "@/lib/geekarena-manager.functions";
+
+export const Route = createFileRoute("/tcg-manager")({
+  head: () => ({ meta: [{ title: "Panel TCG Manager — Geek Arena" }] }),
+  component: TcgManagerLayout,
+});
+
+
+function TcgManagerLayout() {
+  const { role, player, loading } = useGeekarenaRole();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const fetchCounts = useServerFn(getManagerBadgeCounts);
+  const { counts } = useBadgeCounts(fetchCounts);
+
+  useEffect(() => {
+    if (loading) return;
+    if (role !== "tcg_manager" && role !== "admin") {
+      navigate({ to: "/login" });
+    }
+  }, [loading, role, navigate]);
+
+  return (
+    <div className="flex min-h-screen">
+      <PanelSidebar
+        title="TCG Manager"
+        subtitle="Panel"
+        userLabel={player?.geek_tag ?? "Manager"}
+        mobileOpen={menuOpen}
+        onMobileClose={() => setMenuOpen(false)}
+        sections={[
+          {
+            title: "Moderación",
+            items: [
+              { to: "/tcg-manager", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true, badge: counts?.pending ?? 0 },
+              { to: "/tcg-manager/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} />, badge: counts?.approved ?? 0 },
+              { to: "/tcg-manager/history", label: "Mi Historial", icon: <History size={16} /> },
+            ],
+          },
+          {
+            title: "Circuito",
+            items: [
+              { to: "/tcg-manager/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
+            ],
+          },
+        ]}
+      />
+      <main className="min-w-0 flex-1">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:hidden">
+          <button
+            className="p-1 text-gray-400 transition hover:text-white"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu size={22} />
+          </button>
+          <div className="text-sm font-semibold text-white">Panel Manager</div>
+        </div>
+
+        <div className="p-6 sm:p-8">
+          {loading ? (
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <Loader2 className="animate-spin text-primary" />
+            </div>
+          ) : role !== "tcg_manager" && role !== "admin" ? null : (
+            <Outlet />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

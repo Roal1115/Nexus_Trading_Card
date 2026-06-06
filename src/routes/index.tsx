@@ -1,180 +1,340 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Medal, Search, Ticket, Trophy } from "lucide-react";
-import { useStore, type Player, type TCG } from "@/lib/mock-store";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
+import { Medal, Search, Trophy } from "lucide-react";
+import { toast } from "sonner";
+import {
+  getLeaderboard,
+  getLeaderboardOptions,
+} from "@/lib/geekarena-leaderboard.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "National Circuit Leaderboard — Geek Collector" },
-      { name: "description", content: "Live competitive rankings across One Piece, Magic: The Gathering and Pokémon TCG." },
+      { title: "Ranking del Circuito Nacional — Geek Arena" },
+      {
+        name: "description",
+        content:
+          "Rankings competitivos en vivo de los principales TCG en México.",
+      },
     ],
   }),
   component: LeaderboardPage,
 });
 
-const TCGS: ("All" | TCG)[] = ["All", "One Piece", "Magic: The Gathering", "Pokémon"];
-const MONTHS = ["May 2026", "April 2026", "March 2026", "February 2026"];
+type Game = { id: string; slug: string; name: string };
+type Store = { id: string; name: string; city: string | null };
+type Row = {
+  player_id: string;
+  geek_tag: string;
+  city: string;
+  points: number;
+  tournaments_won: number;
+  tournaments_played: number;
+  omw_percentage: number;
+};
+
+const ALL = "__all__";
+
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function monthLabel(m: string): string {
+  const [y, mm] = m.split("-").map(Number);
+  return `${MONTH_NAMES[mm - 1]} ${y}`;
+}
 
 function LeaderboardPage() {
-  const { players } = useStore();
-  const [tcg, setTcg] = useState<(typeof TCGS)[number]>("All");
-  const [city, setCity] = useState("All");
-  const [month, setMonth] = useState(MONTHS[0]);
+  const fetchOptions = useServerFn(getLeaderboardOptions);
+  const fetchLeaderboard = useServerFn(getLeaderboard);
+
+  const [games, setGames] = useState<Game[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [months, setMonths] = useState<string[]>([]);
+
+  const [tcg, setTcg] = useState<string>(ALL);
+  const [city, setCity] = useState<string>(ALL);
+  const [storeId, setStoreId] = useState<string>(ALL);
+  const [month, setMonth] = useState<string>(ALL);
   const [search, setSearch] = useState("");
 
-  const cities = useMemo(() => ["All", ...Array.from(new Set(players.map((p) => p.city)))], [players]);
+  const [monthly, setMonthly] = useState<Row[]>([]);
+  const [semestral, setSemestral] = useState<Row[]>([]);
+  const [monthLbl, setMonthLbl] = useState<string>("");
+  const [semesterLbl, setSemesterLbl] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    return players.filter((p) => {
-      if (tcg !== "All" && p.tcg !== tcg) return false;
-      if (city !== "All" && p.city !== city) return false;
-      if (search && !p.geekTag.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    });
-  }, [players, tcg, city, search]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const opts = await fetchOptions();
+        if (!mounted) return;
+        setGames(opts.games as Game[]);
+        setStores(opts.stores as Store[]);
+        setMonths(opts.months as string[]);
+        if (opts.months.length > 0) setMonth(opts.months[0]);
+      } catch (e) {
+        toast.error("Error al cargar los filtros. Intenta de nuevo.");
+        console.error(e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const monthly = useMemo(() => [...filtered].sort((a, b) => b.monthlyPoints - a.monthlyPoints), [filtered]);
-  const semi = useMemo(() => [...filtered].sort((a, b) => b.semiannualPoints - a.semiannualPoints), [filtered]);
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    fetchLeaderboard({
+      data: {
+        game_id: tcg === ALL ? null : tcg,
+        city: city === ALL ? null : city,
+        store_id: storeId === ALL ? null : storeId,
+        month: month === ALL ? null : month,
+      },
+    })
+      .then((res) => {
+        if (!mounted) return;
+        setMonthly(res.monthly as Row[]);
+        setSemestral(res.semestral as Row[]);
+        setMonthLbl(res.month_label);
+        setSemesterLbl(res.semester_label);
+      })
+      .catch((e) => {
+        toast.error("Error al cargar el ranking. Intenta de nuevo.");
+        console.error(e);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tcg, city, storeId, month]);
+
+  const cities = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of stores) if (s.city) set.add(s.city);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es-MX"));
+  }, [stores]);
+
+  const visibleStores = useMemo(() => {
+    if (city === ALL) return stores;
+    return stores.filter((s) => s.city === city);
+  }, [stores, city]);
+
+  useEffect(() => {
+    if (storeId !== ALL && !visibleStores.some((s) => s.id === storeId)) {
+      setStoreId(ALL);
+    }
+  }, [visibleStores, storeId]);
+
+  const applySearch = (rows: Row[]) => {
+    if (!search) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r) => r.geek_tag.toLowerCase().includes(q));
+  };
+
+  const filteredMonthly = useMemo(() => applySearch(monthly), [monthly, search]);
+  const filteredSemestral = useMemo(() => applySearch(semestral), [semestral, search]);
+
+  const selectedStore = stores.find((s) => s.id === storeId);
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
-      {/* Hero */}
       <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-black/40 to-black/20 p-8 sm:p-12">
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Season III · Sponsored by Bandai · Wizards · TPCI</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+          Temporada III · Patrocinado por Bandai · Wizards · TPCI
+        </p>
         <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl">
-          National <span className="text-primary">Circuit</span>
+          Circuito <span className="text-primary">Nacional</span>
         </h1>
         <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-          The official ranking system for competitive TCG. Climb the table. Earn your tickets to Worlds.
+          El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
         </p>
       </section>
 
-      {/* Sticky filters */}
       <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Select label="TCG" value={tcg} onChange={(v) => setTcg(v as typeof tcg)} options={TCGS as readonly string[]} />
-          <Select label="City" value={city} onChange={setCity} options={cities} />
-          <Select label="Month" value={month} onChange={setMonth} options={MONTHS} />
+          <FilterSelect
+            label="TCG"
+            value={tcg}
+            onChange={setTcg}
+            options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
+          />
+          <FilterSelect
+            label="Ciudad"
+            value={city}
+            onChange={(v) => setCity(v)}
+            options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
+          />
+          <FilterSelect
+            label="Tienda"
+            value={storeId}
+            onChange={setStoreId}
+            options={[
+              { value: ALL, label: "Todas las tiendas" },
+              ...visibleStores.map((s) => ({
+                value: s.id,
+                label: `${s.name}${s.city ? ` — ${s.city}` : ""}`,
+              })),
+            ]}
+          />
+          <FilterSelect
+            label="Mes"
+            value={month}
+            onChange={setMonth}
+            options={[
+              { value: ALL, label: "Más reciente" },
+              ...months.map((m) => ({ value: m, label: monthLabel(m) })),
+            ]}
+          />
           <div className="relative ml-auto min-w-[200px] flex-1 sm:flex-none">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Geek Tag…"
+              placeholder="Buscar Geek Tag…"
               className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </div>
       </div>
 
-      {/* Tables */}
+      {selectedStore && (
+        <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary-foreground">
+          Mostrando resultados de:{" "}
+          <strong className="text-white">
+            {selectedStore.name}
+            {selectedStore.city ? ` — ${selectedStore.city}` : ""}
+          </strong>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <LeaderboardTable
-          title="Monthly Standings"
-          subtitle={month}
-          icon={<Trophy className="text-primary" size={18} />}
-          rows={monthly}
-          pointsKey="monthlyPoints"
-          variant="monthly"
+          title="Ranking Mensual"
+          badge={monthLbl.toUpperCase()}
+          subtitle={
+            selectedStore
+              ? `Mostrando: ${selectedStore.name}${selectedStore.city ? ` — ${selectedStore.city}` : ""}`
+              : null
+          }
+          rows={filteredMonthly}
+          loading={loading}
         />
         <LeaderboardTable
-          title="General Semiannual"
-          subtitle="H1 2026"
-          icon={<Medal className="text-primary" size={18} />}
-          rows={semi}
-          pointsKey="semiannualPoints"
-          variant="semi"
+          title="General Semestral"
+          badge={semesterLbl}
+          subtitle="Ranking general · no filtrado por tienda"
+          rows={filteredSemestral}
+          loading={loading}
         />
       </div>
     </main>
   );
 }
 
-function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: readonly string[] }) {
-  return (
-    <label className="group inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition focus-within:border-primary">
-      <span className="text-gray-500 uppercase tracking-wider">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-white outline-none"
-      >
-        {options.map((o) => (
-          <option key={o} value={o} className="bg-black">{o}</option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 function LeaderboardTable({
-  title, subtitle, icon, rows, pointsKey, variant,
+  title,
+  badge,
+  subtitle,
+  rows,
+  loading,
 }: {
-  title: string; subtitle: string; icon: React.ReactNode;
-  rows: Player[]; pointsKey: "monthlyPoints" | "semiannualPoints";
-  variant: "monthly" | "semi";
+  title: string;
+  badge: string;
+  subtitle?: string | null;
+  rows: Row[];
+  loading: boolean;
 }) {
+  const omwFor = (r: Row) => r.omw_percentage ?? 0;
+
   return (
     <section className="glass overflow-hidden rounded-2xl">
-      <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-        <div className="flex items-center gap-2">
-          {icon}
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+      <header className="border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="text-primary" size={18} />
+            <h2 className="text-lg font-semibold text-white">{title}</h2>
+          </div>
+          <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+            {badge || "—"}
+          </span>
         </div>
-        <span className="text-xs uppercase tracking-wider text-gray-500">{subtitle}</span>
+        {subtitle && <p className="mt-2 text-xs text-gray-400">{subtitle}</p>}
       </header>
 
-      <div className="max-h-[640px] overflow-y-auto">
+
+      <div className="max-h-[720px] overflow-y-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-black/60 backdrop-blur text-xs uppercase tracking-wider text-gray-500">
+          <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
             <tr>
               <th className="px-3 py-2 text-left">#</th>
               <th className="px-3 py-2 text-left">Geek Tag</th>
-              <th className="px-3 py-2 text-left">City</th>
+              <th className="hidden px-3 py-2 text-left sm:table-cell">Ciudad</th>
               <th className="px-3 py-2 text-right">Pts</th>
-              <th className="hidden px-3 py-2 text-right sm:table-cell">W</th>
-              <th className="hidden px-3 py-2 text-right sm:table-cell">L</th>
-              <th className="hidden px-3 py-2 text-right sm:table-cell">OMW%</th>
+              <th className="hidden px-3 py-2 text-right sm:table-cell">Torneos</th>
+              <th className="hidden px-3 py-2 text-right md:table-cell">Victorias</th>
+              <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((p, i) => {
-              const rank = i + 1;
-              const isTopSemi = variant === "semi" && rank <= 3;
-              const goldTicket = variant === "monthly" && rank <= 2;
-              const silverTicket = variant === "semi" && rank > 3 && rank <= 12;
-              return (
-                <tr
-                  key={p.id}
-                  className={`border-b border-white/5 transition ${isTopSemi ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-white/5"}`}
-                >
-                  <td className="px-3 py-2.5">
-                    <span className={`font-mono-stat text-xs ${rank <= 3 ? "text-primary font-bold" : "text-gray-400"}`}>
-                      {String(rank).padStart(2, "0")}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{p.geekTag}</span>
-                      {goldTicket && <TicketBadge tone="gold" />}
-                      {silverTicket && <TicketBadge tone="silver" />}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-wider text-gray-500">{p.tcg}</div>
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-gray-400">{p.city}</td>
-                  <td className="px-3 py-2.5 text-right font-mono-stat font-semibold text-white">
-                    {p[pointsKey].toLocaleString()}
-                  </td>
-                  <td className="hidden px-3 py-2.5 text-right font-mono-stat text-xs text-gray-400 sm:table-cell">{p.wins}</td>
-                  <td className="hidden px-3 py-2.5 text-right font-mono-stat text-xs text-gray-400 sm:table-cell">{p.losses}</td>
-                  <td className="hidden px-3 py-2.5 text-right font-mono-stat text-xs text-gray-400 sm:table-cell">{p.omw}%</td>
-                </tr>
-              );
-            })}
-            {rows.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-10 text-center text-sm text-gray-500">No players match these filters.</td></tr>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
+                  Cargando ranking…
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
+                  No hay resultados para estos filtros todavía.
+                </td>
+              </tr>
+            ) : (
+              rows.map((r, i) => {
+                const rank = i + 1;
+                const podium = rank <= 3;
+                return (
+                  <tr
+                    key={r.player_id}
+                    className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
+                  >
+                    <td className="px-3 py-2.5">
+                      <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                        {String(rank).padStart(2, "0")}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        {rank === 1 && <Medal className="text-amber-300" size={14} />}
+                        <span className="font-medium text-white">{r.geek_tag}</span>
+                      </div>
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
+                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
+                      {r.points.toLocaleString()}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
+                      {r.tournaments_played}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                      {r.tournaments_won}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                      {omwFor(r)}%
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -183,13 +343,31 @@ function LeaderboardTable({
   );
 }
 
-function TicketBadge({ tone }: { tone: "gold" | "silver" }) {
-  const colors = tone === "gold"
-    ? "bg-amber-400/15 text-amber-300 border-amber-400/30"
-    : "bg-zinc-300/10 text-zinc-300 border-zinc-300/30";
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${colors}`}>
-      <Ticket size={9} /> {tone}
-    </span>
+    <label className="group inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition focus-within:border-primary">
+      <span className="uppercase tracking-wider text-gray-500">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-transparent text-white outline-none"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value} className="bg-black">
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
