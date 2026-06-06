@@ -284,12 +284,16 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     game_id: string;
     tournament_date: string;
     rows: Array<z.infer<typeof ResultRowSchema>>;
+    tournament_id?: string;
+    csv_url?: string | null;
   }) =>
     z.object({
       store_id: z.string().uuid(),
       game_id: z.string().uuid(),
       tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       rows: z.array(ResultRowSchema).min(1).max(2000),
+      tournament_id: z.string().uuid().optional(),
+      csv_url: z.string().url().max(2048).nullable().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -316,15 +320,18 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     }
 
     const q = computeQualifying(data.tournament_date);
+    const insertPayload: Record<string, unknown> = {
+      store_id: data.store_id,
+      game_id: data.game_id,
+      tournament_date: data.tournament_date,
+      ...q,
+      status: "DRAFT",
+      csv_url: data.csv_url ?? null,
+    };
+    if (data.tournament_id) insertPayload.id = data.tournament_id;
     const { data: tournament, error: te } = await admin
       .from("tournaments")
-      .insert({
-        store_id: data.store_id,
-        game_id: data.game_id,
-        tournament_date: data.tournament_date,
-        ...q,
-        status: "DRAFT",
-      })
+      .insert(insertPayload)
       .select("id")
       .single();
     if (te) throw new Error(te.message);
