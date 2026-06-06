@@ -344,7 +344,7 @@ export const publishTournaments = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
 
     const season = await getActiveSeason(admin);
     if (!season) {
