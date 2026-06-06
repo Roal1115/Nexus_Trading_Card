@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Info, ExternalLink, Eye } from "lucide-react";
+import { FileLink } from "@/components/ui/FileLink";
 import {
   getAdminTournamentHistory,
   getAdminFilterOptions,
