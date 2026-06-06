@@ -18,17 +18,6 @@ export const Route = createFileRoute("/tcg-manager")({
   component: TcgManagerLayout,
 });
 
-function TcgManagerLayout() {
-  const { role, player, loading } = useGeekarenaRole();
-  const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (loading) return;
-    if (role !== "tcg_manager" && role !== "admin") {
-      navigate({ to: "/login" });
-    }
-  }, [loading, role, navigate]);
 
 function TcgManagerLayout() {
   const { role, player, loading } = useGeekarenaRole();
