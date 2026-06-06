@@ -389,20 +389,9 @@ function TournamentsPage() {
                     <div className="text-gray-200">{r.participants ?? 0}</div>
                   </div>
                   <div>
-                    <div className="text-gray-500">CSV</div>
+                    <div className="text-gray-500">Archivo</div>
                     <div>
-                      {r.csv_url ? (
-                        <a
-                          href={r.csv_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-primary"
-                        >
-                          Ver <ExternalLink size={12} />
-                        </a>
-                      ) : (
-                        <span className="text-gray-500">—</span>
-                      )}
+                      <FileLink url={r.csv_url} />
                     </div>
                   </div>
                 </div>
