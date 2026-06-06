@@ -236,24 +236,11 @@ function ManagerTournamentDetailPage() {
         />
         <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
-            <Upload size={16} /> Archivo CSV
+            <Upload size={16} /> Archivo de resultados
           </div>
-          {(tournament as any).csv_url ? (
-            <a
-              href={(tournament as any).csv_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:underline"
-            >
-              <FileDown size={14} />
-              Descargar CSV
-            </a>
-          ) : (
-            <div className="mt-2 inline-flex items-center gap-1 text-sm text-gray-500">
-              <FileX size={14} />
-              Sin archivo adjunto
-            </div>
-          )}
+          <div className="mt-2">
+            <FileLink url={(tournament as any).csv_url} label="Descargar archivo" size="md" />
+          </div>
         </div>
       </section>
 
