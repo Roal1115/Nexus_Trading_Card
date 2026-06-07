@@ -219,6 +219,16 @@ function AdminAdsPage() {
                           <IconBtn label={s.is_active ? "Desactivar" : "Activar"} onClick={() => handleToggleActive(s)}>
                             <Power size={14} />
                           </IconBtn>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({ id: s.id, name: s.name });
+                              setDeleteInput("");
+                            }}
+                            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 border border-red-400/20 hover:border-red-400/40 rounded px-2 py-1 transition"
+                          >
+                            <Trash2 size={12} />
+                            Eliminar
+                          </button>
                         </div>
                       </td>
                     </tr>
