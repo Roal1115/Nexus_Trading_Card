@@ -7,12 +7,14 @@ import {
   CheckCircle2,
   History,
   Loader2,
+  Megaphone,
   Menu,
   ShieldCheck,
   Store,
   Users,
   Upload,
 } from "lucide-react";
+
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts, useActivityLastSeen } from "@/hooks/use-badge-counts";
