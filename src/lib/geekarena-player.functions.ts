@@ -49,6 +49,24 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       }, new Map<string, any>()).values(),
     );
 
+    const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+    const { data: monthlyRaw } = semKey
+      ? await admin
+          .from("leaderboard_snapshots")
+          .select("game_id, rank_position")
+          .eq("player_id", player.id)
+          .eq("timeframe_type", "MONTHLY")
+          .eq("timeframe_value", monthKey)
+      : { data: [] as any[] };
+    const monthlyMap = new Map<string, number>();
+    for (const m of monthlyRaw ?? []) {
+      const existing = monthlyMap.get(m.game_id);
+      if (existing == null || (m.rank_position ?? 0) < existing) {
+        monthlyMap.set(m.game_id, m.rank_position ?? 0);
+      }
+    }
+
+
     const snapGameIds = (snapshots ?? []).map((s) => s.game_id);
     const { data: snapGames } = snapGameIds.length
       ? await admin
