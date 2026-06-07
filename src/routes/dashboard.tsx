@@ -21,14 +21,25 @@ function DashboardPage() {
   const { player: gaPlayer } = useGeekarenaRole();
   const fetchDashboard = useServerFn(getMyDashboard);
   const fetchTournamentDetail = useServerFn(getTournamentDetail);
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const registerView = useServerFn(registerAdView);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
+  const [sponsor, setSponsor] = useState<any>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    registerView().then(setSponsor).catch(() => {
+      fetchActiveSponsor().then(setSponsor).catch(() => {});
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const openTournament = async (tournament_id: string) => {
     setSelectedTournamentId(tournament_id);
