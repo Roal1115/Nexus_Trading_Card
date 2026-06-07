@@ -574,3 +574,92 @@ function TooltipInfo({ text }: { text: string }) {
   );
 }
 
+
+function TcgRankCard({
+  tcg,
+  semesterLabel,
+  monthLabel,
+}: {
+  tcg: any;
+  semesterLabel: string;
+  monthLabel: string;
+}) {
+  const [tab, setTab] = useState<"global" | "monthly">("global");
+  const rankValue =
+    tab === "global"
+      ? tcg.rank_position > 0
+        ? `#${tcg.rank_position}`
+        : "—"
+      : tcg.monthly_rank_position > 0
+      ? `#${tcg.monthly_rank_position}`
+      : "—";
+  const points =
+    tab === "global" ? tcg.total_points : tcg.monthly_total_points;
+
+  return (
+    <div className="glass flex w-full flex-col gap-3 rounded-2xl border border-white/10 p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
+      <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white">
+        <Crown size={14} className="text-primary" /> {tcg.game_name}
+      </div>
+
+      <div className="flex gap-1 rounded-lg bg-black/40 p-1">
+        {(["global", "monthly"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+              tab === t
+                ? "bg-primary text-primary-foreground"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {t === "global" ? "Global" : "Mensual"}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+            <Crown size={10} /> {tab === "global" ? "Rank Global" : "Rank Mes"}
+          </div>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">{rankValue}</p>
+          <p className="text-[10px] text-gray-500">
+            {tab === "global" ? semesterLabel : monthLabel}
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+            <Target size={10} className="text-primary" /> Puntos
+          </div>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">
+            {Number(points ?? 0).toFixed(0)}
+          </p>
+          <p className="text-[10px] text-gray-500">Arena pts</p>
+        </div>
+
+        {tab === "global" && (
+          <>
+            <div>
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                <Swords size={10} className="text-primary" /> Jugados
+              </div>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_played}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                <Award size={10} className="text-primary" /> Ganados
+              </div>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_won}
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
