@@ -388,7 +388,13 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
         </div>
       )}
     </main>
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+    </div>
   );
+}
+
 }
 
 function StatCard({
