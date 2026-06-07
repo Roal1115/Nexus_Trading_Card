@@ -55,12 +55,13 @@ type ColumnMap = {
   omw?: string;
   record?: string;
   status?: string;
+  membershipId?: string;
 };
 
 const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
-  "one-piece": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %" },
-  "dragon-ball": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %" },
-  gundam: { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %" },
+  "one-piece": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
+  "dragon-ball": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
+  gundam: { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
   riftbound: {
     platform: "limitless",
     rank: "Rank",
@@ -69,6 +70,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
     omw: "Opponent Match Win %",
     record: "Record (W-L-D)",
     status: "Registration Status",
+    membershipId: "User ID",
   },
   pokemon: { platform: "unknown" },
   "magic-the-gathering": { platform: "unknown" },
