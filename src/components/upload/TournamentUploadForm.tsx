@@ -428,6 +428,7 @@ export function TournamentUploadForm({
       const cleanRows = rows.map((r) => ({
         rank: r.rank,
         geek_tag: r.geek_tag.trim(),
+        membership_id: r.membership_id,
         match_points: r.match_points,
         omw_percentage: r.omw_percentage,
         wins: r.wins,
