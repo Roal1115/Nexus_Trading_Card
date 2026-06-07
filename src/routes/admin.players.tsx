@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   Eye,
   Loader2,
   MoreHorizontal,
+  Pencil,
   Power,
   Search,
   ShieldCheck,
@@ -21,6 +22,8 @@ import {
   setPlayerRole,
   setPlayerActive,
   listStoresWithOrganizers,
+  getPlayerDetail,
+  updatePlayerDetail,
 } from "@/lib/geekarena-admin.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
