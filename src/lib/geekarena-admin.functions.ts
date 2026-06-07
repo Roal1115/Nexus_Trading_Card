@@ -1434,7 +1434,8 @@ export const getAdminBadgeCounts = createServerFn({ method: "POST" })
     const pendingP = admin
       .from("tournaments")
       .select("*", { count: "exact", head: true })
-      .eq("status", "DRAFT");
+      .eq("status", "DRAFT")
+      .is("rejection_reason", null);
 
     const readyP = admin
       .from("tournaments")
