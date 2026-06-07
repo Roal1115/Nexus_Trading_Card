@@ -483,7 +483,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       ok: true as const,
       id: tournamentId,
       inserted: baseRows.length,
-      created_players: missingTags.length,
+      created_players: createdPlayers,
     };
   });
 
