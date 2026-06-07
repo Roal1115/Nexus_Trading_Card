@@ -395,7 +395,6 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
   );
 }
 
-}
 
 function StatCard({
   icon,
