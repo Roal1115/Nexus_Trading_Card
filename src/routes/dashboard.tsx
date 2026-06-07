@@ -130,10 +130,7 @@ function DashboardPage() {
   const tag = gaPlayer.geek_tag;
   const tcgStats = data?.tcgStats ?? [];
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
-  const totalPoints = activeTcg?.total_points ?? 0;
-  const tournamentsPlayed = activeTcg?.tournaments_played ?? 0;
-  const tournamentsWon = activeTcg?.tournaments_won ?? 0;
-  const rank = activeTcg?.rank_position ?? 0;
+  void activeTcg;
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
