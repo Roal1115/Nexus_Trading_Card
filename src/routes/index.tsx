@@ -262,6 +262,9 @@ function LeaderboardPage() {
           rows={filteredMonthly}
           loading={loading}
         />
+        <div className="xl:hidden lg:hidden">
+          <AdHorizontal sponsor={sponsor} />
+        </div>
         <LeaderboardTable
           title="General Semestral"
           badge={semesterLbl}
@@ -270,9 +273,14 @@ function LeaderboardPage() {
           loading={loading}
         />
       </div>
-    </main>
+      </main>
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+    </div>
   );
 }
+
 
 function LeaderboardTable({
   title,
