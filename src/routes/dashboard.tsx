@@ -5,6 +5,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Award, ChevronRight, Crown, HelpCircle, Swords, Target, TrendingUp, X } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
+import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Mi Panel — Geek Arena" }] }),
