@@ -538,11 +538,23 @@ export function TournamentUploadForm({
             </div>
             <div className="space-y-2">
               <Label className="text-xs text-gray-400">Fecha del torneo *</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              {(() => {
+                const { min, max } = getWeekDateRange();
+                return (
+                  <>
+                    <Input
+                      type="date"
+                      min={min}
+                      max={max}
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Solo se permiten torneos de la semana actual ({min} al {max}).
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
