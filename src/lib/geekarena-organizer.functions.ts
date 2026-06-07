@@ -3,6 +3,73 @@ import { z } from "zod";
 import {
   requireGeekarenaOrganizer,
 } from "./geekarena-auth.middleware";
+import { getGeekarenaAdmin } from "./geekarena-admin.server";
+
+function normalizeId(id: string): string {
+  const stripped = id.replace(/^0+/, "");
+  return stripped === "" ? "0" : stripped;
+}
+
+async function resolvePlayer(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+  geekTag: string,
+  membershipId: string | null,
+  gameId: string,
+): Promise<{ id: string; isNew: boolean }> {
+  // 1. Try TCG ID (normalized) first
+  if (membershipId) {
+    const normalizedInput = normalizeId(membershipId);
+    const { data: byId } = await admin
+      .from("player_tcg_ids")
+      .select("player_id")
+      .eq("game_id", gameId)
+      .eq("tcg_user_id_normalized", normalizedInput)
+      .maybeSingle();
+    if (byId?.player_id) {
+      return { id: byId.player_id as string, isNew: false };
+    }
+  }
+
+  // 2. Fall back to geek_tag
+  const { data: byTag } = await admin
+    .from("players")
+    .select("id")
+    .eq("geek_tag", geekTag)
+    .maybeSingle();
+  if (byTag?.id) {
+    return { id: byTag.id as string, isNew: false };
+  }
+
+  // 3. Auto-create
+  const { data: newPlayer, error } = await admin
+    .from("players")
+    .insert({
+      geek_tag: geekTag,
+      is_active: true,
+      role: "player",
+    })
+    .select("id")
+    .single();
+  if (error || !newPlayer) {
+    throw new Error(`No se pudo crear el jugador: ${geekTag}`);
+  }
+
+  if (membershipId && newPlayer.id) {
+    await admin
+      .from("player_tcg_ids")
+      .upsert(
+        {
+          player_id: newPlayer.id,
+          game_id: gameId,
+          tcg_user_id: membershipId,
+          tcg_user_id_normalized: normalizeId(membershipId),
+        },
+        { onConflict: "player_id,game_id", ignoreDuplicates: true },
+      );
+  }
+
+  return { id: newPlayer.id as string, isNew: true };
+}
 
 function computeQualifying(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
