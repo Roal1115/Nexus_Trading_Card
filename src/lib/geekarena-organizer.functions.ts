@@ -3,6 +3,73 @@ import { z } from "zod";
 import {
   requireGeekarenaOrganizer,
 } from "./geekarena-auth.middleware";
+import { getGeekarenaAdmin } from "./geekarena-admin.server";
+
+function normalizeId(id: string): string {
+  const stripped = id.replace(/^0+/, "");
+  return stripped === "" ? "0" : stripped;
+}
+
+async function resolvePlayer(
+  admin: ReturnType<typeof getGeekarenaAdmin>,
+  geekTag: string,
+  membershipId: string | null,
+  gameId: string,
+): Promise<{ id: string; isNew: boolean }> {
+  // 1. Try TCG ID (normalized) first
+  if (membershipId) {
+    const normalizedInput = normalizeId(membershipId);
+    const { data: byId } = await admin
+      .from("player_tcg_ids")
+      .select("player_id")
+      .eq("game_id", gameId)
+      .eq("tcg_user_id_normalized", normalizedInput)
+      .maybeSingle();
+    if (byId?.player_id) {
+      return { id: byId.player_id as string, isNew: false };
+    }
+  }
+
+  // 2. Fall back to geek_tag
+  const { data: byTag } = await admin
+    .from("players")
+    .select("id")
+    .eq("geek_tag", geekTag)
+    .maybeSingle();
+  if (byTag?.id) {
+    return { id: byTag.id as string, isNew: false };
+  }
+
+  // 3. Auto-create
+  const { data: newPlayer, error } = await admin
+    .from("players")
+    .insert({
+      geek_tag: geekTag,
+      is_active: true,
+      role: "player",
+    })
+    .select("id")
+    .single();
+  if (error || !newPlayer) {
+    throw new Error(`No se pudo crear el jugador: ${geekTag}`);
+  }
+
+  if (membershipId && newPlayer.id) {
+    await admin
+      .from("player_tcg_ids")
+      .upsert(
+        {
+          player_id: newPlayer.id,
+          game_id: gameId,
+          tcg_user_id: membershipId,
+          tcg_user_id_normalized: normalizeId(membershipId),
+        },
+        { onConflict: "player_id,game_id", ignoreDuplicates: true },
+      );
+  }
+
+  return { id: newPlayer.id as string, isNew: true };
+}
 
 function computeQualifying(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -269,6 +336,7 @@ export const createTournament = createServerFn({ method: "POST" })
 const ResultRowSchema = z.object({
   rank: z.number().int().min(1),
   geek_tag: z.string().min(1).max(120),
+  membership_id: z.string().max(120).nullable().optional(),
   match_points: z.number().int().min(0).nullable(),
   omw_percentage: z.number().min(0).max(100).nullable(),
   wins: z.number().int().min(0).nullable(),
@@ -363,48 +431,44 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       throw new Error(msg);
     };
 
-    const tags = Array.from(new Set(data.rows.map((r) => r.geek_tag.trim())));
-    const { data: existingPlayers, error: pe } = await admin
-      .from("players")
-      .select("id, geek_tag")
-      .in("geek_tag", tags);
-    if (pe) await cleanup(pe.message);
+    const baseRows: Array<{
+      tournament_id: string;
+      player_id: string;
+      rank: number;
+      wins: number | null;
+      losses: number | null;
+      draws: number;
+      points_earned: number;
+      match_points: number | null;
+      omw_percentage: number | null;
+    }> = [];
+    let createdPlayers = 0;
 
-    const tagToId = new Map(
-      (existingPlayers ?? []).map((p) => [p.geek_tag, p.id]),
-    );
-    const missingTags = tags.filter((t) => !tagToId.has(t));
-
-    if (missingTags.length > 0) {
-      const { data: created, error: ce } = await admin
-        .from("players")
-        .insert(
-          missingTags.map((t) => ({
-            geek_tag: t,
-            is_active: true,
-            role: "player",
-          })),
-        )
-        .select("id, geek_tag");
-      if (ce) await cleanup(ce.message);
-      for (const p of created ?? []) tagToId.set(p.geek_tag, p.id);
+    try {
+      for (const r of data.rows) {
+        const { id: playerId, isNew } = await resolvePlayer(
+          admin,
+          r.geek_tag.trim(),
+          r.membership_id ? r.membership_id.trim() || null : null,
+          data.game_id,
+        );
+        if (isNew) createdPlayers++;
+        baseRows.push({
+          tournament_id: tournamentId,
+          player_id: playerId,
+          rank: r.rank,
+          wins: r.wins,
+          losses: r.losses,
+          draws: r.draws ?? 0,
+          points_earned: r.points_earned,
+          match_points: r.match_points,
+          omw_percentage: r.omw_percentage,
+        });
+      }
+    } catch (e) {
+      await cleanup((e as Error).message);
     }
 
-    const baseRows = data.rows.map((r) => {
-      const pid = tagToId.get(r.geek_tag.trim());
-      if (!pid) throw new Error(`No se pudo resolver el jugador ${r.geek_tag}`);
-      return {
-        tournament_id: tournamentId,
-        player_id: pid,
-        rank: r.rank,
-        wins: r.wins,
-        losses: r.losses,
-        draws: r.draws ?? 0,
-        points_earned: r.points_earned,
-        match_points: r.match_points,
-        omw_percentage: r.omw_percentage,
-      };
-    });
 
     let insertErr = (await admin.from("tournament_results").insert(baseRows)).error;
     if (insertErr && /column .* does not exist/i.test(insertErr.message)) {
@@ -419,7 +483,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       ok: true as const,
       id: tournamentId,
       inserted: baseRows.length,
-      created_players: missingTags.length,
+      created_players: createdPlayers,
     };
   });
 
