@@ -59,6 +59,7 @@ export const getManagerPendingTournaments = createServerFn({ method: "POST" })
         "id, tournament_date, status, created_at, csv_url, store_id, game_id, stores(name, city, state), games(name)",
       )
       .eq("status", "DRAFT")
+      .is("rejection_reason", null)
       .in("game_id", gameIds)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
