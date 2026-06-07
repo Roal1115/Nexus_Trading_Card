@@ -301,9 +301,9 @@ function LeaderboardTable({
                 </td>
               </tr>
             ) : (
-              rows.map((r, i) => {
-                const rank = i + 1;
-                const podium = rank <= 3;
+              rows.map((r) => {
+                const rank = r.rank_position;
+                const podium = rank > 0 && rank <= 3;
                 return (
                   <tr
                     key={r.player_id}
