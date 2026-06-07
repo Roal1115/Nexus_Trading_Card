@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useRef } from "react";
-import { Loader2, Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power } from "lucide-react";
+import { Loader2, Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena } from "@/integrations/geekarena/client";
 import {
@@ -10,6 +10,7 @@ import {
   updateSponsor,
   updateSponsorImages,
   resetSponsorViews,
+  deleteSponsor,
 } from "@/lib/geekarena-ads.functions";
 
 export const Route = createFileRoute("/admin/ads")({
@@ -53,6 +54,7 @@ function AdminAdsPage() {
   const callUpdate = useServerFn(updateSponsor);
   const callReset = useServerFn(resetSponsorViews);
   const callUpdateImages = useServerFn(updateSponsorImages);
+  const callDelete = useServerFn(deleteSponsor);
 
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -60,6 +62,9 @@ function AdminAdsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editSponsor, setEditSponsor] = useState<Sponsor | null>(null);
   const [imagesSponsor, setImagesSponsor] = useState<Sponsor | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -99,6 +104,24 @@ function AdminAdsPage() {
       toast.error(e?.message ?? "Error");
     }
   };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await callDelete({ data: { sponsor_id: deleteTarget.id } });
+      toast.success(`Sponsor "${deleteTarget.name}" eliminado correctamente`);
+      setDeleteTarget(null);
+      setDeleteInput("");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al eliminar el sponsor");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const isConfirmed = deleteInput.trim().toLowerCase() === "eliminar";
 
   return (
     <div className="space-y-6">
@@ -196,6 +219,16 @@ function AdminAdsPage() {
                           <IconBtn label={s.is_active ? "Desactivar" : "Activar"} onClick={() => handleToggleActive(s)}>
                             <Power size={14} />
                           </IconBtn>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({ id: s.id, name: s.name });
+                              setDeleteInput("");
+                            }}
+                            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 border border-red-400/20 hover:border-red-400/40 rounded px-2 py-1 transition"
+                          >
+                            <Trash2 size={12} />
+                            Eliminar
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -266,6 +299,81 @@ function AdminAdsPage() {
             if (fresh) setImagesSponsor({ ...fresh, ...updateField } as Sponsor);
           }}
         />
+      )}
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => { setDeleteTarget(null); setDeleteInput(""); }}
+        >
+          <div
+            className="glass rounded-2xl w-full max-w-md p-6 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 flex-shrink-0">
+                <Trash2 size={18} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg">Eliminar Sponsor</h3>
+                <p className="text-gray-400 text-xs">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4">
+              <p className="text-sm text-gray-300">
+                Estás a punto de eliminar permanentemente al sponsor{" "}
+                <span className="font-bold text-white">"{deleteTarget.name}"</span>.
+                Todas sus imágenes y métricas serán eliminadas.
+                Si era el sponsor activo, los anuncios se detendrán hasta que se asigne uno nuevo.
+              </p>
+            </div>
+
+            {/* Text confirmation */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs text-gray-400">
+                Para confirmar, escribe{" "}
+                <span className="font-mono font-bold text-red-400">ELIMINAR</span>{" "}
+                en el campo de abajo:
+              </label>
+              <input
+                type="text"
+                value={deleteInput}
+                onChange={(e) => setDeleteInput(e.target.value)}
+                placeholder="Escribe ELIMINAR para confirmar"
+                className={`w-full rounded-lg border px-4 py-3 text-sm bg-black/30 text-white placeholder-gray-600 outline-none transition
+                  ${isConfirmed
+                    ? "border-red-500/60 focus:border-red-500"
+                    : "border-white/10 focus:border-white/30"
+                  }`}
+                autoFocus
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={() => { setDeleteTarget(null); setDeleteInput(""); }}
+                className="flex-1 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-gray-400 hover:text-white transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={!isConfirmed || deleting}
+                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition
+                  ${isConfirmed && !deleting
+                    ? "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+                    : "bg-red-500/20 text-red-500/40 cursor-not-allowed"
+                  }`}
+              >
+                {deleting ? "Eliminando..." : "Eliminar definitivamente"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

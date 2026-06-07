@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
+import { logAction } from "./geekarena-admin.functions";
 
 // ─── Helper: ensure ad_metrics row exists ────────────────────────────────
 async function ensureMetricsRow(admin: ReturnType<typeof getGeekarenaAdmin>) {
@@ -291,5 +292,47 @@ export const resetSponsorViews = createServerFn({ method: "POST" })
       .update({ views_count: 0 })
       .eq("id", data.sponsor_id);
     if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+// ─── Admin: delete a sponsor ─────────────────────────────────────────────
+export const deleteSponsor = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { sponsor_id: string }) =>
+    z.object({ sponsor_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    // Get sponsor name before deleting for the audit log
+    const { data: sponsor } = await admin
+      .from("sponsors")
+      .select("name, priority_rank")
+      .eq("id", data.sponsor_id)
+      .maybeSingle();
+
+    // If this was the active sponsor, clear current_sponsor_id in metrics
+    await admin
+      .from("ad_metrics")
+      .update({ current_sponsor_id: null })
+      .eq("current_sponsor_id", data.sponsor_id);
+
+    const { error } = await admin
+      .from("sponsors")
+      .delete()
+      .eq("id", data.sponsor_id);
+
+    if (error) throw new Error(error.message);
+
+    await logAction(
+      admin,
+      player,
+      "SPONSOR_DELETED",
+      "sponsor",
+      data.sponsor_id,
+      sponsor?.name ?? data.sponsor_id,
+      { priority_rank: sponsor?.priority_rank },
+    );
+
     return { success: true };
   });

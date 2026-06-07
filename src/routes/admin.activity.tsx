@@ -24,6 +24,7 @@ const ACTION_LABELS: Record<string, ActionInfo> = {
   SEASON_CREATED: { label: "Temporada creada", icon: "📅", color: "text-purple-400" },
   SEASON_ACTIVATED: { label: "Temporada activada", icon: "▶️", color: "text-green-400" },
   SEASON_CLOSED: { label: "Temporada cerrada", icon: "🔒", color: "text-gray-400" },
+  SPONSOR_DELETED: { label: "Sponsor eliminado", icon: "🗑️", color: "text-red-400" },
 };
 
 const ROLE_LABELS: Record<string, string> = {
