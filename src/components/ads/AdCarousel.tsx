@@ -1,6 +1,14 @@
 export function AdCarousel({ sponsors }: { sponsors: any[] }) {
   if (!sponsors || sponsors.length === 0) return null;
-  const items = [...sponsors, ...sponsors];
+
+  // Duplicar suficientes veces para que el carrusel se vea continuo
+  const MIN_ITEMS = 8;
+  const repeated = sponsors.length > 0
+    ? Array.from(
+        { length: Math.ceil(MIN_ITEMS / sponsors.length) * 2 },
+        (_, i) => sponsors[i % sponsors.length],
+      )
+    : [];
 
   return (
     <div className="my-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
@@ -11,7 +19,7 @@ export function AdCarousel({ sponsors }: { sponsors: any[] }) {
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-background to-transparent" />
         <div className="flex w-max gap-10 animate-marquee">
-          {items.map((s, i) =>
+          {repeated.map((s, i) =>
             s.logo_url ? (
               <img
                 key={`${s.id}-${i}`}
