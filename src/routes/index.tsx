@@ -7,6 +7,15 @@ import {
   getLeaderboard,
   getLeaderboardOptions,
 } from "@/lib/geekarena-leaderboard.functions";
+import {
+  getActiveSponsor,
+  listActiveSponsors,
+  registerAdView,
+} from "@/lib/geekarena-ads.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+import { AdHorizontal } from "@/components/ads/AdHorizontal";
+import { AdCarousel } from "@/components/ads/AdCarousel";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
