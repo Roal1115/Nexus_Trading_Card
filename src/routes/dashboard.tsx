@@ -136,13 +136,26 @@ function DashboardPage() {
             <h1 className="mt-2 break-all text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
             <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
           </div>
-          <div className="rounded-xl border border-primary/30 bg-black/40 px-6 py-4 text-center">
-            <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary">
-              <Crown size={12} />
-              {activeTcg ? `Rank · ${activeTcg.game_name}` : "Rank Nacional"}
+          <div className="flex gap-3 flex-wrap">
+            {/* Rank Global */}
+            <div className="rounded-xl border border-primary/30 bg-black/40 px-5 py-4 text-center min-w-[120px]">
+              <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary mb-1">
+                <Crown size={10} /> Global
+              </div>
+              <div className="font-mono text-4xl font-bold text-white">
+                {loading ? "…" : activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : "—"}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
             </div>
-            <div className="font-mono-stat text-5xl font-bold text-white">
-              {loading ? "…" : rank > 0 ? `#${rank}` : "—"}
+            {/* Rank Mensual */}
+            <div className="rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-center min-w-[120px]">
+              <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                <Crown size={10} /> Mensual
+              </div>
+              <div className="font-mono text-4xl font-bold text-white">
+                {loading ? "…" : activeTcg?.monthly_rank_position > 0 ? `#${activeTcg.monthly_rank_position}` : "—"}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-0.5">{data?.monthLabel ?? "Este mes"}</p>
             </div>
           </div>
         </div>
@@ -151,7 +164,7 @@ function DashboardPage() {
       {/* Rankings con tabs estilo Chrome */}
       <section className="mt-6">
         {tcgStats.length > 1 && (
-          <div className="flex overflow-x-auto border-b border-white/10">
+          <div className="flex flex-wrap border-b border-white/10">
             {tcgStats.map((tcg) => (
               <button
                 key={tcg.game_id}
@@ -273,14 +286,14 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
             })}
           </div>
         )}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto hidden sm:block">
           <table className="w-full text-sm">
             <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="px-4 py-2 text-left">Fecha</th>
                 <th className="px-4 py-2 text-left">Tienda</th>
                 <th className="px-4 py-2 text-left">TCG</th>
-                <th className="px-4 py-2 text-center">V / D</th>
+                <th className="px-4 py-2 text-center whitespace-nowrap">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
                 <th className="px-4 py-2 text-right">Pts Arena</th>
                 <th className="px-4 py-2 w-8"></th>
@@ -312,7 +325,7 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                         {t.store} <span className="text-xs text-gray-500">· {t.city}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
-                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300">
+                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
                         {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -345,6 +358,53 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
               )}
             </tbody>
           </table>
+        </div>
+        <div className="sm:hidden">
+          {loading ? (
+            <div className="px-4 py-12 text-center text-gray-500">Cargando…</div>
+          ) : events.length === 0 ? (
+            <div className="px-4 py-12 text-center text-gray-500">Aún no has participado en ningún torneo.</div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {paginatedEvents.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => openTournament(t.id)}
+                  className="cursor-pointer px-4 py-3 hover:bg-white/5 transition"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{t.store}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                        <span>{t.city}</span>
+                        <span>·</span>
+                        <span>{t.date}</span>
+                        {t.wins != null && t.losses != null && (
+                          <>
+                            <span>·</span>
+                            <span className="whitespace-nowrap">{t.wins}V/{t.losses}D</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <span className={`font-mono-stat text-sm font-semibold ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
+                        #{t.placement}
+                      </span>
+                      <p className="text-xs font-mono-stat font-semibold text-white">+{Number(t.pointsEarned).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {hasMore && (
+                <div className="px-4 py-4 text-center">
+                  <button onClick={() => setPage((p) => p + 1)} className="text-xs text-primary hover:underline">
+                    Ver más torneos
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
