@@ -38,7 +38,16 @@ export const getMyDashboard = createServerFn({ method: "POST" })
           .eq("timeframe_type", "SEMESTRAL")
           .eq("timeframe_value", semKey)
       : { data: [] as any[] };
-    const snapshots = snapshotsRes.data;
+    const rawSnapshots = snapshotsRes.data ?? [];
+    const snapshots = Array.from(
+      rawSnapshots.reduce((map: Map<string, any>, s: any) => {
+        const existing = map.get(s.game_id);
+        if (!existing || (s.total_points ?? 0) > (existing.total_points ?? 0)) {
+          map.set(s.game_id, s);
+        }
+        return map;
+      }, new Map<string, any>()).values(),
+    );
 
     const snapGameIds = (snapshots ?? []).map((s) => s.game_id);
     const { data: snapGames } = snapGameIds.length
