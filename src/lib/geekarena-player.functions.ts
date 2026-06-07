@@ -221,6 +221,8 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         year: "numeric",
       }),
       events,
+      is_profile_public: isProfilePublic,
+      registered_game_ids: ((tcgIdRows ?? []) as any[]).map((t) => t.game_id),
     };
   });
 
