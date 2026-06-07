@@ -105,6 +105,24 @@ function AdminAdsPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await callDelete({ data: { sponsor_id: deleteTarget.id } });
+      toast.success(`Sponsor "${deleteTarget.name}" eliminado correctamente`);
+      setDeleteTarget(null);
+      setDeleteInput("");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al eliminar el sponsor");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const isConfirmed = deleteInput.trim().toLowerCase() === "eliminar";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
