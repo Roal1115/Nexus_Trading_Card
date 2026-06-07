@@ -7,6 +7,15 @@ import {
   getLeaderboard,
   getLeaderboardOptions,
 } from "@/lib/geekarena-leaderboard.functions";
+import {
+  getActiveSponsor,
+  listActiveSponsors,
+  registerAdView,
+} from "@/lib/geekarena-ads.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+import { AdHorizontal } from "@/components/ads/AdHorizontal";
+import { AdCarousel } from "@/components/ads/AdCarousel";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -50,6 +59,21 @@ function monthLabel(m: string): string {
 function LeaderboardPage() {
   const fetchOptions = useServerFn(getLeaderboardOptions);
   const fetchLeaderboard = useServerFn(getLeaderboard);
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const fetchActiveSponsors = useServerFn(listActiveSponsors);
+  const registerView = useServerFn(registerAdView);
+
+  const [sponsor, setSponsor] = useState<any>(null);
+  const [allSponsors, setAllSponsors] = useState<any[]>([]);
+
+  useEffect(() => {
+    registerView().then(setSponsor).catch(() => {
+      fetchActiveSponsor().then(setSponsor).catch(() => {});
+    });
+    fetchActiveSponsors().then(setAllSponsors).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -148,7 +172,11 @@ function LeaderboardPage() {
   const selectedStore = stores.find((s) => s.id === storeId);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+      <main className="min-w-0 pb-20">
       <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-black/40 to-black/20 p-8 sm:p-12">
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
@@ -161,6 +189,9 @@ function LeaderboardPage() {
           El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
         </p>
       </section>
+
+      <AdCarousel sponsors={allSponsors} />
+
 
       <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
@@ -231,6 +262,9 @@ function LeaderboardPage() {
           rows={filteredMonthly}
           loading={loading}
         />
+        <div className="xl:hidden lg:hidden">
+          <AdHorizontal sponsor={sponsor} />
+        </div>
         <LeaderboardTable
           title="General Semestral"
           badge={semesterLbl}
@@ -239,9 +273,14 @@ function LeaderboardPage() {
           loading={loading}
         />
       </div>
-    </main>
+      </main>
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+    </div>
   );
 }
+
 
 function LeaderboardTable({
   title,

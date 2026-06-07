@@ -33,6 +33,7 @@ import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminHistoryRouteImport } from './routes/admin.history'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
+import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
@@ -158,6 +159,11 @@ const AdminApprovedRoute = AdminApprovedRouteImport.update({
   path: '/approved',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAdsRoute = AdminAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminActivityRoute = AdminActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/activity': typeof AdminActivityRoute
+  '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/admin/activity': typeof AdminActivityRoute
+  '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/tcg-manager': typeof TcgManagerRouteWithChildren
   '/admin/activity': typeof AdminActivityRoute
+  '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tcg-manager'
     | '/admin/activity'
+    | '/admin/ads'
     | '/admin/approved'
     | '/admin/history'
     | '/admin/players'
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/admin/activity'
+    | '/admin/ads'
     | '/admin/approved'
     | '/admin/history'
     | '/admin/players'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tcg-manager'
     | '/admin/activity'
+    | '/admin/ads'
     | '/admin/approved'
     | '/admin/history'
     | '/admin/players'
@@ -539,6 +551,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApprovedRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ads': {
+      id: '/admin/ads'
+      path: '/ads'
+      fullPath: '/admin/ads'
+      preLoaderRoute: typeof AdminAdsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/activity': {
       id: '/admin/activity'
       path: '/activity'
@@ -584,6 +603,7 @@ const AdminPlayersRouteWithChildren = AdminPlayersRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminActivityRoute: typeof AdminActivityRoute
+  AdminAdsRoute: typeof AdminAdsRoute
   AdminApprovedRoute: typeof AdminApprovedRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminPlayersRoute: typeof AdminPlayersRouteWithChildren
@@ -597,6 +617,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminActivityRoute: AdminActivityRoute,
+  AdminAdsRoute: AdminAdsRoute,
   AdminApprovedRoute: AdminApprovedRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminPlayersRoute: AdminPlayersRouteWithChildren,

@@ -5,6 +5,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Award, ChevronRight, Crown, HelpCircle, Swords, Target, TrendingUp, X } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
+import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Mi Panel — Geek Arena" }] }),
@@ -18,14 +21,25 @@ function DashboardPage() {
   const { player: gaPlayer } = useGeekarenaRole();
   const fetchDashboard = useServerFn(getMyDashboard);
   const fetchTournamentDetail = useServerFn(getTournamentDetail);
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const registerView = useServerFn(registerAdView);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
+  const [sponsor, setSponsor] = useState<any>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    registerView().then(setSponsor).catch(() => {
+      fetchActiveSponsor().then(setSponsor).catch(() => {});
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const openTournament = async (tournament_id: string) => {
     setSelectedTournamentId(tournament_id);
@@ -104,7 +118,11 @@ function DashboardPage() {
   const hasMore = events.length > page * PAGE_SIZE;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+      <main className="min-w-0 pb-20">
       {/* Hero */}
       <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40 p-8 sm:p-12">
         <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
@@ -384,8 +402,13 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
         </div>
       )}
     </main>
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+    </div>
   );
 }
+
 
 function StatCard({
   icon,
