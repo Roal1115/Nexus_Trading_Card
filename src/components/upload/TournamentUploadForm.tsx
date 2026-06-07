@@ -184,6 +184,7 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
     out.push({
       rank: isFinite(rank) ? rank : 0,
       geek_tag: tag,
+      membership_id: iMem !== -1 ? (cols[iMem] || "").trim() || null : null,
       match_points: isFinite(mp) ? mp : null,
       omw_percentage: parsePct(iOmw !== -1 ? cols[iOmw] : undefined, map.platform),
       wins,
