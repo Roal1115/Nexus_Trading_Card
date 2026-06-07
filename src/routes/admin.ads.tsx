@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useRef } from "react";
-import { Loader2, Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power } from "lucide-react";
+import { Loader2, Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena } from "@/integrations/geekarena/client";
 import {
@@ -10,6 +10,7 @@ import {
   updateSponsor,
   updateSponsorImages,
   resetSponsorViews,
+  deleteSponsor,
 } from "@/lib/geekarena-ads.functions";
 
 export const Route = createFileRoute("/admin/ads")({
