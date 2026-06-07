@@ -488,11 +488,22 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                               </span>
                             </td>
                             <td className="px-3 py-2 text-white">
-                              {r.geek_tag}
-                              {r.is_me && (
-                                <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
-                                  Tú
+                              {r.is_me ? (
+                                <span className="font-semibold text-primary">
+                                  {r.geek_tag}
+                                  <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
+                                    Tú
+                                  </span>
                                 </span>
+                              ) : (
+                                <Link
+                                  to="/players/$playerTag"
+                                  params={{ playerTag: r.geek_tag }}
+                                  onClick={closeModal}
+                                  className="font-semibold text-white hover:text-primary transition hover:underline underline-offset-2"
+                                >
+                                  {r.geek_tag}
+                                </Link>
                               )}
                             </td>
                             <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">

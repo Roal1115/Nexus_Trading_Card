@@ -378,7 +378,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         member_since: null as string | null,
         is_owner: false,
         rankings: [] as any[],
-        recent_tournaments: [] as any[],
+        tournaments: [] as any[],
       };
     }
 
@@ -401,12 +401,12 @@ export const getPublicProfile = createServerFn({ method: "POST" })
       admin
         .from("tournament_results")
         .select(
-          "rank, points_earned, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
+          "rank, points_earned, match_points, omw_percentage, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
         )
         .eq("player_id", t.id)
         .eq("tournaments.status", "PUBLISHED")
         .order("tournaments(tournament_date)", { ascending: false })
-        .limit(10),
+        .limit(100),
     ]);
 
     // Dedupe snapshots by game_id, keep highest points
@@ -419,18 +419,68 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     }
     const snaps = Array.from(snapMap.values());
 
+    const results = (resultsRes.data ?? []) as any[];
+
+    const tStoreIds = Array.from(
+      new Set(results.map((r: any) => r.tournaments?.store_id).filter(Boolean)),
+    );
     const gameIds = Array.from(
       new Set([
         ...snaps.map((s) => s.game_id),
-        ...((resultsRes.data ?? []) as any[])
-          .map((r: any) => r.tournaments?.game_id)
-          .filter(Boolean),
+        ...results.map((r: any) => r.tournaments?.game_id).filter(Boolean),
       ]),
     );
-    const { data: games } = gameIds.length
-      ? await admin.from("games").select("id, name").in("id", gameIds)
-      : { data: [] as Array<{ id: string; name: string }> };
-    const gamesMap = new Map((games ?? []).map((g: any) => [g.id, g.name]));
+    const tournamentIds = results.map((r: any) => r.tournament_id);
+
+    const [storesRes, gamesRes, maxPtsRes] = await Promise.all([
+      tStoreIds.length
+        ? admin.from("stores").select("id, name, city").in("id", tStoreIds)
+        : Promise.resolve({ data: [] as any[] }),
+      gameIds.length
+        ? admin.from("games").select("id, name").in("id", gameIds)
+        : Promise.resolve({ data: [] as any[] }),
+      tournamentIds.length
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id, match_points")
+            .in("tournament_id", tournamentIds)
+            .eq("rank", 1)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const storeMap = new Map(((storesRes.data ?? []) as any[]).map((s: any) => [s.id, s]));
+    const gamesMap = new Map(((gamesRes.data ?? []) as any[]).map((g: any) => [g.id, g.name]));
+    const maxPtsMap = new Map(
+      ((maxPtsRes.data ?? []) as any[]).map((m: any) => [m.tournament_id, m.match_points ?? 0]),
+    );
+
+    const tournaments = results.map((r: any) => {
+      const tr = r.tournaments;
+      const store = tr ? storeMap.get(tr.store_id) : null;
+      const maxMp = maxPtsMap.get(r.tournament_id) ?? 0;
+
+      let calcWins: number | null = r.wins;
+      let calcLosses: number | null = r.losses;
+      if (r.wins == null && r.match_points != null && maxMp > 0) {
+        const totalRounds = Math.round(maxMp / 3);
+        calcWins = Math.floor((r.match_points ?? 0) / 3);
+        const draws = ((r.match_points ?? 0) % 3 === 1) ? 1 : 0;
+        calcLosses = totalRounds - calcWins - draws;
+      }
+
+      return {
+        id: r.tournament_id,
+        date: tr?.tournament_date ?? "—",
+        store: (store as any)?.name ?? "—",
+        city: (store as any)?.city ?? "—",
+        tcg: gamesMap.get(tr?.game_id) ?? "—",
+        game_id: tr?.game_id ?? null,
+        placement: r.rank,
+        pointsEarned: Number(r.points_earned ?? 0).toFixed(2),
+        wins: calcWins,
+        losses: calcLosses,
+      };
+    });
 
     return {
       is_private: false as const,
@@ -450,11 +500,6 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         tournaments_won: s.tournaments_won ?? 0,
         timeframe_value: s.timeframe_value,
       })),
-      recent_tournaments: ((resultsRes.data ?? []) as any[]).map((r: any) => ({
-        rank: r.rank,
-        points: r.points_earned ?? 0,
-        date: r.tournaments?.tournament_date ?? null,
-        game_name: gamesMap.get(r.tournaments?.game_id) ?? "—",
-      })),
+      tournaments,
     };
   });
