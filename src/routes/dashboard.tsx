@@ -183,88 +183,58 @@ function DashboardPage() {
         </div>
       </section>
 
-      {/* Rankings con tabs estilo Chrome */}
+      {/* Toggle de privacidad */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span className="uppercase tracking-widest">Visibilidad del perfil:</span>
+          <span className={`inline-flex items-center gap-1 font-semibold ${isPublic ? "text-emerald-400" : "text-gray-300"}`}>
+            {isPublic ? <><Globe size={12} /> Público</> : <><Lock size={12} /> Privado</>}
+          </span>
+        </div>
+        <button
+          onClick={handleTogglePrivacy}
+          className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition"
+        >
+          {isPublic ? "Hacer privado" : "Hacer público"}
+        </button>
+      </div>
+
+      {/* Mis Rankings */}
       <section className="mt-6">
-        {tcgStats.length > 1 && (
-          <div className="flex flex-wrap border-b border-white/10">
-            {tcgStats.map((tcg) => (
-              <button
-                key={tcg.game_id}
-                onClick={() => setSelectedTcg(tcg.game_id)}
-                className={`relative px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 flex-shrink-0 border-b-2 -mb-px ${
-                  selectedTcg === tcg.game_id
-                    ? "text-white border-primary bg-white/[0.03]"
-                    : "text-gray-400 hover:text-gray-200 border-transparent"
-                }`}
-              >
-                {tcg.game_name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {activeTcg && (
-          <div className={`glass p-6 ${tcgStats.length > 1 ? "rounded-b-2xl rounded-tr-2xl" : "rounded-2xl"}`}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Crown size={10} /> Rank Global
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {rank > 0 ? `#${rank}` : "—"}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Target size={10} className="text-primary" /> Puntos Arena
-                  <TooltipInfo
-                    text={`¿Cómo se calculan tus puntos?
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Mis Rankings</h2>
+          <TooltipInfo
+            text={`¿Cómo se calculan tus puntos?
 
 Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
 (tus match points ÷ match points del 1er lugar) × 100
 
-Ejemplo: Si el 1er lugar tuvo 12 pts y tú tuviste 9 pts → (9÷12)×100 = 75.00 Pts Arena
-
-Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard. Los torneos extra se descartan.
+Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard.
 
 Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
-
-Leaderboard de temporada: Suma acumulada de todos tus torneos durante la temporada completa, aplicando siempre la regla del top 2 por semana.
-
-Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneos ganados, luego por torneos jugados, y finalmente por OMW% promedio.`}
-                  />
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {Number(totalPoints).toFixed(0)}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Swords size={10} className="text-primary" /> Jugados
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {tournamentsPlayed}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Esta temporada</p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Award size={10} className="text-primary" /> Ganados
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {tournamentsWon}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">1er lugar</p>
-              </div>
-            </div>
+Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
+          />
+        </div>
+        {loading ? (
+          <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">Cargando…</div>
+        ) : tcgStats.length === 0 ? (
+          <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">
+            Aún no tienes rankings en esta temporada.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-4">
+            {tcgStats.map((tcg) => (
+              <TcgRankCard
+                key={tcg.game_id}
+                tcg={tcg}
+                semesterLabel={semesterLabel}
+                monthLabel={data?.monthLabel ?? "Este mes"}
+              />
+            ))}
           </div>
         )}
       </section>
+
 
       {/* Recent */}
       <section className="glass mt-6 overflow-hidden rounded-2xl">
