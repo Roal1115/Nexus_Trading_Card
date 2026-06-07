@@ -431,48 +431,44 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       throw new Error(msg);
     };
 
-    const tags = Array.from(new Set(data.rows.map((r) => r.geek_tag.trim())));
-    const { data: existingPlayers, error: pe } = await admin
-      .from("players")
-      .select("id, geek_tag")
-      .in("geek_tag", tags);
-    if (pe) await cleanup(pe.message);
+    const baseRows: Array<{
+      tournament_id: string;
+      player_id: string;
+      rank: number;
+      wins: number | null;
+      losses: number | null;
+      draws: number;
+      points_earned: number;
+      match_points: number | null;
+      omw_percentage: number | null;
+    }> = [];
+    let createdPlayers = 0;
 
-    const tagToId = new Map(
-      (existingPlayers ?? []).map((p) => [p.geek_tag, p.id]),
-    );
-    const missingTags = tags.filter((t) => !tagToId.has(t));
-
-    if (missingTags.length > 0) {
-      const { data: created, error: ce } = await admin
-        .from("players")
-        .insert(
-          missingTags.map((t) => ({
-            geek_tag: t,
-            is_active: true,
-            role: "player",
-          })),
-        )
-        .select("id, geek_tag");
-      if (ce) await cleanup(ce.message);
-      for (const p of created ?? []) tagToId.set(p.geek_tag, p.id);
+    try {
+      for (const r of data.rows) {
+        const { id: playerId, isNew } = await resolvePlayer(
+          admin,
+          r.geek_tag.trim(),
+          r.membership_id ? r.membership_id.trim() || null : null,
+          data.game_id,
+        );
+        if (isNew) createdPlayers++;
+        baseRows.push({
+          tournament_id: tournamentId,
+          player_id: playerId,
+          rank: r.rank,
+          wins: r.wins,
+          losses: r.losses,
+          draws: r.draws ?? 0,
+          points_earned: r.points_earned,
+          match_points: r.match_points,
+          omw_percentage: r.omw_percentage,
+        });
+      }
+    } catch (e) {
+      await cleanup((e as Error).message);
     }
 
-    const baseRows = data.rows.map((r) => {
-      const pid = tagToId.get(r.geek_tag.trim());
-      if (!pid) throw new Error(`No se pudo resolver el jugador ${r.geek_tag}`);
-      return {
-        tournament_id: tournamentId,
-        player_id: pid,
-        rank: r.rank,
-        wins: r.wins,
-        losses: r.losses,
-        draws: r.draws ?? 0,
-        points_earned: r.points_earned,
-        match_points: r.match_points,
-        omw_percentage: r.omw_percentage,
-      };
-    });
 
     let insertErr = (await admin.from("tournament_results").insert(baseRows)).error;
     if (insertErr && /column .* does not exist/i.test(insertErr.message)) {
