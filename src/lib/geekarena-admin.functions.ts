@@ -772,7 +772,13 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
       results: resultsRes.data ?? [],
       tournaments: tournaments ?? [],
       yearly_snapshots: snapsRes.data ?? [],
-      tcg_ids: (tcgIdsRes.data ?? []) as Array<{
+      tcg_ids: ((tcgIdsRes.data ?? []) as any[]).map((r) => ({
+        game_id: r.game_id as string,
+        tcg_user_id: r.tcg_user_id as string,
+        games: Array.isArray(r.games)
+          ? (r.games[0] ?? null)
+          : (r.games ?? null),
+      })) as Array<{
         game_id: string;
         tcg_user_id: string;
         games: { name: string } | null;
