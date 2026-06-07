@@ -53,16 +53,22 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     const { data: monthlyRaw } = semKey
       ? await admin
           .from("leaderboard_snapshots")
-          .select("game_id, rank_position")
+          .select("game_id, rank_position, total_points")
           .eq("player_id", player.id)
           .eq("timeframe_type", "MONTHLY")
           .eq("timeframe_value", monthKey)
       : { data: [] as any[] };
-    const monthlyMap = new Map<string, number>();
+    const monthlyMap = new Map<string, { rank: number; points: number }>();
     for (const m of monthlyRaw ?? []) {
       const existing = monthlyMap.get(m.game_id);
-      if (existing == null || (m.rank_position ?? 0) < existing) {
-        monthlyMap.set(m.game_id, m.rank_position ?? 0);
+      const rank = m.rank_position ?? 0;
+      const pts = m.total_points ?? 0;
+      if (
+        !existing ||
+        (rank > 0 && (existing.rank === 0 || rank < existing.rank)) ||
+        pts > existing.points
+      ) {
+        monthlyMap.set(m.game_id, { rank, points: pts });
       }
     }
 
@@ -88,9 +94,23 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         tournaments_played: s.tournaments_played ?? 0,
         tournaments_won: s.tournaments_won ?? 0,
         rank_position: s.rank_position ?? 0,
-        monthly_rank_position: monthlyMap.get(s.game_id) ?? 0,
+        monthly_rank_position: monthlyMap.get(s.game_id)?.rank ?? 0,
+        monthly_total_points: monthlyMap.get(s.game_id)?.points ?? 0,
       }))
       .sort((a, b) => b.total_points - a.total_points);
+
+    const { data: tcgIdRows } = await admin
+      .from("player_tcg_ids" as any)
+      .select("game_id")
+      .eq("player_id", player.id);
+
+    const { data: privacyRow } = await admin
+      .from("players")
+      .select("id")
+      .eq("id", player.id)
+      .maybeSingle();
+    const isProfilePublic =
+      ((privacyRow as any)?.is_profile_public ?? true) as boolean;
 
     const { data: results } = await admin
       .from("tournament_results")
