@@ -336,6 +336,7 @@ export const createTournament = createServerFn({ method: "POST" })
 const ResultRowSchema = z.object({
   rank: z.number().int().min(1),
   geek_tag: z.string().min(1).max(120),
+  membership_id: z.string().max(120).nullable().optional(),
   match_points: z.number().int().min(0).nullable(),
   omw_percentage: z.number().min(0).max(100).nullable(),
   wins: z.number().int().min(0).nullable(),
