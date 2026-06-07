@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
+import { logAction } from "./geekarena-admin.functions";
 
 // ─── Helper: ensure ad_metrics row exists ────────────────────────────────
 async function ensureMetricsRow(admin: ReturnType<typeof getGeekarenaAdmin>) {
