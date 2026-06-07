@@ -702,17 +702,34 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const { data: player, error: pe } = await admin
-      .from("players")
-      .select(
-        "id, geek_tag, display_name, email, avatar_url, role, home_store_id, is_active, created_at",
-      )
-      .eq("id", data.player_id)
-      .maybeSingle();
-    if (pe) throw new Error(pe.message);
+    const baseCols =
+      "id, geek_tag, display_name, email, avatar_url, role, home_store_id, is_active, created_at";
+    const extraCols = ", gender, birth_date, is_profile_public";
+
+    let player: any = null;
+    {
+      const r = await admin
+        .from("players")
+        .select(baseCols + extraCols)
+        .eq("id", data.player_id)
+        .maybeSingle();
+      if (r.error && /column .* does not exist/i.test(r.error.message)) {
+        const r2 = await admin
+          .from("players")
+          .select(baseCols)
+          .eq("id", data.player_id)
+          .maybeSingle();
+        if (r2.error) throw new Error(r2.error.message);
+        player = r2.data;
+      } else if (r.error) {
+        throw new Error(r.error.message);
+      } else {
+        player = r.data;
+      }
+    }
     if (!player) throw new Error("Jugador no encontrado");
 
-    const [storeRes, resultsRes, snapsRes] = await Promise.all([
+    const [storeRes, resultsRes, snapsRes, tcgIdsRes] = await Promise.all([
       player.home_store_id
         ? admin.from("stores").select("id, name, city, state").eq("id", player.home_store_id).maybeSingle()
         : Promise.resolve({ data: null, error: null } as const),
@@ -726,6 +743,10 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
         .eq("player_id", data.player_id)
         .eq("timeframe_type", "SEMESTRAL")
         .order("timeframe_value", { ascending: false }),
+      admin
+        .from("player_tcg_ids")
+        .select("game_id, tcg_user_id, games(name)")
+        .eq("player_id", data.player_id),
     ]);
 
     const tIds = Array.from(new Set((resultsRes.data ?? []).map((r) => r.tournament_id)));
@@ -751,8 +772,118 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
       results: resultsRes.data ?? [],
       tournaments: tournaments ?? [],
       yearly_snapshots: snapsRes.data ?? [],
+      tcg_ids: ((tcgIdsRes.data ?? []) as any[]).map((r) => ({
+        game_id: r.game_id as string,
+        tcg_user_id: r.tcg_user_id as string,
+        games: Array.isArray(r.games)
+          ? (r.games[0] ?? null)
+          : (r.games ?? null),
+      })) as Array<{
+        game_id: string;
+        tcg_user_id: string;
+        games: { name: string } | null;
+      }>,
     };
   });
+
+function normalizeTcgId(id: string): string {
+  const stripped = id.replace(/^0+/, "");
+  return stripped === "" ? "0" : stripped;
+}
+
+export const updatePlayerDetail = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: {
+    player_id: string;
+    display_name?: string | null;
+    gender?: string | null;
+    birth_date?: string | null;
+    is_profile_public?: boolean;
+    tcg_ids?: Array<{ game_id: string; tcg_user_id: string }>;
+  }) =>
+    z
+      .object({
+        player_id: z.string().uuid(),
+        display_name: z.string().max(120).nullable().optional(),
+        gender: z.string().max(40).nullable().optional(),
+        birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        is_profile_public: z.boolean().optional(),
+        tcg_ids: z
+          .array(
+            z.object({
+              game_id: z.string().uuid(),
+              tcg_user_id: z.string().min(1).max(120),
+            }),
+          )
+          .optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const update: Record<string, unknown> = {};
+    if (data.display_name !== undefined)
+      update.display_name = data.display_name || null;
+    if (data.gender !== undefined) update.gender = data.gender || null;
+    if (data.birth_date !== undefined)
+      update.birth_date = data.birth_date || null;
+    if (data.is_profile_public !== undefined)
+      update.is_profile_public = data.is_profile_public;
+
+    if (Object.keys(update).length > 0) {
+      const { error } = await admin
+        .from("players")
+        .update(update)
+        .eq("id", data.player_id);
+      if (error && !/column .* does not exist/i.test(error.message)) {
+        throw new Error(error.message);
+      }
+      if (error) {
+        // Retry only with always-present columns
+        const safe: Record<string, unknown> = {};
+        if (update.display_name !== undefined) safe.display_name = update.display_name;
+        if (Object.keys(safe).length > 0) {
+          const r2 = await admin.from("players").update(safe).eq("id", data.player_id);
+          if (r2.error) throw new Error(r2.error.message);
+        }
+      }
+    }
+
+    if (data.tcg_ids) {
+      const rows = data.tcg_ids.map((t) => ({
+        player_id: data.player_id,
+        game_id: t.game_id,
+        tcg_user_id: t.tcg_user_id.trim(),
+        tcg_user_id_normalized: normalizeTcgId(t.tcg_user_id.trim()),
+      }));
+      if (rows.length > 0) {
+        const { error } = await admin
+          .from("player_tcg_ids")
+          .upsert(rows, { onConflict: "player_id,game_id" });
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    const { data: target } = await admin
+      .from("players")
+      .select("geek_tag")
+      .eq("id", data.player_id)
+      .maybeSingle();
+
+    await logAction(
+      admin,
+      player,
+      "PLAYER_DETAIL_UPDATED",
+      "player",
+      data.player_id,
+      target?.geek_tag ?? data.player_id,
+      { fields: Object.keys(update), tcg_ids_count: data.tcg_ids?.length ?? 0 },
+    );
+
+    return { ok: true };
+  });
+
 
 export const setPlayerRole = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])

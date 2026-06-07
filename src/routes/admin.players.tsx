@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   Eye,
   Loader2,
   MoreHorizontal,
+  Pencil,
   Power,
   Search,
   ShieldCheck,
@@ -21,6 +22,8 @@ import {
   setPlayerRole,
   setPlayerActive,
   listStoresWithOrganizers,
+  getPlayerDetail,
+  updatePlayerDetail,
 } from "@/lib/geekarena-admin.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -105,6 +108,94 @@ function AdminPlayersPage() {
   const [storeModal, setStoreModal] = useState<{ p: P; next: string } | null>(null);
   const [activeModal, setActiveModal] = useState<P | null>(null);
   const [acting, setActing] = useState(false);
+
+  // detail modal
+  type DetailData = Awaited<ReturnType<typeof getPlayerDetail>>;
+  type EditFields = {
+    display_name: string;
+    gender: string;
+    birth_date: string;
+    is_profile_public: boolean;
+    tcg_ids: Array<{ game_id: string; tcg_user_id: string }>;
+  };
+  const [detailModal, setDetailModal] = useState<string | null>(null);
+  const [detailData, setDetailData] = useState<DetailData | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editFields, setEditFields] = useState<EditFields>({
+    display_name: "",
+    gender: "",
+    birth_date: "",
+    is_profile_public: true,
+    tcg_ids: [],
+  });
+  const [savingDetail, setSavingDetail] = useState(false);
+  const fetchDetail = useServerFn(getPlayerDetail);
+  const updateDetail = useServerFn(updatePlayerDetail);
+
+  const openDetail = async (playerId: string) => {
+    setDetailModal(playerId);
+    setDetailLoading(true);
+    setEditMode(false);
+    setDetailData(null);
+    try {
+      const d = await fetchDetail({ data: { player_id: playerId } });
+      setDetailData(d);
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setDetailModal(null);
+    setDetailData(null);
+    setEditMode(false);
+  };
+
+  const enterEditMode = () => {
+    if (!detailData) return;
+    const p: any = detailData.player;
+    setEditFields({
+      display_name: p.display_name ?? "",
+      gender: p.gender ?? "",
+      birth_date: p.birth_date ?? "",
+      is_profile_public: p.is_profile_public ?? true,
+      tcg_ids: (detailData.tcg_ids ?? []).map((t) => ({
+        game_id: t.game_id,
+        tcg_user_id: t.tcg_user_id,
+      })),
+    });
+    setEditMode(true);
+  };
+
+  const saveDetail = async () => {
+    if (!detailModal) return;
+    setSavingDetail(true);
+    try {
+      await updateDetail({
+        data: {
+          player_id: detailModal,
+          display_name: editFields.display_name,
+          gender: editFields.gender,
+          birth_date: editFields.birth_date || null,
+          is_profile_public: editFields.is_profile_public,
+          tcg_ids: editFields.tcg_ids,
+        },
+      });
+      toast.success("Información actualizada correctamente");
+      setEditMode(false);
+      const d = await fetchDetail({ data: { player_id: detailModal } });
+      setDetailData(d);
+      refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingDetail(false);
+    }
+  };
+
 
   // debounce search
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -505,6 +596,7 @@ function AdminPlayersPage() {
                       <td className="px-4 py-3 text-right">
                         <RowActions
                           p={p}
+                          onViewDetail={() => openDetail(p.id)}
                           onChangeRole={(next) => setRoleModal({ p, next })}
                           onAssignStore={() =>
                             setStoreModal({ p, next: p.home_store_id ?? "" })
@@ -673,19 +765,329 @@ function AdminPlayersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Detail modal */}
+        <Dialog open={!!detailModal} onOpenChange={(o) => !o && closeDetail()}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                    Jugador
+                  </p>
+                  <DialogTitle className="text-2xl">
+                    {detailData?.player?.geek_tag ?? "Cargando..."}
+                  </DialogTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  {detailData && !editMode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={enterEditMode}
+                    >
+                      <Pencil size={14} className="mr-1.5" />
+                      Editar
+                    </Button>
+                  )}
+                  {editMode && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditMode(false)}
+                        disabled={savingDetail}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={saveDetail}
+                        disabled={savingDetail}
+                      >
+                        {savingDetail ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          "Guardar cambios"
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </DialogHeader>
+
+            {detailLoading ? (
+              <div className="flex h-40 items-center justify-center">
+                <Loader2 className="animate-spin text-primary" />
+              </div>
+            ) : detailData ? (
+              <div className="space-y-6">
+                {/* Información de cuenta */}
+                <section className="space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    Información de cuenta
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <DetailField
+                      label="Geek Tag"
+                      value={detailData.player.geek_tag}
+                    />
+                    <DetailField
+                      label="Email"
+                      value={detailData.player.email ?? "—"}
+                    />
+                    <DetailField
+                      label="Nombre para mostrar"
+                      value={detailData.player.display_name ?? "—"}
+                      editable={editMode}
+                      editType="text"
+                      editValue={editFields.display_name}
+                      onEdit={(v) =>
+                        setEditFields((p) => ({ ...p, display_name: v }))
+                      }
+                    />
+                    <DetailField
+                      label="Rol"
+                      value={(detailData.player as any).role ?? "—"}
+                    />
+                    <DetailField
+                      label="Tienda"
+                      value={detailData.store?.name ?? "Sin tienda"}
+                    />
+                    <DetailField
+                      label="Visibilidad del perfil"
+                      value={
+                        (detailData.player as any).is_profile_public === false
+                          ? "Privado"
+                          : "Público"
+                      }
+                      editable={editMode}
+                      editType="toggle"
+                      editValue={editFields.is_profile_public}
+                      onEdit={(v) =>
+                        setEditFields((p) => ({ ...p, is_profile_public: v }))
+                      }
+                    />
+                  </div>
+                </section>
+
+                {/* Datos demográficos */}
+                <section className="space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    Datos demográficos{" "}
+                    <span className="ml-1 text-[10px] text-amber-400 normal-case tracking-normal">
+                      — No visibles públicamente
+                    </span>
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <DetailField
+                      label="Género"
+                      value={(detailData.player as any).gender ?? "—"}
+                      editable={editMode}
+                      editType="select"
+                      editValue={editFields.gender}
+                      editOptions={[
+                        { value: "", label: "Sin especificar" },
+                        { value: "hombre", label: "Hombre" },
+                        { value: "mujer", label: "Mujer" },
+                        { value: "otro", label: "Otro" },
+                      ]}
+                      onEdit={(v) =>
+                        setEditFields((p) => ({ ...p, gender: v }))
+                      }
+                    />
+                    <DetailField
+                      label="Fecha de nacimiento"
+                      value={(detailData.player as any).birth_date ?? "—"}
+                      editable={editMode}
+                      editType="date"
+                      editValue={editFields.birth_date}
+                      onEdit={(v) =>
+                        setEditFields((p) => ({ ...p, birth_date: v }))
+                      }
+                    />
+                  </div>
+                </section>
+
+                {/* TCG IDs */}
+                <section className="space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    IDs por TCG{" "}
+                    <span className="ml-1 text-[10px] text-amber-400 normal-case tracking-normal">
+                      — No visibles públicamente
+                    </span>
+                  </h3>
+                  {(editMode ? editFields.tcg_ids : detailData.tcg_ids).length === 0 ? (
+                    <p className="text-sm text-gray-500">Sin IDs registrados.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(editMode
+                        ? editFields.tcg_ids.map((t) => {
+                            const orig = detailData.tcg_ids.find(
+                              (x) => x.game_id === t.game_id,
+                            );
+                            return {
+                              game_id: t.game_id,
+                              tcg_user_id: t.tcg_user_id,
+                              games: orig?.games ?? null,
+                            };
+                          })
+                        : detailData.tcg_ids
+                      ).map((t, i) => (
+                        <div
+                          key={t.game_id}
+                          className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                        >
+                          <span className="min-w-[120px] text-sm text-white">
+                            {t.games?.name ?? "—"}
+                          </span>
+                          {editMode ? (
+                            <Input
+                              value={editFields.tcg_ids[i]?.tcg_user_id ?? ""}
+                              onChange={(e) => {
+                                const updated = [...editFields.tcg_ids];
+                                updated[i] = {
+                                  ...updated[i],
+                                  tcg_user_id: e.target.value,
+                                };
+                                setEditFields((p) => ({ ...p, tcg_ids: updated }));
+                              }}
+                              className="flex-1 font-mono text-xs"
+                            />
+                          ) : (
+                            <span className="flex-1 font-mono text-xs text-gray-300">
+                              {t.tcg_user_id}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* Estadísticas */}
+                <section className="space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    Estadísticas
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <StatBox
+                      label="Torneos jugados"
+                      value={detailData.tournaments_played}
+                    />
+                    <StatBox
+                      label="Torneos ganados"
+                      value={detailData.tournaments_won}
+                    />
+                    <StatBox
+                      label="Puntos totales"
+                      value={Number(detailData.total_points).toFixed(2)}
+                    />
+                  </div>
+                </section>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
 }
 
+function DetailField({
+  label,
+  value,
+  editable,
+  editType,
+  editValue,
+  editOptions,
+  onEdit,
+}: {
+  label: string;
+  value: string;
+  editable?: boolean;
+  editType?: "text" | "select" | "date" | "toggle";
+  editValue?: any;
+  editOptions?: { value: string; label: string }[];
+  onEdit?: (v: any) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+      <p className="text-[10px] uppercase tracking-widest text-gray-500">
+        {label}
+      </p>
+      {editable && onEdit ? (
+        editType === "select" ? (
+          <select
+            value={editValue ?? ""}
+            onChange={(e) => onEdit(e.target.value)}
+            className="mt-1 w-full bg-transparent text-sm text-white outline-none"
+          >
+            {editOptions?.map((o) => (
+              <option key={o.value} value={o.value} className="bg-black">
+                {o.label}
+              </option>
+            ))}
+          </select>
+        ) : editType === "toggle" ? (
+          <button
+            type="button"
+            onClick={() => onEdit(!editValue)}
+            className={`mt-1 text-sm font-medium ${
+              editValue ? "text-emerald-400" : "text-gray-400"
+            }`}
+          >
+            {editValue ? "Público" : "Privado"}
+          </button>
+        ) : editType === "date" ? (
+          <input
+            type="date"
+            value={editValue ?? ""}
+            onChange={(e) => onEdit(e.target.value)}
+            className="mt-1 w-full bg-transparent text-sm text-white outline-none [color-scheme:dark]"
+          />
+        ) : (
+          <input
+            value={editValue ?? ""}
+            onChange={(e) => onEdit(e.target.value)}
+            className="mt-1 w-full bg-transparent text-sm text-white outline-none border-b border-white/20 pb-0.5"
+          />
+        )
+      ) : (
+        <p className="mt-0.5 text-sm text-white">{value}</p>
+      )}
+    </div>
+  );
+}
+
+function StatBox({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center">
+      <p className="text-xl font-semibold text-white">{value}</p>
+      <p className="mt-0.5 text-[10px] uppercase tracking-widest text-gray-500">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 function RowActions({
   p,
+  onViewDetail,
   onChangeRole,
   onAssignStore,
   onToggleActive,
   onAssignGames,
 }: {
   p: P;
+  onViewDetail: () => void;
   onChangeRole: (next: Role) => void;
   onAssignStore: () => void;
   onToggleActive: () => void;
@@ -701,10 +1103,8 @@ function RowActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem asChild>
-          <Link to="/admin/players/$id" params={{ id: p.id }}>
-            <Eye size={14} className="mr-2" /> Ver perfil
-          </Link>
+        <DropdownMenuItem onClick={onViewDetail}>
+          <Eye size={14} className="mr-2" /> Ver perfil
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onChangeRole("player")}>
