@@ -151,6 +151,8 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
   const iOmw = idx(map.omw);
   const iRec = idx(map.record);
   const iSt = idx(map.status);
+  const iMem = idx(map.membershipId);
+
 
   const out: ParsedRow[] = [];
   for (let li = 1; li < rows.length; li++) {
