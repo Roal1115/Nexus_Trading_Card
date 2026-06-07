@@ -772,12 +772,14 @@ function AdminPlayersPage() {
 
 function RowActions({
   p,
+  onViewDetail,
   onChangeRole,
   onAssignStore,
   onToggleActive,
   onAssignGames,
 }: {
   p: P;
+  onViewDetail: () => void;
   onChangeRole: (next: Role) => void;
   onAssignStore: () => void;
   onToggleActive: () => void;
@@ -793,10 +795,8 @@ function RowActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem asChild>
-          <Link to="/admin/players/$id" params={{ id: p.id }}>
-            <Eye size={14} className="mr-2" /> Ver perfil
-          </Link>
+        <DropdownMenuItem onClick={onViewDetail}>
+          <Eye size={14} className="mr-2" /> Ver perfil
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onChangeRole("player")}>
