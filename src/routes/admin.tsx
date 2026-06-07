@@ -92,7 +92,14 @@ function AdminLayout() {
               { to: "/admin/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
           },
+          {
+            title: "Publicidad",
+            items: [
+              { to: "/admin/ads", label: "Sponsors & Ads", icon: <Megaphone size={16} /> },
+            ],
+          },
         ]}
+
       />
       <main className="min-w-0 flex-1">
         {/* Header mobile con hamburger */}
