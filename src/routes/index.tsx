@@ -59,6 +59,21 @@ function monthLabel(m: string): string {
 function LeaderboardPage() {
   const fetchOptions = useServerFn(getLeaderboardOptions);
   const fetchLeaderboard = useServerFn(getLeaderboard);
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const fetchActiveSponsors = useServerFn(listActiveSponsors);
+  const registerView = useServerFn(registerAdView);
+
+  const [sponsor, setSponsor] = useState<any>(null);
+  const [allSponsors, setAllSponsors] = useState<any[]>([]);
+
+  useEffect(() => {
+    registerView().then(setSponsor).catch(() => {
+      fetchActiveSponsor().then(setSponsor).catch(() => {});
+    });
+    fetchActiveSponsors().then(setAllSponsors).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
