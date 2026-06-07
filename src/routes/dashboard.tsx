@@ -28,6 +28,7 @@ function DashboardPage() {
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
   const [sponsor, setSponsor] = useState<any>(null);
   const [page, setPage] = useState(1);
+  const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const PAGE_SIZE = 10;
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
