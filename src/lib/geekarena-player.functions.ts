@@ -88,6 +88,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         tournaments_played: s.tournaments_played ?? 0,
         tournaments_won: s.tournaments_won ?? 0,
         rank_position: s.rank_position ?? 0,
+        monthly_rank_position: monthlyMap.get(s.game_id) ?? 0,
       }))
       .sort((a, b) => b.total_points - a.total_points);
 
