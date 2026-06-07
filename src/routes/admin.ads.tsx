@@ -300,6 +300,81 @@ function AdminAdsPage() {
           }}
         />
       )}
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => { setDeleteTarget(null); setDeleteInput(""); }}
+        >
+          <div
+            className="glass rounded-2xl w-full max-w-md p-6 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 flex-shrink-0">
+                <Trash2 size={18} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg">Eliminar Sponsor</h3>
+                <p className="text-gray-400 text-xs">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4">
+              <p className="text-sm text-gray-300">
+                Estás a punto de eliminar permanentemente al sponsor{" "}
+                <span className="font-bold text-white">"{deleteTarget.name}"</span>.
+                Todas sus imágenes y métricas serán eliminadas.
+                Si era el sponsor activo, los anuncios se detendrán hasta que se asigne uno nuevo.
+              </p>
+            </div>
+
+            {/* Text confirmation */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs text-gray-400">
+                Para confirmar, escribe{" "}
+                <span className="font-mono font-bold text-red-400">ELIMINAR</span>{" "}
+                en el campo de abajo:
+              </label>
+              <input
+                type="text"
+                value={deleteInput}
+                onChange={(e) => setDeleteInput(e.target.value)}
+                placeholder="Escribe ELIMINAR para confirmar"
+                className={`w-full rounded-lg border px-4 py-3 text-sm bg-black/30 text-white placeholder-gray-600 outline-none transition
+                  ${isConfirmed
+                    ? "border-red-500/60 focus:border-red-500"
+                    : "border-white/10 focus:border-white/30"
+                  }`}
+                autoFocus
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={() => { setDeleteTarget(null); setDeleteInput(""); }}
+                className="flex-1 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-gray-400 hover:text-white transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={!isConfirmed || deleting}
+                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition
+                  ${isConfirmed && !deleting
+                    ? "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+                    : "bg-red-500/20 text-red-500/40 cursor-not-allowed"
+                  }`}
+              >
+                {deleting ? "Eliminando..." : "Eliminar definitivamente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
