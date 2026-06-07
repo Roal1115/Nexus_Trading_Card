@@ -16,6 +16,31 @@ const PASS_RE = /^(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const MIN_FORM_MS = 8000;
 
 type TagStatus = "idle" | "checking" | "available" | "taken" | "invalid";
+type Step = 1 | 2 | 3 | 4;
+type Gender = "hombre" | "mujer" | "no_especificado";
+
+const TCG_ID_CONFIG: Record<
+  string,
+  { label: string; placeholder: string; disclaimer?: string }
+> = {
+  "one-piece": { label: "Bandai ID", placeholder: "Ej: 0000198276" },
+  "dragon-ball": { label: "Bandai ID", placeholder: "Ej: 0000198276" },
+  "gundam": { label: "Bandai ID", placeholder: "Ej: 0000198276" },
+  "riftbound": {
+    label: "User ID de Limitless",
+    placeholder: "Ej: user_abc123",
+  },
+  "pokemon": {
+    label: "Player ID de Pokémon TCG Live",
+    placeholder: "Ej: Trainer12345",
+  },
+  "magic-the-gathering": {
+    label: "Username de MTG Companion",
+    placeholder: "Ej: WizardPlayer99",
+    disclaimer:
+      "⚠️ Aviso importante: Debido a las políticas de privacidad de Wizards of the Coast, no se comparten IDs ni correos electrónicos. El Username de Companion que ingreses aquí será tu identificador permanente en todo el circuito y no podrá cambiarse.",
+  },
+};
 
 function translateAuthError(msg: string): string {
   const m = msg.toLowerCase();
@@ -38,7 +63,7 @@ function SignupPage() {
   const navigate = useNavigate();
   const renderedAt = useRef<number>(Date.now());
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<Step>(1);
 
   // step 1
   const [email, setEmail] = useState("");
@@ -55,8 +80,13 @@ function SignupPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [gamesLoading, setGamesLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [tcgIds, setTcgIds] = useState<Record<string, string>>({});
 
-  // step 3
+  // step 3 — demographics
+  const [gender, setGender] = useState<Gender | "">("");
+  const [birthDate, setBirthDate] = useState("");
+
+  // step 4
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(false);
@@ -100,13 +130,33 @@ function SignupPage() {
         return;
       }
       if (data && data.auth_user_id) {
-        setTagStatus("taken"); // cuenta real activa → bloqueado
+        setTagStatus("taken");
       } else {
-        setTagStatus("available"); // no existe o es auto-creada → disponible
+        setTagStatus("available");
       }
     }, 500);
     return () => clearTimeout(handle);
   }, [tag]);
+
+  const toggleGame = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        setTcgIds((p) => {
+          const copy = { ...p };
+          delete copy[id];
+          return copy;
+        });
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const setTcgId = (gameId: string, value: string) =>
+    setTcgIds((prev) => ({ ...prev, [gameId]: value }));
 
   const step1Errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -129,6 +179,14 @@ function SignupPage() {
     confirm &&
     Object.keys(step1Errors).length === 0 &&
     tagStatus === "available";
+
+  const step2Valid =
+    selected.size > 0 &&
+    Array.from(selected).every(
+      (gameId) => (tcgIds[gameId] ?? "").trim().length > 0,
+    );
+
+  const step3Valid = gender !== "" && birthDate !== "";
 
   const signupFn = useServerFn(signupPlayer);
 
@@ -153,6 +211,14 @@ function SignupPage() {
       toast.error("Debes seleccionar al menos un juego");
       return;
     }
+    if (!step2Valid) {
+      toast.error("Falta el ID de jugador para uno de los juegos seleccionados");
+      return;
+    }
+    if (!step3Valid) {
+      toast.error("Completa tus datos demográficos");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -162,16 +228,16 @@ function SignupPage() {
           password,
           geek_tag: tag,
           game_ids: Array.from(selected),
+          tcg_ids: tcgIds,
+          gender: gender as Gender,
+          birth_date: birthDate,
         },
       });
 
-      // Enviar correo de verificación
       const { error: resendErr } = await geekarena.auth.resend({
         type: "signup",
         email: result.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}/login` },
       });
       if (resendErr) {
         toast.error(translateAuthError(resendErr.message));
@@ -188,6 +254,11 @@ function SignupPage() {
       setTimeout(() => setCooldown(false), 3000);
     }
   };
+
+  const canContinue =
+    (step === 1 && step1Valid) ||
+    (step === 2 && step2Valid) ||
+    (step === 3 && step3Valid);
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
@@ -229,18 +300,23 @@ function SignupPage() {
             games={games}
             loading={gamesLoading}
             selected={selected}
-            toggle={(id) =>
-              setSelected((prev) => {
-                const next = new Set(prev);
-                next.has(id) ? next.delete(id) : next.add(id);
-                return next;
-              })
-            }
+            toggle={toggleGame}
+            tcgIds={tcgIds}
+            setTcgId={setTcgId}
           />
         )}
 
         {step === 3 && (
-          <Step3
+          <Step3Demographics
+            gender={gender}
+            setGender={setGender}
+            birthDate={birthDate}
+            setBirthDate={setBirthDate}
+          />
+        )}
+
+        {step === 4 && (
+          <Step4Confirm
             email={email}
             tag={tag}
             games={games.filter((g) => selected.has(g.id))}
@@ -252,7 +328,7 @@ function SignupPage() {
         <div className="mt-8 flex items-center justify-between">
           {step > 1 ? (
             <button
-              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+              onClick={() => setStep((s) => (s - 1) as Step)}
               className="text-xs uppercase tracking-wider text-gray-500 transition hover:text-white"
             >
               ← Atrás
@@ -266,13 +342,10 @@ function SignupPage() {
             </Link>
           )}
 
-          {step < 3 ? (
+          {step < 4 ? (
             <button
-              onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
-              disabled={
-                (step === 1 && !step1Valid) ||
-                (step === 2 && selected.size === 0)
-              }
+              onClick={() => setStep((s) => (s + 1) as Step)}
+              disabled={!canContinue}
               className="rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Continuar →
@@ -319,12 +392,12 @@ function SignupPage() {
   );
 }
 
-function Stepper({ step }: { step: 1 | 2 | 3 }) {
-  const labels = ["Identidad", "Tus Juegos", "Confirmación"];
+function Stepper({ step }: { step: Step }) {
+  const labels = ["Identidad", "Tus Juegos", "Datos", "Confirmación"];
   return (
     <div className="mb-8 flex items-center gap-3">
       {labels.map((label, i) => {
-        const n = (i + 1) as 1 | 2 | 3;
+        const n = (i + 1) as Step;
         const active = step === n;
         const done = step > n;
         return (
@@ -345,7 +418,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
                 {label}
               </span>
             </div>
-            {i < 2 && (
+            {i < labels.length - 1 && (
               <div
                 className={`h-px flex-1 ${done ? "bg-primary" : "bg-white/10"}`}
               />
@@ -401,7 +474,6 @@ function Step1(props: {
         />
       </Field>
 
-      {/* Honeypot — oculto visualmente, debe permanecer vacío */}
       <div className="hp-field" aria-hidden="true">
         <label>
           Sitio web
@@ -491,11 +563,15 @@ function Step2({
   loading,
   selected,
   toggle,
+  tcgIds,
+  setTcgId,
 }: {
   games: Game[];
   loading: boolean;
   selected: Set<string>;
   toggle: (id: string) => void;
+  tcgIds: Record<string, string>;
+  setTcgId: (gameId: string, value: string) => void;
 }) {
   return (
     <div>
@@ -503,7 +579,7 @@ function Step2({
         ¿Qué TCGs juegas?
       </h2>
       <p className="mb-5 text-sm text-gray-400">
-        Selecciona todos los juegos en los que participas.
+        Selecciona los juegos en los que participas e ingresa tu ID en cada uno.
       </p>
 
       {loading ? (
@@ -515,34 +591,69 @@ function Step2({
           Aún no hay juegos disponibles.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="space-y-3">
           {games.map((g) => {
             const on = selected.has(g.id);
+            const config =
+              TCG_ID_CONFIG[g.slug ?? ""] ?? {
+                label: "ID de jugador",
+                placeholder: "Tu ID",
+              };
             return (
-              <button
+              <div
                 key={g.id}
-                type="button"
-                onClick={() => toggle(g.id)}
-                className={`group relative flex h-28 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition ${
-                  on
-                    ? "border-primary bg-primary/10"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/30"
-                }`}
+                className="overflow-hidden rounded-xl border border-white/10"
               >
+                <button
+                  type="button"
+                  onClick={() => toggle(g.id)}
+                  className={`flex w-full items-center justify-between px-4 py-3 transition ${
+                    on
+                      ? "border-primary bg-primary/10"
+                      : "bg-white/[0.03] hover:bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-5 w-5 items-center justify-center rounded border transition ${
+                        on ? "border-primary bg-primary" : "border-white/20"
+                      }`}
+                    >
+                      {on && <Check size={12} className="text-white" />}
+                    </div>
+                    <span className="text-sm font-semibold text-white">
+                      {g.name}
+                    </span>
+                  </div>
+                  {g.publisher && (
+                    <span className="text-[10px] uppercase tracking-wider text-gray-500">
+                      {g.publisher}
+                    </span>
+                  )}
+                </button>
+
                 {on && (
-                  <span className="absolute right-2 top-2 rounded-full bg-primary p-1 text-primary-foreground">
-                    <Check size={10} />
-                  </span>
+                  <div className="space-y-2 border-t border-white/10 bg-black/20 px-4 py-3">
+                    {config.disclaimer && (
+                      <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-300">
+                        {config.disclaimer}
+                      </div>
+                    )}
+                    <Field
+                      label={config.label}
+                      hint="Requerido para participar en el circuito"
+                    >
+                      <input
+                        type="text"
+                        value={tcgIds[g.id] ?? ""}
+                        onChange={(e) => setTcgId(g.id, e.target.value)}
+                        placeholder={config.placeholder}
+                        className="input-base"
+                      />
+                    </Field>
+                  </div>
                 )}
-                <span className="text-sm font-semibold text-white">
-                  {g.name}
-                </span>
-                {g.publisher && (
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500">
-                    {g.publisher}
-                  </span>
-                )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -551,7 +662,71 @@ function Step2({
   );
 }
 
-function Step3({
+function Step3Demographics({
+  gender,
+  setGender,
+  birthDate,
+  setBirthDate,
+}: {
+  gender: Gender | "";
+  setGender: (g: Gender) => void;
+  birthDate: string;
+  setBirthDate: (d: string) => void;
+}) {
+  const maxDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000 * 5)
+    .toISOString()
+    .split("T")[0];
+
+  return (
+    <div className="space-y-5">
+      <h2 className="text-xl font-semibold text-white">Datos demográficos</h2>
+      <p className="text-sm text-gray-400">
+        Esta información es de uso interno del circuito y no será visible
+        públicamente.
+      </p>
+
+      <Field label="Género *">
+        <div className="grid grid-cols-3 gap-2">
+          {(
+            [
+              { value: "hombre", label: "Hombre" },
+              { value: "mujer", label: "Mujer" },
+              { value: "no_especificado", label: "No especificado" },
+            ] as { value: Gender; label: string }[]
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setGender(opt.value)}
+              className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
+                gender === opt.value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/30"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Fecha de nacimiento *">
+        <input
+          type="date"
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
+          max={maxDate}
+          className="input-base"
+        />
+        <p className="mt-1 text-[11px] text-gray-600">
+          Tu fecha de nacimiento no será visible para otros usuarios.
+        </p>
+      </Field>
+    </div>
+  );
+}
+
+function Step4Confirm({
   email,
   tag,
   games,
