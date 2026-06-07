@@ -109,6 +109,94 @@ function AdminPlayersPage() {
   const [activeModal, setActiveModal] = useState<P | null>(null);
   const [acting, setActing] = useState(false);
 
+  // detail modal
+  type DetailData = Awaited<ReturnType<typeof getPlayerDetail>>;
+  type EditFields = {
+    display_name: string;
+    gender: string;
+    birth_date: string;
+    is_profile_public: boolean;
+    tcg_ids: Array<{ game_id: string; tcg_user_id: string }>;
+  };
+  const [detailModal, setDetailModal] = useState<string | null>(null);
+  const [detailData, setDetailData] = useState<DetailData | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editFields, setEditFields] = useState<EditFields>({
+    display_name: "",
+    gender: "",
+    birth_date: "",
+    is_profile_public: true,
+    tcg_ids: [],
+  });
+  const [savingDetail, setSavingDetail] = useState(false);
+  const fetchDetail = useServerFn(getPlayerDetail);
+  const updateDetail = useServerFn(updatePlayerDetail);
+
+  const openDetail = async (playerId: string) => {
+    setDetailModal(playerId);
+    setDetailLoading(true);
+    setEditMode(false);
+    setDetailData(null);
+    try {
+      const d = await fetchDetail({ data: { player_id: playerId } });
+      setDetailData(d);
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setDetailModal(null);
+    setDetailData(null);
+    setEditMode(false);
+  };
+
+  const enterEditMode = () => {
+    if (!detailData) return;
+    const p: any = detailData.player;
+    setEditFields({
+      display_name: p.display_name ?? "",
+      gender: p.gender ?? "",
+      birth_date: p.birth_date ?? "",
+      is_profile_public: p.is_profile_public ?? true,
+      tcg_ids: (detailData.tcg_ids ?? []).map((t) => ({
+        game_id: t.game_id,
+        tcg_user_id: t.tcg_user_id,
+      })),
+    });
+    setEditMode(true);
+  };
+
+  const saveDetail = async () => {
+    if (!detailModal) return;
+    setSavingDetail(true);
+    try {
+      await updateDetail({
+        data: {
+          player_id: detailModal,
+          display_name: editFields.display_name,
+          gender: editFields.gender,
+          birth_date: editFields.birth_date || null,
+          is_profile_public: editFields.is_profile_public,
+          tcg_ids: editFields.tcg_ids,
+        },
+      });
+      toast.success("Información actualizada correctamente");
+      setEditMode(false);
+      const d = await fetchDetail({ data: { player_id: detailModal } });
+      setDetailData(d);
+      refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingDetail(false);
+    }
+  };
+
+
   // debounce search
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
