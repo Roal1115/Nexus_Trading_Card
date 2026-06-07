@@ -172,7 +172,7 @@ function LeaderboardPage() {
   const selectedStore = stores.find((s) => s.id === storeId);
 
   return (
-    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px] items-start">
       <aside className="hidden xl:block">
         <AdVertical sponsor={sponsor} />
       </aside>
