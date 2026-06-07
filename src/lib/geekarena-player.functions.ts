@@ -159,6 +159,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         store: store?.name ?? "—",
         city: store?.city ?? "—",
         tcg: t ? (gameMap.get(t.game_id) ?? "—") : "—",
+        game_id: t?.game_id ?? null,
         placement: r.rank,
         pointsEarned: Number(r.points_earned ?? 0),
         matchPoints: r.match_points ?? null,
