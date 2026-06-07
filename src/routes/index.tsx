@@ -356,7 +356,13 @@ function LeaderboardTable({
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         {rank === 1 && <Medal className="text-amber-300" size={14} />}
-                        <span className="font-medium text-white">{r.geek_tag}</span>
+                        <Link
+                          to="/players/$playerTag"
+                          params={{ playerTag: r.geek_tag }}
+                          className="font-medium text-white hover:text-primary transition"
+                        >
+                          {r.geek_tag}
+                        </Link>
                       </div>
                     </td>
                     <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
