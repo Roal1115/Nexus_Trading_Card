@@ -191,6 +191,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       tournaments_won: number;
       tournaments_played: number;
       omw_percentage: number;
+      rank_position: number;
     };
 
     function shape(
@@ -201,6 +202,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         tournaments_played: number | null;
         tournaments_won: number | null;
         omw_percentage: number | null;
+        rank_position: number | null;
       }>,
     ): Row[] {
       // Aggregate by player (in case multiple store-scoped rows match)
@@ -213,6 +215,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
           cities: Set<string>;
           omw_sum: number;
           omw_count: number;
+          best_rank: number | null;
         }
       >();
       for (const r of raws) {
@@ -225,6 +228,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
             cities: new Set(),
             omw_sum: 0,
             omw_count: 0,
+            best_rank: null,
           };
           agg.set(r.player_id, a);
         }
@@ -235,10 +239,14 @@ export const getLeaderboard = createServerFn({ method: "POST" })
           a.omw_sum += Number(r.omw_percentage);
           a.omw_count += 1;
         }
+        if (r.rank_position != null) {
+          a.best_rank =
+            a.best_rank == null ? r.rank_position : Math.min(a.best_rank, r.rank_position);
+        }
         const city = r.store_id ? storeMap.get(r.store_id)?.city : null;
         if (city) a.cities.add(city);
       }
-      return Array.from(agg.entries())
+      const sorted = Array.from(agg.entries())
         .map(([pid, a]) => ({
           player_id: pid,
           geek_tag: playerMap.get(pid)?.geek_tag ?? "—",
@@ -255,8 +263,29 @@ export const getLeaderboard = createServerFn({ method: "POST" })
             a.omw_count > 0
               ? Math.round((a.omw_sum / a.omw_count) * 100) / 100
               : 0,
+          best_rank: a.best_rank,
         }))
-        .sort((x, y) => y.points - x.points);
+        .sort((x, y) => {
+          // When a single snapshot per player matched (e.g. store filter),
+          // use the canonical DB rank_position. Otherwise fall back to points.
+          if (x.best_rank != null && y.best_rank != null && x.best_rank !== y.best_rank) {
+            return x.best_rank - y.best_rank;
+          }
+          return y.points - x.points;
+        });
+
+      // Assign final rank_position based on sorted order. This is the canonical
+      // value used by the UI — never recomputed in the client.
+      return sorted.map((r, i) => ({
+        player_id: r.player_id,
+        geek_tag: r.geek_tag,
+        city: r.city,
+        points: r.points,
+        tournaments_won: r.tournaments_won,
+        tournaments_played: r.tournaments_played,
+        omw_percentage: r.omw_percentage,
+        rank_position: r.best_rank ?? i + 1,
+      }));
     }
 
     return {
