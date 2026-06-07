@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, ChevronRight, Crown, HelpCircle, Swords, Target, TrendingUp, X } from "lucide-react";
+import { Award, ChevronRight, Crown, Globe, HelpCircle, Lock, Swords, Target, TrendingUp, X } from "lucide-react";
+import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
+import { getMyDashboard, getTournamentDetail, toggleProfilePrivacy } from "@/lib/geekarena-player.functions";
 import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 
@@ -34,12 +35,33 @@ function DashboardPage() {
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
+  const [isPublic, setIsPublic] = useState(true);
+
   useEffect(() => {
     registerView().then(setSponsor).catch(() => {
       fetchActiveSponsor().then(setSponsor).catch(() => {});
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data && typeof (data as any).is_profile_public === "boolean") {
+      setIsPublic((data as any).is_profile_public);
+    }
+  }, [data]);
+
+  const handleTogglePrivacy = async () => {
+    const next = !isPublic;
+    setIsPublic(next);
+    try {
+      await togglePrivacyFn({ data: { is_public: next } });
+      toast.success(next ? "Perfil ahora es público" : "Perfil ahora es privado");
+    } catch {
+      setIsPublic(!next);
+      toast.error("Error al cambiar la privacidad");
+    }
+  };
 
 
   const openTournament = async (tournament_id: string) => {
@@ -108,10 +130,7 @@ function DashboardPage() {
   const tag = gaPlayer.geek_tag;
   const tcgStats = data?.tcgStats ?? [];
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
-  const totalPoints = activeTcg?.total_points ?? 0;
-  const tournamentsPlayed = activeTcg?.tournaments_played ?? 0;
-  const tournamentsWon = activeTcg?.tournaments_won ?? 0;
-  const rank = activeTcg?.rank_position ?? 0;
+  
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
@@ -161,88 +180,58 @@ function DashboardPage() {
         </div>
       </section>
 
-      {/* Rankings con tabs estilo Chrome */}
+      {/* Toggle de privacidad */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span className="uppercase tracking-widest">Visibilidad del perfil:</span>
+          <span className={`inline-flex items-center gap-1 font-semibold ${isPublic ? "text-emerald-400" : "text-gray-300"}`}>
+            {isPublic ? <><Globe size={12} /> Público</> : <><Lock size={12} /> Privado</>}
+          </span>
+        </div>
+        <button
+          onClick={handleTogglePrivacy}
+          className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition"
+        >
+          {isPublic ? "Hacer privado" : "Hacer público"}
+        </button>
+      </div>
+
+      {/* Mis Rankings */}
       <section className="mt-6">
-        {tcgStats.length > 1 && (
-          <div className="flex flex-wrap border-b border-white/10">
-            {tcgStats.map((tcg) => (
-              <button
-                key={tcg.game_id}
-                onClick={() => setSelectedTcg(tcg.game_id)}
-                className={`relative px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 flex-shrink-0 border-b-2 -mb-px ${
-                  selectedTcg === tcg.game_id
-                    ? "text-white border-primary bg-white/[0.03]"
-                    : "text-gray-400 hover:text-gray-200 border-transparent"
-                }`}
-              >
-                {tcg.game_name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {activeTcg && (
-          <div className={`glass p-6 ${tcgStats.length > 1 ? "rounded-b-2xl rounded-tr-2xl" : "rounded-2xl"}`}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Crown size={10} /> Rank Global
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {rank > 0 ? `#${rank}` : "—"}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Target size={10} className="text-primary" /> Puntos Arena
-                  <TooltipInfo
-                    text={`¿Cómo se calculan tus puntos?
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Mis Rankings</h2>
+          <TooltipInfo
+            text={`¿Cómo se calculan tus puntos?
 
 Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
 (tus match points ÷ match points del 1er lugar) × 100
 
-Ejemplo: Si el 1er lugar tuvo 12 pts y tú tuviste 9 pts → (9÷12)×100 = 75.00 Pts Arena
-
-Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard. Los torneos extra se descartan.
+Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard.
 
 Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
-
-Leaderboard de temporada: Suma acumulada de todos tus torneos durante la temporada completa, aplicando siempre la regla del top 2 por semana.
-
-Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneos ganados, luego por torneos jugados, y finalmente por OMW% promedio.`}
-                  />
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {Number(totalPoints).toFixed(0)}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Swords size={10} className="text-primary" /> Jugados
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {tournamentsPlayed}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Esta temporada</p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Award size={10} className="text-primary" /> Ganados
-                </div>
-                <p className="font-mono-stat text-4xl font-bold text-white">
-                  {tournamentsWon}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">1er lugar</p>
-              </div>
-            </div>
+Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
+          />
+        </div>
+        {loading ? (
+          <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">Cargando…</div>
+        ) : tcgStats.length === 0 ? (
+          <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">
+            Aún no tienes rankings en esta temporada.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-4">
+            {tcgStats.map((tcg) => (
+              <TcgRankCard
+                key={tcg.game_id}
+                tcg={tcg}
+                semesterLabel={semesterLabel}
+                monthLabel={data?.monthLabel ?? "Este mes"}
+              />
+            ))}
           </div>
         )}
       </section>
+
 
       {/* Recent */}
       <section className="glass mt-6 overflow-hidden rounded-2xl">
@@ -582,3 +571,92 @@ function TooltipInfo({ text }: { text: string }) {
   );
 }
 
+
+function TcgRankCard({
+  tcg,
+  semesterLabel,
+  monthLabel,
+}: {
+  tcg: any;
+  semesterLabel: string;
+  monthLabel: string;
+}) {
+  const [tab, setTab] = useState<"global" | "monthly">("global");
+  const rankValue =
+    tab === "global"
+      ? tcg.rank_position > 0
+        ? `#${tcg.rank_position}`
+        : "—"
+      : tcg.monthly_rank_position > 0
+      ? `#${tcg.monthly_rank_position}`
+      : "—";
+  const points =
+    tab === "global" ? tcg.total_points : tcg.monthly_total_points;
+
+  return (
+    <div className="glass flex w-full flex-col gap-3 rounded-2xl border border-white/10 p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
+      <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white">
+        <Crown size={14} className="text-primary" /> {tcg.game_name}
+      </div>
+
+      <div className="flex gap-1 rounded-lg bg-black/40 p-1">
+        {(["global", "monthly"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+              tab === t
+                ? "bg-primary text-primary-foreground"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {t === "global" ? "Global" : "Mensual"}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+            <Crown size={10} /> {tab === "global" ? "Rank Global" : "Rank Mes"}
+          </div>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">{rankValue}</p>
+          <p className="text-[10px] text-gray-500">
+            {tab === "global" ? semesterLabel : monthLabel}
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+            <Target size={10} className="text-primary" /> Puntos
+          </div>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">
+            {Number(points ?? 0).toFixed(0)}
+          </p>
+          <p className="text-[10px] text-gray-500">Arena pts</p>
+        </div>
+
+        {tab === "global" && (
+          <>
+            <div>
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                <Swords size={10} className="text-primary" /> Jugados
+              </div>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_played}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                <Award size={10} className="text-primary" /> Ganados
+              </div>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_won}
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
