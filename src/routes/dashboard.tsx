@@ -104,7 +104,11 @@ function DashboardPage() {
   const hasMore = events.length > page * PAGE_SIZE;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+      <main className="min-w-0 pb-20">
       {/* Hero */}
       <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40 p-8 sm:p-12">
         <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
