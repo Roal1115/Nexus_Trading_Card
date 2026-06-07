@@ -32,6 +32,7 @@ type Row = {
   tournaments_won: number;
   tournaments_played: number;
   omw_percentage: number;
+  rank_position: number;
 };
 
 const ALL = "__all__";
