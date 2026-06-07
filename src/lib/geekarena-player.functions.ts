@@ -327,3 +327,134 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       rankings,
     };
   });
+
+export const toggleProfilePrivacy = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { is_public: boolean }) =>
+    z.object({ is_public: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { error } = await admin
+      .from("players")
+      .update({ is_profile_public: data.is_public } as any)
+      .eq("id", player.id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const getPublicProfile = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { player_tag: string }) =>
+    z.object({ player_tag: z.string() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player: viewer } = context;
+
+    const { data: target } = await admin
+      .from("players")
+      .select(
+        "id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public" as any,
+      )
+      .eq("geek_tag", data.player_tag)
+      .maybeSingle();
+
+    if (!target) throw new Error("Jugador no encontrado");
+    const t = target as any;
+
+    const isOwner = viewer.id === t.id;
+    const isSuperior = viewer.role === "admin" || viewer.role === "tcg_manager";
+    const isPublic = t.is_profile_public ?? true;
+    const canView = isOwner || isSuperior || isPublic;
+
+    if (!canView) {
+      return {
+        is_private: true as const,
+        geek_tag: t.geek_tag as string,
+        display_name: null as string | null,
+        avatar_url: null as string | null,
+        store_name: null as string | null,
+        store_city: null as string | null,
+        member_since: null as string | null,
+        is_owner: false,
+        rankings: [] as any[],
+        recent_tournaments: [] as any[],
+      };
+    }
+
+    const [storeRes, snapshotsRes, resultsRes] = await Promise.all([
+      t.home_store_id
+        ? admin
+            .from("stores")
+            .select("name, city")
+            .eq("id", t.home_store_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null as any }),
+      admin
+        .from("leaderboard_snapshots")
+        .select(
+          "game_id, timeframe_type, timeframe_value, total_points, rank_position, tournaments_played, tournaments_won",
+        )
+        .eq("player_id", t.id)
+        .eq("timeframe_type", "SEMESTRAL")
+        .order("total_points", { ascending: false }),
+      admin
+        .from("tournament_results")
+        .select(
+          "rank, points_earned, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
+        )
+        .eq("player_id", t.id)
+        .eq("tournaments.status", "PUBLISHED")
+        .order("tournaments(tournament_date)", { ascending: false })
+        .limit(10),
+    ]);
+
+    // Dedupe snapshots by game_id, keep highest points
+    const snapMap = new Map<string, any>();
+    for (const s of (snapshotsRes.data ?? []) as any[]) {
+      const ex = snapMap.get(s.game_id);
+      if (!ex || (s.total_points ?? 0) > (ex.total_points ?? 0)) {
+        snapMap.set(s.game_id, s);
+      }
+    }
+    const snaps = Array.from(snapMap.values());
+
+    const gameIds = Array.from(
+      new Set([
+        ...snaps.map((s) => s.game_id),
+        ...((resultsRes.data ?? []) as any[])
+          .map((r: any) => r.tournaments?.game_id)
+          .filter(Boolean),
+      ]),
+    );
+    const { data: games } = gameIds.length
+      ? await admin.from("games").select("id, name").in("id", gameIds)
+      : { data: [] as Array<{ id: string; name: string }> };
+    const gamesMap = new Map((games ?? []).map((g: any) => [g.id, g.name]));
+
+    return {
+      is_private: false as const,
+      geek_tag: t.geek_tag as string,
+      display_name: t.display_name as string | null,
+      avatar_url: t.avatar_url as string | null,
+      store_name: ((storeRes.data as any)?.name ?? null) as string | null,
+      store_city: ((storeRes.data as any)?.city ?? null) as string | null,
+      member_since: t.created_at as string | null,
+      is_owner: isOwner,
+      rankings: snaps.map((s: any) => ({
+        game_id: s.game_id,
+        game_name: gamesMap.get(s.game_id) ?? "—",
+        rank_position: s.rank_position ?? 0,
+        total_points: s.total_points ?? 0,
+        tournaments_played: s.tournaments_played ?? 0,
+        tournaments_won: s.tournaments_won ?? 0,
+        timeframe_value: s.timeframe_value,
+      })),
+      recent_tournaments: ((resultsRes.data ?? []) as any[]).map((r: any) => ({
+        rank: r.rank,
+        points: r.points_earned ?? 0,
+        date: r.tournaments?.tournament_date ?? null,
+        game_name: gamesMap.get(r.tournaments?.game_id) ?? "—",
+      })),
+    };
+  });
