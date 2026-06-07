@@ -115,8 +115,11 @@ function DashboardPage() {
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
-  const paginatedEvents = events.slice(0, page * PAGE_SIZE);
-  const hasMore = events.length > page * PAGE_SIZE;
+  const filteredEvents = historyTcg
+    ? events.filter((e: any) => e.game_id === historyTcg)
+    : events;
+  const paginatedEvents = filteredEvents.slice(0, page * PAGE_SIZE);
+  const hasMore = filteredEvents.length > page * PAGE_SIZE;
 
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
