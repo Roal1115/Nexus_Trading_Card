@@ -106,7 +106,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
     const { data: privacyRow } = await admin
       .from("players")
-      .select("id")
+      .select("id, is_profile_public" as any)
       .eq("id", player.id)
       .maybeSingle();
     const isProfilePublic =
