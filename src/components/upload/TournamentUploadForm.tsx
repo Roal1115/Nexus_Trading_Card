@@ -731,6 +731,9 @@ export function TournamentUploadForm({
                                   className="w-full rounded bg-transparent px-2 py-1 font-medium text-white outline-none ring-inset focus:bg-white/10 focus:ring-1 focus:ring-primary"
                                 />
                               </td>
+                              <td className="px-3 py-2.5 text-xs text-gray-500 font-mono">
+                                {r.membership_id ?? "—"}
+                              </td>
                               <td className="px-3 py-2 text-right font-mono text-white">
                                 {r.match_points ?? "—"}
                               </td>
