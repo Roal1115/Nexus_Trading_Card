@@ -28,6 +28,7 @@ function DashboardPage() {
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
   const [sponsor, setSponsor] = useState<any>(null);
   const [page, setPage] = useState(1);
+  const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const PAGE_SIZE = 10;
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
@@ -114,8 +115,11 @@ function DashboardPage() {
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
-  const paginatedEvents = events.slice(0, page * PAGE_SIZE);
-  const hasMore = events.length > page * PAGE_SIZE;
+  const filteredEvents = historyTcg
+    ? events.filter((e: any) => e.game_id === historyTcg)
+    : events;
+  const paginatedEvents = filteredEvents.slice(0, page * PAGE_SIZE);
+  const hasMore = filteredEvents.length > page * PAGE_SIZE;
 
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
@@ -144,31 +148,44 @@ function DashboardPage() {
         </div>
       </section>
 
-      {/* TCG selector */}
-      {tcgStats.length > 1 && (
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-          {tcgStats.map((tcg) => (
-            <button
-              key={tcg.game_id}
-              onClick={() => setSelectedTcg(tcg.game_id)}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
-                selectedTcg === tcg.game_id ? "bg-primary text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
-              }`}
-            >
-              {tcg.game_name}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Rankings con tabs estilo Chrome */}
+      <section className="mt-6">
+        {tcgStats.length > 1 && (
+          <div className="flex overflow-x-auto border-b border-white/10">
+            {tcgStats.map((tcg) => (
+              <button
+                key={tcg.game_id}
+                onClick={() => setSelectedTcg(tcg.game_id)}
+                className={`relative px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 flex-shrink-0 border-b-2 -mb-px ${
+                  selectedTcg === tcg.game_id
+                    ? "text-white border-primary bg-white/[0.03]"
+                    : "text-gray-400 hover:text-gray-200 border-transparent"
+                }`}
+              >
+                {tcg.game_name}
+              </button>
+            ))}
+          </div>
+        )}
 
-      {/* Stats */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={<Target className="text-primary" size={18} />}
-          label="Puntos Totales"
-          value={Number(totalPoints).toFixed(2)}
-          sub={semesterLabel || "—"}
-          tooltip={`¿Cómo se calculan tus puntos?
+        {activeTcg && (
+          <div className={`glass p-6 ${tcgStats.length > 1 ? "rounded-b-2xl rounded-tr-2xl" : "rounded-2xl"}`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                  <Crown size={10} /> Rank Global
+                </div>
+                <p className="font-mono-stat text-4xl font-bold text-white">
+                  {rank > 0 ? `#${rank}` : "—"}
+                </p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
+              </div>
+
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                  <Target size={10} className="text-primary" /> Puntos Arena
+                  <TooltipInfo
+                    text={`¿Cómo se calculan tus puntos?
 
 Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
 (tus match points ÷ match points del 1er lugar) × 100
@@ -182,19 +199,36 @@ Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
 Leaderboard de temporada: Suma acumulada de todos tus torneos durante la temporada completa, aplicando siempre la regla del top 2 por semana.
 
 Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneos ganados, luego por torneos jugados, y finalmente por OMW% promedio.`}
-        />
-        <StatCard
-          icon={<Swords className="text-primary" size={18} />}
-          label="Torneos Jugados"
-          value={String(tournamentsPlayed)}
-          sub="Esta temporada"
-        />
-        <StatCard
-          icon={<Award className="text-primary" size={18} />}
-          label="Torneos Ganados"
-          value={String(tournamentsWon)}
-          sub="1er lugar"
-        />
+                  />
+                </div>
+                <p className="font-mono-stat text-4xl font-bold text-white">
+                  {Number(totalPoints).toFixed(0)}
+                </p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
+              </div>
+
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                  <Swords size={10} className="text-primary" /> Jugados
+                </div>
+                <p className="font-mono-stat text-4xl font-bold text-white">
+                  {tournamentsPlayed}
+                </p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Esta temporada</p>
+              </div>
+
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                  <Award size={10} className="text-primary" /> Ganados
+                </div>
+                <p className="font-mono-stat text-4xl font-bold text-white">
+                  {tournamentsWon}
+                </p>
+                <p className="text-[10px] text-gray-500 mt-0.5">1er lugar</p>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Recent */}
@@ -204,8 +238,41 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
             <TrendingUp className="text-primary" size={18} />
             <h2 className="text-lg font-semibold text-white">Torneos Recientes</h2>
           </div>
-          <span className="text-xs uppercase tracking-wider text-gray-500">{events.length} torneos jugados</span>
+          <span className="text-xs uppercase tracking-wider text-gray-500">
+            {filteredEvents.length} {historyTcg ? "torneos" : "torneos jugados"}
+          </span>
         </header>
+        {tcgStats.length > 1 && (
+          <div className="flex overflow-x-auto border-b border-white/10 px-2">
+            <button
+              onClick={() => { setHistoryTcg(null); setPage(1); }}
+              className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
+                historyTcg === null
+                  ? "border-primary text-white"
+                  : "border-transparent text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              Todos ({events.length})
+            </button>
+            {tcgStats.map((tcg) => {
+              const count = events.filter((e: any) => e.game_id === tcg.game_id).length;
+              if (count === 0) return null;
+              return (
+                <button
+                  key={tcg.game_id}
+                  onClick={() => { setHistoryTcg(tcg.game_id); setPage(1); }}
+                  className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
+                    historyTcg === tcg.game_id
+                      ? "border-primary text-white"
+                      : "border-transparent text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  {tcg.game_name} ({count})
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
@@ -410,76 +477,48 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
 }
 
 
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  tooltip,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-  tooltip?: string;
-}) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+function TooltipInfo({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = React.useRef<HTMLButtonElement>(null);
 
-  const handleMouseEnter = () => {
+  const onEnter = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const tooltipWidth = Math.min(window.innerWidth * 0.5, 600);
       const leftPos = Math.min(rect.left + window.scrollX, window.innerWidth - tooltipWidth - 16);
-      setTooltipPos({
-        top: rect.bottom + window.scrollY + 8,
-        left: Math.max(leftPos, 16),
-      });
+      setPos({ top: rect.bottom + window.scrollY + 8, left: Math.max(leftPos, 16) });
     }
-    setShowTooltip(true);
+    setShow(true);
   };
 
   return (
-    <div className="glass rounded-2xl p-6 relative">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
-          {icon} {label}
-        </div>
-        {tooltip && (
-          <>
-            <button
-              ref={btnRef}
-              className="text-gray-600 hover:text-primary transition"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={() => setShowTooltip(false)}
-              aria-label="Más información"
-            >
-              <HelpCircle size={14} />
-            </button>
-            {showTooltip &&
-              ReactDOM.createPortal(
-                <div
-                  className="fixed z-[99999]"
-                  style={{
-                    top: tooltipPos.top,
-                    left: tooltipPos.left,
-                    width: `min(50vw, 600px)`,
-                  }}
-                  onMouseEnter={() => setShowTooltip(true)}
-                  onMouseLeave={() => setShowTooltip(false)}
-                >
-                  <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
-                    {tooltip}
-                  </div>
-                </div>,
-                document.body,
-              )}
-          </>
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className="text-gray-600 hover:text-primary transition"
+        onMouseEnter={onEnter}
+        onMouseLeave={() => setShow(false)}
+        aria-label="Más información"
+      >
+        <HelpCircle size={12} />
+      </button>
+      {show &&
+        ReactDOM.createPortal(
+          <div
+            className="fixed z-[99999]"
+            style={{ top: pos.top, left: pos.left, width: `min(50vw, 600px)` }}
+            onMouseEnter={() => setShow(true)}
+            onMouseLeave={() => setShow(false)}
+          >
+            <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
+              {text}
+            </div>
+          </div>,
+          document.body,
         )}
-      </div>
-      <div className="mt-3 font-mono-stat text-4xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-xs text-gray-500">{sub}</div>
-    </div>
+    </>
   );
 }
+
