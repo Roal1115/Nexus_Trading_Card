@@ -706,6 +706,7 @@ export function TournamentUploadForm({
                         <tr>
                           <th className="w-10 px-3 py-2 text-left">#</th>
                           <th className="px-3 py-2 text-left">Geek Tag</th>
+                          <th className="px-3 py-2 text-left">Membership ID</th>
                           <th className="px-3 py-2 text-right">Match Pts</th>
                           <th className="px-3 py-2 text-right">OMW%</th>
                           <th className="px-3 py-2 text-right">Pts Arena</th>
