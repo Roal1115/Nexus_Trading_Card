@@ -596,6 +596,7 @@ function AdminPlayersPage() {
                       <td className="px-4 py-3 text-right">
                         <RowActions
                           p={p}
+                          onViewDetail={() => openDetail(p.id)}
                           onChangeRole={(next) => setRoleModal({ p, next })}
                           onAssignStore={() =>
                             setStoreModal({ p, next: p.home_store_id ?? "" })
