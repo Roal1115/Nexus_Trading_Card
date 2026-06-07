@@ -329,6 +329,7 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
         .from("tournaments")
         .select("*", { count: "exact", head: true })
         .eq("status", "DRAFT")
+        .is("rejection_reason", null)
         .in("game_id", gameIds),
       admin
         .from("tournaments")
