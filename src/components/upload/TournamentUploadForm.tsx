@@ -259,6 +259,17 @@ async function uploadFileToStorage(
   }
 }
 
+function getWeekDateRange(): { min: string; max: string } {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Dom, 1=Lun ... 6=Sab
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - daysSinceMonday);
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { min: fmt(monday), max: fmt(today) };
+}
+
 export function TournamentUploadForm({
   cancelTo = "/organizer/tournaments",
   successTo = "/organizer/tournaments",
@@ -527,11 +538,23 @@ export function TournamentUploadForm({
             </div>
             <div className="space-y-2">
               <Label className="text-xs text-gray-400">Fecha del torneo *</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              {(() => {
+                const { min, max } = getWeekDateRange();
+                return (
+                  <>
+                    <Input
+                      type="date"
+                      min={min}
+                      max={max}
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Solo se permiten torneos de la semana actual ({min} al {max}).
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           </div>
 

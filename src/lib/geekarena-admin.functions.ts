@@ -223,13 +223,16 @@ export const listTournamentsByStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const { data: rows, error } = await admin
+    let q = admin
       .from("tournaments")
       .select(
-        "id, store_id, game_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, status, csv_url, approved_at, published_at, created_at",
+        "id, store_id, game_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, status, csv_url, approved_at, published_at, created_at, rejection_reason",
       )
       .in("status", data.statuses)
       .order("tournament_date", { ascending: false });
+    // Excluir torneos rechazados de la cola de pendientes (DRAFT con rejection_reason).
+    if (data.statuses.includes("DRAFT")) q = q.is("rejection_reason", null);
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
     const gameIds = Array.from(new Set((rows ?? []).map((r) => r.game_id)));
@@ -1431,7 +1434,8 @@ export const getAdminBadgeCounts = createServerFn({ method: "POST" })
     const pendingP = admin
       .from("tournaments")
       .select("*", { count: "exact", head: true })
-      .eq("status", "DRAFT");
+      .eq("status", "DRAFT")
+      .is("rejection_reason", null);
 
     const readyP = admin
       .from("tournaments")

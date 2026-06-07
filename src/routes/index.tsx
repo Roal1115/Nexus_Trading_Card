@@ -32,6 +32,7 @@ type Row = {
   tournaments_won: number;
   tournaments_played: number;
   omw_percentage: number;
+  rank_position: number;
 };
 
 const ALL = "__all__";
@@ -300,9 +301,9 @@ function LeaderboardTable({
                 </td>
               </tr>
             ) : (
-              rows.map((r, i) => {
-                const rank = i + 1;
-                const podium = rank <= 3;
+              rows.map((r) => {
+                const rank = r.rank_position;
+                const podium = rank > 0 && rank <= 3;
                 return (
                   <tr
                     key={r.player_id}
