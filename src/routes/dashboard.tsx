@@ -477,76 +477,48 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
 }
 
 
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  tooltip,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-  tooltip?: string;
-}) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+function TooltipInfo({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = React.useRef<HTMLButtonElement>(null);
 
-  const handleMouseEnter = () => {
+  const onEnter = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const tooltipWidth = Math.min(window.innerWidth * 0.5, 600);
       const leftPos = Math.min(rect.left + window.scrollX, window.innerWidth - tooltipWidth - 16);
-      setTooltipPos({
-        top: rect.bottom + window.scrollY + 8,
-        left: Math.max(leftPos, 16),
-      });
+      setPos({ top: rect.bottom + window.scrollY + 8, left: Math.max(leftPos, 16) });
     }
-    setShowTooltip(true);
+    setShow(true);
   };
 
   return (
-    <div className="glass rounded-2xl p-6 relative">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
-          {icon} {label}
-        </div>
-        {tooltip && (
-          <>
-            <button
-              ref={btnRef}
-              className="text-gray-600 hover:text-primary transition"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={() => setShowTooltip(false)}
-              aria-label="Más información"
-            >
-              <HelpCircle size={14} />
-            </button>
-            {showTooltip &&
-              ReactDOM.createPortal(
-                <div
-                  className="fixed z-[99999]"
-                  style={{
-                    top: tooltipPos.top,
-                    left: tooltipPos.left,
-                    width: `min(50vw, 600px)`,
-                  }}
-                  onMouseEnter={() => setShowTooltip(true)}
-                  onMouseLeave={() => setShowTooltip(false)}
-                >
-                  <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
-                    {tooltip}
-                  </div>
-                </div>,
-                document.body,
-              )}
-          </>
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className="text-gray-600 hover:text-primary transition"
+        onMouseEnter={onEnter}
+        onMouseLeave={() => setShow(false)}
+        aria-label="Más información"
+      >
+        <HelpCircle size={12} />
+      </button>
+      {show &&
+        ReactDOM.createPortal(
+          <div
+            className="fixed z-[99999]"
+            style={{ top: pos.top, left: pos.left, width: `min(50vw, 600px)` }}
+            onMouseEnter={() => setShow(true)}
+            onMouseLeave={() => setShow(false)}
+          >
+            <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
+              {text}
+            </div>
+          </div>,
+          document.body,
         )}
-      </div>
-      <div className="mt-3 font-mono-stat text-4xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-xs text-gray-500">{sub}</div>
-    </div>
+    </>
   );
 }
+
