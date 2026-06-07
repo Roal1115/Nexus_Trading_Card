@@ -54,6 +54,7 @@ function AdminAdsPage() {
   const callUpdate = useServerFn(updateSponsor);
   const callReset = useServerFn(resetSponsorViews);
   const callUpdateImages = useServerFn(updateSponsorImages);
+  const callDelete = useServerFn(deleteSponsor);
 
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -61,6 +62,9 @@ function AdminAdsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editSponsor, setEditSponsor] = useState<Sponsor | null>(null);
   const [imagesSponsor, setImagesSponsor] = useState<Sponsor | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
