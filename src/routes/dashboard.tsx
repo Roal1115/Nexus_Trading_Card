@@ -35,12 +35,33 @@ function DashboardPage() {
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
+  const [isPublic, setIsPublic] = useState(true);
+
   useEffect(() => {
     registerView().then(setSponsor).catch(() => {
       fetchActiveSponsor().then(setSponsor).catch(() => {});
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (data && typeof (data as any).is_profile_public === "boolean") {
+      setIsPublic((data as any).is_profile_public);
+    }
+  }, [data]);
+
+  const handleTogglePrivacy = async () => {
+    const next = !isPublic;
+    setIsPublic(next);
+    try {
+      await togglePrivacyFn({ data: { is_public: next } });
+      toast.success(next ? "Perfil ahora es público" : "Perfil ahora es privado");
+    } catch {
+      setIsPublic(!next);
+      toast.error("Error al cambiar la privacidad");
+    }
+  };
 
 
   const openTournament = async (tournament_id: string) => {
