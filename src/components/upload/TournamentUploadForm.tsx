@@ -98,6 +98,7 @@ function normalizarPuntos(rows: ParsedRow[]): ParsedRow[] {
 type ParsedRow = {
   rank: number;
   geek_tag: string;
+  membership_id: string | null;
   match_points: number | null;
   omw_percentage: number | null;
   wins: number | null;
