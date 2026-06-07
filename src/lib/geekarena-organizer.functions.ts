@@ -302,6 +302,26 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       throw new Error("No puedes subir un torneo para esta tienda");
     }
 
+    // Restringir fecha a la semana actual (lunes → hoy). Admin puede saltar la validación.
+    if (player.role !== "admin") {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      const dayOfWeek = today.getDay();
+      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - daysSinceMonday);
+      monday.setHours(0, 0, 0, 0);
+      const tDate = new Date(data.tournament_date + "T12:00:00");
+      if (tDate > today) {
+        throw new Error("No se pueden subir torneos con fecha futura.");
+      }
+      if (tDate < monday) {
+        throw new Error(
+          `Solo se pueden subir torneos de la semana actual (desde el ${monday.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}).`,
+        );
+      }
+    }
+
     const { data: existing, error: dupErr } = await admin
       .from("tournaments")
       .select("id")
