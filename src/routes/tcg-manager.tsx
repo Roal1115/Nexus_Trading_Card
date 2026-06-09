@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  Calendar,
   CheckCircle2,
   History,
   Loader2,
@@ -55,6 +56,7 @@ function TcgManagerLayout() {
           {
             title: "Circuito",
             items: [
+              { to: "/tcg-manager/calendar", label: "Calendario", icon: <Calendar size={16} /> },
               { to: "/tcg-manager/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
           },
