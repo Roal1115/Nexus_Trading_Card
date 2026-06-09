@@ -414,3 +414,194 @@ export const getManagerHistory = createServerFn({ method: "POST" })
       }),
     };
   });
+
+// ---------- Calendario ----------
+async function assertManagerOwnsGameLocal(
+  admin: any,
+  player: { id: string; role: string },
+  game_id: string,
+) {
+  if (player.role === "admin") return;
+  const { data: mg } = await admin
+    .from("manager_games")
+    .select("id")
+    .eq("player_id", player.id)
+    .eq("game_id", game_id)
+    .maybeSingle();
+  if (!mg) throw new Error("No tienes permiso para este TCG");
+}
+
+export const getManagerCalendar = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: { game_id: string; week_start?: string }) =>
+    z.object({
+      game_id: z.string().uuid(),
+      week_start: z.string().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    if (player.role !== "admin") {
+      await assertManagerOwnsGameLocal(admin, player, data.game_id);
+    }
+
+    const today = new Date();
+    let monday: Date;
+    if (data.week_start) {
+      monday = new Date(data.week_start + "T00:00:00");
+    } else {
+      const day = today.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      monday = new Date(today);
+      monday.setDate(today.getDate() + diff);
+      monday.setHours(0, 0, 0, 0);
+    }
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    const mondayStr = monday.toISOString().split("T")[0];
+    const sundayStr = sunday.toISOString().split("T")[0];
+
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select(
+        "id, store_id, game_id, day_of_week, start_time, is_active, stores(id, name, city, state, zone, phone, instagram)",
+      )
+      .eq("game_id", data.game_id)
+      .eq("is_active", true);
+
+    const storeIds = Array.from(
+      new Set((schedules ?? []).map((s: any) => s.store_id)),
+    );
+    const { data: organizers } = storeIds.length
+      ? await admin
+          .from("players")
+          .select("id, geek_tag, email, home_store_id")
+          .eq("role", "organizer")
+          .in("home_store_id", storeIds)
+      : { data: [] as any[] };
+    const organizerMap = new Map(
+      (organizers ?? []).map((o: any) => [o.home_store_id, o]),
+    );
+
+    const { data: allTournaments } = await admin
+      .from("tournaments")
+      .select(
+        "id, store_id, tournament_date, status, created_at, rejection_reason",
+      )
+      .eq("game_id", data.game_id)
+      .gte("tournament_date", mondayStr)
+      .lte("tournament_date", sundayStr);
+
+    const allTournamentMap = new Map<string, any>();
+    (allTournaments ?? []).forEach((t: any) => {
+      const d = new Date(t.tournament_date + "T12:00:00");
+      const dow = d.getDay();
+      allTournamentMap.set(`${t.store_id}-${dow}`, t);
+    });
+
+    const nowMs = Date.now();
+    const todayDateStr = today.toDateString();
+
+    const entries = (schedules ?? []).map((s: any) => {
+      const store = s.stores;
+      const organizer: any = organizerMap.get(s.store_id);
+      const tournament = allTournamentMap.get(`${s.store_id}-${s.day_of_week}`);
+
+      const entryDate = new Date(monday);
+      entryDate.setDate(
+        monday.getDate() + ((s.day_of_week === 0 ? 7 : s.day_of_week) - 1),
+      );
+      const entryDateStr = entryDate.toISOString().split("T")[0];
+
+      const [h, m] = String(s.start_time).split(":").map(Number);
+      const tournamentStart = new Date(entryDate);
+      tournamentStart.setHours(h, m, 0, 0);
+      const tournamentEnd = new Date(tournamentStart);
+      tournamentEnd.setHours(h + 3, m, 0, 0);
+
+      const isPast =
+        entryDate < today && entryDate.toDateString() !== todayDateStr;
+      const isToday = entryDate.toDateString() === todayDateStr;
+      const isFuture = entryDate > today && !isToday;
+      const isOngoing =
+        isToday &&
+        nowMs >= tournamentStart.getTime() &&
+        nowMs <= tournamentEnd.getTime();
+      const hasEnded =
+        isPast || (isToday && nowMs > tournamentEnd.getTime());
+
+      let reportStatus: "submitted" | "overdue" | "pending" | "upcoming";
+      if (tournament && tournament.status !== "DRAFT") {
+        reportStatus = "submitted";
+      } else if (
+        tournament &&
+        tournament.status === "DRAFT" &&
+        !tournament.rejection_reason
+      ) {
+        reportStatus = "submitted";
+      } else if (hasEnded && !tournament) {
+        reportStatus = "overdue";
+      } else if (isFuture) {
+        reportStatus = "upcoming";
+      } else {
+        reportStatus = "pending";
+      }
+
+      return {
+        id: `${s.store_id}-${s.day_of_week}`,
+        store_id: s.store_id,
+        store_name: store?.name ?? "—",
+        city: store?.city ?? "—",
+        zone: store?.zone ?? "Zona Extendida",
+        phone: store?.phone ?? null,
+        instagram: store?.instagram ?? null,
+        day_of_week: s.day_of_week,
+        date: entryDateStr,
+        start_time: s.start_time,
+        is_past: isPast,
+        is_today: isToday,
+        is_future: isFuture,
+        is_ongoing: isOngoing,
+        has_ended: hasEnded,
+        report_status: reportStatus,
+        tournament_id: tournament?.id ?? null,
+        tournament_status: tournament?.status ?? null,
+        organizer_tag: organizer?.geek_tag ?? null,
+        organizer_phone: organizer?.email ?? null,
+      };
+    });
+
+    const totalExpected = entries.length;
+    const totalSubmitted = entries.filter(
+      (e) => e.report_status === "submitted",
+    ).length;
+    const totalOverdue = entries.filter(
+      (e) => e.report_status === "overdue",
+    ).length;
+    const todayExpected = entries.filter((e) => e.is_today).length;
+    const todaySubmitted = entries.filter(
+      (e) => e.is_today && e.report_status === "submitted",
+    ).length;
+    const daysElapsed = entries.filter((e) => !e.is_future).length;
+    const uploadedSoFar = entries.filter(
+      (e) => !e.is_future && e.report_status === "submitted",
+    ).length;
+
+    return {
+      week_start: mondayStr,
+      week_end: sundayStr,
+      entries,
+      stats: {
+        total_overdue: totalOverdue,
+        total_submitted: totalSubmitted,
+        uploaded_so_far: uploadedSoFar,
+        days_elapsed: daysElapsed,
+        total_expected: totalExpected,
+        today_expected: todayExpected,
+        today_submitted: todaySubmitted,
+      },
+    };
+  });
