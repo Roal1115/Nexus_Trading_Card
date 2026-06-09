@@ -453,9 +453,8 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     // Get all store schedules for this game
     const { data: schedules, error: se } = await admin
       .from("store_schedules")
-      .select("id, store_id, game_id, day_of_week, start_time, is_active, stores(id, name, city, state, zone, phone, instagram)")
-      .eq("game_id", data.game_id)
-      .eq("is_active", true);
+      .select("id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)")
+      .eq("game_id", data.game_id);
     if (se) throw new Error(se.message);
 
     // Get organizers for these stores
