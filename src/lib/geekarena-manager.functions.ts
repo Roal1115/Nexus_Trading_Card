@@ -415,37 +415,23 @@ export const getManagerHistory = createServerFn({ method: "POST" })
     };
   });
 
-// ---------- Calendario ----------
-async function assertManagerOwnsGameLocal(
-  admin: any,
-  player: { id: string; role: string },
-  game_id: string,
-) {
-  if (player.role === "admin") return;
-  const { data: mg } = await admin
-    .from("manager_games")
-    .select("id")
-    .eq("player_id", player.id)
-    .eq("game_id", game_id)
-    .maybeSingle();
-  if (!mg) throw new Error("No tienes permiso para este TCG");
-}
-
 export const getManagerCalendar = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
   .inputValidator((d: { game_id: string; week_start?: string }) =>
     z.object({
-      game_id: z.string().uuid(),
+      game_id:    z.string().uuid(),
       week_start: z.string().optional(),
-    }).parse(d),
+    }).parse(d)
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
+    // Verify manager owns this game
     if (player.role !== "admin") {
-      await assertManagerOwnsGameLocal(admin, player, data.game_id);
+      await assertManagerOwnsGame(admin, player, data.game_id);
     }
 
+    // Calculate week range Mon-Sun
     const today = new Date();
     let monday: Date;
     if (data.week_start) {
@@ -464,83 +450,75 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     const mondayStr = monday.toISOString().split("T")[0];
     const sundayStr = sunday.toISOString().split("T")[0];
 
-    const { data: schedules } = await admin
+    // Get all store schedules for this game
+    const { data: schedules, error: se } = await admin
       .from("store_schedules")
-      .select(
-        "id, store_id, game_id, day_of_week, start_time, is_active, stores(id, name, city, state, zone, phone, instagram)",
-      )
+      .select("id, store_id, game_id, day_of_week, start_time, is_active, stores(id, name, city, state, zone, phone, instagram)")
       .eq("game_id", data.game_id)
       .eq("is_active", true);
+    if (se) throw new Error(se.message);
 
-    const storeIds = Array.from(
-      new Set((schedules ?? []).map((s: any) => s.store_id)),
-    );
+    // Get organizers for these stores
+    const storeIds = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
     const { data: organizers } = storeIds.length
       ? await admin
           .from("players")
-          .select("id, geek_tag, email, home_store_id")
+          .select("id, geek_tag, home_store_id")
           .eq("role", "organizer")
           .in("home_store_id", storeIds)
-      : { data: [] as any[] };
-    const organizerMap = new Map(
-      (organizers ?? []).map((o: any) => [o.home_store_id, o]),
-    );
+      : { data: [] };
+    const organizerMap = new Map((organizers ?? []).map((o: any) => [o.home_store_id, o]));
 
-    const { data: allTournaments } = await admin
+    // Get all tournaments this week for this game
+    const { data: weekTournaments } = await admin
       .from("tournaments")
-      .select(
-        "id, store_id, tournament_date, status, created_at, rejection_reason",
-      )
+      .select("id, store_id, tournament_date, status, created_at, rejection_reason")
       .eq("game_id", data.game_id)
       .gte("tournament_date", mondayStr)
       .lte("tournament_date", sundayStr);
 
-    const allTournamentMap = new Map<string, any>();
-    (allTournaments ?? []).forEach((t: any) => {
+    // Map: storeId-dayOfWeek -> tournament
+    const tournamentMap = new Map<string, any>();
+    (weekTournaments ?? []).forEach((t: any) => {
       const d = new Date(t.tournament_date + "T12:00:00");
       const dow = d.getDay();
-      allTournamentMap.set(`${t.store_id}-${dow}`, t);
+      tournamentMap.set(`${t.store_id}-${dow}`, t);
     });
 
     const nowMs = Date.now();
-    const todayDateStr = today.toDateString();
 
+    // Build entries
     const entries = (schedules ?? []).map((s: any) => {
-      const store = s.stores;
-      const organizer: any = organizerMap.get(s.store_id);
-      const tournament = allTournamentMap.get(`${s.store_id}-${s.day_of_week}`);
+      const store     = s.stores;
+      const organizer = organizerMap.get(s.store_id);
+      const tournament = tournamentMap.get(`${s.store_id}-${s.day_of_week}`);
 
+      // Actual date for this day_of_week in current week
+      // monday = index 0 = day_of_week 1 (Lunes)
+      // We need to map day_of_week (0=Sun...6=Sat) to offset from monday
+      const offset = s.day_of_week === 0 ? 6 : s.day_of_week - 1;
       const entryDate = new Date(monday);
-      entryDate.setDate(
-        monday.getDate() + ((s.day_of_week === 0 ? 7 : s.day_of_week) - 1),
-      );
+      entryDate.setDate(monday.getDate() + offset);
       const entryDateStr = entryDate.toISOString().split("T")[0];
 
+      // Tournament timing
       const [h, m] = String(s.start_time).split(":").map(Number);
-      const tournamentStart = new Date(entryDate);
-      tournamentStart.setHours(h, m, 0, 0);
-      const tournamentEnd = new Date(tournamentStart);
-      tournamentEnd.setHours(h + 3, m, 0, 0);
+      const tStart = new Date(entryDate);
+      tStart.setHours(h, m, 0, 0);
+      const tEnd = new Date(tStart);
+      tEnd.setHours(h + 3, m, 0, 0);
 
-      const isPast =
-        entryDate < today && entryDate.toDateString() !== todayDateStr;
-      const isToday = entryDate.toDateString() === todayDateStr;
-      const isFuture = entryDate > today && !isToday;
-      const isOngoing =
-        isToday &&
-        nowMs >= tournamentStart.getTime() &&
-        nowMs <= tournamentEnd.getTime();
-      const hasEnded =
-        isPast || (isToday && nowMs > tournamentEnd.getTime());
+      const isToday   = entryDate.toDateString() === today.toDateString();
+      const isPast    = entryDate < today && !isToday;
+      const isFuture  = entryDate > today && !isToday;
+      const isOngoing = isToday && nowMs >= tStart.getTime() && nowMs <= tEnd.getTime();
+      const hasEnded  = isPast || (isToday && nowMs > tEnd.getTime());
 
+      // Report status
       let reportStatus: "submitted" | "overdue" | "pending" | "upcoming";
-      if (tournament && tournament.status !== "DRAFT") {
-        reportStatus = "submitted";
-      } else if (
-        tournament &&
-        tournament.status === "DRAFT" &&
-        !tournament.rejection_reason
-      ) {
+      const isSubmitted = tournament &&
+        (tournament.status !== "DRAFT" || (tournament.status === "DRAFT" && !tournament.rejection_reason));
+      if (isSubmitted) {
         reportStatus = "submitted";
       } else if (hasEnded && !tournament) {
         reportStatus = "overdue";
@@ -551,57 +529,45 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       }
 
       return {
-        id: `${s.store_id}-${s.day_of_week}`,
-        store_id: s.store_id,
-        store_name: store?.name ?? "—",
-        city: store?.city ?? "—",
-        zone: store?.zone ?? "Zona Extendida",
-        phone: store?.phone ?? null,
-        instagram: store?.instagram ?? null,
-        day_of_week: s.day_of_week,
-        date: entryDateStr,
-        start_time: s.start_time,
-        is_past: isPast,
-        is_today: isToday,
-        is_future: isFuture,
-        is_ongoing: isOngoing,
-        has_ended: hasEnded,
-        report_status: reportStatus,
-        tournament_id: tournament?.id ?? null,
+        id:                `${s.store_id}-${s.day_of_week}`,
+        store_id:          s.store_id,
+        store_name:        store?.name ?? "—",
+        city:              store?.city ?? "—",
+        zone:              store?.zone ?? "Zona Extendida",
+        phone:             store?.phone ?? null,
+        instagram:         store?.instagram ?? null,
+        day_of_week:       s.day_of_week,
+        date:              entryDateStr,
+        start_time:        String(s.start_time).slice(0, 5),
+        is_past:           isPast,
+        is_today:          isToday,
+        is_future:         isFuture,
+        is_ongoing:        isOngoing,
+        has_ended:         hasEnded,
+        report_status:     reportStatus,
+        tournament_id:     tournament?.id ?? null,
         tournament_status: tournament?.status ?? null,
-        organizer_tag: organizer?.geek_tag ?? null,
-        organizer_phone: organizer?.email ?? null,
+        organizer_tag:     organizer?.geek_tag ?? null,
+        organizer_phone:   null,
       };
     });
 
-    const totalExpected = entries.length;
-    const totalSubmitted = entries.filter(
-      (e) => e.report_status === "submitted",
-    ).length;
-    const totalOverdue = entries.filter(
-      (e) => e.report_status === "overdue",
-    ).length;
-    const todayExpected = entries.filter((e) => e.is_today).length;
-    const todaySubmitted = entries.filter(
-      (e) => e.is_today && e.report_status === "submitted",
-    ).length;
-    const daysElapsed = entries.filter((e) => !e.is_future).length;
-    const uploadedSoFar = entries.filter(
-      (e) => !e.is_future && e.report_status === "submitted",
-    ).length;
+    // Stats
+    const elapsedEntries  = entries.filter((e: any) => !e.is_future);
+    const uploadedSoFar   = elapsedEntries.filter((e: any) => e.report_status === "submitted").length;
+    const totalOverdue    = entries.filter((e: any) => e.report_status === "overdue").length;
 
     return {
-      week_start: mondayStr,
-      week_end: sundayStr,
+      week_start:   mondayStr,
+      week_end:     sundayStr,
       entries,
       stats: {
-        total_overdue: totalOverdue,
-        total_submitted: totalSubmitted,
+        total_overdue:   totalOverdue,
         uploaded_so_far: uploadedSoFar,
-        days_elapsed: daysElapsed,
-        total_expected: totalExpected,
-        today_expected: todayExpected,
-        today_submitted: todaySubmitted,
+        days_elapsed:    elapsedEntries.length,
+        total_expected:  entries.length,
+        today_expected:  entries.filter((e: any) => e.is_today).length,
+        today_submitted: entries.filter((e: any) => e.is_today && e.report_status === "submitted").length,
       },
     };
   });
