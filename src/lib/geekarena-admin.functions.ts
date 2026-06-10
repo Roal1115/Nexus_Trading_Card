@@ -2006,6 +2006,38 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
     return { player_id: playerId, was_existing: false };
   });
 
+export const updateStaffOperationalFields = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator(
+    (d: {
+      player_id: string;
+      work_schedule?: string | null;
+      contact_primary?: string | null;
+      contact_backup?: string | null;
+    }) =>
+      z
+        .object({
+          player_id: z.string().uuid(),
+          work_schedule: z.string().max(200).nullable().optional(),
+          contact_primary: z.string().max(50).nullable().optional(),
+          contact_backup: z.string().max(50).nullable().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { error } = await admin
+      .from("players")
+      .update({
+        work_schedule: data.work_schedule ?? null,
+        contact_primary: data.contact_primary ?? null,
+        contact_backup: data.contact_backup ?? null,
+      })
+      .eq("id", data.player_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
 export const deactivateStaffMember = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
   .inputValidator((d: { player_id: string; action: "deactivate" | "delete" }) =>
