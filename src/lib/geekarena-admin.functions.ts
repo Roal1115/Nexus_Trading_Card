@@ -1799,3 +1799,22 @@ export const getAdminFilterOptions = createServerFn({ method: "POST" })
       seasons: seasonsRes.data ?? [],
     };
   });
+
+// ---------- Manager TCG assignment helper ----------
+export const getManagerAssignedGames = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { player_id: string }) =>
+    z.object({ player_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { admin } = context;
+    const [allGames, assigned] = await Promise.all([
+      admin.from("games").select("id, name, slug").eq("is_active", true).order("name"),
+      admin.from("manager_games").select("game_id").eq("player_id", data.player_id),
+    ]);
+    const assignedIds = new Set((assigned.data ?? []).map((r: any) => r.game_id));
+    return {
+      all_games: (allGames.data ?? []) as Array<{ id: string; name: string; slug: string }>,
+      assigned_game_ids: Array.from(assignedIds) as string[],
+    };
+  });
