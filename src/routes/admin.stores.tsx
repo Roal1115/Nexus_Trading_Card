@@ -224,11 +224,40 @@ function AdminStoresPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
           Red
         </p>
-        <h1 className="text-3xl font-bold text-white">Tiendas y Organizadores</h1>
+        <h1 className="text-3xl font-bold text-white">Tiendas y Staff</h1>
         <p className="text-sm text-gray-400">
-          Administra las tiendas del circuito y sus organizadores asignados.
+          Administra las tiendas del circuito y el staff asignado.
         </p>
       </header>
+
+      {/* Tabs */}
+      <div className="flex border-b border-white/10">
+        <button
+          onClick={() => setActiveTab("stores")}
+          className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition ${
+            activeTab === "stores"
+              ? "border-primary text-white"
+              : "border-transparent text-gray-400 hover:text-white"
+          }`}
+        >
+          Tiendas
+        </button>
+        <button
+          onClick={() => setActiveTab("staff")}
+          className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition ${
+            activeTab === "staff"
+              ? "border-primary text-white"
+              : "border-transparent text-gray-400 hover:text-white"
+          }`}
+        >
+          Staff
+        </button>
+      </div>
+
+      {activeTab === "staff" && <StaffTab />}
+
+      {activeTab === "stores" && (<>
+
 
       {/* Stats */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
