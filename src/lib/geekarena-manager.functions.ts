@@ -617,10 +617,9 @@ export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
       admin
         .from("store_schedules")
         .select(
-          "id, store_id, game_id, day_of_week, start_time, is_active, games(id, name)",
+          "id, store_id, game_id, day_of_week, start_time, games(id, name)",
         )
         .eq("store_id", data.store_id)
-        .eq("is_active", true)
         .in("game_id", gameIds.length ? gameIds : ["00000000-0000-0000-0000-000000000000"])
         .order("game_id")
         .order("day_of_week"),
@@ -682,7 +681,6 @@ export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
             game_id: data.game_id,
             day_of_week: data.day_of_week,
             start_time: data.start_time,
-            is_active: true,
           },
           { onConflict: "store_id,game_id,day_of_week" },
         );
