@@ -398,7 +398,7 @@ function AdminStoresPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-bold text-white">{s.name}</div>
-                        <div className="text-xs text-gray-500">{s.slug}</div>
+                        {s.address && <div className="text-xs text-gray-500">{s.address}</div>}
                         <div className="mt-1 text-xs text-gray-400">
                           {[s.city, s.state].filter(Boolean).join(", ") || "Sin ubicación"}
                         </div>
