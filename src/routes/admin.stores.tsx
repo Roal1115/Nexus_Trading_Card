@@ -953,6 +953,7 @@ function StaffTab() {
   const saveManagerGamesFn = useServerFn(assignManagerGames);
   const assignOrganizerFn = useServerFn(assignOrganizerToStore);
   const deactivateStaffFn = useServerFn(deactivateStaffMember);
+  const updateOpFieldsFn = useServerFn(updateStaffOperationalFields);
 
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
