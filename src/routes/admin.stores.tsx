@@ -545,7 +545,9 @@ function AdminStoresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>)}
     </div>
+
   );
 }
 
