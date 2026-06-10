@@ -1103,6 +1103,30 @@ function StaffTab() {
         </Button>
       </div>
 
+      {/* Role tabs */}
+      <div className="flex gap-2 border-b border-white/10">
+        {([
+          { k: "all", label: "Todos" },
+          { k: "tcg_manager", label: "Managers" },
+          { k: "organizer", label: "Organizadores" },
+        ] as const).map((t) => {
+          const count = t.k === "all" ? staff.length : staff.filter((s) => s.role === t.k).length;
+          return (
+            <button
+              key={t.k}
+              onClick={() => setRoleTab(t.k)}
+              className={`px-3 py-2 text-sm font-medium border-b-2 transition ${
+                roleTab === t.k
+                  ? "border-primary text-white"
+                  : "border-transparent text-gray-400 hover:text-white"
+              }`}
+            >
+              {t.label} <span className="ml-1 text-xs text-gray-500">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         {loading ? (
