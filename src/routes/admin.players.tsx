@@ -1043,6 +1043,98 @@ function AdminPlayersPage() {
             ) : null}
           </DialogContent>
         </Dialog>
+
+        {/* TCG assignment modal */}
+        {tcgModal && (
+          <div
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+            onClick={() => setTcgModal(null)}
+          >
+            <div
+              className="bg-[#0e0e10] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                    TCG Manager
+                  </p>
+                  <h2 className="mt-1 text-xl font-bold text-white">
+                    Asignar TCGs
+                  </h2>
+                  <p className="text-sm text-gray-400">@{tcgModal.geek_tag}</p>
+                </div>
+                <button
+                  onClick={() => setTcgModal(null)}
+                  className="text-gray-500 hover:text-white transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {tcgModalLoading ? (
+                <div className="flex h-40 items-center justify-center">
+                  <Loader2 className="animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">
+                    Selecciona los juegos que este manager tiene bajo su
+                    responsabilidad. Puede gestionar múltiples TCGs
+                    simultáneamente.
+                  </p>
+                  {allManagerGames.map((g) => {
+                    const isSelected = selectedManagerGames.has(g.id);
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => toggleManagerGame(g.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition text-left ${
+                          isSelected
+                            ? "border-primary bg-primary/10 text-white"
+                            : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20"
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                            isSelected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-white/20"
+                          }`}
+                        >
+                          {isSelected && <Check size={14} />}
+                        </div>
+                        <span className="text-sm">{g.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setTcgModal(null)}
+                  className="flex-1 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-gray-400 hover:text-white transition"
+                >
+                  Cancelar
+                </button>
+                <Button
+                  className="flex-1"
+                  onClick={saveTcgAssignment}
+                  disabled={tcgSaving || tcgModalLoading}
+                >
+                  {tcgSaving
+                    ? "Guardando..."
+                    : `Guardar (${selectedManagerGames.size} TCG${
+                        selectedManagerGames.size !== 1 ? "s" : ""
+                      })`}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );
