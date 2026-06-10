@@ -1223,6 +1223,7 @@ function RowActions({
   onAssignStore,
   onToggleActive,
   onAssignGames,
+  onDeleteAccount,
 }: {
   p: P;
   onViewDetail: () => void;
@@ -1230,6 +1231,7 @@ function RowActions({
   onAssignStore: () => void;
   onToggleActive: () => void;
   onAssignGames: () => void;
+  onDeleteAccount: () => void;
 }) {
   const canAssignStore = p.role === "organizer";
   const canAssignGames = p.role === "tcg_manager";
