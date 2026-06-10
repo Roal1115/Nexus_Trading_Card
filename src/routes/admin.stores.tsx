@@ -587,11 +587,13 @@ function RowActions({
   onEdit,
   onAssign,
   onToggle,
+  onSchedules,
 }: {
   store: Store;
   onEdit: () => void;
   onAssign: () => void;
   onToggle: () => void;
+  onSchedules: () => void;
 }) {
   return (
     <DropdownMenu>
@@ -610,6 +612,9 @@ function RowActions({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onAssign}>
           <UserPlus size={14} className="mr-2" /> Asignar organizador
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSchedules}>
+          <CalendarDays size={14} className="mr-2" /> Configurar Torneos
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onToggle}>
