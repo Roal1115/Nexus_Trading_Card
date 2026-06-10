@@ -108,6 +108,7 @@ function AdminPlayersPage() {
 
   // modals
   const [roleModal, setRoleModal] = useState<{ p: P; next: Role } | null>(null);
+  const [adminConfirmEmail, setAdminConfirmEmail] = useState("");
   const [storeModal, setStoreModal] = useState<{ p: P; next: string } | null>(null);
   const [activeModal, setActiveModal] = useState<P | null>(null);
   const [acting, setActing] = useState(false);
