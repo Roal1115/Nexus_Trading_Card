@@ -703,19 +703,32 @@ function AdminPlayersPage() {
         <Dialog open={!!roleModal} onOpenChange={(o) => !o && setRoleModal(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar cambio de rol</DialogTitle>
+              <DialogTitle>
+                {roleModal?.next === "admin"
+                  ? "Confirmar cambio a Administrador"
+                  : "Confirmar cambio de rol"}
+              </DialogTitle>
               <DialogDescription>
                 {roleModal && (
                   <>
-                    ¿Confirmas cambiar el rol de{" "}
-                    <strong className="text-white">{roleModal.p.geek_tag}</strong> a{" "}
-                    <strong className="text-white">{roleModal.next}</strong>? Esta acción
-                    modifica sus permisos inmediatamente.
+                    {roleModal.next === "admin" ? (
+                      <>
+                        Estás por darle <strong className="text-red-300">acceso total</strong> a{" "}
+                        <strong className="text-white">{roleModal.p.geek_tag}</strong>.
+                        Para confirmar, escribe su correo exacto.
+                      </>
+                    ) : (
+                      <>
+                        ¿Confirmas cambiar el rol de{" "}
+                        <strong className="text-white">{roleModal.p.geek_tag}</strong> a{" "}
+                        <strong className="text-white">{roleModal.next}</strong>?
+                      </>
+                    )}
                   </>
                 )}
               </DialogDescription>
             </DialogHeader>
-            {roleModal && (
+            {roleModal && roleModal.next !== "admin" && (
               <Select
                 value={roleModal.next}
                 onValueChange={(v) =>
@@ -733,16 +746,40 @@ function AdminPlayersPage() {
                 </SelectContent>
               </Select>
             )}
+            {roleModal && roleModal.next === "admin" && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400">
+                  Email esperado:{" "}
+                  <code className="text-white">{roleModal.p.email ?? "(sin email)"}</code>
+                </p>
+                <Input
+                  autoFocus
+                  placeholder="Reescribe el correo del usuario"
+                  value={adminConfirmEmail}
+                  onChange={(e) => setAdminConfirmEmail(e.target.value)}
+                />
+              </div>
+            )}
             <DialogFooter>
               <Button variant="ghost" onClick={() => setRoleModal(null)}>
                 Cancelar
               </Button>
-              <Button onClick={confirmRoleChange} disabled={acting}>
+              <Button
+                onClick={confirmRoleChange}
+                disabled={
+                  acting ||
+                  (roleModal?.next === "admin" &&
+                    (!roleModal.p.email ||
+                      adminConfirmEmail.trim().toLowerCase() !==
+                        roleModal.p.email.toLowerCase()))
+                }
+              >
                 {acting ? <Loader2 className="animate-spin" size={14} /> : "Confirmar"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
 
         {/* Store modal */}
         <Dialog open={!!storeModal} onOpenChange={(o) => !o && setStoreModal(null)}>
