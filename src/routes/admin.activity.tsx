@@ -41,6 +41,7 @@ type Filters = {
   target_type: string;
   date_from: string;
   date_to: string;
+  search: string;
   page: number;
 };
 
@@ -50,6 +51,7 @@ const INITIAL: Filters = {
   target_type: "",
   date_from: "",
   date_to: "",
+  search: "",
   page: 1,
 };
 
