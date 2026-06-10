@@ -19,8 +19,8 @@ import {
 
 
 export const Route = createFileRoute("/admin/calendar")({
-  head: () => ({ meta: [{ title: "Calendario de Torneos — Geek Arena" }] }),
-  component: ManagerCalendarPage,
+  head: () => ({ meta: [{ title: "Calendario Nacional — Geek Arena" }] }),
+  component: AdminCalendarPage,
 });
 
 type ZoneColor = {
@@ -99,7 +99,7 @@ type CalData = {
 };
 
 
-function ManagerCalendarPage() {
+function AdminCalendarPage() {
   const fetchCalendar = useServerFn(getManagerCalendar);
 
   const [calData, setCalData] = useState<CalData | null>(null);
@@ -183,10 +183,10 @@ function ManagerCalendarPage() {
     <div className="space-y-6">
       <div>
         <div className="text-xs uppercase tracking-wider text-primary">
-          TCG Manager
+          Administrador
         </div>
         <h1 className="text-2xl font-bold text-white mt-1">
-          Calendario de Torneos
+          Calendario Nacional
         </h1>
       </div>
 
