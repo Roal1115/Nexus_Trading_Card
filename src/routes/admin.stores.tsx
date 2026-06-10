@@ -560,6 +560,23 @@ function RowActions({
   );
 }
 
+type EditStorePayload = {
+  store_id: string;
+  name: string;
+  city: string;
+  state: string;
+  country: string;
+  address?: string;
+  phone?: string;
+  google_maps_url?: string;
+  description?: string;
+  opening_hours?: string;
+  instagram?: string;
+  website?: string;
+  twitter?: string;
+  twitch?: string;
+};
+
 function EditStoreDialog({
   store,
   onClose,
@@ -567,50 +584,48 @@ function EditStoreDialog({
 }: {
   store: Store | null;
   onClose: () => void;
-  onSubmit: (data: {
-    store_id: string;
-    name: string;
-    slug: string;
-    city: string;
-    state: string;
-    country: string;
-  }) => Promise<void>;
+  onSubmit: (data: EditStorePayload) => Promise<void>;
 }) {
   const [form, setForm] = useState({
     name: "",
-    slug: "",
     city: "",
     state: "",
     country: "MX",
+    address: "",
+    phone: "",
+    google_maps_url: "",
+    description: "",
+    opening_hours: "",
+    instagram: "",
+    website: "",
+    twitter: "",
+    twitch: "",
   });
-  const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (store) {
       setForm({
         name: store.name,
-        slug: store.slug,
         city: store.city ?? "",
         state: store.state ?? "",
         country: "MX",
+        address: store.address ?? "",
+        phone: store.phone ?? "",
+        google_maps_url: store.google_maps_url ?? "",
+        description: store.description ?? "",
+        opening_hours: store.opening_hours ?? "",
+        instagram: store.instagram ?? "",
+        website: store.website ?? "",
+        twitter: store.twitter ?? "",
+        twitch: store.twitch ?? "",
       });
-      setSlugTouched(true);
     }
   }, [store]);
-
-  const handleNameChange = (v: string) => {
-    setForm((f) => ({
-      ...f,
-      name: v,
-      slug: slugTouched ? f.slug : slugifyName(v),
-    }));
-  };
 
   const submit = async () => {
     if (!store) return;
     if (!form.name.trim()) return toast.error("El nombre es obligatorio");
-    if (!form.slug.trim()) return toast.error("El slug es obligatorio");
     if (!form.city.trim()) return toast.error("La ciudad es obligatoria");
     if (!form.state.trim()) return toast.error("El estado es obligatorio");
     setSaving(true);
@@ -618,54 +633,136 @@ function EditStoreDialog({
       await onSubmit({
         store_id: store.id,
         name: form.name.trim(),
-        slug: slugifyName(form.slug),
         city: form.city.trim(),
         state: form.state.trim(),
         country: (form.country || "MX").trim().toUpperCase(),
+        address: form.address.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        google_maps_url: form.google_maps_url.trim() || undefined,
+        description: form.description.trim() || undefined,
+        opening_hours: form.opening_hours.trim() || undefined,
+        instagram: form.instagram.trim() || undefined,
+        website: form.website.trim() || undefined,
+        twitter: form.twitter.trim() || undefined,
+        twitch: form.twitch.trim() || undefined,
       });
     } finally {
       setSaving(false);
     }
   };
 
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm({ ...form, [k]: e.target.value });
+
   return (
     <Dialog open={!!store} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Editar tienda</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-400">Nombre *</Label>
-            <Input value={form.name} onChange={(e) => handleNameChange(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-400">Slug *</Label>
-            <Input
-              value={form.slug}
-              onChange={(e) => {
-                setSlugTouched(true);
-                setForm({ ...form, slug: e.target.value });
-              }}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-4">
+          {/* Información esencial */}
+          <div className="space-y-3">
+            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Información esencial
+            </h3>
             <div className="space-y-1">
-              <Label className="text-xs text-gray-400">Ciudad *</Label>
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+              <Label className="text-xs text-gray-400">Nombre *</Label>
+              <Input value={form.name} onChange={set("name")} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-400">Ciudad *</Label>
+                <Input value={form.city} onChange={set("city")} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-400">Estado *</Label>
+                <Input value={form.state} onChange={set("state")} />
+              </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-gray-400">Estado *</Label>
-              <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+              <Label className="text-xs text-gray-400">País</Label>
+              <Input
+                value={form.country}
+                maxLength={2}
+                onChange={(e) => setForm({ ...form, country: e.target.value.toUpperCase() })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Dirección</Label>
+              <Input value={form.address} onChange={set("address")} placeholder="Calle, número, colonia" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Teléfono</Label>
+              <Input value={form.phone} onChange={set("phone")} placeholder="+52..." />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Google Maps URL</Label>
+              <Input value={form.google_maps_url} onChange={set("google_maps_url")} placeholder="https://maps.google.com/..." />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Horario</Label>
+              <Input value={form.opening_hours} onChange={set("opening_hours")} placeholder="Lun-Vie 11:00-21:00" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Descripción</Label>
+              <textarea
+                value={form.description}
+                onChange={set("description")}
+                rows={3}
+                maxLength={500}
+                className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+                placeholder="Breve descripción de la tienda"
+              />
             </div>
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-400">País</Label>
-            <Input
-              value={form.country}
-              maxLength={2}
-              onChange={(e) => setForm({ ...form, country: e.target.value.toUpperCase() })}
-            />
+
+          {/* Presencia digital */}
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Presencia digital
+              <span className="ml-2 text-gray-600 normal-case tracking-normal font-normal">— Opcional</span>
+            </h3>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Página web</Label>
+              <Input value={form.website} onChange={set("website")} placeholder="https://..." />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Instagram</Label>
+              <div className="flex items-center rounded-md border border-white/10 bg-black/30">
+                <span className="px-2 text-gray-500 text-sm">@</span>
+                <input
+                  value={form.instagram}
+                  onChange={set("instagram")}
+                  placeholder="usuario"
+                  className="flex-1 bg-transparent py-2 pr-3 text-sm text-white outline-none"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Twitter / X</Label>
+              <div className="flex items-center rounded-md border border-white/10 bg-black/30">
+                <span className="px-2 text-gray-500 text-sm">@</span>
+                <input
+                  value={form.twitter}
+                  onChange={set("twitter")}
+                  placeholder="usuario"
+                  className="flex-1 bg-transparent py-2 pr-3 text-sm text-white outline-none"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Twitch</Label>
+              <div className="flex items-center rounded-md border border-white/10 bg-black/30">
+                <span className="px-2 text-gray-500 text-sm">twitch.tv/</span>
+                <input
+                  value={form.twitch}
+                  onChange={set("twitch")}
+                  placeholder="usuario"
+                  className="flex-1 bg-transparent py-2 pr-3 text-sm text-white outline-none"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -681,6 +778,7 @@ function EditStoreDialog({
     </Dialog>
   );
 }
+
 
 function AssignOrganizerDialog({
   store,
