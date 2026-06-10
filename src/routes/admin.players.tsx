@@ -665,9 +665,7 @@ function AdminPlayersPage() {
                               refresh();
                             });
                           }}
-                          onAssignGames={() => {
-                            toast.info("Asignación de TCGs próximamente");
-                          }}
+                          onAssignGames={() => openTcgModal(p.id, p.geek_tag)}
                         />
                       </td>
                     </tr>
