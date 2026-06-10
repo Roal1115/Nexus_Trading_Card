@@ -2154,7 +2154,6 @@ export const upsertStoreSchedule = createServerFn({ method: "POST" })
             game_id: data.game_id,
             day_of_week: data.day_of_week,
             start_time: data.start_time,
-            is_active: true,
           },
           { onConflict: "store_id,game_id,day_of_week" },
         );
