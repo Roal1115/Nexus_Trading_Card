@@ -1330,6 +1330,14 @@ function StaffTab() {
                         }
                         className="text-xs text-primary hover:underline"
                       >
+                        Info
+                      </button>
+                      <button
+                        onClick={() =>
+                          openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                        }
+                        className="text-xs text-primary hover:underline"
+                      >
                         {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
                       </button>
                       {p.is_active ? (
