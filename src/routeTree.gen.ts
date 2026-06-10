@@ -28,6 +28,7 @@ import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.app
 import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
+import { Route as OrganizerCalendarRouteImport } from './routes/organizer.calendar'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
 import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
@@ -137,6 +138,11 @@ const OrganizerNewRoute = OrganizerNewRouteImport.update({
   path: '/new',
   getParentRoute: () => OrganizerRoute,
 } as any)
+const OrganizerCalendarRoute = OrganizerCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 const AdminUploadRoute = AdminUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -223,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/players/$playerTag': typeof PlayersPlayerTagRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/players/$playerTag': typeof PlayersPlayerTagRoute
@@ -289,6 +297,7 @@ export interface FileRoutesById {
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
   '/players/$playerTag': typeof PlayersPlayerTagRoute
@@ -325,6 +334,7 @@ export interface FileRouteTypes {
     | '/admin/seasons'
     | '/admin/stores'
     | '/admin/upload'
+    | '/organizer/calendar'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/players/$playerTag'
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/admin/seasons'
     | '/admin/stores'
     | '/admin/upload'
+    | '/organizer/calendar'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/players/$playerTag'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/admin/seasons'
     | '/admin/stores'
     | '/admin/upload'
+    | '/organizer/calendar'
     | '/organizer/new'
     | '/organizer/tournaments'
     | '/players/$playerTag'
@@ -553,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerNewRouteImport
       parentRoute: typeof OrganizerRoute
     }
+    '/organizer/calendar': {
+      id: '/organizer/calendar'
+      path: '/calendar'
+      fullPath: '/organizer/calendar'
+      preLoaderRoute: typeof OrganizerCalendarRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/admin/upload': {
       id: '/admin/upload'
       path: '/upload'
@@ -692,12 +711,14 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface OrganizerRouteChildren {
+  OrganizerCalendarRoute: typeof OrganizerCalendarRoute
   OrganizerNewRoute: typeof OrganizerNewRoute
   OrganizerTournamentsRoute: typeof OrganizerTournamentsRoute
   OrganizerIndexRoute: typeof OrganizerIndexRoute
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerCalendarRoute: OrganizerCalendarRoute,
   OrganizerNewRoute: OrganizerNewRoute,
   OrganizerTournamentsRoute: OrganizerTournamentsRoute,
   OrganizerIndexRoute: OrganizerIndexRoute,
