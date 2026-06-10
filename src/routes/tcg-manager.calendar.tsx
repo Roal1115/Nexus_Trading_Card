@@ -60,7 +60,6 @@ const ZONE_COLORS: Record<string, ZoneColor> = {
 const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const HOURS = [17, 18, 19, 20, 21, 22, 23];
 
-type Game = { id: string; name: string; slug: string };
 type CalEntry = {
   id: string;
   store_id: string;
@@ -69,6 +68,8 @@ type CalEntry = {
   zone: string;
   phone: string | null;
   instagram: string | null;
+  game_id: string;
+  game_name: string;
   day_of_week: number;
   date: string;
   start_time: string;
@@ -89,7 +90,6 @@ type CalData = {
   entries: CalEntry[];
   stats: {
     total_overdue: number;
-    total_submitted: number;
     uploaded_so_far: number;
     days_elapsed: number;
     total_expected: number;
@@ -97,6 +97,7 @@ type CalData = {
     today_submitted: number;
   };
 };
+
 
 function ManagerCalendarPage() {
   const fetchCalendar = useServerFn(getManagerCalendar);
