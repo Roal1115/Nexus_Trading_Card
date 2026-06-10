@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Upload, Eye, ArrowRight, FileDown, FileX } from "lucide-react";
+import { Loader2, Upload, Eye, ArrowRight, FileDown, FileX, XCircle } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   listTournamentsByStatus,
   publishTournaments,
+  unapproveAdminTournament,
 } from "@/lib/geekarena-admin.functions";
+import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
