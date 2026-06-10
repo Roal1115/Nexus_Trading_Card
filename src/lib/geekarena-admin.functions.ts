@@ -1556,6 +1556,7 @@ export const listAuditLog = createServerFn({ method: "POST" })
     target_type?: string;
     date_from?: string;
     date_to?: string;
+    search?: string;
     page?: number;
   }) => z.object({
     action: z.string().optional(),
@@ -1563,6 +1564,7 @@ export const listAuditLog = createServerFn({ method: "POST" })
     target_type: z.string().optional(),
     date_from: z.string().optional(),
     date_to: z.string().optional(),
+    search: z.string().max(100).optional(),
     page: z.number().min(1).default(1),
   }).parse(d))
   .handler(async ({ data, context }) => {
