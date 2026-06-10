@@ -1297,6 +1297,13 @@ function RowActions({
           <Power size={14} className="mr-2" />
           {p.is_active ? "Desactivar cuenta" : "Activar cuenta"}
         </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={onDeleteAccount}
+          disabled={p.role === "admin"}
+          className="text-red-300 focus:bg-red-500/10 focus:text-red-300"
+        >
+          <Trash2 size={14} className="mr-2" /> Eliminar cuenta
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
