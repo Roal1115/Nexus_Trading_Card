@@ -557,8 +557,11 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       }
 
       return {
-        id:                `${s.store_id}-${s.day_of_week}`,
+        id:                `${s.store_id}-${s.game_id}-${s.day_of_week}`,
         store_id:          s.store_id,
+        game_id:           s.game_id,
+        game_name:         gameNamesMap.get(s.game_id) ?? "—",
+
         store_name:        store?.name ?? "—",
         city:              store?.city ?? "—",
         zone:              store?.zone ?? "Zona Extendida",
