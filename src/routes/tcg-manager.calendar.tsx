@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import {
   getManagerCalendar,
-  getManagerGames,
 } from "@/lib/geekarena-manager.functions";
+
 
 export const Route = createFileRoute("/tcg-manager/calendar")({
   head: () => ({ meta: [{ title: "Calendario de Torneos — Geek Arena" }] }),
@@ -60,7 +60,6 @@ const ZONE_COLORS: Record<string, ZoneColor> = {
 const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const HOURS = [17, 18, 19, 20, 21, 22, 23];
 
-type Game = { id: string; name: string; slug: string };
 type CalEntry = {
   id: string;
   store_id: string;
@@ -69,6 +68,8 @@ type CalEntry = {
   zone: string;
   phone: string | null;
   instagram: string | null;
+  game_id: string;
+  game_name: string;
   day_of_week: number;
   date: string;
   start_time: string;
@@ -89,7 +90,6 @@ type CalData = {
   entries: CalEntry[];
   stats: {
     total_overdue: number;
-    total_submitted: number;
     uploaded_so_far: number;
     days_elapsed: number;
     total_expected: number;
@@ -98,33 +98,22 @@ type CalData = {
   };
 };
 
+
 function ManagerCalendarPage() {
   const fetchCalendar = useServerFn(getManagerCalendar);
-  const fetchGames = useServerFn(getManagerGames);
 
-  const [games, setGames] = useState<Game[]>([]);
-  const [activeGame, setActiveGame] = useState<string | null>(null);
   const [calData, setCalData] = useState<CalData | null>(null);
   const [, setLoading] = useState(false);
   const [weekStart, setWeekStart] = useState<string>("");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
   const [storeFilter, setStoreFilter] = useState<string>("all");
+  const [gameFilter, setGameFilter] = useState<string>("all");
   const [selectedEntry, setSelectedEntry] = useState<CalEntry | null>(null);
 
   useEffect(() => {
-    fetchGames({}).then((g: any) => {
-      const list = (g ?? []) as Game[];
-      setGames(list);
-      if (list.length > 0) setActiveGame(list[0].id);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!activeGame) return;
     setLoading(true);
     fetchCalendar({
-      data: { game_id: activeGame, ...(weekStart ? { week_start: weekStart } : {}) },
+      data: { ...(weekStart ? { week_start: weekStart } : {}) },
     } as any)
       .then((d: any) => {
         setCalData(d);
@@ -132,7 +121,7 @@ function ManagerCalendarPage() {
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGame, weekStart]);
+  }, [weekStart]);
 
   const navigateWeek = (dir: -1 | 1) => {
     if (!weekStart) return;
@@ -146,9 +135,11 @@ function ManagerCalendarPage() {
     return calData.entries.filter((e) => {
       if (zoneFilter !== "all" && e.zone !== zoneFilter) return false;
       if (storeFilter !== "all" && e.store_id !== storeFilter) return false;
+      if (gameFilter !== "all" && e.game_id !== gameFilter) return false;
       return true;
+
     });
-  }, [calData, zoneFilter, storeFilter]);
+  }, [calData, zoneFilter, storeFilter, gameFilter]);
 
   const calendarGrid = useMemo(() => {
     const grid: Record<number, Record<number, CalEntry[]>> = {};
@@ -183,6 +174,9 @@ function ManagerCalendarPage() {
     .filter(
       (v, i, a) => a.findIndex((x) => x.id === v.id) === i,
     );
+  const uniqueGames = Array.from(
+    new Map((calData?.entries ?? []).map((e) => [e.game_id, { id: e.game_id, name: e.game_name }])).values(),
+  );
   const stats = calData?.stats;
 
   return (
@@ -196,23 +190,7 @@ function ManagerCalendarPage() {
         </h1>
       </div>
 
-      {games.length > 1 && (
-        <div className="flex border-b border-white/10 overflow-x-auto">
-          {games.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setActiveGame(g.id)}
-              className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
-                activeGame === g.id
-                  ? "border-primary text-white"
-                  : "border-transparent text-gray-400 hover:text-white"
-              }`}
-            >
-              {g.name}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -347,6 +325,21 @@ function ManagerCalendarPage() {
             </option>
           ))}
         </select>
+
+        <select
+          value={gameFilter}
+          onChange={(e) => setGameFilter(e.target.value)}
+          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
+        >
+          <option value="all">Todos los TCGs</option>
+          {uniqueGames.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+
+
 
         <div className="flex flex-wrap items-center gap-3 ml-auto">
           {Object.entries(ZONE_COLORS).map(([zone, colors]) => (
@@ -640,6 +633,15 @@ function ManagerCalendarPage() {
             </div>
 
             <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+              <div className="text-[10px] uppercase text-gray-500">TCG</div>
+              <div className="mt-1 text-sm text-white">
+                {selectedEntry.game_name}
+              </div>
+            </div>
+
+
+
+            <div className="rounded-lg border border-white/10 bg-black/30 p-3">
               <div className="text-[10px] uppercase text-gray-500">Horario</div>
               <div className="flex items-center gap-2 mt-1 text-sm text-white">
                 <Clock size={14} className="text-gray-400" />
@@ -718,6 +720,12 @@ function CalendarEntry({
           {entry.store_name}
         </span>
       </div>
+      {!compact && entry.game_name && (
+        <div className="text-[9px] text-gray-400 truncate mt-0.5">
+          {entry.game_name}
+        </div>
+      )}
+
       {!compact && (
         <div className="flex items-center gap-1 mt-0.5">
           {isOverdue && (
