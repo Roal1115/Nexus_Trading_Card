@@ -14,7 +14,6 @@ import {
   UserPlus,
   Power,
   PowerOff,
-  X,
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
