@@ -170,14 +170,27 @@ function ManagerCalendarPage() {
   const uniqueZones = Array.from(
     new Set((calData?.entries ?? []).map((e) => e.zone)),
   );
-  const uniqueStores = (calData?.entries ?? [])
-    .map((e) => ({ id: e.store_id, name: e.store_name }))
-    .filter(
-      (v, i, a) => a.findIndex((x) => x.id === v.id) === i,
+  // Cascade: stores filtered by zone
+  const uniqueStores = useMemo(() => {
+    const src = (calData?.entries ?? []).filter(
+      (e) => zoneFilter === "all" || e.zone === zoneFilter,
     );
-  const uniqueGames = Array.from(
-    new Map((calData?.entries ?? []).map((e) => [e.game_id, { id: e.game_id, name: e.game_name }])).values(),
-  );
+    return src
+      .map((e) => ({ id: e.store_id, name: e.store_name }))
+      .filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i);
+  }, [calData, zoneFilter]);
+  // Cascade: games filtered by zone + store
+  const uniqueGames = useMemo(() => {
+    const src = (calData?.entries ?? []).filter(
+      (e) =>
+        (zoneFilter === "all" || e.zone === zoneFilter) &&
+        (storeFilter === "all" || e.store_id === storeFilter),
+    );
+    return Array.from(
+      new Map(src.map((e) => [e.game_id, { id: e.game_id, name: e.game_name }])).values(),
+    );
+  }, [calData, zoneFilter, storeFilter]);
+
   const stats = calData?.stats;
 
   return (
@@ -303,7 +316,11 @@ function ManagerCalendarPage() {
 
         <select
           value={zoneFilter}
-          onChange={(e) => setZoneFilter(e.target.value)}
+          onChange={(e) => {
+            setZoneFilter(e.target.value);
+            setStoreFilter("all");
+            setGameFilter("all");
+          }}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
         >
           <option value="all">Todas las zonas</option>
@@ -316,7 +333,10 @@ function ManagerCalendarPage() {
 
         <select
           value={storeFilter}
-          onChange={(e) => setStoreFilter(e.target.value)}
+          onChange={(e) => {
+            setStoreFilter(e.target.value);
+            setGameFilter("all");
+          }}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
         >
           <option value="all">Todas las tiendas</option>
@@ -353,6 +373,7 @@ function ManagerCalendarPage() {
             </div>
           ))}
         </div>
+
       </div>
 
       {/* Calendar grid */}
