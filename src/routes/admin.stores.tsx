@@ -935,7 +935,7 @@ type StaffRow = {
   id: string;
   geek_tag: string;
   email: string | null;
-  role: "tcg_manager" | "organizer";
+  role: "tcg_manager" | "organizer" | "admin";
   is_active: boolean;
   home_store: { id: string; name: string; city: string | null } | null;
   manager_games: { game_id: string; games?: { id: string; name: string } | null }[];
@@ -955,7 +955,7 @@ function StaffTab() {
 
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [roleTab, setRoleTab] = useState<"all" | "tcg_manager" | "organizer">("all");
+  const [roleTab, setRoleTab] = useState<"all" | "tcg_manager" | "organizer" | "admin">("all");
 
   const [addModal, setAddModal] = useState(false);
   const [addForm, setAddForm] = useState<{
@@ -971,7 +971,7 @@ function StaffTab() {
   const [assignModal, setAssignModal] = useState<{
     player_id: string;
     geek_tag: string;
-    role: "tcg_manager" | "organizer";
+    role: StaffRow["role"];
   } | null>(null);
 
   const [allGames, setAllGames] = useState<{ id: string; name: string }[]>([]);
@@ -1011,7 +1011,7 @@ function StaffTab() {
   const openAssignmentFor = async (
     player_id: string,
     geek_tag: string,
-    role: "tcg_manager" | "organizer",
+    role: StaffRow["role"],
     currentStoreId?: string,
   ) => {
     setAssignModal({ player_id, geek_tag, role });
@@ -1107,6 +1107,7 @@ function StaffTab() {
       <div className="flex gap-2 border-b border-white/10">
         {([
           { k: "all", label: "Todos" },
+          { k: "admin", label: "Admins" },
           { k: "tcg_manager", label: "Managers" },
           { k: "organizer", label: "Organizadores" },
         ] as const).map((t) => {
@@ -1165,8 +1166,16 @@ function StaffTab() {
                           {p.email ?? "—"}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="outline">
-                            {p.role === "tcg_manager" ? "TCG Manager" : "Organizador"}
+                          <Badge
+                            className={
+                              p.role === "admin"
+                                ? "bg-red-500/20 text-red-400"
+                                : p.role === "tcg_manager"
+                                  ? "bg-blue-500/20 text-blue-400"
+                                  : "bg-orange-500/20 text-orange-400"
+                            }
+                          >
+                            {p.role === "admin" ? "Admin" : p.role === "tcg_manager" ? "TCG Manager" : "Organizador"}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
@@ -1250,8 +1259,16 @@ function StaffTab() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-white font-medium">{p.geek_tag}</span>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {p.role === "tcg_manager" ? "Manager" : "Org"}
+                        <Badge
+                          className={
+                            p.role === "admin"
+                              ? "bg-red-500/20 text-red-400"
+                              : p.role === "tcg_manager"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : "bg-orange-500/20 text-orange-400"
+                          }
+                        >
+                          {p.role === "admin" ? "Admin" : p.role === "tcg_manager" ? "Manager" : "Org"}
                         </Badge>
                         <Badge variant={p.is_active ? "default" : "secondary"}>
                           {p.is_active ? "Activo" : "Inactivo"}
