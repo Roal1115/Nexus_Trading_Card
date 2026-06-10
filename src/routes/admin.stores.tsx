@@ -1240,18 +1240,23 @@ function StaffTab() {
 
             {/* Mobile */}
             <div className="sm:hidden divide-y divide-white/5">
-              {staff.length === 0 ? (
+              {filteredStaff.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-gray-500">
                   Sin staff registrado.
                 </div>
               ) : (
-                staff.map((p) => (
+                filteredStaff.map((p) => (
                   <div key={p.id} className="p-4 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-white font-medium">{p.geek_tag}</span>
-                      <Badge variant="outline">
-                        {p.role === "tcg_manager" ? "Manager" : "Org"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                          {p.role === "tcg_manager" ? "Manager" : "Org"}
+                        </Badge>
+                        <Badge variant={p.is_active ? "default" : "secondary"}>
+                          {p.is_active ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </div>
                     </div>
                     <div className="text-xs text-gray-400">{p.email ?? "—"}</div>
                     {p.role === "tcg_manager" && p.manager_games?.length ? (
@@ -1271,14 +1276,30 @@ function StaffTab() {
                         {p.home_store.city ? ` · ${p.home_store.city}` : ""}
                       </div>
                     ) : null}
-                    <button
-                      onClick={() =>
-                        openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
-                      }
-                      className="text-xs text-primary hover:underline"
-                    >
-                      {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
-                    </button>
+                    <div className="flex items-center gap-3 pt-1">
+                      <button
+                        onClick={() =>
+                          openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                        }
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
+                      </button>
+                      {p.is_active ? (
+                        <button
+                          onClick={() => setConfirmAction({ player: p, action: "deactivate" })}
+                          className="text-xs text-amber-400 hover:underline"
+                        >
+                          Desactivar
+                        </button>
+                      ) : null}
+                      <button
+                        onClick={() => setConfirmAction({ player: p, action: "delete" })}
+                        className="text-xs text-red-400 hover:underline"
+                      >
+                        Quitar
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
