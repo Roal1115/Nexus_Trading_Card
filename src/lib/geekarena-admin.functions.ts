@@ -1881,17 +1881,29 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
       email: string;
       geek_tag: string;
       role: "tcg_manager" | "organizer";
+      work_schedule?: string;
+      contact_primary?: string;
+      contact_backup?: string;
     }) =>
       z
         .object({
           email: z.string().email(),
           geek_tag: z.string().min(3).max(30),
           role: z.enum(["tcg_manager", "organizer"]),
+          work_schedule: z.string().max(200).optional(),
+          contact_primary: z.string().max(50).optional(),
+          contact_backup: z.string().max(50).optional(),
         })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player: actor } = context;
+
+    const opFields = {
+      work_schedule: data.work_schedule ?? null,
+      contact_primary: data.contact_primary ?? null,
+      contact_backup: data.contact_backup ?? null,
+    };
 
     // Step 1 — check if player already exists by email
     const { data: existingByEmail } = await admin
@@ -1901,7 +1913,10 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (existingByEmail) {
-      const updates: Record<string, unknown> = { role: data.role };
+      const updates: Record<string, unknown> = {
+        role: data.role,
+        ...opFields,
+      };
       if (existingByEmail.geek_tag !== data.geek_tag) {
         const { data: tagTaken } = await admin
           .from("players")
@@ -1973,6 +1988,7 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
           email: data.email,
           geek_tag: data.geek_tag,
           is_active: true,
+          ...opFields,
         })
         .eq("id", playerId);
     }
@@ -1988,4 +2004,49 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
     );
 
     return { player_id: playerId, was_existing: false };
+  });
+
+export const deactivateStaffMember = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { player_id: string; action: "deactivate" | "delete" }) =>
+    z.object({
+      player_id: z.string().uuid(),
+      action: z.enum(["deactivate", "delete"]),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player: actor } = context;
+    if (data.action === "deactivate") {
+      const { error } = await admin
+        .from("players")
+        .update({ is_active: false })
+        .eq("id", data.player_id);
+      if (error) throw new Error(error.message);
+      await logAction(
+        admin,
+        actor,
+        "ROLE_CHANGED",
+        "player",
+        data.player_id,
+        data.player_id,
+        { action: "deactivated" },
+      );
+    } else {
+      const { error } = await admin
+        .from("players")
+        .update({ role: "player", is_active: false })
+        .eq("id", data.player_id);
+      if (error) throw new Error(error.message);
+      await admin.from("manager_games").delete().eq("player_id", data.player_id);
+      await logAction(
+        admin,
+        actor,
+        "ROLE_CHANGED",
+        "player",
+        data.player_id,
+        data.player_id,
+        { action: "removed_from_staff" },
+      );
+    }
+    return { success: true };
   });
