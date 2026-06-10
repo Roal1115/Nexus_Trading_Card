@@ -761,3 +761,16 @@ export const unapproveManagerTournament = createServerFn({ method: "POST" })
     );
     return { success: true };
   });
+
+// ==================== List stores (Manager) ====================
+
+export const listManagerStores = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .handler(async ({ context }) => {
+    const { admin } = context;
+    const { data } = await admin
+      .from("stores")
+      .select("id, name, city, state, is_active")
+      .order("name");
+    return { stores: data ?? [] };
+  });
