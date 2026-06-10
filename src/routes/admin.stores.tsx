@@ -1040,7 +1040,7 @@ function StaffTab() {
       const role = addForm.role;
       const geekTag = addForm.geek_tag;
       setAddModal(false);
-      setAddForm({ email: "", geek_tag: "", role: "organizer" });
+      setAddForm({ email: "", geek_tag: "", role: "organizer", work_schedule: "", contact_primary: "", contact_backup: "" });
       await refresh();
       if (playerId) {
         await openAssignmentFor(playerId, geekTag, role);
