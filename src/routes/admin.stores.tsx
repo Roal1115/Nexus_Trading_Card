@@ -28,6 +28,7 @@ import {
   upsertStaffMember,
   getManagerAssignedGames,
   deactivateStaffMember,
+  updateStaffOperationalFields,
 } from "@/lib/geekarena-admin.functions";
 import { assignManagerGames } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
@@ -952,6 +953,7 @@ function StaffTab() {
   const saveManagerGamesFn = useServerFn(assignManagerGames);
   const assignOrganizerFn = useServerFn(assignOrganizerToStore);
   const deactivateStaffFn = useServerFn(deactivateStaffMember);
+  const updateOpFieldsFn = useServerFn(updateStaffOperationalFields);
 
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -979,6 +981,11 @@ function StaffTab() {
   const [allStores, setAllStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
+  const [opFields, setOpFields] = useState<{
+    work_schedule: string;
+    contact_primary: string;
+    contact_backup: string;
+  }>({ work_schedule: "", contact_primary: "", contact_backup: "" });
 
   const [confirmAction, setConfirmAction] = useState<{
     player: StaffRow;
@@ -1015,6 +1022,12 @@ function StaffTab() {
     currentStoreId?: string,
   ) => {
     setAssignModal({ player_id, geek_tag, role });
+    const current = staff.find((s) => s.id === player_id);
+    setOpFields({
+      work_schedule: current?.work_schedule ?? "",
+      contact_primary: current?.contact_primary ?? "",
+      contact_backup: current?.contact_backup ?? "",
+    });
     if (role === "tcg_manager") {
       const gRes: any = await fetchManagerGames({ data: { player_id } });
       setAllGames(gRes.all_games ?? []);
@@ -1078,6 +1091,14 @@ function StaffTab() {
         });
         toast.success("Tienda asignada correctamente");
       }
+      await updateOpFieldsFn({
+        data: {
+          player_id: assignModal.player_id,
+          work_schedule: opFields.work_schedule.trim() || null,
+          contact_primary: opFields.contact_primary.trim() || null,
+          contact_backup: opFields.contact_backup.trim() || null,
+        },
+      });
       setAssignModal(null);
       await refresh();
     } catch (e: any) {
@@ -1482,6 +1503,56 @@ function StaffTab() {
               </Select>
             </div>
           ) : null}
+
+          {assignModal ? (
+            <div className="space-y-3 pt-4 border-t border-white/10">
+              <h4 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Información operativa
+              </h4>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">
+                  Horario / Disponibilidad
+                </label>
+                <input
+                  value={opFields.work_schedule}
+                  onChange={(e) =>
+                    setOpFields((f) => ({ ...f, work_schedule: e.target.value }))
+                  }
+                  placeholder="Lun-Vie 18:00-22:00"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">
+                    Contacto principal
+                  </label>
+                  <input
+                    value={opFields.contact_primary}
+                    onChange={(e) =>
+                      setOpFields((f) => ({ ...f, contact_primary: e.target.value }))
+                    }
+                    placeholder="+52 81 1234 5678"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">
+                    Contacto de respaldo
+                  </label>
+                  <input
+                    value={opFields.contact_backup}
+                    onChange={(e) =>
+                      setOpFields((f) => ({ ...f, contact_backup: e.target.value }))
+                    }
+                    placeholder="+52 81 9876 5432"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAssignModal(null)}>
