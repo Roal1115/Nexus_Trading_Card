@@ -395,8 +395,7 @@ function ManagerCalendarPage() {
                   {hour}:00
                 </div>
                 {[0, 1, 2, 3, 4, 5, 6].map((dow) => {
-                  const actualDow = weekDates[dow]?.getDay() ?? dow;
-                  const cellEntries = calendarGrid[actualDow]?.[hour] ?? [];
+                  const cellEntries = calendarGrid[dow]?.[hour] ?? [];
                   const isToday =
                     weekDates[dow]?.toDateString() ===
                     new Date().toDateString();
