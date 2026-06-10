@@ -15,6 +15,7 @@ import {
   Power,
   PowerOff,
   Check,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
