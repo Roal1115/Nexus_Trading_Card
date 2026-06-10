@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Filter } from "lucide-react";
+import { Activity, Filter, Search } from "lucide-react";
 import { listAuditLog, type AuditLogRow } from "@/lib/geekarena-admin.functions";
 import { useActivityLastSeen } from "@/hooks/use-badge-counts";
 
