@@ -633,6 +633,15 @@ function ManagerCalendarPage() {
             </div>
 
             <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+              <div className="text-[10px] uppercase text-gray-500">TCG</div>
+              <div className="mt-1 text-sm text-white">
+                {selectedEntry.game_name}
+              </div>
+            </div>
+
+
+
+            <div className="rounded-lg border border-white/10 bg-black/30 p-3">
               <div className="text-[10px] uppercase text-gray-500">Horario</div>
               <div className="flex items-center gap-2 mt-1 text-sm text-white">
                 <Clock size={14} className="text-gray-400" />
