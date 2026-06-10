@@ -80,6 +80,7 @@ function ActivityPage() {
           ...(f.target_type && { target_type: f.target_type }),
           ...(f.date_from && { date_from: f.date_from }),
           ...(f.date_to && { date_to: f.date_to }),
+          ...(f.search && { search: f.search }),
           page: f.page,
         },
       });
