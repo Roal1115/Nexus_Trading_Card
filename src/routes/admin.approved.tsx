@@ -206,18 +206,24 @@ function ApprovedTournaments() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <FileLink url={r.csv_url} />
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate({ to: "/admin/tournaments/$id", params: { id: r.id } });
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
-                      >
-                        <Eye size={13} />
-                        Revisar
-                        <ArrowRight size={13} />
-                      </button>
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          onClick={() => setUnapproveTarget(r)}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-red-400/60 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                        >
+                          <XCircle size={13} />
+                          Des-aprobar
+                        </button>
+                        <button
+                          onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                        >
+                          <Eye size={13} />
+                          Revisar
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -226,6 +232,24 @@ function ApprovedTournaments() {
           </div>
         </div>
       )}
+
+      <UnapproveTournamentDialog
+        tournament={
+          unapproveTarget
+            ? {
+                id: unapproveTarget.id,
+                label: `${unapproveTarget.game_name} — ${unapproveTarget.store.name} (${unapproveTarget.tournament_date})`,
+              }
+            : null
+        }
+        onClose={() => setUnapproveTarget(null)}
+        onConfirm={async (reason) => {
+          if (!unapproveTarget) return;
+          await unapproveFn({ data: { tournament_id: unapproveTarget.id, reason } });
+          toast.success("Torneo des-aprobado");
+          if (email) await refresh(email);
+        }}
+      />
     </div>
   );
 }
