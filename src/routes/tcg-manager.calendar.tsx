@@ -711,6 +711,12 @@ function CalendarEntry({
           {entry.store_name}
         </span>
       </div>
+      {!compact && entry.game_name && (
+        <div className="text-[9px] text-gray-400 truncate mt-0.5">
+          {entry.game_name}
+        </div>
+      )}
+
       {!compact && (
         <div className="flex items-center gap-1 mt-0.5">
           {isOverdue && (
