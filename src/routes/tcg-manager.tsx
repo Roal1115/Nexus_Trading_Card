@@ -8,6 +8,7 @@ import {
   Loader2,
   Menu,
   ShieldCheck,
+  Store as StoreIcon,
   Upload,
 } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
@@ -51,6 +52,12 @@ function TcgManagerLayout() {
               { to: "/tcg-manager", label: "Torneos Pendientes", icon: <ShieldCheck size={16} />, exact: true, badge: counts?.pending ?? 0 },
               { to: "/tcg-manager/approved", label: "Torneos Aprobados", icon: <CheckCircle2 size={16} />, badge: counts?.approved ?? 0 },
               { to: "/tcg-manager/history", label: "Mi Historial", icon: <History size={16} /> },
+            ],
+          },
+          {
+            title: "Red",
+            items: [
+              { to: "/tcg-manager/stores", label: "Tiendas", icon: <StoreIcon size={16} /> },
             ],
           },
           {

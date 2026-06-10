@@ -30,8 +30,13 @@ import {
   getManagerAssignedGames,
   deactivateStaffMember,
   updateStaffOperationalFields,
+  getStoreSchedules,
+  upsertStoreSchedule,
+  deleteStoreSchedule,
 } from "@/lib/geekarena-admin.functions";
 import { assignManagerGames } from "@/lib/geekarena-manager.functions";
+import { StoreSchedulesDialog } from "@/components/admin/StoreSchedulesDialog";
+import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,6 +124,11 @@ function AdminStoresPage() {
   const [editStore, setEditStore] = useState<Store | null>(null);
   const [assignStore, setAssignStore] = useState<Store | null>(null);
   const [toggleStore, setToggleStore] = useState<Store | null>(null);
+  const [schedStore, setSchedStore] = useState<Store | null>(null);
+
+  const fetchSchedulesFn = useServerFn(getStoreSchedules);
+  const upsertScheduleFn = useServerFn(upsertStoreSchedule);
+  const deleteScheduleFn = useServerFn(deleteStoreSchedule);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchRaw.trim().toLowerCase()), 300);
@@ -438,6 +448,7 @@ function AdminStoresPage() {
                             onEdit={() => setEditStore(s)}
                             onAssign={() => setAssignStore(s)}
                             onToggle={() => setToggleStore(s)}
+                            onSchedules={() => setSchedStore(s)}
                           />
                         </td>
                       </tr>
@@ -466,6 +477,7 @@ function AdminStoresPage() {
                         onEdit={() => setEditStore(s)}
                         onAssign={() => setAssignStore(s)}
                         onToggle={() => setToggleStore(s)}
+                        onSchedules={() => setSchedStore(s)}
                       />
                     </div>
                     <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
@@ -547,6 +559,17 @@ function AdminStoresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Store schedules modal */}
+      <StoreSchedulesDialog
+        store={schedStore ? { id: schedStore.id, name: schedStore.name } : null}
+        onClose={() => setSchedStore(null)}
+        fns={{
+          fetch: fetchSchedulesFn as any,
+          upsert: upsertScheduleFn as any,
+          remove: deleteScheduleFn as any,
+        }}
+      />
       </>)}
     </div>
 
@@ -577,11 +600,13 @@ function RowActions({
   onEdit,
   onAssign,
   onToggle,
+  onSchedules,
 }: {
   store: Store;
   onEdit: () => void;
   onAssign: () => void;
   onToggle: () => void;
+  onSchedules: () => void;
 }) {
   return (
     <DropdownMenu>
@@ -600,6 +625,9 @@ function RowActions({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onAssign}>
           <UserPlus size={14} className="mr-2" /> Asignar organizador
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSchedules}>
+          <CalendarDays size={14} className="mr-2" /> Configurar Torneos
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onToggle}>
