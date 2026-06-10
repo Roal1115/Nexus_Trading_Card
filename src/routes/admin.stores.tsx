@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin/stores")({
+  head: () => ({ meta: [{ title: "Tiendas y Staff — Geek Arena" }] }),
   component: AdminStoresPage,
 });
 
