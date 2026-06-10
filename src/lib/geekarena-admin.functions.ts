@@ -1317,34 +1317,56 @@ export const updateStore = createServerFn({ method: "POST" })
     (d: {
       store_id: string;
       name: string;
-      slug: string;
       city?: string;
       state?: string;
       country?: string;
+      address?: string;
+      phone?: string;
+      google_maps_url?: string;
+      description?: string;
+      opening_hours?: string;
+      instagram?: string;
+      website?: string;
+      twitter?: string;
+      twitch?: string;
     }) =>
       z
         .object({
           store_id: z.string().uuid(),
           name: z.string().min(1).max(120),
-          slug: z.string().min(1).max(80),
           city: z.string().max(120).optional(),
           state: z.string().max(120).optional(),
           country: z.string().min(2).max(2).optional(),
+          address: z.string().max(300).optional(),
+          phone: z.string().max(20).optional(),
+          google_maps_url: z.string().url().optional().or(z.literal("")),
+          description: z.string().max(500).optional(),
+          opening_hours: z.string().max(200).optional(),
+          instagram: z.string().max(100).optional(),
+          website: z.string().max(200).optional(),
+          twitter: z.string().max(100).optional(),
+          twitch: z.string().max(100).optional(),
         })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    const slug = slugify(data.slug);
-    if (!slug) throw new Error("Slug inválido");
     const { error } = await admin
       .from("stores")
       .update({
         name: data.name,
-        slug,
         city: data.city || null,
         state: data.state || null,
         country: (data.country || "MX").toUpperCase(),
+        address: data.address || null,
+        phone: data.phone || null,
+        google_maps_url: data.google_maps_url || null,
+        description: data.description || null,
+        opening_hours: data.opening_hours || null,
+        instagram: data.instagram || null,
+        website: data.website || null,
+        twitter: data.twitter || null,
+        twitch: data.twitch || null,
       })
       .eq("id", data.store_id);
     if (error) throw new Error(error.message);
@@ -1359,6 +1381,7 @@ export const updateStore = createServerFn({ method: "POST" })
     );
     return { ok: true };
   });
+
 
 export const assignOrganizerToStore = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
