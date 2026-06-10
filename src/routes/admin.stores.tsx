@@ -59,11 +59,19 @@ export const Route = createFileRoute("/admin/stores")({
 
 type Store = {
   id: string;
-  slug: string;
   name: string;
   city: string | null;
   state: string | null;
   is_active: boolean | null;
+  address: string | null;
+  phone: string | null;
+  google_maps_url: string | null;
+  description: string | null;
+  opening_hours: string | null;
+  instagram: string | null;
+  website: string | null;
+  twitter: string | null;
+  twitch: string | null;
 };
 type Organizer = {
   id: string;
@@ -73,17 +81,6 @@ type Organizer = {
   home_store_id: string | null;
 };
 
-function slugifyName(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 80);
-}
 
 function AdminStoresPage() {
   const { player } = useGeekarenaRole();
