@@ -1504,6 +1504,56 @@ function StaffTab() {
             </div>
           ) : null}
 
+          {assignModal ? (
+            <div className="space-y-3 pt-4 border-t border-white/10">
+              <h4 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Información operativa
+              </h4>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">
+                  Horario / Disponibilidad
+                </label>
+                <input
+                  value={opFields.work_schedule}
+                  onChange={(e) =>
+                    setOpFields((f) => ({ ...f, work_schedule: e.target.value }))
+                  }
+                  placeholder="Lun-Vie 18:00-22:00"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">
+                    Contacto principal
+                  </label>
+                  <input
+                    value={opFields.contact_primary}
+                    onChange={(e) =>
+                      setOpFields((f) => ({ ...f, contact_primary: e.target.value }))
+                    }
+                    placeholder="+52 81 1234 5678"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">
+                    Contacto de respaldo
+                  </label>
+                  <input
+                    value={opFields.contact_backup}
+                    onChange={(e) =>
+                      setOpFields((f) => ({ ...f, contact_backup: e.target.value }))
+                    }
+                    placeholder="+52 81 9876 5432"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAssignModal(null)}>
               Omitir
