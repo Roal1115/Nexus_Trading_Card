@@ -15,6 +15,7 @@ import {
   Power,
   PowerOff,
   Check,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
@@ -1238,6 +1239,14 @@ function StaffTab() {
                                   openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
                                 }
                               >
+                                <Info size={14} className="mr-2" />
+                                Info
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                                }
+                              >
                                 <UserPlus size={14} className="mr-2" />
                                 {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
                               </DropdownMenuItem>
@@ -1315,6 +1324,14 @@ function StaffTab() {
                       </div>
                     ) : null}
                     <div className="flex items-center gap-3 pt-1">
+                      <button
+                        onClick={() =>
+                          openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                        }
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Info
+                      </button>
                       <button
                         onClick={() =>
                           openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
