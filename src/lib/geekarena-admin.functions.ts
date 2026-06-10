@@ -1556,6 +1556,7 @@ export const listAuditLog = createServerFn({ method: "POST" })
     target_type?: string;
     date_from?: string;
     date_to?: string;
+    search?: string;
     page?: number;
   }) => z.object({
     action: z.string().optional(),
@@ -1563,11 +1564,12 @@ export const listAuditLog = createServerFn({ method: "POST" })
     target_type: z.string().optional(),
     date_from: z.string().optional(),
     date_to: z.string().optional(),
+    search: z.string().max(100).optional(),
     page: z.number().min(1).default(1),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const PAGE_SIZE = 50;
+    const PAGE_SIZE = 25;
     const page = data.page ?? 1;
     const offset = (page - 1) * PAGE_SIZE;
 
@@ -1582,6 +1584,13 @@ export const listAuditLog = createServerFn({ method: "POST" })
     if (data.target_type) q = q.eq("target_type", data.target_type);
     if (data.date_from) q = q.gte("created_at", data.date_from);
     if (data.date_to) q = q.lte("created_at", data.date_to + "T23:59:59Z");
+    if (data.search) {
+      const s = data.search.replace(/[%,]/g, "");
+      const pat = `%${s}%`;
+      q = q.or(
+        `actor_tag.ilike.${pat},target_label.ilike.${pat},action.ilike.${pat},target_type.ilike.${pat}`,
+      );
+    }
 
     const { data: logs, count, error } = await q;
     if (error) throw new Error(error.message);
@@ -1828,7 +1837,7 @@ export const listStaffMembers = createServerFn({ method: "POST" })
     const { data, error } = await admin
       .from("players")
       .select(
-        "id, geek_tag, email, role, is_active, home_store_id, created_at, manager_games(game_id, games(id, name))",
+        "id, geek_tag, email, role, is_active, home_store_id, work_schedule, contact_primary, contact_backup, created_at, manager_games(game_id, games(id, name))",
       )
       .in("role", ["organizer", "tcg_manager"])
       .order("role", { ascending: true })
@@ -1858,6 +1867,9 @@ export const listStaffMembers = createServerFn({ method: "POST" })
       is_active: p.is_active,
       home_store: p.home_store_id ? storeMap.get(p.home_store_id) ?? null : null,
       manager_games: p.manager_games ?? [],
+      work_schedule: p.work_schedule ?? null,
+      contact_primary: p.contact_primary ?? null,
+      contact_backup: p.contact_backup ?? null,
       created_at: p.created_at,
     }));
   });
@@ -1869,17 +1881,29 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
       email: string;
       geek_tag: string;
       role: "tcg_manager" | "organizer";
+      work_schedule?: string;
+      contact_primary?: string;
+      contact_backup?: string;
     }) =>
       z
         .object({
           email: z.string().email(),
           geek_tag: z.string().min(3).max(30),
           role: z.enum(["tcg_manager", "organizer"]),
+          work_schedule: z.string().max(200).optional(),
+          contact_primary: z.string().max(50).optional(),
+          contact_backup: z.string().max(50).optional(),
         })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player: actor } = context;
+
+    const opFields = {
+      work_schedule: data.work_schedule ?? null,
+      contact_primary: data.contact_primary ?? null,
+      contact_backup: data.contact_backup ?? null,
+    };
 
     // Step 1 — check if player already exists by email
     const { data: existingByEmail } = await admin
@@ -1889,7 +1913,10 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (existingByEmail) {
-      const updates: Record<string, unknown> = { role: data.role };
+      const updates: Record<string, unknown> = {
+        role: data.role,
+        ...opFields,
+      };
       if (existingByEmail.geek_tag !== data.geek_tag) {
         const { data: tagTaken } = await admin
           .from("players")
@@ -1961,6 +1988,7 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
           email: data.email,
           geek_tag: data.geek_tag,
           is_active: true,
+          ...opFields,
         })
         .eq("id", playerId);
     }
@@ -1976,4 +2004,49 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
     );
 
     return { player_id: playerId, was_existing: false };
+  });
+
+export const deactivateStaffMember = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { player_id: string; action: "deactivate" | "delete" }) =>
+    z.object({
+      player_id: z.string().uuid(),
+      action: z.enum(["deactivate", "delete"]),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player: actor } = context;
+    if (data.action === "deactivate") {
+      const { error } = await admin
+        .from("players")
+        .update({ is_active: false })
+        .eq("id", data.player_id);
+      if (error) throw new Error(error.message);
+      await logAction(
+        admin,
+        actor,
+        "ROLE_CHANGED",
+        "player",
+        data.player_id,
+        data.player_id,
+        { action: "deactivated" },
+      );
+    } else {
+      const { error } = await admin
+        .from("players")
+        .update({ role: "player", is_active: false })
+        .eq("id", data.player_id);
+      if (error) throw new Error(error.message);
+      await admin.from("manager_games").delete().eq("player_id", data.player_id);
+      await logAction(
+        admin,
+        actor,
+        "ROLE_CHANGED",
+        "player",
+        data.player_id,
+        data.player_id,
+        { action: "removed_from_staff" },
+      );
+    }
+    return { success: true };
   });

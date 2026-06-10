@@ -70,7 +70,7 @@ function AdminLayout() {
               },
               { to: "/admin/history", label: "Historial de Torneos", icon: <History size={16} /> },
               { to: "/admin/stores", label: "Tiendas y Staff", icon: <Store size={16} /> },
-              { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
+              { to: "/admin/players", label: "Usuarios", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
               {
                 to: "/admin/activity",

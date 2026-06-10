@@ -426,7 +426,7 @@ function AdminPlayersPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
             Comunidad
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-white">Jugadores</h1>
+          <h1 className="mt-2 text-3xl font-bold text-white">Gestión de Usuarios</h1>
           <p className="mt-1 text-sm text-gray-400">
             Administra roles, tiendas y estado de cuenta a escala.
           </p>
