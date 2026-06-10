@@ -448,6 +448,7 @@ function AdminStoresPage() {
                             onEdit={() => setEditStore(s)}
                             onAssign={() => setAssignStore(s)}
                             onToggle={() => setToggleStore(s)}
+                            onSchedules={() => setSchedStore(s)}
                           />
                         </td>
                       </tr>
@@ -476,6 +477,7 @@ function AdminStoresPage() {
                         onEdit={() => setEditStore(s)}
                         onAssign={() => setAssignStore(s)}
                         onToggle={() => setToggleStore(s)}
+                        onSchedules={() => setSchedStore(s)}
                       />
                     </div>
                     <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
