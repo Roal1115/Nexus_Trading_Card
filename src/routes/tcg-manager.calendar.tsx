@@ -358,9 +358,13 @@ function ManagerCalendarPage() {
       {/* Calendar grid */}
       <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/10">
-              <div />
+          <div style={{ minWidth: "760px", width: "100%" }}>
+            {/* Header row */}
+            <div
+              style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
+              className="border-b border-white/10"
+            >
+              <div className="border-r border-white/5" />
               {weekDates.map((d, i) => {
                 const isToday =
                   d.toDateString() === new Date().toDateString();
@@ -370,6 +374,7 @@ function ManagerCalendarPage() {
                     className={`p-2 text-center border-l border-white/10 ${
                       isToday ? "bg-primary/10" : ""
                     }`}
+                    style={{ minWidth: 0 }}
                   >
                     <div className="text-[10px] uppercase text-gray-400">
                       {DAY_NAMES[d.getDay()]}
@@ -386,25 +391,28 @@ function ManagerCalendarPage() {
               })}
             </div>
 
+            {/* Hour rows */}
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/5"
+                style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
+                className="border-b border-white/5"
               >
-                <div className="p-2 text-[10px] text-gray-500 text-right">
+                <div className="p-2 text-[10px] text-gray-500 text-right border-r border-white/5 flex items-start justify-end pt-2">
                   {hour}:00
                 </div>
-                {[0, 1, 2, 3, 4, 5, 6].map((dow) => {
-                  const cellEntries = calendarGrid[dow]?.[hour] ?? [];
+                {[0, 1, 2, 3, 4, 5, 6].map((colIdx) => {
+                  const cellEntries = calendarGrid[colIdx]?.[hour] ?? [];
                   const isToday =
-                    weekDates[dow]?.toDateString() ===
+                    weekDates[colIdx]?.toDateString() ===
                     new Date().toDateString();
                   return (
                     <div
-                      key={dow}
+                      key={colIdx}
                       className={`min-h-[60px] p-1 border-l border-white/10 ${
                         isToday ? "bg-primary/5" : ""
                       }`}
+                      style={{ minWidth: 0, overflow: "hidden" }}
                     >
                       {cellEntries.length === 0 ? null : cellEntries.length ===
                         1 ? (
@@ -413,7 +421,7 @@ function ManagerCalendarPage() {
                           onClick={() => setSelectedEntry(cellEntries[0])}
                         />
                       ) : (
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                           {cellEntries.slice(0, 2).map((e) => (
                             <CalendarEntry
                               key={e.id}
