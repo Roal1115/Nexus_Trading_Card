@@ -92,6 +92,7 @@ type Organizer = {
 function AdminStoresPage() {
   const { player } = useGeekarenaRole();
   const email = player?.email ?? null;
+  const [activeTab, setActiveTab] = useState<"stores" | "staff">("stores");
   const fetchAll = useServerFn(listStoresWithOrganizers);
   const create = useServerFn(createStore);
   const toggleActive = useServerFn(setStoreActive);
