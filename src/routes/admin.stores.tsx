@@ -1355,6 +1355,32 @@ function StaffTab() {
                 ))}
               </div>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Horario de trabajo</Label>
+                <Input
+                  value={addForm.work_schedule}
+                  onChange={(e) => setAddForm((f) => ({ ...f, work_schedule: e.target.value }))}
+                  placeholder="Lun-Vie 10:00-19:00"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Contacto principal</Label>
+                <Input
+                  value={addForm.contact_primary}
+                  onChange={(e) => setAddForm((f) => ({ ...f, contact_primary: e.target.value }))}
+                  placeholder="+52 55 1234 5678"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Contacto secundario</Label>
+                <Input
+                  value={addForm.contact_backup}
+                  onChange={(e) => setAddForm((f) => ({ ...f, contact_backup: e.target.value }))}
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAddModal(false)}>
