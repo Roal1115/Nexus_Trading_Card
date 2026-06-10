@@ -175,10 +175,11 @@ function AdminStoresPage() {
   const submitCreate = async () => {
     if (!createForm.name) return toast.error("El nombre es obligatorio");
     try {
-      await create({ data: { name: createForm.name, city: createForm.city, state: createForm.state } });
+      await create({ data: { name: createForm.name, city: createForm.city, state: createForm.state, address: createForm.address || undefined, phone: createForm.phone || undefined } });
       toast.success("Tienda creada");
       setCreateOpen(false);
-      setCreateForm({ name: "", city: "", state: "" });
+      setCreateForm({ name: "", city: "", state: "", address: "", phone: "" });
+
       await refresh();
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
