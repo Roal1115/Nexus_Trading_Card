@@ -1,16 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Eye, ArrowRight, FileDown, FileX } from "lucide-react";
+import { Loader2, Eye, ArrowRight, FileDown, FileX, XCircle } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   getManagerApprovedTournaments,
   managerUndoApproval,
+  unapproveManagerTournament,
 } from "@/lib/geekarena-manager.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 
 export const Route = createFileRoute("/tcg-manager/approved")({
   component: ManagerApprovedTournaments,
