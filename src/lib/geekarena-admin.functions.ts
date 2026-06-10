@@ -452,11 +452,12 @@ export const listStoresWithOrganizers = createServerFn({ method: "POST" })
     const [storesRes, playersRes] = await Promise.all([
       admin
         .from("stores")
-        .select("id, slug, name, city, state, is_active")
+        .select("id, slug, name, city, state, country, is_active, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch, created_at")
         .order("city", { ascending: true })
         .order("name", { ascending: true }),
       admin.from("players").select("id, geek_tag, email, role, home_store_id").in("role", ["organizer", "admin"]),
     ]);
+
     if (storesRes.error) throw new Error(storesRes.error.message);
     if (playersRes.error) throw new Error(playersRes.error.message);
 
