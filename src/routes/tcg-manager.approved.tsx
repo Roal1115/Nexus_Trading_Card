@@ -46,10 +46,12 @@ function ManagerApprovedTournaments() {
   const email = player?.email ?? null;
   const fetchList = useServerFn(getManagerApprovedTournaments);
   const undoFn = useServerFn(managerUndoApproval);
+  const unapproveFn = useServerFn(unapproveManagerTournament);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [unapproveTarget, setUnapproveTarget] = useState<Row | null>(null);
   const [, setTick] = useState(0);
 
   useEffect(() => {
