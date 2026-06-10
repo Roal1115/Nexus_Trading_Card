@@ -559,6 +559,17 @@ function AdminStoresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Store schedules modal */}
+      <StoreSchedulesDialog
+        store={schedStore ? { id: schedStore.id, name: schedStore.name } : null}
+        onClose={() => setSchedStore(null)}
+        fns={{
+          fetch: fetchSchedulesFn as any,
+          upsert: upsertScheduleFn as any,
+          remove: deleteScheduleFn as any,
+        }}
+      />
       </>)}
     </div>
 
