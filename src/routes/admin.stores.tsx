@@ -27,6 +27,7 @@ import {
   listStaffMembers,
   upsertStaffMember,
   getManagerAssignedGames,
+  deactivateStaffMember,
 } from "@/lib/geekarena-admin.functions";
 import { assignManagerGames } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
@@ -938,6 +939,9 @@ type StaffRow = {
   is_active: boolean;
   home_store: { id: string; name: string; city: string | null } | null;
   manager_games: { game_id: string; games?: { id: string; name: string } | null }[];
+  work_schedule?: string | null;
+  contact_primary?: string | null;
+  contact_backup?: string | null;
 };
 
 function StaffTab() {
@@ -947,16 +951,21 @@ function StaffTab() {
   const fetchManagerGames = useServerFn(getManagerAssignedGames);
   const saveManagerGamesFn = useServerFn(assignManagerGames);
   const assignOrganizerFn = useServerFn(assignOrganizerToStore);
+  const deactivateStaffFn = useServerFn(deactivateStaffMember);
 
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roleTab, setRoleTab] = useState<"all" | "tcg_manager" | "organizer">("all");
 
   const [addModal, setAddModal] = useState(false);
   const [addForm, setAddForm] = useState<{
     email: string;
     geek_tag: string;
     role: "tcg_manager" | "organizer";
-  }>({ email: "", geek_tag: "", role: "organizer" });
+    work_schedule: string;
+    contact_primary: string;
+    contact_backup: string;
+  }>({ email: "", geek_tag: "", role: "organizer", work_schedule: "", contact_primary: "", contact_backup: "" });
   const [addLoading, setAddLoading] = useState(false);
 
   const [assignModal, setAssignModal] = useState<{
@@ -970,6 +979,17 @@ function StaffTab() {
   const [allStores, setAllStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
+
+  const [confirmAction, setConfirmAction] = useState<{
+    player: StaffRow;
+    action: "deactivate" | "delete";
+  } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const filteredStaff = useMemo(
+    () => (roleTab === "all" ? staff : staff.filter((p) => p.role === roleTab)),
+    [staff, roleTab],
+  );
 
   const refresh = async () => {
     setLoading(true);
@@ -1020,7 +1040,7 @@ function StaffTab() {
       const role = addForm.role;
       const geekTag = addForm.geek_tag;
       setAddModal(false);
-      setAddForm({ email: "", geek_tag: "", role: "organizer" });
+      setAddForm({ email: "", geek_tag: "", role: "organizer", work_schedule: "", contact_primary: "", contact_backup: "" });
       await refresh();
       if (playerId) {
         await openAssignmentFor(playerId, geekTag, role);
@@ -1083,6 +1103,30 @@ function StaffTab() {
         </Button>
       </div>
 
+      {/* Role tabs */}
+      <div className="flex gap-2 border-b border-white/10">
+        {([
+          { k: "all", label: "Todos" },
+          { k: "tcg_manager", label: "Managers" },
+          { k: "organizer", label: "Organizadores" },
+        ] as const).map((t) => {
+          const count = t.k === "all" ? staff.length : staff.filter((s) => s.role === t.k).length;
+          return (
+            <button
+              key={t.k}
+              onClick={() => setRoleTab(t.k)}
+              className={`px-3 py-2 text-sm font-medium border-b-2 transition ${
+                roleTab === t.k
+                  ? "border-primary text-white"
+                  : "border-transparent text-gray-400 hover:text-white"
+              }`}
+            >
+              {t.label} <span className="ml-1 text-xs text-gray-500">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         {loading ? (
@@ -1105,14 +1149,14 @@ function StaffTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {staff.length === 0 ? (
+                  {filteredStaff.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                        Sin staff registrado. Usa "Agregar Staff" para comenzar.
+                        Sin staff registrado.
                       </td>
                     </tr>
                   ) : (
-                    staff.map((p) => (
+                    filteredStaff.map((p) => (
                       <tr key={p.id} className="border-t border-white/5">
                         <td className="px-4 py-3 text-white font-medium">
                           {p.geek_tag}
@@ -1152,19 +1196,40 @@ function StaffTab() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() =>
-                              openAssignmentFor(
-                                p.id,
-                                p.geek_tag,
-                                p.role,
-                                p.home_store?.id,
-                              )
-                            }
-                            className="text-xs text-primary hover:underline"
-                          >
-                            {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1.5 rounded hover:bg-white/10 text-gray-300">
+                                <MoreHorizontal size={16} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                                }
+                              >
+                                <UserPlus size={14} className="mr-2" />
+                                {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {p.is_active ? (
+                                <DropdownMenuItem
+                                  onClick={() => setConfirmAction({ player: p, action: "deactivate" })}
+                                  className="text-amber-400 focus:text-amber-300"
+                                >
+                                  <PowerOff size={14} className="mr-2" />
+                                  Desactivar
+                                </DropdownMenuItem>
+                              ) : null}
+                              <DropdownMenuItem
+                                onClick={() => setConfirmAction({ player: p, action: "delete" })}
+                                className="text-red-400 focus:text-red-300"
+                              >
+                                <Power size={14} className="mr-2" />
+                                Quitar del staff
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))
@@ -1175,18 +1240,23 @@ function StaffTab() {
 
             {/* Mobile */}
             <div className="sm:hidden divide-y divide-white/5">
-              {staff.length === 0 ? (
+              {filteredStaff.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-gray-500">
                   Sin staff registrado.
                 </div>
               ) : (
-                staff.map((p) => (
+                filteredStaff.map((p) => (
                   <div key={p.id} className="p-4 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-white font-medium">{p.geek_tag}</span>
-                      <Badge variant="outline">
-                        {p.role === "tcg_manager" ? "Manager" : "Org"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                          {p.role === "tcg_manager" ? "Manager" : "Org"}
+                        </Badge>
+                        <Badge variant={p.is_active ? "default" : "secondary"}>
+                          {p.is_active ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </div>
                     </div>
                     <div className="text-xs text-gray-400">{p.email ?? "—"}</div>
                     {p.role === "tcg_manager" && p.manager_games?.length ? (
@@ -1206,14 +1276,30 @@ function StaffTab() {
                         {p.home_store.city ? ` · ${p.home_store.city}` : ""}
                       </div>
                     ) : null}
-                    <button
-                      onClick={() =>
-                        openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
-                      }
-                      className="text-xs text-primary hover:underline"
-                    >
-                      {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
-                    </button>
+                    <div className="flex items-center gap-3 pt-1">
+                      <button
+                        onClick={() =>
+                          openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                        }
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
+                      </button>
+                      {p.is_active ? (
+                        <button
+                          onClick={() => setConfirmAction({ player: p, action: "deactivate" })}
+                          className="text-xs text-amber-400 hover:underline"
+                        >
+                          Desactivar
+                        </button>
+                      ) : null}
+                      <button
+                        onClick={() => setConfirmAction({ player: p, action: "delete" })}
+                        className="text-xs text-red-400 hover:underline"
+                      >
+                        Quitar
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -1267,6 +1353,32 @@ function StaffTab() {
                     {r === "organizer" ? "Organizador" : "TCG Manager"}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Horario de trabajo</Label>
+                <Input
+                  value={addForm.work_schedule}
+                  onChange={(e) => setAddForm((f) => ({ ...f, work_schedule: e.target.value }))}
+                  placeholder="Lun-Vie 10:00-19:00"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Contacto principal</Label>
+                <Input
+                  value={addForm.contact_primary}
+                  onChange={(e) => setAddForm((f) => ({ ...f, contact_primary: e.target.value }))}
+                  placeholder="+52 55 1234 5678"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Contacto secundario</Label>
+                <Input
+                  value={addForm.contact_backup}
+                  onChange={(e) => setAddForm((f) => ({ ...f, contact_backup: e.target.value }))}
+                  placeholder="Opcional"
+                />
               </div>
             </div>
           </div>
@@ -1363,6 +1475,57 @@ function StaffTab() {
                 <Loader2 size={14} className="mr-2 animate-spin" />
               ) : null}
               {assignLoading ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm deactivate / delete */}
+      <Dialog open={!!confirmAction} onOpenChange={(o) => !o && setConfirmAction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction?.action === "deactivate" ? "Desactivar staff" : "Quitar del staff"}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmAction?.action === "deactivate"
+                ? `Se desactivará la cuenta de ${confirmAction?.player.geek_tag}. Podrá ser reactivada después.`
+                : `Se removerá a ${confirmAction?.player.geek_tag} del staff. Su rol pasará a usuario regular y se eliminarán sus asignaciones de TCGs.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmAction(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmAction?.action === "delete" ? "destructive" : "default"}
+              disabled={confirmLoading}
+              onClick={async () => {
+                if (!confirmAction) return;
+                setConfirmLoading(true);
+                try {
+                  await deactivateStaffFn({
+                    data: {
+                      player_id: confirmAction.player.id,
+                      action: confirmAction.action,
+                    },
+                  });
+                  toast.success(
+                    confirmAction.action === "deactivate"
+                      ? "Staff desactivado"
+                      : "Staff removido",
+                  );
+                  setConfirmAction(null);
+                  await refresh();
+                } catch (e: any) {
+                  toast.error(e?.message ?? String(e));
+                } finally {
+                  setConfirmLoading(false);
+                }
+              }}
+            >
+              {confirmLoading ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
