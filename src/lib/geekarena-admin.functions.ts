@@ -1837,7 +1837,7 @@ export const listStaffMembers = createServerFn({ method: "POST" })
     const { data, error } = await admin
       .from("players")
       .select(
-        "id, geek_tag, email, role, is_active, home_store_id, created_at, manager_games(game_id, games(id, name))",
+        "id, geek_tag, email, role, is_active, home_store_id, work_schedule, contact_primary, contact_backup, created_at, manager_games(game_id, games(id, name))",
       )
       .in("role", ["organizer", "tcg_manager"])
       .order("role", { ascending: true })
@@ -1867,6 +1867,9 @@ export const listStaffMembers = createServerFn({ method: "POST" })
       is_active: p.is_active,
       home_store: p.home_store_id ? storeMap.get(p.home_store_id) ?? null : null,
       manager_games: p.manager_games ?? [],
+      work_schedule: p.work_schedule ?? null,
+      contact_primary: p.contact_primary ?? null,
+      contact_backup: p.contact_backup ?? null,
       created_at: p.created_at,
     }));
   });
