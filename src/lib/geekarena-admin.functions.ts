@@ -1567,7 +1567,7 @@ export const listAuditLog = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const PAGE_SIZE = 50;
+    const PAGE_SIZE = 25;
     const page = data.page ?? 1;
     const offset = (page - 1) * PAGE_SIZE;
 
@@ -1582,6 +1582,13 @@ export const listAuditLog = createServerFn({ method: "POST" })
     if (data.target_type) q = q.eq("target_type", data.target_type);
     if (data.date_from) q = q.gte("created_at", data.date_from);
     if (data.date_to) q = q.lte("created_at", data.date_to + "T23:59:59Z");
+    if (data.search) {
+      const s = data.search.replace(/[%,]/g, "");
+      const pat = `%${s}%`;
+      q = q.or(
+        `actor_tag.ilike.${pat},target_label.ilike.${pat},action.ilike.${pat},target_type.ilike.${pat}`,
+      );
+    }
 
     const { data: logs, count, error } = await q;
     if (error) throw new Error(error.message);
