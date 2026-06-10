@@ -136,6 +136,58 @@ function AdminPlayersPage() {
   const fetchDetail = useServerFn(getPlayerDetail);
   const updateDetail = useServerFn(updatePlayerDetail);
 
+  // TCG assignment modal
+  const fetchManagerGames = useServerFn(getManagerAssignedGames);
+  const saveManagerGames = useServerFn(assignManagerGames);
+  const [tcgModal, setTcgModal] = useState<{ player_id: string; geek_tag: string } | null>(null);
+  const [allManagerGames, setAllManagerGames] = useState<{ id: string; name: string }[]>([]);
+  const [selectedManagerGames, setSelectedManagerGames] = useState<Set<string>>(new Set());
+  const [tcgModalLoading, setTcgModalLoading] = useState(false);
+  const [tcgSaving, setTcgSaving] = useState(false);
+
+  const openTcgModal = async (player_id: string, geek_tag: string) => {
+    setTcgModal({ player_id, geek_tag });
+    setTcgModalLoading(true);
+    try {
+      const res = await fetchManagerGames({ data: { player_id } });
+      setAllManagerGames(res.all_games);
+      setSelectedManagerGames(new Set(res.assigned_game_ids));
+    } catch (e: any) {
+      toast.error(String(e?.message ?? e));
+    } finally {
+      setTcgModalLoading(false);
+    }
+  };
+
+  const toggleManagerGame = (gameId: string) => {
+    setSelectedManagerGames((prev) => {
+      const next = new Set(prev);
+      if (next.has(gameId)) next.delete(gameId);
+      else next.add(gameId);
+      return next;
+    });
+  };
+
+  const saveTcgAssignment = async () => {
+    if (!tcgModal) return;
+    setTcgSaving(true);
+    try {
+      await saveManagerGames({
+        data: {
+          player_id: tcgModal.player_id,
+          game_ids: Array.from(selectedManagerGames),
+        },
+      });
+      toast.success("TCGs asignados correctamente");
+      setTcgModal(null);
+      refresh();
+    } catch (e: any) {
+      toast.error(String(e?.message ?? e));
+    } finally {
+      setTcgSaving(false);
+    }
+  };
+
   const openDetail = async (playerId: string) => {
     setDetailModal(playerId);
     setDetailLoading(true);
