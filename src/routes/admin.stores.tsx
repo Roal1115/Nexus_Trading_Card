@@ -1149,14 +1149,14 @@ function StaffTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {staff.length === 0 ? (
+                  {filteredStaff.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                        Sin staff registrado. Usa "Agregar Staff" para comenzar.
+                        Sin staff registrado.
                       </td>
                     </tr>
                   ) : (
-                    staff.map((p) => (
+                    filteredStaff.map((p) => (
                       <tr key={p.id} className="border-t border-white/5">
                         <td className="px-4 py-3 text-white font-medium">
                           {p.geek_tag}
@@ -1196,19 +1196,40 @@ function StaffTab() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() =>
-                              openAssignmentFor(
-                                p.id,
-                                p.geek_tag,
-                                p.role,
-                                p.home_store?.id,
-                              )
-                            }
-                            className="text-xs text-primary hover:underline"
-                          >
-                            {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1.5 rounded hover:bg-white/10 text-gray-300">
+                                <MoreHorizontal size={16} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                                }
+                              >
+                                <UserPlus size={14} className="mr-2" />
+                                {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {p.is_active ? (
+                                <DropdownMenuItem
+                                  onClick={() => setConfirmAction({ player: p, action: "deactivate" })}
+                                  className="text-amber-400 focus:text-amber-300"
+                                >
+                                  <PowerOff size={14} className="mr-2" />
+                                  Desactivar
+                                </DropdownMenuItem>
+                              ) : null}
+                              <DropdownMenuItem
+                                onClick={() => setConfirmAction({ player: p, action: "delete" })}
+                                className="text-red-400 focus:text-red-300"
+                              >
+                                <Power size={14} className="mr-2" />
+                                Quitar del staff
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))
