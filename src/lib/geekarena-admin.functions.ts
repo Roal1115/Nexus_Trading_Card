@@ -2082,3 +2082,193 @@ export const deactivateStaffMember = createServerFn({ method: "POST" })
     }
     return { success: true };
   });
+
+// ==================== Store Schedules (Admin) ====================
+
+export const getStoreSchedules = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { store_id: string }) =>
+    z.object({ store_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const [schedulesRes, gamesRes] = await Promise.all([
+      admin
+        .from("store_schedules")
+        .select(
+          "id, store_id, game_id, day_of_week, start_time, is_active, games(id, name)",
+        )
+        .eq("store_id", data.store_id)
+        .eq("is_active", true)
+        .order("game_id")
+        .order("day_of_week"),
+      admin
+        .from("games")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name"),
+    ]);
+    return {
+      schedules: schedulesRes.data ?? [],
+      games: gamesRes.data ?? [],
+    };
+  });
+
+export const upsertStoreSchedule = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator(
+    (d: {
+      store_id: string;
+      game_id: string;
+      day_of_week: number;
+      start_time: string;
+      id?: string;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          game_id: z.string().uuid(),
+          day_of_week: z.number().int().min(0).max(6),
+          start_time: z.string().regex(/^\d{2}:\d{2}$/),
+          id: z.string().uuid().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    if (data.id) {
+      const { error } = await admin
+        .from("store_schedules")
+        .update({
+          game_id: data.game_id,
+          day_of_week: data.day_of_week,
+          start_time: data.start_time,
+        })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await admin
+        .from("store_schedules")
+        .upsert(
+          {
+            store_id: data.store_id,
+            game_id: data.game_id,
+            day_of_week: data.day_of_week,
+            start_time: data.start_time,
+            is_active: true,
+          },
+          { onConflict: "store_id,game_id,day_of_week" },
+        );
+      if (error) throw new Error(error.message);
+    }
+    return { success: true };
+  });
+
+export const deleteStoreSchedule = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { schedule_id: string }) =>
+    z.object({ schedule_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.admin
+      .from("store_schedules")
+      .delete()
+      .eq("id", data.schedule_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+// ==================== Delete Player Account ====================
+
+export const deletePlayerAccount = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { player_id: string; confirm_tag: string }) =>
+    z
+      .object({
+        player_id: z.string().uuid(),
+        confirm_tag: z.string().min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player: actor } = context;
+    const { data: target } = await admin
+      .from("players")
+      .select("id, geek_tag, auth_user_id, role")
+      .eq("id", data.player_id)
+      .maybeSingle();
+    if (!target) throw new Error("Usuario no encontrado");
+    if ((target as any).geek_tag !== data.confirm_tag) {
+      throw new Error("El Player Tag no coincide");
+    }
+    if ((target as any).role === "admin") {
+      throw new Error("No puedes eliminar una cuenta de admin");
+    }
+    const authUserId = (target as any).auth_user_id as string | null;
+    if (authUserId) {
+      try {
+        await admin.auth.admin.deleteUser(authUserId);
+      } catch (e) {
+        console.error("auth deleteUser error:", e);
+      }
+    }
+    const { error } = await admin
+      .from("players")
+      .delete()
+      .eq("id", data.player_id);
+    if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      actor,
+      "ACCOUNT_DELETED",
+      "player",
+      data.player_id,
+      (target as any).geek_tag,
+    );
+    return { success: true };
+  });
+
+// ==================== Unapprove Tournament (Admin) ====================
+
+export const unapproveAdminTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { tournament_id: string; reason: string }) =>
+    z
+      .object({
+        tournament_id: z.string().uuid(),
+        reason: z.string().min(10, "El motivo debe tener al menos 10 caracteres"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("status, game_id, store_id, tournament_date")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (!t || (t as any).status !== "APPROVED") {
+      throw new Error("Torneo no válido para des-aprobación");
+    }
+    const { error } = await admin
+      .from("tournaments")
+      .update({
+        status: "DRAFT",
+        approved_at: null,
+        undo_deadline: null,
+        approved_by: null,
+        rejection_reason: data.reason,
+      })
+      .eq("id", data.tournament_id);
+    if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${(t as any).game_id} — ${(t as any).store_id}`,
+      { reason: data.reason, unapproved_by_role: player.role },
+    );
+    return { success: true };
+  });
