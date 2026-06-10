@@ -326,6 +326,21 @@ function ManagerCalendarPage() {
           ))}
         </select>
 
+        <select
+          value={gameFilter}
+          onChange={(e) => setGameFilter(e.target.value)}
+          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
+        >
+          <option value="all">Todos los TCGs</option>
+          {uniqueGames.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+
+
+
         <div className="flex flex-wrap items-center gap-3 ml-auto">
           {Object.entries(ZONE_COLORS).map(([zone, colors]) => (
             <div
