@@ -1091,6 +1091,14 @@ function StaffTab() {
         });
         toast.success("Tienda asignada correctamente");
       }
+      await updateOpFieldsFn({
+        data: {
+          player_id: assignModal.player_id,
+          work_schedule: opFields.work_schedule.trim() || null,
+          contact_primary: opFields.contact_primary.trim() || null,
+          contact_backup: opFields.contact_backup.trim() || null,
+        },
+      });
       setAssignModal(null);
       await refresh();
     } catch (e: any) {
