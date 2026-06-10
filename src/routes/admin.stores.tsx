@@ -951,16 +951,21 @@ function StaffTab() {
   const fetchManagerGames = useServerFn(getManagerAssignedGames);
   const saveManagerGamesFn = useServerFn(assignManagerGames);
   const assignOrganizerFn = useServerFn(assignOrganizerToStore);
+  const deactivateStaffFn = useServerFn(deactivateStaffMember);
 
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roleTab, setRoleTab] = useState<"all" | "tcg_manager" | "organizer">("all");
 
   const [addModal, setAddModal] = useState(false);
   const [addForm, setAddForm] = useState<{
     email: string;
     geek_tag: string;
     role: "tcg_manager" | "organizer";
-  }>({ email: "", geek_tag: "", role: "organizer" });
+    work_schedule: string;
+    contact_primary: string;
+    contact_backup: string;
+  }>({ email: "", geek_tag: "", role: "organizer", work_schedule: "", contact_primary: "", contact_backup: "" });
   const [addLoading, setAddLoading] = useState(false);
 
   const [assignModal, setAssignModal] = useState<{
@@ -974,6 +979,17 @@ function StaffTab() {
   const [allStores, setAllStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
+
+  const [confirmAction, setConfirmAction] = useState<{
+    player: StaffRow;
+    action: "deactivate" | "delete";
+  } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const filteredStaff = useMemo(
+    () => (roleTab === "all" ? staff : staff.filter((p) => p.role === roleTab)),
+    [staff, roleTab],
+  );
 
   const refresh = async () => {
     setLoading(true);
