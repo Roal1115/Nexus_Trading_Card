@@ -101,31 +101,19 @@ type CalData = {
 
 function ManagerCalendarPage() {
   const fetchCalendar = useServerFn(getManagerCalendar);
-  const fetchGames = useServerFn(getManagerGames);
 
-  const [games, setGames] = useState<Game[]>([]);
-  const [activeGame, setActiveGame] = useState<string | null>(null);
   const [calData, setCalData] = useState<CalData | null>(null);
   const [, setLoading] = useState(false);
   const [weekStart, setWeekStart] = useState<string>("");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
   const [storeFilter, setStoreFilter] = useState<string>("all");
+  const [gameFilter, setGameFilter] = useState<string>("all");
   const [selectedEntry, setSelectedEntry] = useState<CalEntry | null>(null);
 
   useEffect(() => {
-    fetchGames({}).then((g: any) => {
-      const list = (g ?? []) as Game[];
-      setGames(list);
-      if (list.length > 0) setActiveGame(list[0].id);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!activeGame) return;
     setLoading(true);
     fetchCalendar({
-      data: { game_id: activeGame, ...(weekStart ? { week_start: weekStart } : {}) },
+      data: { ...(weekStart ? { week_start: weekStart } : {}) },
     } as any)
       .then((d: any) => {
         setCalData(d);
@@ -133,7 +121,7 @@ function ManagerCalendarPage() {
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGame, weekStart]);
+  }, [weekStart]);
 
   const navigateWeek = (dir: -1 | 1) => {
     if (!weekStart) return;
@@ -147,7 +135,9 @@ function ManagerCalendarPage() {
     return calData.entries.filter((e) => {
       if (zoneFilter !== "all" && e.zone !== zoneFilter) return false;
       if (storeFilter !== "all" && e.store_id !== storeFilter) return false;
+      if (gameFilter !== "all" && e.game_id !== gameFilter) return false;
       return true;
+
     });
   }, [calData, zoneFilter, storeFilter]);
 
