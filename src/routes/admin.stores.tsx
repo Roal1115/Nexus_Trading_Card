@@ -295,7 +295,24 @@ function AdminStoresPage() {
                   />
                 </div>
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-400">Dirección</Label>
+                <Input
+                  value={createForm.address}
+                  onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
+                  placeholder="Calle, número, colonia"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-400">Teléfono</Label>
+                <Input
+                  value={createForm.phone}
+                  onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                  placeholder="+52..."
+                />
+              </div>
             </div>
+
             <DialogFooter>
               <Button variant="ghost" onClick={() => setCreateOpen(false)}>
                 Cancelar
