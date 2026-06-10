@@ -30,8 +30,13 @@ import {
   getManagerAssignedGames,
   deactivateStaffMember,
   updateStaffOperationalFields,
+  getStoreSchedules,
+  upsertStoreSchedule,
+  deleteStoreSchedule,
 } from "@/lib/geekarena-admin.functions";
 import { assignManagerGames } from "@/lib/geekarena-manager.functions";
+import { StoreSchedulesDialog } from "@/components/admin/StoreSchedulesDialog";
+import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
