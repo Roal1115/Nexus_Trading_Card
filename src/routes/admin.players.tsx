@@ -25,7 +25,9 @@ import {
   listStoresWithOrganizers,
   getPlayerDetail,
   updatePlayerDetail,
+  getManagerAssignedGames,
 } from "@/lib/geekarena-admin.functions";
+import { assignManagerGames } from "@/lib/geekarena-manager.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
