@@ -1839,7 +1839,7 @@ export const listStaffMembers = createServerFn({ method: "POST" })
       .select(
         "id, geek_tag, email, role, is_active, home_store_id, work_schedule, contact_primary, contact_backup, created_at, manager_games(game_id, games(id, name))",
       )
-      .in("role", ["organizer", "tcg_manager"])
+      .in("role", ["organizer", "tcg_manager", "admin"])
       .order("role", { ascending: true })
       .order("geek_tag", { ascending: true });
 

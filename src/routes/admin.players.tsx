@@ -79,8 +79,6 @@ type P = {
 };
 type Store = { id: string; name: string; city: string | null };
 
-type Tab = "all" | "organizers" | "managers" | "admins";
-
 const PAGE_SIZE = 25;
 
 function AdminPlayersPage() {
@@ -92,7 +90,6 @@ function AdminPlayersPage() {
   const setRole = useServerFn(setPlayerRole);
   const setActive = useServerFn(setPlayerActive);
 
-  const [tab, setTab] = useState<Tab>("all");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | Role>("all");
@@ -274,20 +271,12 @@ function AdminPlayersPage() {
       .catch(() => toast.error("Error al cargar las tiendas. Intenta de nuevo."));
   }, [email, fetchStores]);
 
-  // tab presets — reset page when tab changes
+  // reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [tab, roleFilter, activeFilter, storeFilter, sort, search]);
+  }, [roleFilter, activeFilter, storeFilter, sort, search]);
 
-  // effective role based on tab
-  const effectiveRole: "all" | Role =
-    tab === "organizers"
-      ? "organizer"
-      : tab === "managers"
-        ? "tcg_manager"
-        : tab === "admins"
-          ? "admin"
-          : roleFilter;
+  const effectiveRole: "all" | Role = roleFilter;
 
   // fetch players
   useEffect(() => {
@@ -301,7 +290,6 @@ function AdminPlayersPage() {
         store_id: storeFilter !== "all" ? storeFilter : undefined,
         sort,
         page,
-        include_last_sign_in: tab === "admins",
       },
     })
       .then((r) => {
@@ -316,7 +304,7 @@ function AdminPlayersPage() {
     return () => {
       cancelled = true;
     };
-  }, [email, search, effectiveRole, activeFilter, storeFilter, sort, page, tab, fetchPlayers]);
+  }, [email, search, effectiveRole, activeFilter, storeFilter, sort, page, fetchPlayers]);
 
   const refresh = () => {
     // bump via no-op state change
@@ -329,7 +317,6 @@ function AdminPlayersPage() {
           store_id: storeFilter !== "all" ? storeFilter : undefined,
           sort,
           page,
-          include_last_sign_in: tab === "admins",
         },
       }).then((r) => {
         setPlayers((r.players as P[]) ?? []);
@@ -340,13 +327,13 @@ function AdminPlayersPage() {
 
   const activeFiltersCount = useMemo(() => {
     let n = 0;
-    if (tab === "all" && roleFilter !== "all") n++;
+    if (roleFilter !== "all") n++;
     if (activeFilter !== "all") n++;
     if (storeFilter !== "all") n++;
     if (sort !== "recent") n++;
     if (search) n++;
     return n;
-  }, [tab, roleFilter, activeFilter, storeFilter, sort, search]);
+  }, [roleFilter, activeFilter, storeFilter, sort, search]);
 
   const clearFilters = () => {
     setRoleFilter("all");
@@ -433,27 +420,6 @@ function AdminPlayersPage() {
           </p>
         </header>
 
-        {/* Tabs */}
-        <div className="glass inline-flex rounded-2xl p-1">
-          {([
-            { k: "all", label: "Todos" },
-            { k: "organizers", label: "Organizadores" },
-            { k: "managers", label: "TCG Managers" },
-            { k: "admins", label: "Administradores" },
-          ] as { k: Tab; label: string }[]).map((t) => (
-            <button
-              key={t.k}
-              onClick={() => setTab(t.k)}
-              className={`rounded-xl px-4 py-2 text-sm transition ${
-                tab === t.k
-                  ? "bg-primary text-primary-foreground"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
 
         {/* Search + filters */}
         <div className="glass space-y-3 rounded-2xl p-4">
@@ -473,20 +439,18 @@ function AdminPlayersPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {tab === "all" && (
-              <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as any)}>
-                <SelectTrigger className="h-9 w-40">
-                  <SelectValue placeholder="Rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los roles</SelectItem>
-                  <SelectItem value="player">Player</SelectItem>
-                  <SelectItem value="organizer">Organizer</SelectItem>
-                  <SelectItem value="tcg_manager">TCG Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
+            <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as any)}>
+              <SelectTrigger className="h-9 w-40">
+                <SelectValue placeholder="Rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los roles</SelectItem>
+                <SelectItem value="player">Player</SelectItem>
+                <SelectItem value="organizer">Organizer</SelectItem>
+                <SelectItem value="tcg_manager">TCG Manager</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
 
             <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as any)}>
               <SelectTrigger className="h-9 w-40">
@@ -567,13 +531,9 @@ function AdminPlayersPage() {
                     <th className="px-4 py-3">Geek Tag</th>
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Rol</th>
-                    <th className="px-4 py-3">
-                      {tab === "organizers" ? "Tienda asignada" : "Tienda"}
-                    </th>
+                    <th className="px-4 py-3">Tienda</th>
                     <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3">
-                      {tab === "admins" ? "Último acceso" : "Registro"}
-                    </th>
+                    <th className="px-4 py-3">Registro</th>
                     <th className="px-4 py-3 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -620,17 +580,6 @@ function AdminPlayersPage() {
                       <td className="px-4 py-3 text-gray-300">
                         <div className="flex items-center gap-2">
                           <span>{storeName(p.home_store_id)}</span>
-                          {tab === "organizers" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setStoreModal({ p, next: p.home_store_id ?? "" })
-                              }
-                            >
-                              Reasignar
-                            </Button>
-                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -643,11 +592,7 @@ function AdminPlayersPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-gray-400">
-                        {tab === "admins"
-                          ? p.last_sign_in_at
-                            ? new Date(p.last_sign_in_at).toLocaleDateString("es-MX")
-                            : "—"
-                          : new Date(p.created_at).toLocaleDateString("es-MX")}
+                        {new Date(p.created_at).toLocaleDateString("es-MX")}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <RowActions
