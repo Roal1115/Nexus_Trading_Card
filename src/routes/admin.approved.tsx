@@ -47,11 +47,13 @@ function ApprovedTournaments() {
   const email = player?.email ?? null;
   const fetchList = useServerFn(listTournamentsByStatus);
   const publish = useServerFn(publishTournaments);
+  const unapproveFn = useServerFn(unapproveAdminTournament);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [publishing, setPublishing] = useState(false);
+  const [unapproveTarget, setUnapproveTarget] = useState<Row | null>(null);
 
   const refresh = async (em: string) => {
     setLoading(true);
