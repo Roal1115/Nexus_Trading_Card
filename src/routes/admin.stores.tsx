@@ -14,6 +14,8 @@ import {
   UserPlus,
   Power,
   PowerOff,
+  X,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
