@@ -1022,6 +1022,12 @@ function StaffTab() {
     currentStoreId?: string,
   ) => {
     setAssignModal({ player_id, geek_tag, role });
+    const current = staff.find((s) => s.id === player_id);
+    setOpFields({
+      work_schedule: current?.work_schedule ?? "",
+      contact_primary: current?.contact_primary ?? "",
+      contact_backup: current?.contact_backup ?? "",
+    });
     if (role === "tcg_manager") {
       const gRes: any = await fetchManagerGames({ data: { player_id } });
       setAllGames(gRes.all_games ?? []);
