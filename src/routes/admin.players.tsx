@@ -618,6 +618,10 @@ function AdminPlayersPage() {
                             });
                           }}
                           onAssignGames={() => openTcgModal(p.id, p.geek_tag)}
+                          onDeleteAccount={() => {
+                            setDeleteModal(p);
+                            setDeleteConfirmTag("");
+                          }}
                         />
                       </td>
                     </tr>
