@@ -602,3 +602,162 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       },
     };
   });
+
+// ==================== Store Schedules (Manager) ====================
+
+export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: { store_id: string }) =>
+    z.object({ store_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const gameIds = await getManagerGameIds(admin, player);
+    const [schedulesRes, gamesRes] = await Promise.all([
+      admin
+        .from("store_schedules")
+        .select(
+          "id, store_id, game_id, day_of_week, start_time, is_active, games(id, name)",
+        )
+        .eq("store_id", data.store_id)
+        .eq("is_active", true)
+        .in("game_id", gameIds.length ? gameIds : ["00000000-0000-0000-0000-000000000000"])
+        .order("game_id")
+        .order("day_of_week"),
+      admin
+        .from("games")
+        .select("id, name")
+        .eq("is_active", true)
+        .in("id", gameIds.length ? gameIds : ["00000000-0000-0000-0000-000000000000"])
+        .order("name"),
+    ]);
+    return {
+      schedules: schedulesRes.data ?? [],
+      games: gamesRes.data ?? [],
+    };
+  });
+
+export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator(
+    (d: {
+      store_id: string;
+      game_id: string;
+      day_of_week: number;
+      start_time: string;
+      id?: string;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          game_id: z.string().uuid(),
+          day_of_week: z.number().int().min(0).max(6),
+          start_time: z.string().regex(/^\d{2}:\d{2}$/),
+          id: z.string().uuid().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const gameIds = await getManagerGameIds(admin, player);
+    if (!gameIds.includes(data.game_id)) {
+      throw new Error("No tienes permisos para este TCG");
+    }
+    if (data.id) {
+      const { error } = await admin
+        .from("store_schedules")
+        .update({
+          game_id: data.game_id,
+          day_of_week: data.day_of_week,
+          start_time: data.start_time,
+        })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await admin
+        .from("store_schedules")
+        .upsert(
+          {
+            store_id: data.store_id,
+            game_id: data.game_id,
+            day_of_week: data.day_of_week,
+            start_time: data.start_time,
+            is_active: true,
+          },
+          { onConflict: "store_id,game_id,day_of_week" },
+        );
+      if (error) throw new Error(error.message);
+    }
+    return { success: true };
+  });
+
+export const deleteStoreScheduleManager = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: { schedule_id: string }) =>
+    z.object({ schedule_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: row } = await admin
+      .from("store_schedules")
+      .select("game_id")
+      .eq("id", data.schedule_id)
+      .maybeSingle();
+    if (!row) throw new Error("Horario no encontrado");
+    const gameIds = await getManagerGameIds(admin, player);
+    if (!gameIds.includes((row as any).game_id)) {
+      throw new Error("No tienes permisos para este TCG");
+    }
+    const { error } = await admin
+      .from("store_schedules")
+      .delete()
+      .eq("id", data.schedule_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+// ==================== Unapprove Tournament (Manager) ====================
+
+export const unapproveManagerTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: { tournament_id: string; reason: string }) =>
+    z
+      .object({
+        tournament_id: z.string().uuid(),
+        reason: z.string().min(10, "El motivo debe tener al menos 10 caracteres"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("status, game_id, store_id, tournament_date")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (!t || (t as any).status !== "APPROVED") {
+      throw new Error("Torneo no válido para des-aprobación");
+    }
+    await assertManagerOwnsGame(admin, player, (t as any).game_id);
+    const { error } = await admin
+      .from("tournaments")
+      .update({
+        status: "DRAFT",
+        approved_at: null,
+        undo_deadline: null,
+        approved_by: null,
+        rejection_reason: data.reason,
+      })
+      .eq("id", data.tournament_id);
+    if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_REJECTED",
+      "tournament",
+      data.tournament_id,
+      `${(t as any).game_id} — ${(t as any).store_id}`,
+      { reason: data.reason, unapproved_by_role: player.role },
+    );
+    return { success: true };
+  });
