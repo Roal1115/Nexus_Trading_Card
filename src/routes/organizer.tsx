@@ -38,6 +38,7 @@ function OrganizerLayout() {
         items={[
           { to: "/organizer", label: "Mi Tienda", icon: <Store size={16} />, exact: true },
           { to: "/organizer/tournaments", label: "Mis Torneos", icon: <Trophy size={16} />, badge: counts?.pending ?? 0 },
+          { to: "/organizer/calendar", label: "Calendario", icon: <Calendar size={16} /> },
           { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
         ]}
       />
