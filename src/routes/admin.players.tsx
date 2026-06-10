@@ -112,6 +112,8 @@ function AdminPlayersPage() {
   const [adminConfirmEmail, setAdminConfirmEmail] = useState("");
   const [storeModal, setStoreModal] = useState<{ p: P; next: string } | null>(null);
   const [activeModal, setActiveModal] = useState<P | null>(null);
+  const [deleteModal, setDeleteModal] = useState<P | null>(null);
+  const [deleteConfirmTag, setDeleteConfirmTag] = useState("");
   const [acting, setActing] = useState(false);
 
   // detail modal
