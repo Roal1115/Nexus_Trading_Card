@@ -939,6 +939,9 @@ type StaffRow = {
   is_active: boolean;
   home_store: { id: string; name: string; city: string | null } | null;
   manager_games: { game_id: string; games?: { id: string; name: string } | null }[];
+  work_schedule?: string | null;
+  contact_primary?: string | null;
+  contact_backup?: string | null;
 };
 
 function StaffTab() {
