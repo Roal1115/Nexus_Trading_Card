@@ -981,6 +981,11 @@ function StaffTab() {
   const [allStores, setAllStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
+  const [opFields, setOpFields] = useState<{
+    work_schedule: string;
+    contact_primary: string;
+    contact_backup: string;
+  }>({ work_schedule: "", contact_primary: "", contact_backup: "" });
 
   const [confirmAction, setConfirmAction] = useState<{
     player: StaffRow;
