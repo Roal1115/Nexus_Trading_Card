@@ -519,7 +519,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     const entries = (schedules ?? []).map((s: any) => {
       const store     = s.stores;
       const organizer = organizerMap.get(s.store_id);
-      const tournament = tournamentMap.get(`${s.store_id}-${s.day_of_week}`);
+      const tournament = tournamentMap.get(`${s.store_id}-${s.game_id}-${s.day_of_week}`);
 
       // Actual date for this day_of_week in current week
       // monday = index 0 = day_of_week 1 (Lunes)
