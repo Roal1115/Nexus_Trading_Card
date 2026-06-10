@@ -174,6 +174,9 @@ function ManagerCalendarPage() {
     .filter(
       (v, i, a) => a.findIndex((x) => x.id === v.id) === i,
     );
+  const uniqueGames = Array.from(
+    new Map((calData?.entries ?? []).map((e) => [e.game_id, { id: e.game_id, name: e.game_name }])).values(),
+  );
   const stats = calData?.stats;
 
   return (
@@ -187,23 +190,7 @@ function ManagerCalendarPage() {
         </h1>
       </div>
 
-      {games.length > 1 && (
-        <div className="flex border-b border-white/10 overflow-x-auto">
-          {games.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setActiveGame(g.id)}
-              className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
-                activeGame === g.id
-                  ? "border-primary text-white"
-                  : "border-transparent text-gray-400 hover:text-white"
-              }`}
-            >
-              {g.name}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
