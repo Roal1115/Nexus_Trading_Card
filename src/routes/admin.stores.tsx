@@ -28,6 +28,7 @@ import {
   upsertStaffMember,
   getManagerAssignedGames,
   deactivateStaffMember,
+  updateStaffOperationalFields,
 } from "@/lib/geekarena-admin.functions";
 import { assignManagerGames } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
