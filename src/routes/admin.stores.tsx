@@ -1479,6 +1479,57 @@ function StaffTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm deactivate / delete */}
+      <Dialog open={!!confirmAction} onOpenChange={(o) => !o && setConfirmAction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction?.action === "deactivate" ? "Desactivar staff" : "Quitar del staff"}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmAction?.action === "deactivate"
+                ? `Se desactivará la cuenta de ${confirmAction?.player.geek_tag}. Podrá ser reactivada después.`
+                : `Se removerá a ${confirmAction?.player.geek_tag} del staff. Su rol pasará a usuario regular y se eliminarán sus asignaciones de TCGs.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmAction(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmAction?.action === "delete" ? "destructive" : "default"}
+              disabled={confirmLoading}
+              onClick={async () => {
+                if (!confirmAction) return;
+                setConfirmLoading(true);
+                try {
+                  await deactivateStaffFn({
+                    data: {
+                      player_id: confirmAction.player.id,
+                      action: confirmAction.action,
+                    },
+                  });
+                  toast.success(
+                    confirmAction.action === "deactivate"
+                      ? "Staff desactivado"
+                      : "Staff removido",
+                  );
+                  setConfirmAction(null);
+                  await refresh();
+                } catch (e: any) {
+                  toast.error(e?.message ?? String(e));
+                } finally {
+                  setConfirmLoading(false);
+                }
+              }}
+            >
+              {confirmLoading ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
