@@ -328,12 +328,25 @@ function ActivityPage() {
           )}
         </div>
 
+        {/* Search bar */}
+        <div className="border-t border-white/10 px-4 sm:px-5 py-3">
+          <div className="relative max-w-md">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              value={filters.search}
+              onChange={(e) => load({ search: e.target.value, page: 1 })}
+              placeholder="Buscar en todas las columnas..."
+              className="w-full rounded-lg border border-white/10 bg-black/30 pl-8 pr-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-white/10 px-4 sm:px-5 py-3">
             <div className="text-xs text-gray-400">
-              Mostrando {(filters.page - 1) * 50 + 1}–
-              {Math.min(filters.page * 50, total)} de{" "}
+              Mostrando {(filters.page - 1) * 25 + 1}–
+              {Math.min(filters.page * 25, total)} de{" "}
               {total.toLocaleString("es-MX")}
             </div>
             <div className="flex items-center gap-2">
