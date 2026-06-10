@@ -91,6 +91,8 @@ function AdminPlayersPage() {
   const fetchStores = useServerFn(listStoresWithOrganizers);
   const setRole = useServerFn(setPlayerRole);
   const setActive = useServerFn(setPlayerActive);
+  const deleteAccountFn = useServerFn(deletePlayerAccount);
+
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
