@@ -314,7 +314,11 @@ function AdminCalendarPage() {
 
         <select
           value={zoneFilter}
-          onChange={(e) => setZoneFilter(e.target.value)}
+          onChange={(e) => {
+            setZoneFilter(e.target.value);
+            setStoreFilter("all");
+            setGameFilter("all");
+          }}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
         >
           <option value="all">Todas las zonas</option>
@@ -327,7 +331,10 @@ function AdminCalendarPage() {
 
         <select
           value={storeFilter}
-          onChange={(e) => setStoreFilter(e.target.value)}
+          onChange={(e) => {
+            setStoreFilter(e.target.value);
+            setGameFilter("all");
+          }}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
         >
           <option value="all">Todas las tiendas</option>
@@ -337,6 +344,7 @@ function AdminCalendarPage() {
             </option>
           ))}
         </select>
+
 
         <select
           value={gameFilter}
