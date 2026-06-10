@@ -13,6 +13,7 @@ import {
   Search,
   ShieldCheck,
   Store as StoreIcon,
+  Trash2,
   UserCog,
   X,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import {
   getPlayerDetail,
   updatePlayerDetail,
   getManagerAssignedGames,
+  deletePlayerAccount,
 } from "@/lib/geekarena-admin.functions";
 import { assignManagerGames } from "@/lib/geekarena-manager.functions";
 import { Input } from "@/components/ui/input";
