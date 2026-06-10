@@ -55,6 +55,12 @@ function TcgManagerLayout() {
             ],
           },
           {
+            title: "Red",
+            items: [
+              { to: "/tcg-manager/stores", label: "Tiendas", icon: <StoreIcon size={16} /> },
+            ],
+          },
+          {
             title: "Circuito",
             items: [
               { to: "/tcg-manager/calendar", label: "Calendario", icon: <Calendar size={16} /> },
