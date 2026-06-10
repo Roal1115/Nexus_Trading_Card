@@ -55,12 +55,13 @@ type ColumnMap = {
   omw?: string;
   record?: string;
   status?: string;
+  membershipId?: string;
 };
 
 const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
-  "one-piece": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %" },
-  "dragon-ball": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %" },
-  gundam: { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %" },
+  "one-piece": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
+  "dragon-ball": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
+  gundam: { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
   riftbound: {
     platform: "limitless",
     rank: "Rank",
@@ -69,6 +70,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
     omw: "Opponent Match Win %",
     record: "Record (W-L-D)",
     status: "Registration Status",
+    membershipId: "User ID",
   },
   pokemon: { platform: "unknown" },
   "magic-the-gathering": { platform: "unknown" },
@@ -96,6 +98,7 @@ function normalizarPuntos(rows: ParsedRow[]): ParsedRow[] {
 type ParsedRow = {
   rank: number;
   geek_tag: string;
+  membership_id: string | null;
   match_points: number | null;
   omw_percentage: number | null;
   wins: number | null;
@@ -148,6 +151,8 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
   const iOmw = idx(map.omw);
   const iRec = idx(map.record);
   const iSt = idx(map.status);
+  const iMem = idx(map.membershipId);
+
 
   const out: ParsedRow[] = [];
   for (let li = 1; li < rows.length; li++) {
@@ -179,6 +184,7 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
     out.push({
       rank: isFinite(rank) ? rank : 0,
       geek_tag: tag,
+      membership_id: iMem !== -1 ? (cols[iMem] || "").trim() || null : null,
       match_points: isFinite(mp) ? mp : null,
       omw_percentage: parsePct(iOmw !== -1 ? cols[iOmw] : undefined, map.platform),
       wins,
@@ -257,6 +263,17 @@ async function uploadFileToStorage(
     console.error("Storage error:", e);
     return null;
   }
+}
+
+function getWeekDateRange(): { min: string; max: string } {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Dom, 1=Lun ... 6=Sab
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - daysSinceMonday);
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { min: fmt(monday), max: fmt(today) };
 }
 
 export function TournamentUploadForm({
@@ -411,6 +428,7 @@ export function TournamentUploadForm({
       const cleanRows = rows.map((r) => ({
         rank: r.rank,
         geek_tag: r.geek_tag.trim(),
+        membership_id: r.membership_id,
         match_points: r.match_points,
         omw_percentage: r.omw_percentage,
         wins: r.wins,
@@ -527,11 +545,23 @@ export function TournamentUploadForm({
             </div>
             <div className="space-y-2">
               <Label className="text-xs text-gray-400">Fecha del torneo *</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              {(() => {
+                const { min, max } = getWeekDateRange();
+                return (
+                  <>
+                    <Input
+                      type="date"
+                      min={min}
+                      max={max}
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Solo se permiten torneos de la semana actual ({min} al {max}).
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -676,6 +706,7 @@ export function TournamentUploadForm({
                         <tr>
                           <th className="w-10 px-3 py-2 text-left">#</th>
                           <th className="px-3 py-2 text-left">Geek Tag</th>
+                          <th className="px-3 py-2 text-left">Membership ID</th>
                           <th className="px-3 py-2 text-right">Match Pts</th>
                           <th className="px-3 py-2 text-right">OMW%</th>
                           <th className="px-3 py-2 text-right">Pts Arena</th>
@@ -699,6 +730,9 @@ export function TournamentUploadForm({
                                   onChange={(e) => updateRow(i, "geek_tag", e.target.value)}
                                   className="w-full rounded bg-transparent px-2 py-1 font-medium text-white outline-none ring-inset focus:bg-white/10 focus:ring-1 focus:ring-primary"
                                 />
+                              </td>
+                              <td className="px-3 py-2.5 text-xs text-gray-500 font-mono">
+                                {r.membership_id ?? "—"}
                               </td>
                               <td className="px-3 py-2 text-right font-mono text-white">
                                 {r.match_points ?? "—"}

@@ -2,9 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, ChevronRight, Crown, HelpCircle, Swords, Target, TrendingUp, X } from "lucide-react";
+import { Award, ChevronRight, Crown, Globe, HelpCircle, Lock, Swords, Target, TrendingUp, X } from "lucide-react";
+import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getMyDashboard, getTournamentDetail } from "@/lib/geekarena-player.functions";
+import { getMyDashboard, getTournamentDetail, toggleProfilePrivacy } from "@/lib/geekarena-player.functions";
+import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Mi Panel — Geek Arena" }] }),
@@ -18,14 +22,47 @@ function DashboardPage() {
   const { player: gaPlayer } = useGeekarenaRole();
   const fetchDashboard = useServerFn(getMyDashboard);
   const fetchTournamentDetail = useServerFn(getTournamentDetail);
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const registerView = useServerFn(registerAdView);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
+  const [sponsor, setSponsor] = useState<any>(null);
   const [page, setPage] = useState(1);
+  const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const PAGE_SIZE = 10;
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
+  const [isPublic, setIsPublic] = useState(true);
+
+  useEffect(() => {
+    registerView().then(setSponsor).catch(() => {
+      fetchActiveSponsor().then(setSponsor).catch(() => {});
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (data && typeof (data as any).is_profile_public === "boolean") {
+      setIsPublic((data as any).is_profile_public);
+    }
+  }, [data]);
+
+  const handleTogglePrivacy = async () => {
+    const next = !isPublic;
+    setIsPublic(next);
+    try {
+      await togglePrivacyFn({ data: { is_public: next } });
+      toast.success(next ? "Perfil ahora es público" : "Perfil ahora es privado");
+    } catch {
+      setIsPublic(!next);
+      toast.error("Error al cambiar la privacidad");
+    }
+  };
+
 
   const openTournament = async (tournament_id: string) => {
     setSelectedTournamentId(tournament_id);
@@ -93,18 +130,22 @@ function DashboardPage() {
   const tag = gaPlayer.geek_tag;
   const tcgStats = data?.tcgStats ?? [];
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
-  const totalPoints = activeTcg?.total_points ?? 0;
-  const tournamentsPlayed = activeTcg?.tournaments_played ?? 0;
-  const tournamentsWon = activeTcg?.tournaments_won ?? 0;
-  const rank = activeTcg?.rank_position ?? 0;
+  
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
-  const paginatedEvents = events.slice(0, page * PAGE_SIZE);
-  const hasMore = events.length > page * PAGE_SIZE;
+  const filteredEvents = historyTcg
+    ? events.filter((e: any) => e.game_id === historyTcg)
+    : events;
+  const paginatedEvents = filteredEvents.slice(0, page * PAGE_SIZE);
+  const hasMore = filteredEvents.length > page * PAGE_SIZE;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+      <main className="min-w-0 pb-20">
       {/* Hero */}
       <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40 p-8 sm:p-12">
         <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
@@ -114,70 +155,83 @@ function DashboardPage() {
             <h1 className="mt-2 break-all text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
             <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
           </div>
-          <div className="rounded-xl border border-primary/30 bg-black/40 px-6 py-4 text-center">
-            <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary">
-              <Crown size={12} />
-              {activeTcg ? `Rank · ${activeTcg.game_name}` : "Rank Nacional"}
+          <div className="flex gap-3 flex-wrap">
+            {/* Rank Global */}
+            <div className="rounded-xl border border-primary/30 bg-black/40 px-5 py-4 text-center min-w-[120px]">
+              <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary mb-1">
+                <Crown size={10} /> Global
+              </div>
+              <div className="font-mono text-4xl font-bold text-white">
+                {loading ? "…" : activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : "—"}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
             </div>
-            <div className="font-mono-stat text-5xl font-bold text-white">
-              {loading ? "…" : rank > 0 ? `#${rank}` : "—"}
+            {/* Rank Mensual */}
+            <div className="rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-center min-w-[120px]">
+              <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                <Crown size={10} /> Mensual
+              </div>
+              <div className="font-mono text-4xl font-bold text-white">
+                {loading ? "…" : activeTcg?.monthly_rank_position > 0 ? `#${activeTcg.monthly_rank_position}` : "—"}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-0.5">{data?.monthLabel ?? "Este mes"}</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TCG selector */}
-      {tcgStats.length > 1 && (
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-          {tcgStats.map((tcg) => (
-            <button
-              key={tcg.game_id}
-              onClick={() => setSelectedTcg(tcg.game_id)}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
-                selectedTcg === tcg.game_id ? "bg-primary text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
-              }`}
-            >
-              {tcg.game_name}
-            </button>
-          ))}
+      {/* Toggle de privacidad */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span className="uppercase tracking-widest">Visibilidad del perfil:</span>
+          <span className={`inline-flex items-center gap-1 font-semibold ${isPublic ? "text-emerald-400" : "text-gray-300"}`}>
+            {isPublic ? <><Globe size={12} /> Público</> : <><Lock size={12} /> Privado</>}
+          </span>
         </div>
-      )}
+        <button
+          onClick={handleTogglePrivacy}
+          className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition"
+        >
+          {isPublic ? "Hacer privado" : "Hacer público"}
+        </button>
+      </div>
 
-      {/* Stats */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={<Target className="text-primary" size={18} />}
-          label="Puntos Totales"
-          value={Number(totalPoints).toFixed(2)}
-          sub={semesterLabel || "—"}
-          tooltip={`¿Cómo se calculan tus puntos?
+      {/* Mis Rankings */}
+      <section className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Mis Rankings</h2>
+          <TooltipInfo
+            text={`¿Cómo se calculan tus puntos?
 
 Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
 (tus match points ÷ match points del 1er lugar) × 100
 
-Ejemplo: Si el 1er lugar tuvo 12 pts y tú tuviste 9 pts → (9÷12)×100 = 75.00 Pts Arena
-
-Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard. Los torneos extra se descartan.
+Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard.
 
 Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
-
-Leaderboard de temporada: Suma acumulada de todos tus torneos durante la temporada completa, aplicando siempre la regla del top 2 por semana.
-
-Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneos ganados, luego por torneos jugados, y finalmente por OMW% promedio.`}
-        />
-        <StatCard
-          icon={<Swords className="text-primary" size={18} />}
-          label="Torneos Jugados"
-          value={String(tournamentsPlayed)}
-          sub="Esta temporada"
-        />
-        <StatCard
-          icon={<Award className="text-primary" size={18} />}
-          label="Torneos Ganados"
-          value={String(tournamentsWon)}
-          sub="1er lugar"
-        />
+Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
+          />
+        </div>
+        {loading ? (
+          <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">Cargando…</div>
+        ) : tcgStats.length === 0 ? (
+          <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">
+            Aún no tienes rankings en esta temporada.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-4">
+            {tcgStats.map((tcg) => (
+              <TcgRankCard
+                key={tcg.game_id}
+                tcg={tcg}
+                semesterLabel={semesterLabel}
+                monthLabel={data?.monthLabel ?? "Este mes"}
+              />
+            ))}
+          </div>
+        )}
       </section>
+
 
       {/* Recent */}
       <section className="glass mt-6 overflow-hidden rounded-2xl">
@@ -186,16 +240,49 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
             <TrendingUp className="text-primary" size={18} />
             <h2 className="text-lg font-semibold text-white">Torneos Recientes</h2>
           </div>
-          <span className="text-xs uppercase tracking-wider text-gray-500">{events.length} torneos jugados</span>
+          <span className="text-xs uppercase tracking-wider text-gray-500">
+            {filteredEvents.length} {historyTcg ? "torneos" : "torneos jugados"}
+          </span>
         </header>
-        <div className="overflow-x-auto">
+        {tcgStats.length > 1 && (
+          <div className="flex overflow-x-auto border-b border-white/10 px-2">
+            <button
+              onClick={() => { setHistoryTcg(null); setPage(1); }}
+              className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
+                historyTcg === null
+                  ? "border-primary text-white"
+                  : "border-transparent text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              Todos ({events.length})
+            </button>
+            {tcgStats.map((tcg) => {
+              const count = events.filter((e: any) => e.game_id === tcg.game_id).length;
+              if (count === 0) return null;
+              return (
+                <button
+                  key={tcg.game_id}
+                  onClick={() => { setHistoryTcg(tcg.game_id); setPage(1); }}
+                  className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
+                    historyTcg === tcg.game_id
+                      ? "border-primary text-white"
+                      : "border-transparent text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  {tcg.game_name} ({count})
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div className="overflow-x-auto hidden sm:block">
           <table className="w-full text-sm">
             <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="px-4 py-2 text-left">Fecha</th>
                 <th className="px-4 py-2 text-left">Tienda</th>
                 <th className="px-4 py-2 text-left">TCG</th>
-                <th className="px-4 py-2 text-center">V / D</th>
+                <th className="px-4 py-2 text-center whitespace-nowrap">V / D</th>
                 <th className="px-4 py-2 text-right">Posición</th>
                 <th className="px-4 py-2 text-right">Pts Arena</th>
                 <th className="px-4 py-2 w-8"></th>
@@ -227,7 +314,7 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                         {t.store} <span className="text-xs text-gray-500">· {t.city}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
-                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300">
+                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
                         {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -260,6 +347,53 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
               )}
             </tbody>
           </table>
+        </div>
+        <div className="sm:hidden">
+          {loading ? (
+            <div className="px-4 py-12 text-center text-gray-500">Cargando…</div>
+          ) : events.length === 0 ? (
+            <div className="px-4 py-12 text-center text-gray-500">Aún no has participado en ningún torneo.</div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {paginatedEvents.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => openTournament(t.id)}
+                  className="cursor-pointer px-4 py-3 hover:bg-white/5 transition"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{t.store}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                        <span>{t.city}</span>
+                        <span>·</span>
+                        <span>{t.date}</span>
+                        {t.wins != null && t.losses != null && (
+                          <>
+                            <span>·</span>
+                            <span className="whitespace-nowrap">{t.wins}V/{t.losses}D</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <span className={`font-mono-stat text-sm font-semibold ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
+                        #{t.placement}
+                      </span>
+                      <p className="text-xs font-mono-stat font-semibold text-white">+{Number(t.pointsEarned).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {hasMore && (
+                <div className="px-4 py-4 text-center">
+                  <button onClick={() => setPage((p) => p + 1)} className="text-xs text-primary hover:underline">
+                    Ver más torneos
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -354,11 +488,22 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
                               </span>
                             </td>
                             <td className="px-3 py-2 text-white">
-                              {r.geek_tag}
-                              {r.is_me && (
-                                <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
-                                  Tú
+                              {r.is_me ? (
+                                <span className="font-semibold text-primary">
+                                  {r.geek_tag}
+                                  <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
+                                    Tú
+                                  </span>
                                 </span>
+                              ) : (
+                                <Link
+                                  to="/players/$playerTag"
+                                  params={{ playerTag: r.geek_tag }}
+                                  onClick={closeModal}
+                                  className="font-semibold text-white hover:text-primary transition hover:underline underline-offset-2"
+                                >
+                                  {r.geek_tag}
+                                </Link>
                               )}
                             </td>
                             <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
@@ -384,79 +529,145 @@ Desempate: Si tienes los mismos puntos que otro jugador, se desempata por torneo
         </div>
       )}
     </main>
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+    </div>
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  tooltip,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-  tooltip?: string;
-}) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+
+function TooltipInfo({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = React.useRef<HTMLButtonElement>(null);
 
-  const handleMouseEnter = () => {
+  const onEnter = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const tooltipWidth = Math.min(window.innerWidth * 0.5, 600);
       const leftPos = Math.min(rect.left + window.scrollX, window.innerWidth - tooltipWidth - 16);
-      setTooltipPos({
-        top: rect.bottom + window.scrollY + 8,
-        left: Math.max(leftPos, 16),
-      });
+      setPos({ top: rect.bottom + window.scrollY + 8, left: Math.max(leftPos, 16) });
     }
-    setShowTooltip(true);
+    setShow(true);
   };
 
   return (
-    <div className="glass rounded-2xl p-6 relative">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500">
-          {icon} {label}
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className="text-gray-600 hover:text-primary transition"
+        onMouseEnter={onEnter}
+        onMouseLeave={() => setShow(false)}
+        aria-label="Más información"
+      >
+        <HelpCircle size={12} />
+      </button>
+      {show &&
+        ReactDOM.createPortal(
+          <div
+            className="fixed z-[99999]"
+            style={{ top: pos.top, left: pos.left, width: `min(50vw, 600px)` }}
+            onMouseEnter={() => setShow(true)}
+            onMouseLeave={() => setShow(false)}
+          >
+            <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
+              {text}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+
+function TcgRankCard({
+  tcg,
+  semesterLabel,
+  monthLabel,
+}: {
+  tcg: any;
+  semesterLabel: string;
+  monthLabel: string;
+}) {
+  const [tab, setTab] = useState<"global" | "monthly">("global");
+  const rankValue =
+    tab === "global"
+      ? tcg.rank_position > 0
+        ? `#${tcg.rank_position}`
+        : "—"
+      : tcg.monthly_rank_position > 0
+      ? `#${tcg.monthly_rank_position}`
+      : "—";
+  const points =
+    tab === "global" ? tcg.total_points : tcg.monthly_total_points;
+
+  return (
+    <div className="glass flex w-full flex-col gap-3 rounded-2xl border border-white/10 p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
+      <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white">
+        <Crown size={14} className="text-primary" /> {tcg.game_name}
+      </div>
+
+      <div className="flex gap-1 rounded-lg bg-black/40 p-1">
+        {(["global", "monthly"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+              tab === t
+                ? "bg-primary text-primary-foreground"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {t === "global" ? "Global" : "Mensual"}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+            <Crown size={10} /> {tab === "global" ? "Rank Global" : "Rank Mes"}
+          </div>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">{rankValue}</p>
+          <p className="text-[10px] text-gray-500">
+            {tab === "global" ? semesterLabel : monthLabel}
+          </p>
         </div>
-        {tooltip && (
+
+        <div>
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+            <Target size={10} className="text-primary" /> Puntos
+          </div>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">
+            {Number(points ?? 0).toFixed(0)}
+          </p>
+          <p className="text-[10px] text-gray-500">Arena pts</p>
+        </div>
+
+        {tab === "global" && (
           <>
-            <button
-              ref={btnRef}
-              className="text-gray-600 hover:text-primary transition"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={() => setShowTooltip(false)}
-              aria-label="Más información"
-            >
-              <HelpCircle size={14} />
-            </button>
-            {showTooltip &&
-              ReactDOM.createPortal(
-                <div
-                  className="fixed z-[99999]"
-                  style={{
-                    top: tooltipPos.top,
-                    left: tooltipPos.left,
-                    width: `min(50vw, 600px)`,
-                  }}
-                  onMouseEnter={() => setShowTooltip(true)}
-                  onMouseLeave={() => setShowTooltip(false)}
-                >
-                  <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
-                    {tooltip}
-                  </div>
-                </div>,
-                document.body,
-              )}
+            <div>
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                <Swords size={10} className="text-primary" /> Jugados
+              </div>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_played}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                <Award size={10} className="text-primary" /> Ganados
+              </div>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_won}
+              </p>
+            </div>
           </>
         )}
       </div>
-      <div className="mt-3 font-mono-stat text-4xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-xs text-gray-500">{sub}</div>
     </div>
   );
 }

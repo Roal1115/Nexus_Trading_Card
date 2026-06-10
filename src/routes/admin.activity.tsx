@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Filter } from "lucide-react";
+import { Activity, Filter, Search } from "lucide-react";
 import { listAuditLog, type AuditLogRow } from "@/lib/geekarena-admin.functions";
 import { useActivityLastSeen } from "@/hooks/use-badge-counts";
 
@@ -24,6 +24,8 @@ const ACTION_LABELS: Record<string, ActionInfo> = {
   SEASON_CREATED: { label: "Temporada creada", icon: "📅", color: "text-purple-400" },
   SEASON_ACTIVATED: { label: "Temporada activada", icon: "▶️", color: "text-green-400" },
   SEASON_CLOSED: { label: "Temporada cerrada", icon: "🔒", color: "text-gray-400" },
+  SPONSOR_DELETED: { label: "Sponsor eliminado", icon: "🗑️", color: "text-red-400" },
+  PLAYER_DETAIL_UPDATED: { label: "Perfil de jugador editado", icon: "✏️", color: "text-blue-400" },
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -39,6 +41,7 @@ type Filters = {
   target_type: string;
   date_from: string;
   date_to: string;
+  search: string;
   page: number;
 };
 
@@ -48,6 +51,7 @@ const INITIAL: Filters = {
   target_type: "",
   date_from: "",
   date_to: "",
+  search: "",
   page: 1,
 };
 
@@ -76,6 +80,7 @@ function ActivityPage() {
           ...(f.target_type && { target_type: f.target_type }),
           ...(f.date_from && { date_from: f.date_from }),
           ...(f.date_to && { date_to: f.date_to }),
+          ...(f.search && { search: f.search }),
           page: f.page,
         },
       });
@@ -91,13 +96,14 @@ function ActivityPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(total / 50));
+  const totalPages = Math.max(1, Math.ceil(total / 25));
   const activeFilters = [
     filters.action,
     filters.actor_role,
     filters.target_type,
     filters.date_from,
     filters.date_to,
+    filters.search,
   ].filter(Boolean).length;
 
   return (
@@ -113,8 +119,17 @@ function ActivityPage() {
       </header>
 
       {/* Filters */}
-      <div className="glass rounded-2xl p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3 text-sm text-gray-300">
+      <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
+        <div className="relative">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input
+            value={filters.search}
+            onChange={(e) => load({ search: e.target.value, page: 1 })}
+            placeholder="Buscar en todas las columnas..."
+            className="w-full rounded-lg border border-white/10 bg-black/30 pl-8 pr-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-300">
           <Filter size={14} />
           <span>Filtros</span>
           {activeFilters > 0 && (
@@ -322,12 +337,15 @@ function ActivityPage() {
           )}
         </div>
 
+
+
+
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-white/10 px-4 sm:px-5 py-3">
             <div className="text-xs text-gray-400">
-              Mostrando {(filters.page - 1) * 50 + 1}–
-              {Math.min(filters.page * 50, total)} de{" "}
+              Mostrando {(filters.page - 1) * 25 + 1}–
+              {Math.min(filters.page * 25, total)} de{" "}
               {total.toLocaleString("es-MX")}
             </div>
             <div className="flex items-center gap-2">

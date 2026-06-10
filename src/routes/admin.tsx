@@ -7,12 +7,14 @@ import {
   CheckCircle2,
   History,
   Loader2,
+  Megaphone,
   Menu,
   ShieldCheck,
   Store,
   Users,
   Upload,
 } from "lucide-react";
+
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts, useActivityLastSeen } from "@/hooks/use-badge-counts";
@@ -67,8 +69,8 @@ function AdminLayout() {
                 badge: counts?.approvedActive ?? 0,
               },
               { to: "/admin/history", label: "Historial de Torneos", icon: <History size={16} /> },
-              { to: "/admin/stores", label: "Tiendas y Organizadores", icon: <Store size={16} /> },
-              { to: "/admin/players", label: "Jugadores", icon: <Users size={16} /> },
+              { to: "/admin/stores", label: "Tiendas y Staff", icon: <Store size={16} /> },
+              { to: "/admin/players", label: "Usuarios", icon: <Users size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
               {
                 to: "/admin/activity",
@@ -87,10 +89,18 @@ function AdminLayout() {
                 icon: <Upload size={16} />,
                 badge: counts?.readyToPublish ?? 0,
               },
+              { to: "/admin/calendar", label: "Calendario Nacional", icon: <Calendar size={16} /> },
               { to: "/admin/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
           },
+          {
+            title: "Publicidad",
+            items: [
+              { to: "/admin/ads", label: "Sponsors & Ads", icon: <Megaphone size={16} /> },
+            ],
+          },
         ]}
+
       />
       <main className="min-w-0 flex-1">
         {/* Header mobile con hamburger */}
