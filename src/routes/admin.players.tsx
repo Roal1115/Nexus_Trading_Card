@@ -701,7 +701,7 @@ function AdminPlayersPage() {
         </div>
 
         {/* Role change modal */}
-        <Dialog open={!!roleModal} onOpenChange={(o) => !o && setRoleModal(null)}>
+        <Dialog open={!!roleModal} onOpenChange={(o) => { if (!o) { setRoleModal(null); setAdminConfirmEmail(""); } }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
