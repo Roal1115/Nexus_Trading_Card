@@ -170,14 +170,25 @@ function AdminCalendarPage() {
   const uniqueZones = Array.from(
     new Set((calData?.entries ?? []).map((e) => e.zone)),
   );
-  const uniqueStores = (calData?.entries ?? [])
-    .map((e) => ({ id: e.store_id, name: e.store_name }))
-    .filter(
-      (v, i, a) => a.findIndex((x) => x.id === v.id) === i,
+  const uniqueStores = useMemo(() => {
+    const src = (calData?.entries ?? []).filter(
+      (e) => zoneFilter === "all" || e.zone === zoneFilter,
     );
-  const uniqueGames = Array.from(
-    new Map((calData?.entries ?? []).map((e) => [e.game_id, { id: e.game_id, name: e.game_name }])).values(),
-  );
+    return src
+      .map((e) => ({ id: e.store_id, name: e.store_name }))
+      .filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i);
+  }, [calData, zoneFilter]);
+  const uniqueGames = useMemo(() => {
+    const src = (calData?.entries ?? []).filter(
+      (e) =>
+        (zoneFilter === "all" || e.zone === zoneFilter) &&
+        (storeFilter === "all" || e.store_id === storeFilter),
+    );
+    return Array.from(
+      new Map(src.map((e) => [e.game_id, { id: e.game_id, name: e.game_name }])).values(),
+    );
+  }, [calData, zoneFilter, storeFilter]);
+
   const stats = calData?.stats;
 
   return (
