@@ -2096,10 +2096,9 @@ export const getStoreSchedules = createServerFn({ method: "POST" })
       admin
         .from("store_schedules")
         .select(
-          "id, store_id, game_id, day_of_week, start_time, is_active, games(id, name)",
+          "id, store_id, game_id, day_of_week, start_time, games(id, name)",
         )
         .eq("store_id", data.store_id)
-        .eq("is_active", true)
         .order("game_id")
         .order("day_of_week"),
       admin
