@@ -171,8 +171,15 @@ function ManagerApprovedTournaments() {
                               ) : (
                                 "Deshacer"
                               )}
-                            </Button>
+                          </Button>
                           )}
+                          <button
+                            onClick={() => setUnapproveTarget(r)}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-red-400/60 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                          >
+                            <XCircle size={13} />
+                            Des-aprobar
+                          </button>
                           <button
                             onClick={() =>
                               navigate({
@@ -196,6 +203,24 @@ function ManagerApprovedTournaments() {
           </div>
         </div>
       )}
+
+      <UnapproveTournamentDialog
+        tournament={
+          unapproveTarget
+            ? {
+                id: unapproveTarget.id,
+                label: `${unapproveTarget.games?.name ?? "Torneo"} — ${unapproveTarget.stores?.name ?? ""} (${unapproveTarget.tournament_date})`,
+              }
+            : null
+        }
+        onClose={() => setUnapproveTarget(null)}
+        onConfirm={async (reason) => {
+          if (!unapproveTarget) return;
+          await unapproveFn({ data: { tournament_id: unapproveTarget.id, reason } });
+          toast.success("Torneo des-aprobado");
+          await refresh();
+        }}
+      />
     </div>
   );
 }
