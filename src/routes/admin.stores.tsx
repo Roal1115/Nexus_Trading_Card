@@ -124,6 +124,11 @@ function AdminStoresPage() {
   const [editStore, setEditStore] = useState<Store | null>(null);
   const [assignStore, setAssignStore] = useState<Store | null>(null);
   const [toggleStore, setToggleStore] = useState<Store | null>(null);
+  const [schedStore, setSchedStore] = useState<Store | null>(null);
+
+  const fetchSchedulesFn = useServerFn(getStoreSchedules);
+  const upsertScheduleFn = useServerFn(upsertStoreSchedule);
+  const deleteScheduleFn = useServerFn(deleteStoreSchedule);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchRaw.trim().toLowerCase()), 300);
