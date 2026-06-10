@@ -496,21 +496,22 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       : { data: [] };
     const organizerMap = new Map((organizers ?? []).map((o: any) => [o.home_store_id, o]));
 
-    // Get all tournaments this week for this game
+    // Get all tournaments this week for these games
     const { data: weekTournaments } = await admin
       .from("tournaments")
-      .select("id, store_id, tournament_date, status, created_at, rejection_reason")
-      .eq("game_id", data.game_id)
+      .select("id, store_id, game_id, tournament_date, status, created_at, rejection_reason")
+      .in("game_id", gameIds)
       .gte("tournament_date", mondayStr)
       .lte("tournament_date", sundayStr);
 
-    // Map: storeId-dayOfWeek -> tournament
+    // Map: storeId-gameId-dayOfWeek -> tournament
     const tournamentMap = new Map<string, any>();
     (weekTournaments ?? []).forEach((t: any) => {
       const d = new Date(t.tournament_date + "T12:00:00");
       const dow = d.getDay();
-      tournamentMap.set(`${t.store_id}-${dow}`, t);
+      tournamentMap.set(`${t.store_id}-${t.game_id}-${dow}`, t);
     });
+
 
     const nowMs = Date.now();
 
