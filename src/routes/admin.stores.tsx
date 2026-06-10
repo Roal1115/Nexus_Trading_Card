@@ -96,7 +96,8 @@ function AdminStoresPage() {
   const [loading, setLoading] = useState(true);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", city: "", state: "" });
+  const [createForm, setCreateForm] = useState({ name: "", city: "", state: "", address: "", phone: "" });
+
 
   // Search & filters
   const [searchRaw, setSearchRaw] = useState("");
