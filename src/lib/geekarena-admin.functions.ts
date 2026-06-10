@@ -1818,3 +1818,162 @@ export const getManagerAssignedGames = createServerFn({ method: "POST" })
       assigned_game_ids: Array.from(assignedIds) as string[],
     };
   });
+
+// ---------- Staff (organizer / tcg_manager) management ----------
+export const listStaffMembers = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .handler(async ({ context }) => {
+    const { admin } = context;
+
+    const { data, error } = await admin
+      .from("players")
+      .select(
+        "id, geek_tag, email, role, is_active, home_store_id, created_at, manager_games(game_id, games(id, name))",
+      )
+      .in("role", ["organizer", "tcg_manager"])
+      .order("role", { ascending: true })
+      .order("geek_tag", { ascending: true });
+
+    if (error) throw new Error(error.message);
+
+    const storeIds = Array.from(
+      new Set(
+        (data ?? [])
+          .filter((p: any) => p.home_store_id)
+          .map((p: any) => p.home_store_id as string),
+      ),
+    );
+    const storesRes = storeIds.length
+      ? await admin.from("stores").select("id, name, city").in("id", storeIds)
+      : { data: [] as any[] };
+    const storeMap = new Map(
+      ((storesRes.data ?? []) as any[]).map((s: any) => [s.id, s]),
+    );
+
+    return (data ?? []).map((p: any) => ({
+      id: p.id,
+      geek_tag: p.geek_tag,
+      email: p.email,
+      role: p.role,
+      is_active: p.is_active,
+      home_store: p.home_store_id ? storeMap.get(p.home_store_id) ?? null : null,
+      manager_games: p.manager_games ?? [],
+      created_at: p.created_at,
+    }));
+  });
+
+export const upsertStaffMember = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator(
+    (d: {
+      email: string;
+      geek_tag: string;
+      role: "tcg_manager" | "organizer";
+    }) =>
+      z
+        .object({
+          email: z.string().email(),
+          geek_tag: z.string().min(3).max(30),
+          role: z.enum(["tcg_manager", "organizer"]),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player: actor } = context;
+
+    // Step 1 — check if player already exists by email
+    const { data: existingByEmail } = await admin
+      .from("players")
+      .select("id, geek_tag, role")
+      .eq("email", data.email)
+      .maybeSingle();
+
+    if (existingByEmail) {
+      const updates: Record<string, unknown> = { role: data.role };
+      if (existingByEmail.geek_tag !== data.geek_tag) {
+        const { data: tagTaken } = await admin
+          .from("players")
+          .select("id")
+          .eq("geek_tag", data.geek_tag)
+          .neq("id", existingByEmail.id)
+          .maybeSingle();
+        if (!tagTaken) updates.geek_tag = data.geek_tag;
+      }
+      const { error } = await admin
+        .from("players")
+        .update(updates)
+        .eq("id", existingByEmail.id);
+      if (error) throw new Error(error.message);
+
+      if (
+        existingByEmail.role === "tcg_manager" &&
+        data.role !== "tcg_manager"
+      ) {
+        await admin
+          .from("manager_games")
+          .delete()
+          .eq("player_id", existingByEmail.id);
+      }
+
+      await logAction(
+        admin,
+        actor,
+        "ROLE_CHANGED",
+        "player",
+        existingByEmail.id,
+        existingByEmail.geek_tag,
+        {
+          old_role: existingByEmail.role,
+          new_role: data.role,
+          source: "staff_upsert",
+        },
+      );
+
+      return { player_id: existingByEmail.id as string, was_existing: true };
+    }
+
+    // Scenario A — new user: create auth account, then update player record
+    const tempPassword = Math.random().toString(36).slice(2) + "Aa1!";
+    const { data: authUser, error: authErr } = await admin.auth.admin.createUser(
+      {
+        email: data.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { geek_tag: data.geek_tag },
+      },
+    );
+    if (authErr) throw new Error(authErr.message);
+
+    // Trigger handle_new_auth_user should create the players row; fetch it
+    const { data: newPlayer } = await admin
+      .from("players")
+      .select("id")
+      .eq("auth_user_id", authUser.user.id)
+      .maybeSingle();
+
+    let playerId: string | null = newPlayer?.id ?? null;
+
+    if (playerId) {
+      await admin
+        .from("players")
+        .update({
+          role: data.role,
+          email: data.email,
+          geek_tag: data.geek_tag,
+          is_active: true,
+        })
+        .eq("id", playerId);
+    }
+
+    await logAction(
+      admin,
+      actor,
+      "ROLE_CHANGED",
+      "player",
+      playerId,
+      data.geek_tag,
+      { new_role: data.role, source: "staff_created" },
+    );
+
+    return { player_id: playerId, was_existing: false };
+  });

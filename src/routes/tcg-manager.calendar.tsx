@@ -149,8 +149,9 @@ function ManagerCalendarPage() {
     }
     filteredEntries.forEach((e) => {
       const hour = parseInt(String(e.start_time).split(":")[0], 10);
-      if (grid[e.day_of_week] && grid[e.day_of_week][hour] !== undefined) {
-        grid[e.day_of_week][hour].push(e);
+      const colIndex = e.day_of_week === 0 ? 6 : e.day_of_week - 1;
+      if (grid[colIndex] && grid[colIndex][hour] !== undefined) {
+        grid[colIndex][hour].push(e);
       }
     });
     return grid;
@@ -394,8 +395,7 @@ function ManagerCalendarPage() {
                   {hour}:00
                 </div>
                 {[0, 1, 2, 3, 4, 5, 6].map((dow) => {
-                  const actualDow = weekDates[dow]?.getDay() ?? dow;
-                  const cellEntries = calendarGrid[actualDow]?.[hour] ?? [];
+                  const cellEntries = calendarGrid[dow]?.[hour] ?? [];
                   const isToday =
                     weekDates[dow]?.toDateString() ===
                     new Date().toDateString();

@@ -14,6 +14,7 @@ import {
   UserPlus,
   Power,
   PowerOff,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
@@ -23,7 +24,11 @@ import {
   setStoreActive,
   updateStore,
   assignOrganizerToStore,
+  listStaffMembers,
+  upsertStaffMember,
+  getManagerAssignedGames,
 } from "@/lib/geekarena-admin.functions";
+import { assignManagerGames } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +59,7 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin/stores")({
+  head: () => ({ meta: [{ title: "Tiendas y Staff — Geek Arena" }] }),
   component: AdminStoresPage,
 });
 
@@ -85,6 +91,7 @@ type Organizer = {
 function AdminStoresPage() {
   const { player } = useGeekarenaRole();
   const email = player?.email ?? null;
+  const [activeTab, setActiveTab] = useState<"stores" | "staff">("stores");
   const fetchAll = useServerFn(listStoresWithOrganizers);
   const create = useServerFn(createStore);
   const toggleActive = useServerFn(setStoreActive);
@@ -216,11 +223,40 @@ function AdminStoresPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
           Red
         </p>
-        <h1 className="text-3xl font-bold text-white">Tiendas y Organizadores</h1>
+        <h1 className="text-3xl font-bold text-white">Tiendas y Staff</h1>
         <p className="text-sm text-gray-400">
-          Administra las tiendas del circuito y sus organizadores asignados.
+          Administra las tiendas del circuito y el staff asignado.
         </p>
       </header>
+
+      {/* Tabs */}
+      <div className="flex border-b border-white/10">
+        <button
+          onClick={() => setActiveTab("stores")}
+          className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition ${
+            activeTab === "stores"
+              ? "border-primary text-white"
+              : "border-transparent text-gray-400 hover:text-white"
+          }`}
+        >
+          Tiendas
+        </button>
+        <button
+          onClick={() => setActiveTab("staff")}
+          className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition ${
+            activeTab === "staff"
+              ? "border-primary text-white"
+              : "border-transparent text-gray-400 hover:text-white"
+          }`}
+        >
+          Staff
+        </button>
+      </div>
+
+      {activeTab === "staff" && <StaffTab />}
+
+      {activeTab === "stores" && (<>
+
 
       {/* Stats */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -508,7 +544,9 @@ function AdminStoresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>)}
     </div>
+
   );
 }
 
@@ -886,5 +924,449 @@ function AssignOrganizerDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// Staff tab
+// ────────────────────────────────────────────────────────────
+type StaffRow = {
+  id: string;
+  geek_tag: string;
+  email: string | null;
+  role: "tcg_manager" | "organizer";
+  is_active: boolean;
+  home_store: { id: string; name: string; city: string | null } | null;
+  manager_games: { game_id: string; games?: { id: string; name: string } | null }[];
+};
+
+function StaffTab() {
+  const fetchStaff = useServerFn(listStaffMembers);
+  const upsertStaff = useServerFn(upsertStaffMember);
+  const fetchAllStores = useServerFn(listStoresWithOrganizers);
+  const fetchManagerGames = useServerFn(getManagerAssignedGames);
+  const saveManagerGamesFn = useServerFn(assignManagerGames);
+  const assignOrganizerFn = useServerFn(assignOrganizerToStore);
+
+  const [staff, setStaff] = useState<StaffRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [addModal, setAddModal] = useState(false);
+  const [addForm, setAddForm] = useState<{
+    email: string;
+    geek_tag: string;
+    role: "tcg_manager" | "organizer";
+  }>({ email: "", geek_tag: "", role: "organizer" });
+  const [addLoading, setAddLoading] = useState(false);
+
+  const [assignModal, setAssignModal] = useState<{
+    player_id: string;
+    geek_tag: string;
+    role: "tcg_manager" | "organizer";
+  } | null>(null);
+
+  const [allGames, setAllGames] = useState<{ id: string; name: string }[]>([]);
+  const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
+  const [allStores, setAllStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
+  const [selectedStore, setSelectedStore] = useState<string>("");
+  const [assignLoading, setAssignLoading] = useState(false);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const data = (await fetchStaff()) as StaffRow[];
+      setStaff(data);
+    } catch (e: any) {
+      toast.error(e?.message ?? String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openAssignmentFor = async (
+    player_id: string,
+    geek_tag: string,
+    role: "tcg_manager" | "organizer",
+    currentStoreId?: string,
+  ) => {
+    setAssignModal({ player_id, geek_tag, role });
+    if (role === "tcg_manager") {
+      const gRes: any = await fetchManagerGames({ data: { player_id } });
+      setAllGames(gRes.all_games ?? []);
+      setSelectedGames(new Set(gRes.assigned_game_ids ?? []));
+    } else {
+      const sRes: any = await fetchAllStores();
+      setAllStores((sRes.stores ?? []) as any[]);
+      setSelectedStore(currentStoreId ?? "");
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!addForm.email || !addForm.geek_tag) return;
+    setAddLoading(true);
+    try {
+      const res: any = await upsertStaff({ data: addForm });
+      toast.success(
+        res.was_existing
+          ? `Usuario existente actualizado al rol ${addForm.role}`
+          : "Staff creado correctamente",
+      );
+      const playerId = res.player_id as string | null;
+      const role = addForm.role;
+      const geekTag = addForm.geek_tag;
+      setAddModal(false);
+      setAddForm({ email: "", geek_tag: "", role: "organizer" });
+      await refresh();
+      if (playerId) {
+        await openAssignmentFor(playerId, geekTag, role);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? String(e));
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const handleSaveAssignment = async () => {
+    if (!assignModal) return;
+    setAssignLoading(true);
+    try {
+      if (assignModal.role === "tcg_manager") {
+        await saveManagerGamesFn({
+          data: {
+            player_id: assignModal.player_id,
+            game_ids: Array.from(selectedGames),
+          },
+        });
+        toast.success("TCGs asignados correctamente");
+      } else {
+        if (!selectedStore) {
+          toast.error("Selecciona una tienda");
+          setAssignLoading(false);
+          return;
+        }
+        await assignOrganizerFn({
+          data: {
+            player_id: assignModal.player_id,
+            store_id: selectedStore,
+          },
+        });
+        toast.success("Tienda asignada correctamente");
+      }
+      setAssignModal(null);
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? String(e));
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Staff del circuito</h2>
+          <p className="text-xs text-gray-400">
+            Managers y Organizadores activos en la plataforma
+          </p>
+        </div>
+        <Button onClick={() => setAddModal(true)}>
+          <UserPlus size={14} className="mr-2" />
+          Agregar Staff
+        </Button>
+      </div>
+
+      {/* Table */}
+      <div className="glass rounded-2xl overflow-hidden">
+        {loading ? (
+          <div className="flex h-32 items-center justify-center">
+            <Loader2 className="animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Desktop */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-black/40 text-xs uppercase text-gray-400">
+                  <tr>
+                    <th className="text-left px-4 py-2">Geek Tag</th>
+                    <th className="text-left px-4 py-2">Email</th>
+                    <th className="text-left px-4 py-2">Rol</th>
+                    <th className="text-left px-4 py-2">Asignación</th>
+                    <th className="text-left px-4 py-2">Estado</th>
+                    <th className="text-left px-4 py-2">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staff.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                        Sin staff registrado. Usa "Agregar Staff" para comenzar.
+                      </td>
+                    </tr>
+                  ) : (
+                    staff.map((p) => (
+                      <tr key={p.id} className="border-t border-white/5">
+                        <td className="px-4 py-3 text-white font-medium">
+                          {p.geek_tag}
+                        </td>
+                        <td className="px-4 py-3 text-gray-300">
+                          {p.email ?? "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline">
+                            {p.role === "tcg_manager" ? "TCG Manager" : "Organizador"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          {p.role === "tcg_manager" && p.manager_games?.length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {p.manager_games.map((mg) => (
+                                <span
+                                  key={mg.game_id}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-gray-300"
+                                >
+                                  {mg.games?.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : p.role === "organizer" && p.home_store ? (
+                            <span className="text-xs text-gray-300">
+                              {p.home_store.name}
+                              {p.home_store.city ? ` · ${p.home_store.city}` : ""}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500">Sin asignar</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={p.is_active ? "default" : "secondary"}>
+                            {p.is_active ? "Activo" : "Inactivo"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() =>
+                              openAssignmentFor(
+                                p.id,
+                                p.geek_tag,
+                                p.role,
+                                p.home_store?.id,
+                              )
+                            }
+                            className="text-xs text-primary hover:underline"
+                          >
+                            {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile */}
+            <div className="sm:hidden divide-y divide-white/5">
+              {staff.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-gray-500">
+                  Sin staff registrado.
+                </div>
+              ) : (
+                staff.map((p) => (
+                  <div key={p.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-white font-medium">{p.geek_tag}</span>
+                      <Badge variant="outline">
+                        {p.role === "tcg_manager" ? "Manager" : "Org"}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-gray-400">{p.email ?? "—"}</div>
+                    {p.role === "tcg_manager" && p.manager_games?.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {p.manager_games.map((mg) => (
+                          <span
+                            key={mg.game_id}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-gray-300"
+                          >
+                            {mg.games?.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : p.role === "organizer" && p.home_store ? (
+                      <div className="text-xs text-gray-300">
+                        {p.home_store.name}
+                        {p.home_store.city ? ` · ${p.home_store.city}` : ""}
+                      </div>
+                    ) : null}
+                    <button
+                      onClick={() =>
+                        openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                      }
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Add Staff modal */}
+      <Dialog open={addModal} onOpenChange={(o) => !o && setAddModal(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agregar Staff</DialogTitle>
+            <DialogDescription>
+              Si el correo ya existe en la plataforma, el sistema actualizará su
+              rol automáticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-gray-400">Correo electrónico *</Label>
+              <Input
+                type="email"
+                value={addForm.email}
+                onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="correo@ejemplo.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-gray-400">Nombre / Geek Tag *</Label>
+              <Input
+                value={addForm.geek_tag}
+                onChange={(e) => setAddForm((f) => ({ ...f, geek_tag: e.target.value }))}
+                placeholder="GeekTag123"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-gray-400">Rol *</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["organizer", "tcg_manager"] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setAddForm((f) => ({ ...f, role: r }))}
+                    className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition ${
+                      addForm.role === r
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20"
+                    }`}
+                  >
+                    {r === "organizer" ? "Organizador" : "TCG Manager"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddStaff} disabled={addLoading}>
+              {addLoading ? (
+                <Loader2 size={14} className="mr-2 animate-spin" />
+              ) : null}
+              {addLoading ? "Procesando..." : "Continuar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment modal */}
+      <Dialog open={!!assignModal} onOpenChange={(o) => !o && setAssignModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {assignModal?.role === "tcg_manager"
+                ? "Asignar TCGs"
+                : "Asignar tienda"}
+            </DialogTitle>
+            <DialogDescription>
+              {assignModal?.role === "tcg_manager"
+                ? `Selecciona los juegos que ${assignModal?.geek_tag ?? ""} tendrá bajo su responsabilidad.`
+                : `Selecciona la tienda que ${assignModal?.geek_tag ?? ""} administrará.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {assignModal?.role === "tcg_manager" ? (
+            <div className="space-y-2 max-h-[360px] overflow-y-auto">
+              {allGames.map((g) => {
+                const isSelected = selectedGames.has(g.id);
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedGames((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(g.id)) next.delete(g.id);
+                        else next.add(g.id);
+                        return next;
+                      })
+                    }
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-white"
+                        : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-5 w-5 items-center justify-center rounded border ${
+                        isSelected
+                          ? "bg-primary border-primary text-white"
+                          : "border-white/20"
+                      }`}
+                    >
+                      {isSelected ? <Check size={12} /> : null}
+                    </span>
+                    {g.name}
+                  </button>
+                );
+              })}
+            </div>
+          ) : assignModal ? (
+            <div className="space-y-2">
+              <Select value={selectedStore} onValueChange={setSelectedStore}>
+                <SelectTrigger>
+                  <SelectValue placeholder="— Seleccionar tienda —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allStores.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                      {s.city ? ` · ${s.city}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAssignModal(null)}>
+              Omitir
+            </Button>
+            <Button onClick={handleSaveAssignment} disabled={assignLoading}>
+              {assignLoading ? (
+                <Loader2 size={14} className="mr-2 animate-spin" />
+              ) : null}
+              {assignLoading ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
