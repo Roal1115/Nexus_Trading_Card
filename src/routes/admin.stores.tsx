@@ -1239,6 +1239,14 @@ function StaffTab() {
                                   openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
                                 }
                               >
+                                <Info size={14} className="mr-2" />
+                                Info
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  openAssignmentFor(p.id, p.geek_tag, p.role, p.home_store?.id)
+                                }
+                              >
                                 <UserPlus size={14} className="mr-2" />
                                 {p.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
                               </DropdownMenuItem>
