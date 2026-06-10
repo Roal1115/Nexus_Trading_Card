@@ -29,6 +29,45 @@ type StoreRow = {
   name: string;
   city: string | null;
   state: string | null;
+  address: string | null;
+  phone: string | null;
+  google_maps_url: string | null;
+  description: string | null;
+  opening_hours: string | null;
+  instagram: string | null;
+  website: string | null;
+  twitter: string | null;
+  twitch: string | null;
+};
+
+type FormState = {
+  name: string;
+  city: string;
+  state: string;
+  address: string;
+  phone: string;
+  google_maps_url: string;
+  description: string;
+  opening_hours: string;
+  instagram: string;
+  website: string;
+  twitter: string;
+  twitch: string;
+};
+
+const emptyForm: FormState = {
+  name: "",
+  city: "",
+  state: "",
+  address: "",
+  phone: "",
+  google_maps_url: "",
+  description: "",
+  opening_hours: "",
+  instagram: "",
+  website: "",
+  twitter: "",
+  twitch: "",
 };
 
 function OrganizerHome() {
@@ -41,24 +80,35 @@ function OrganizerHome() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [stores, setStores] = useState<StoreRow[]>([]);
+  const [stores, setStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
   const [homeStore, setHomeStore] = useState<StoreRow | null>(null);
   const [selectedStoreId, setSelectedStoreId] = useState<string>("");
-  const [form, setForm] = useState({ name: "", city: "", state: "" });
+  const [form, setForm] = useState<FormState>(emptyForm);
 
-  const refresh = async (em: string) => {
+  const refresh = async () => {
     setLoading(true);
     try {
-      const res = await fetchOverview();
+      const res: any = await fetchOverview();
       setStores(res.stores);
       setHomeStore(res.homeStore);
       setSelectedStoreId(res.player.home_store_id ?? "");
       if (res.homeStore) {
         setForm({
-          name: res.homeStore.name ?? "",
-          city: res.homeStore.city ?? "",
-          state: res.homeStore.state ?? "",
+          name:            res.homeStore.name ?? "",
+          city:            res.homeStore.city ?? "",
+          state:           res.homeStore.state ?? "",
+          address:         res.homeStore.address ?? "",
+          phone:           res.homeStore.phone ?? "",
+          google_maps_url: res.homeStore.google_maps_url ?? "",
+          description:     res.homeStore.description ?? "",
+          opening_hours:   res.homeStore.opening_hours ?? "",
+          instagram:       res.homeStore.instagram ?? "",
+          website:         res.homeStore.website ?? "",
+          twitter:         res.homeStore.twitter ?? "",
+          twitch:          res.homeStore.twitch ?? "",
         });
+      } else {
+        setForm(emptyForm);
       }
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
@@ -69,7 +119,7 @@ function OrganizerHome() {
 
   useEffect(() => {
     if (!email) return;
-    refresh(email);
+    refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
 
@@ -79,7 +129,7 @@ function OrganizerHome() {
     try {
       await saveHomeStore({ data: { store_id: selectedStoreId } });
       toast.success("Tienda asignada");
-      await refresh(email);
+      await refresh();
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -92,14 +142,24 @@ function OrganizerHome() {
     setSaving(true);
     try {
       await saveStoreInfo({
-        data: { store_id: homeStore.id,
-          name: form.name,
-          city: form.city,
-          state: form.state,
+        data: {
+          store_id:        homeStore.id,
+          name:            form.name,
+          city:            form.city,
+          state:           form.state,
+          address:         form.address,
+          phone:           form.phone,
+          google_maps_url: form.google_maps_url,
+          description:     form.description,
+          opening_hours:   form.opening_hours,
+          instagram:       form.instagram,
+          website:         form.website,
+          twitter:         form.twitter,
+          twitch:          form.twitch,
         },
       });
       toast.success("Datos de la tienda actualizados");
-      await refresh(email);
+      await refresh();
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -172,44 +232,144 @@ function OrganizerHome() {
       </section>
 
       {homeStore ? (
-        <section className="glass space-y-4 rounded-2xl p-6">
-          <div className="text-sm font-semibold text-white">
-            Datos de tu tienda
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label className="text-xs text-gray-400">Nombre</Label>
-              <Input
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-gray-400">Ciudad</Label>
-              <Input
-                value={form.city}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, city: e.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-gray-400">Estado</Label>
-              <Input
-                value={form.state}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, state: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-          <div className="flex justify-end">
+        <section className="glass space-y-6 rounded-2xl p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-white">
+              Información de mi tienda
+            </h2>
             <Button onClick={handleSaveInfo} disabled={saving}>
-              <Save size={14} className="mr-1" />
-              {saving ? "Guardando..." : "Guardar cambios"}
+              {saving ? (
+                <Loader2 size={14} className="animate-spin mr-1" />
+              ) : (
+                <Save size={14} className="mr-1" />
+              )}
+              Guardar cambios
             </Button>
+          </div>
+
+          {/* SECCIÓN 1 — Información esencial */}
+          <div className="space-y-3">
+            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Información esencial
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Nombre de la tienda *</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Ciudad</Label>
+                <Input
+                  value={form.city}
+                  onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Estado</Label>
+                <Input
+                  value={form.state}
+                  onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Dirección física</Label>
+                <Input
+                  value={form.address}
+                  onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                  placeholder="Calle, número, colonia"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Enlace Google Maps</Label>
+                <Input
+                  value={form.google_maps_url}
+                  onChange={(e) => setForm((f) => ({ ...f, google_maps_url: e.target.value }))}
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Teléfono de contacto</Label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  placeholder="+52 81 1234 5678"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Horarios de atención</Label>
+                <Input
+                  value={form.opening_hours}
+                  onChange={(e) => setForm((f) => ({ ...f, opening_hours: e.target.value }))}
+                  placeholder="Lun-Vie 12:00-21:00"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Descripción</Label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  rows={3}
+                  placeholder="Breve descripción de la tienda..."
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary resize-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SECCIÓN 2 — Presencia digital */}
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Presencia digital
+              <span className="ml-2 text-gray-600 normal-case tracking-normal font-normal">
+                — Opcional
+              </span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Página web</Label>
+                <Input
+                  value={form.website}
+                  onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Instagram</Label>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500 text-sm">@</span>
+                  <Input
+                    value={form.instagram}
+                    onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
+                    placeholder="usuario"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">X / Twitter</Label>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500 text-sm">@</span>
+                  <Input
+                    value={form.twitter}
+                    onChange={(e) => setForm((f) => ({ ...f, twitter: e.target.value }))}
+                    placeholder="usuario"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-gray-400">Twitch</Label>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500 text-sm">twitch.tv/</span>
+                  <Input
+                    value={form.twitch}
+                    onChange={(e) => setForm((f) => ({ ...f, twitch: e.target.value }))}
+                    placeholder="canal"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       ) : (
