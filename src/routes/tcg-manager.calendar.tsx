@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import {
   getManagerCalendar,
-  getManagerGames,
 } from "@/lib/geekarena-manager.functions";
+
 
 export const Route = createFileRoute("/tcg-manager/calendar")({
   head: () => ({ meta: [{ title: "Calendario de Torneos — Geek Arena" }] }),
