@@ -481,12 +481,35 @@ function slugify(name: string): string {
 
 export const createStore = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { name: string; city?: string; state?: string; slug?: string }) =>
+  .inputValidator((d: {
+    name: string;
+    city?: string;
+    state?: string;
+    slug?: string;
+    address?: string;
+    phone?: string;
+    google_maps_url?: string;
+    description?: string;
+    opening_hours?: string;
+    instagram?: string;
+    website?: string;
+    twitter?: string;
+    twitch?: string;
+  }) =>
     z.object({
       name: z.string().min(1).max(120),
       city: z.string().max(120).optional(),
       state: z.string().max(120).optional(),
       slug: z.string().max(80).optional(),
+      address: z.string().max(300).optional(),
+      phone: z.string().max(20).optional(),
+      google_maps_url: z.string().url().optional().or(z.literal("")),
+      description: z.string().max(500).optional(),
+      opening_hours: z.string().max(200).optional(),
+      instagram: z.string().max(100).optional(),
+      website: z.string().max(200).optional(),
+      twitter: z.string().max(100).optional(),
+      twitch: z.string().max(100).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -500,6 +523,15 @@ export const createStore = createServerFn({ method: "POST" })
       state: data.state || null,
       country: "MX",
       is_active: true,
+      address: data.address || null,
+      phone: data.phone || null,
+      google_maps_url: data.google_maps_url || null,
+      description: data.description || null,
+      opening_hours: data.opening_hours || null,
+      instagram: data.instagram || null,
+      website: data.website || null,
+      twitter: data.twitter || null,
+      twitch: data.twitch || null,
     }).select("id").maybeSingle();
     if (error) throw new Error(error.message);
     await logAction(
@@ -513,6 +545,7 @@ export const createStore = createServerFn({ method: "POST" })
     );
     return { ok: true };
   });
+
 
 export const setStoreActive = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
