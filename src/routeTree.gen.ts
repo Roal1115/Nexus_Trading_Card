@@ -22,6 +22,7 @@ import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
+import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
 import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
 import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.calendar'
 import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
@@ -106,6 +107,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const TcgManagerUploadRoute = TcgManagerUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerStoresRoute = TcgManagerStoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
   getParentRoute: () => TcgManagerRoute,
 } as any)
 const TcgManagerHistoryRoute = TcgManagerHistoryRouteImport.update({
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
+  '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByTo {
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
+  '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -304,6 +312,7 @@ export interface FileRoutesById {
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
+  '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
+    | '/tcg-manager/stores'
     | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
+    | '/tcg-manager/stores'
     | '/tcg-manager/upload'
     | '/admin'
     | '/organizer'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
+    | '/tcg-manager/stores'
     | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
@@ -521,6 +533,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/tcg-manager/upload'
       preLoaderRoute: typeof TcgManagerUploadRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/stores': {
+      id: '/tcg-manager/stores'
+      path: '/stores'
+      fullPath: '/tcg-manager/stores'
+      preLoaderRoute: typeof TcgManagerStoresRouteImport
       parentRoute: typeof TcgManagerRoute
     }
     '/tcg-manager/history': {
@@ -732,6 +751,7 @@ interface TcgManagerRouteChildren {
   TcgManagerApprovedRoute: typeof TcgManagerApprovedRoute
   TcgManagerCalendarRoute: typeof TcgManagerCalendarRoute
   TcgManagerHistoryRoute: typeof TcgManagerHistoryRoute
+  TcgManagerStoresRoute: typeof TcgManagerStoresRoute
   TcgManagerUploadRoute: typeof TcgManagerUploadRoute
   TcgManagerIndexRoute: typeof TcgManagerIndexRoute
   TcgManagerTournamentsIdRoute: typeof TcgManagerTournamentsIdRoute
@@ -741,6 +761,7 @@ const TcgManagerRouteChildren: TcgManagerRouteChildren = {
   TcgManagerApprovedRoute: TcgManagerApprovedRoute,
   TcgManagerCalendarRoute: TcgManagerCalendarRoute,
   TcgManagerHistoryRoute: TcgManagerHistoryRoute,
+  TcgManagerStoresRoute: TcgManagerStoresRoute,
   TcgManagerUploadRoute: TcgManagerUploadRoute,
   TcgManagerIndexRoute: TcgManagerIndexRoute,
   TcgManagerTournamentsIdRoute: TcgManagerTournamentsIdRoute,

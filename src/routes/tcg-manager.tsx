@@ -8,6 +8,7 @@ import {
   Loader2,
   Menu,
   ShieldCheck,
+  Store as StoreIcon,
   Upload,
 } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
