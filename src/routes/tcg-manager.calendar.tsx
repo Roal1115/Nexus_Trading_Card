@@ -139,7 +139,7 @@ function ManagerCalendarPage() {
       return true;
 
     });
-  }, [calData, zoneFilter, storeFilter]);
+  }, [calData, zoneFilter, storeFilter, gameFilter]);
 
   const calendarGrid = useMemo(() => {
     const grid: Record<number, Record<number, CalEntry[]>> = {};
