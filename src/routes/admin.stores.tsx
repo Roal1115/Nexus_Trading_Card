@@ -332,7 +332,8 @@ function AdminStoresPage() {
                       <tr key={s.id} className="cursor-pointer border-t border-white/5 transition hover:bg-white/5">
                         <td className="px-4 py-3">
                           <div className="font-bold text-white">{s.name}</div>
-                          <div className="text-xs text-gray-500">{s.slug}</div>
+                          {s.address && <div className="text-xs text-gray-500">{s.address}</div>}
+
                         </td>
                         <td className="px-4 py-3 text-gray-300">
                           {[s.city, s.state].filter(Boolean).join(", ") || "—"}
