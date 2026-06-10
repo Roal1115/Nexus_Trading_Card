@@ -96,13 +96,14 @@ function ActivityPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(total / 50));
+  const totalPages = Math.max(1, Math.ceil(total / 25));
   const activeFilters = [
     filters.action,
     filters.actor_role,
     filters.target_type,
     filters.date_from,
     filters.date_to,
+    filters.search,
   ].filter(Boolean).length;
 
   return (
