@@ -89,6 +89,7 @@ function AdminLayout() {
                 icon: <Upload size={16} />,
                 badge: counts?.readyToPublish ?? 0,
               },
+              { to: "/admin/calendar", label: "Calendario Nacional", icon: <Calendar size={16} /> },
               { to: "/admin/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
           },
