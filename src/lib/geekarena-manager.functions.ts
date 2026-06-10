@@ -417,18 +417,24 @@ export const getManagerHistory = createServerFn({ method: "POST" })
 
 export const getManagerCalendar = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .inputValidator((d: { game_id: string; week_start?: string }) =>
+  .inputValidator((d: { game_id?: string; week_start?: string }) =>
     z.object({
-      game_id:    z.string().uuid(),
+      game_id:    z.string().uuid().optional(),
       week_start: z.string().optional(),
     }).parse(d)
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
-    // Verify manager owns this game
-    if (player.role !== "admin") {
-      await assertManagerOwnsGame(admin, player, data.game_id);
+    // Determine which game_ids to query
+    let gameIds: string[];
+    if (data.game_id) {
+      if (player.role !== "admin") {
+        await assertManagerOwnsGame(admin, player, data.game_id);
+      }
+      gameIds = [data.game_id];
+    } else {
+      gameIds = await getManagerGameIds(admin, player);
     }
 
     // Calculate week range Mon-Sun
@@ -450,12 +456,34 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     const mondayStr = monday.toISOString().split("T")[0];
     const sundayStr = sunday.toISOString().split("T")[0];
 
-    // Get all store schedules for this game
+    if (gameIds.length === 0) {
+      return {
+        week_start: mondayStr,
+        week_end: sundayStr,
+        entries: [],
+        stats: {
+          total_overdue: 0,
+          uploaded_so_far: 0,
+          days_elapsed: 0,
+          total_expected: 0,
+          today_expected: 0,
+          today_submitted: 0,
+        },
+      };
+    }
+
+    // Get all store schedules for these games
     const { data: schedules, error: se } = await admin
       .from("store_schedules")
       .select("id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)")
-      .eq("game_id", data.game_id);
+      .in("game_id", gameIds);
     if (se) throw new Error(se.message);
+
+    // Game names
+    const { data: gamesData } = await admin
+      .from("games").select("id, name").in("id", gameIds);
+    const gameNamesMap = new Map((gamesData ?? []).map((g: any) => [g.id, g.name]));
+
 
     // Get organizers for these stores
     const storeIds = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
