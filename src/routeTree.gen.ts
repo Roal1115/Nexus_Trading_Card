@@ -34,6 +34,7 @@ import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminHistoryRouteImport } from './routes/admin.history'
+import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
@@ -166,6 +167,11 @@ const AdminHistoryRoute = AdminHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCalendarRoute = AdminCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminApprovedRoute = AdminApprovedRouteImport.update({
   id: '/approved',
   path: '/approved',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/admin/activity': typeof AdminActivityRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
+  '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/admin/activity': typeof AdminActivityRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
+  '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/admin/activity': typeof AdminActivityRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
+  '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRouteWithChildren
   '/admin/publish': typeof AdminPublishRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/ads'
     | '/admin/approved'
+    | '/admin/calendar'
     | '/admin/history'
     | '/admin/players'
     | '/admin/publish'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/ads'
     | '/admin/approved'
+    | '/admin/calendar'
     | '/admin/history'
     | '/admin/players'
     | '/admin/publish'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/ads'
     | '/admin/approved'
+    | '/admin/calendar'
     | '/admin/history'
     | '/admin/players'
     | '/admin/publish'
@@ -583,6 +595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHistoryRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/calendar': {
+      id: '/admin/calendar'
+      path: '/calendar'
+      fullPath: '/admin/calendar'
+      preLoaderRoute: typeof AdminCalendarRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/approved': {
       id: '/admin/approved'
       path: '/approved'
@@ -644,6 +663,7 @@ interface AdminRouteChildren {
   AdminActivityRoute: typeof AdminActivityRoute
   AdminAdsRoute: typeof AdminAdsRoute
   AdminApprovedRoute: typeof AdminApprovedRoute
+  AdminCalendarRoute: typeof AdminCalendarRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminPlayersRoute: typeof AdminPlayersRouteWithChildren
   AdminPublishRoute: typeof AdminPublishRoute
@@ -658,6 +678,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminActivityRoute: AdminActivityRoute,
   AdminAdsRoute: AdminAdsRoute,
   AdminApprovedRoute: AdminApprovedRoute,
+  AdminCalendarRoute: AdminCalendarRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminPlayersRoute: AdminPlayersRouteWithChildren,
   AdminPublishRoute: AdminPublishRoute,

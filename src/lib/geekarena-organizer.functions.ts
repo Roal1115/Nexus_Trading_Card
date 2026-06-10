@@ -94,7 +94,13 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
         .order("name", { ascending: true }),
       admin.from("games").select("id, slug, name, publisher, logo_url, is_active").eq("is_active", true).order("name"),
       player.home_store_id
-        ? admin.from("stores").select("id, slug, name, city, state, country, is_active").eq("id", player.home_store_id).maybeSingle()
+        ? admin
+            .from("stores")
+            .select(
+              "id, slug, name, city, state, country, is_active, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch",
+            )
+            .eq("id", player.home_store_id)
+            .maybeSingle()
         : Promise.resolve({ data: null, error: null } as const),
     ]);
 
@@ -127,12 +133,35 @@ export const updateHomeStore = createServerFn({ method: "POST" })
 
 export const updateStoreInfo = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { store_id: string; name: string; city: string; state: string }) =>
+  .inputValidator((d: {
+    store_id:        string;
+    name:            string;
+    city?:           string;
+    state?:          string;
+    address?:        string;
+    phone?:          string;
+    google_maps_url?: string;
+    description?:    string;
+    opening_hours?:  string;
+    instagram?:      string;
+    website?:        string;
+    twitter?:        string;
+    twitch?:         string;
+  }) =>
     z.object({
-      store_id: z.string().uuid(),
-      name: z.string().min(1).max(120),
-      city: z.string().max(120),
-      state: z.string().max(120),
+      store_id:        z.string().uuid(),
+      name:            z.string().min(1).max(120),
+      city:            z.string().max(120).optional(),
+      state:           z.string().max(120).optional(),
+      address:         z.string().max(300).optional(),
+      phone:           z.string().max(20).optional(),
+      google_maps_url: z.string().max(500).optional(),
+      description:     z.string().max(500).optional(),
+      opening_hours:   z.string().max(200).optional(),
+      instagram:       z.string().max(100).optional(),
+      website:         z.string().max(200).optional(),
+      twitter:         z.string().max(100).optional(),
+      twitch:          z.string().max(100).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -140,10 +169,24 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
     if (player.home_store_id !== data.store_id && player.role !== "admin") {
       throw new Error("Solo puedes editar tu tienda asignada");
     }
+    const { store_id, ...fields } = data;
     const { error } = await admin
       .from("stores")
-      .update({ name: data.name, city: data.city || null, state: data.state || null })
-      .eq("id", data.store_id);
+      .update({
+        name:            fields.name,
+        city:            fields.city || null,
+        state:           fields.state || null,
+        address:         fields.address || null,
+        phone:           fields.phone || null,
+        google_maps_url: fields.google_maps_url || null,
+        description:     fields.description || null,
+        opening_hours:   fields.opening_hours || null,
+        instagram:       fields.instagram || null,
+        website:         fields.website || null,
+        twitter:         fields.twitter || null,
+        twitch:          fields.twitch || null,
+      })
+      .eq("id", store_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
