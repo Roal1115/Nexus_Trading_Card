@@ -535,11 +535,11 @@ export function TournamentUploadForm({
         <section className="glass space-y-5 rounded-2xl p-6">
           <div className="space-y-2">
             <Label className="text-xs text-gray-400">
-              {isAdmin ? "Seleccionar tienda *" : "Tienda"}
+              {isAdmin || isManager ? "Seleccionar tienda *" : "Tienda"}
             </Label>
-            {isAdmin ? (
+            {isAdmin || isManager ? (
               <StoreCombobox
-                stores={stores}
+                stores={isManager ? availableStoresForGame : stores}
                 value={storeId}
                 onChange={setStoreId}
               />
