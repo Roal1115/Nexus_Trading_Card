@@ -409,8 +409,21 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    if (player.role !== "admin" && player.home_store_id !== data.store_id) {
+    if (player.role !== "admin" && player.role !== "tcg_manager" && player.home_store_id !== data.store_id) {
       throw new Error("No puedes subir un torneo para esta tienda");
+    }
+
+    // Validar que el manager tiene autoridad sobre este TCG
+    if (player.role === "tcg_manager") {
+      const { data: mg } = await admin
+        .from("manager_games")
+        .select("id")
+        .eq("player_id", player.id)
+        .eq("game_id", data.game_id)
+        .maybeSingle();
+      if (!mg) {
+        throw new Error("No tienes permisos para subir torneos de este TCG.");
+      }
     }
 
     // Restringir fecha a la semana actual (lunes → hoy). Admin puede saltar la validación.
