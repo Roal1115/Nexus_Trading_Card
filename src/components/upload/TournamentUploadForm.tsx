@@ -214,15 +214,21 @@ async function readFileToRows(file: File): Promise<string[][]> {
   }
   const buf = await file.arrayBuffer();
   try {
-    const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
-    const sheetName = wb.SheetNames[0];
-    const sheet = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      raw: false,
-      defval: "",
-      blankrows: false,
-    }) as unknown as string[][];
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const sheet = wb.worksheets[0];
+    if (!sheet) throw new Error("No se encontró ninguna hoja en el archivo.");
+    const rows: string[][] = [];
+    sheet.eachRow({ includeEmpty: false }, (row) => {
+      const values = (row.values as any[]).slice(1);
+      rows.push(
+        values.map((v: any) => {
+          if (v == null) return "";
+          if (typeof v === "object" && v.result != null) return String(v.result);
+          return String(v);
+        })
+      );
+    });
     return rows;
   } catch {
     throw new Error(
