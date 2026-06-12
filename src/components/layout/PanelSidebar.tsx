@@ -50,13 +50,9 @@ export function PanelSidebar({
   };
 
   const renderItem = (item: SidebarItem) => {
-    const active = item.exact
-      ? pathname === item.to
-      : pathname === item.to || pathname.startsWith(item.to + "/");
+    const active = item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + "/");
     const cls = `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
-      active
-        ? "bg-primary/15 text-primary"
-        : "text-gray-300 hover:bg-white/5 hover:text-white"
+      active ? "bg-primary/15 text-primary" : "text-gray-300 hover:bg-white/5 hover:text-white"
     }`;
     if (item.external) {
       return (
@@ -76,22 +72,15 @@ export function PanelSidebar({
     );
   };
 
-  const resolvedSections: SidebarSection[] =
-    sections ?? (items ? [{ title, items }] : []);
+  const resolvedSections: SidebarSection[] = sections ?? (items ? [{ title, items }] : []);
 
   return (
     <>
       {/* Overlay en mobile */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
-          onClick={closeMobile}
-          aria-hidden
-        />
-      )}
+      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={closeMobile} aria-hidden />}
 
       <aside
-        className={`glass fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col rounded-none border-r border-white/10 p-4 transition-transform duration-200 ease-in-out md:sticky md:top-0 md:z-auto md:translate-x-0 ${
+        className={`glass fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col rounded-none border-r border-white/10 p-4 transition-transform duration-200 ease-in-out md:sticky md:top-0 md:z-auto md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -104,19 +93,13 @@ export function PanelSidebar({
           <X size={20} />
         </button>
 
-        <Link
-          to="/"
-          className="mb-6 flex items-center gap-2 px-2"
-          onClick={closeMobile}
-        >
+        <Link to="/" className="mb-6 flex items-center gap-2 px-2" onClick={closeMobile}>
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/20 text-primary">
             <Trophy size={16} />
           </span>
           <div>
             <div className="text-sm font-bold text-white">Geek Arena</div>
-            <div className="text-[10px] uppercase tracking-widest text-primary">
-              {subtitle}
-            </div>
+            <div className="text-[10px] uppercase tracking-widest text-primary">{subtitle}</div>
           </div>
         </Link>
 
@@ -133,9 +116,7 @@ export function PanelSidebar({
 
         <div className="mt-auto space-y-2 border-t border-white/10 pt-4">
           <div className="px-2 text-xs text-gray-400">
-            <div className="text-[10px] uppercase tracking-widest text-gray-500">
-              Sesión
-            </div>
+            <div className="text-[10px] uppercase tracking-widest text-gray-500">Sesión</div>
             <div className="truncate text-white">{userLabel}</div>
           </div>
           <button
