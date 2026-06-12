@@ -305,6 +305,7 @@ export function TournamentUploadForm({
   const [step, setStep] = useState<1 | 2>(1);
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [managerStores, setManagerStores] = useState<(Store & { available_game_ids: string[] })[]>([]);
   const [homeStore, setHomeStore] = useState<Store | null>(null);
 
   const [storeId, setStoreId] = useState<string>("");
