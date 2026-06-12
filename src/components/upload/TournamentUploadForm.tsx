@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import {
   AlertCircle,
   ArrowLeft,
@@ -214,17 +214,23 @@ async function readFileToRows(file: File): Promise<string[][]> {
   }
   const buf = await file.arrayBuffer();
   try {
-    const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
-    const sheetName = wb.SheetNames[0];
-    const sheet = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      raw: false,
-      defval: "",
-      blankrows: false,
-    }) as unknown as string[][];
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const sheet = wb.worksheets[0];
+    if (!sheet) throw new Error("No se encontró ninguna hoja en el archivo.");
+    const rows: string[][] = [];
+    sheet.eachRow({ includeEmpty: false }, (row) => {
+      const values = (row.values as any[]).slice(1); // ExcelJS uses 1-based index, slice removes the empty first element
+      rows.push(
+        values.map((v: any) => {
+          if (v == null) return "";
+          if (typeof v === "object" && v.result != null) return String(v.result); // formula cells
+          return String(v);
+        })
+      );
+    });
     return rows;
-  } catch {
+  } catch (e) {
     throw new Error(
       "No se pudo leer el archivo. Verifica que sea un archivo Excel válido.",
     );
@@ -555,6 +561,7 @@ export function TournamentUploadForm({
                       max={max}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      className="[color-scheme:dark]"
                     />
                     <p className="mt-1 text-xs text-gray-500">
                       Solo se permiten torneos de la semana actual ({min} al {max}).

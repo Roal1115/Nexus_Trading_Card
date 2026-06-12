@@ -228,7 +228,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
 export const getTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { tournament_id: string }) =>
+  .validator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -330,7 +330,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
 
 export const toggleProfilePrivacy = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { is_public: boolean }) =>
+  .validator((d: { is_public: boolean }) =>
     z.object({ is_public: z.boolean() }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -345,7 +345,7 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
 
 export const getPublicProfile = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { player_tag: string }) =>
+  .validator((d: { player_tag: string }) =>
     z.object({ player_tag: z.string() }).parse(d),
   )
   .handler(async ({ data, context }) => {

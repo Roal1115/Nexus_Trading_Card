@@ -194,7 +194,7 @@ export const listSponsors = createServerFn({ method: "POST" })
 // ─── Admin: create sponsor ─────────────────────────────────────────────────
 export const createSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { name: string; priority_rank: number; view_limit: number }) =>
+  .validator((d: { name: string; priority_rank: number; view_limit: number }) =>
     z
       .object({
         name: z.string().min(2).max(120),
@@ -219,7 +219,7 @@ export const createSponsor = createServerFn({ method: "POST" })
 // ─── Admin: update sponsor images ─────────────────────────────────────────
 export const updateSponsorImages = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator(
+  .validator(
     (d: {
       sponsor_id: string;
       logo_url?: string;
@@ -252,7 +252,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
 // ─── Admin: update sponsor settings ───────────────────────────────────────
 export const updateSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator(
+  .validator(
     (d: {
       sponsor_id: string;
       name?: string;
@@ -283,7 +283,7 @@ export const updateSponsor = createServerFn({ method: "POST" })
 // ─── Admin: reset a sponsor's view count ──────────────────────────────────
 export const resetSponsorViews = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { sponsor_id: string }) =>
+  .validator((d: { sponsor_id: string }) =>
     z.object({ sponsor_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -298,7 +298,7 @@ export const resetSponsorViews = createServerFn({ method: "POST" })
 // ─── Admin: delete a sponsor ─────────────────────────────────────────────
 export const deleteSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { sponsor_id: string }) =>
+  .validator((d: { sponsor_id: string }) =>
     z.object({ sponsor_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
