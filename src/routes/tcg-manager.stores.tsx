@@ -4,19 +4,27 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Loader2,
   Search,
-  Store as StoreIcon,
   CalendarDays,
+  Instagram,
+  Globe,
+  Twitch,
+  Twitter,
+  MapPin,
+  Phone,
+  Clock,
+  Map as MapIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  listManagerStores,
+  getManagerResponsibleStores,
   getStoreSchedulesForManager,
   upsertStoreScheduleManager,
   deleteStoreScheduleManager,
 } from "@/lib/geekarena-manager.functions";
 import { StoreSchedulesDialog } from "@/components/admin/StoreSchedulesDialog";
+import { StoreEditModal } from "@/components/stores/StoreEditModal";
 
 export const Route = createFileRoute("/tcg-manager/stores")({
   head: () => ({ meta: [{ title: "Tiendas — TCG Manager" }] }),
@@ -28,20 +36,36 @@ type Store = {
   name: string;
   city: string | null;
   state: string | null;
+  country?: string | null;
   is_active: boolean | null;
+  address?: string | null;
+  phone?: string | null;
+  google_maps_url?: string | null;
+  description?: string | null;
+  opening_hours?: string | null;
+  instagram?: string | null;
+  website?: string | null;
+  twitter?: string | null;
+  twitch?: string | null;
+  zone?: string | null;
+  available_game_ids: string[];
 };
 
+type Game = { id: string; name: string };
+
 function ManagerStoresPage() {
-  const fetchStores = useServerFn(listManagerStores);
+  const fetchStores = useServerFn(getManagerResponsibleStores);
   const fetchSchedulesFn = useServerFn(getStoreSchedulesForManager);
   const upsertScheduleFn = useServerFn(upsertStoreScheduleManager);
   const deleteScheduleFn = useServerFn(deleteStoreScheduleManager);
 
   const [stores, setStores] = useState<Store[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchRaw, setSearchRaw] = useState("");
   const [search, setSearch] = useState("");
   const [schedStore, setSchedStore] = useState<Store | null>(null);
+  const [editStore, setEditStore] = useState<Store | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchRaw.trim().toLowerCase()), 300);
@@ -51,8 +75,9 @@ function ManagerStoresPage() {
   const refresh = async () => {
     setLoading(true);
     try {
-      const res = await fetchStores();
+      const res: any = await fetchStores();
       setStores((res.stores ?? []) as Store[]);
+      setGames((res.games ?? []) as Game[]);
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -67,7 +92,6 @@ function ManagerStoresPage() {
 
   const filtered = useMemo(() => {
     return stores.filter((s) => {
-      if (!s.is_active) return false;
       if (!search) return true;
       const hay = `${s.name} ${s.city ?? ""} ${s.state ?? ""}`.toLowerCase();
       return hay.includes(search);
@@ -88,9 +112,9 @@ function ManagerStoresPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
           Red
         </p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Tiendas</h1>
+        <h1 className="mt-2 text-3xl font-bold text-white">Tiendas a tu cargo</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Configura los días y horarios de torneos de tus TCGs en cada tienda.
+          Gestiona la información y los horarios de torneos de las tiendas que ofrecen tus TCGs.
         </p>
       </header>
 
@@ -109,53 +133,139 @@ function ManagerStoresPage() {
         </div>
       </div>
 
-      <section className="glass overflow-hidden rounded-2xl">
-        {filtered.length === 0 ? (
-          <div className="p-8 text-sm text-gray-400">
-            No hay tiendas que coincidan con la búsqueda.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
-                <tr>
-                  <th className="px-4 py-3">Tienda</th>
-                  <th className="px-4 py-3">Ciudad</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((s) => (
-                  <tr
-                    key={s.id}
-                    className="border-t border-white/5 transition hover:bg-white/5"
+      {filtered.length === 0 ? (
+        <div className="glass rounded-2xl p-8 text-sm text-gray-400">
+          No hay tiendas que coincidan.
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {filtered.map((s) => (
+            <div key={s.id} className="glass rounded-2xl p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-white font-bold text-lg">{s.name}</h3>
+                  <p className="text-xs text-gray-400">
+                    {s.city ?? "—"}
+                    {s.state ? ` · ${s.state}` : ""}
+                    {s.zone ? ` · ${s.zone}` : ""}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    onClick={() => setEditStore(s)}
+                    className="text-xs text-primary hover:underline"
                   >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 font-bold text-white">
-                        <StoreIcon size={14} className="text-gray-500" />
-                        {s.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-300">{s.city ?? "—"}</td>
-                    <td className="px-4 py-3 text-gray-300">{s.state ?? "—"}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSchedStore(s)}
-                      >
-                        <CalendarDays size={13} className="mr-1.5" />
-                        Configurar Torneos
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+                    Editar
+                  </button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSchedStore(s)}
+                  >
+                    <CalendarDays size={13} className="mr-1.5" />
+                    Torneos
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {s.available_game_ids.map((gid) => {
+                  const g = games.find((x) => x.id === gid);
+                  return (
+                    <span
+                      key={gid}
+                      className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-semibold text-primary"
+                    >
+                      {g?.name ?? "—"}
+                    </span>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-1.5 text-xs text-gray-300">
+                <div className="flex items-start gap-2">
+                  <MapPin size={12} className="mt-0.5 text-gray-500 shrink-0" />
+                  <span>{s.address || "—"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone size={12} className="text-gray-500 shrink-0" />
+                  <span>{s.phone || "—"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock size={12} className="text-gray-500 shrink-0" />
+                  <span>{s.opening_hours || "—"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapIcon size={12} className="text-gray-500 shrink-0" />
+                  {s.google_maps_url ? (
+                    <a
+                      href={s.google_maps_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      Ver mapa
+                    </a>
+                  ) : (
+                    <span>—</span>
+                  )}
+                </div>
+              </div>
+
+              {(s.instagram || s.website || s.twitter || s.twitch) && (
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
+                  {s.instagram && (
+                    <a
+                      href={`https://instagram.com/${s.instagram.replace("@", "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
+                    >
+                      <Instagram size={12} /> Instagram
+                    </a>
+                  )}
+                  {s.website && (
+                    <a
+                      href={s.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
+                    >
+                      <Globe size={12} /> Web
+                    </a>
+                  )}
+                  {s.twitter && (
+                    <a
+                      href={`https://x.com/${s.twitter.replace("@", "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
+                    >
+                      <Twitter size={12} /> X
+                    </a>
+                  )}
+                  {s.twitch && (
+                    <a
+                      href={`https://twitch.tv/${s.twitch}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
+                    >
+                      <Twitch size={12} /> Twitch
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {s.description && (
+                <p className="text-xs text-gray-400 leading-relaxed pt-2 border-t border-white/5">
+                  {s.description}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <StoreSchedulesDialog
         store={schedStore ? { id: schedStore.id, name: schedStore.name } : null}
@@ -166,6 +276,14 @@ function ManagerStoresPage() {
           remove: deleteScheduleFn as any,
         }}
       />
+
+      {editStore && (
+        <StoreEditModal
+          store={editStore}
+          onClose={() => setEditStore(null)}
+          onSaved={() => void refresh()}
+        />
+      )}
     </div>
   );
 }
