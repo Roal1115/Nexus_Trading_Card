@@ -433,6 +433,22 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       }
     }
 
+    // Validar que la tienda ofrece este TCG
+    if (player.role !== "admin") {
+      const { data: scheduleCheck } = await admin
+        .from("store_schedules")
+        .select("id")
+        .eq("store_id", data.store_id)
+        .eq("game_id", data.game_id)
+        .limit(1)
+        .maybeSingle();
+      if (!scheduleCheck) {
+        throw new Error("Esta tienda no tiene este TCG configurado en su calendario de torneos.");
+      }
+    }
+
+
+
     const { data: existing, error: dupErr } = await admin
       .from("tournaments")
       .select("id")
