@@ -338,7 +338,7 @@ export function TournamentUploadForm({
         const { data: sess } = await geekarena.auth.getSession();
         if (!sess.session) return;
         const ov = await fetchOverview();
-        setGames(ov.games as Game[]);
+        setGames(gamesOverride !== undefined ? gamesOverride : (ov.games as Game[]));
         setHomeStore((ov.homeStore as Store) ?? null);
         if (isAdmin) {
           const s = await fetchStores();
