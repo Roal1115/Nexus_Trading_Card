@@ -83,6 +83,7 @@ export function PanelSidebar({
         className={`glass fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col rounded-none border-r border-white/10 p-4 transition-transform duration-200 ease-in-out md:sticky md:top-0 md:z-auto md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
+        style={{ height: "100dvh" }}
       >
         {/* Botón cerrar en mobile */}
         <button
@@ -103,7 +104,7 @@ export function PanelSidebar({
           </div>
         </Link>
 
-        <nav className="flex flex-col gap-4">
+        <nav className="flex flex-col gap-4 flex-1 overflow-y-auto min-h-0 py-1">
           {resolvedSections.map((sec) => (
             <div key={sec.title}>
               <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
@@ -114,7 +115,7 @@ export function PanelSidebar({
           ))}
         </nav>
 
-        <div className="mt-auto space-y-2 border-t border-white/10 pt-4">
+        <div className="flex-shrink-0 space-y-2 border-t border-white/10 pt-4 mt-2">
           <div className="px-2 text-xs text-gray-400">
             <div className="text-[10px] uppercase tracking-widest text-gray-500">Sesión</div>
             <div className="truncate text-white">{userLabel}</div>
