@@ -226,14 +226,22 @@ async function readFileToRows(file: File): Promise<string[][]> {
         values.map((v: any) => {
           if (v == null) return "";
           if (typeof v === "object" && v.result != null) return String(v.result);
+          if (typeof v === "object" && v.text != null) return String(v.text);
+          if (typeof v === "object" && v.richText) {
+            return v.richText.map((rt: any) => rt.text).join("");
+          }
           return String(v);
         })
       );
     });
+    if (rows.length === 0) {
+      throw new Error("El archivo no contiene filas con datos.");
+    }
     return rows;
-  } catch {
+  } catch (err) {
+    console.error("Error parsing XLSX:", err);
     throw new Error(
-      "No se pudo leer el archivo. Verifica que sea un archivo Excel válido.",
+      `No se pudo leer el archivo Excel: ${(err as Error).message ?? "formato no soportado"}. Intenta exportarlo de nuevo o usar formato CSV.`,
     );
   }
 }
