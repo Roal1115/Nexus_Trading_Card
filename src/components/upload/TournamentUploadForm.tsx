@@ -294,9 +294,11 @@ function getWeekDateRange(): { min: string; max: string } {
 export function TournamentUploadForm({
   cancelTo = "/organizer/tournaments",
   successTo = "/organizer/tournaments",
+  gamesOverride,
 }: {
   cancelTo?: string;
   successTo?: string;
+  gamesOverride?: Game[];
 } = {}) {
   const navigate = useNavigate();
   const { player, loading: roleLoading } = useGeekarenaRole();
