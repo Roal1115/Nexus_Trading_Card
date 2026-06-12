@@ -293,9 +293,11 @@ export function TournamentUploadForm({
   const navigate = useNavigate();
   const { player, loading: roleLoading } = useGeekarenaRole();
   const isAdmin = player?.role === "admin";
+  const isManager = player?.role === "tcg_manager";
 
   const fetchOverview = useServerFn(getOrganizerOverview);
   const fetchStores = useServerFn(listActiveStores);
+  const fetchManagerStores = useServerFn(getManagerResponsibleStores);
   const submitUpload = useServerFn(uploadTournamentResults);
   const lookupTags = useServerFn(lookupPlayerTags);
 
