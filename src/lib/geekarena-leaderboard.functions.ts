@@ -74,7 +74,7 @@ function monthLabel(monthValue: string): string {
 }
 
 export const getLeaderboard = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     (d: {
       game_id?: string | null;
       city?: string | null;

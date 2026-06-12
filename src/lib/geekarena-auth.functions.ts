@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
 export const signupPlayer = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     (d: {
       email: string;
       password: string;
