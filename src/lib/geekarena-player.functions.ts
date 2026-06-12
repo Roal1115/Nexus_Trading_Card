@@ -191,7 +191,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
 export const getTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .validator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
@@ -271,7 +271,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
 
 export const toggleProfilePrivacy = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .validator((d: { is_public: boolean }) => z.object({ is_public: z.boolean() }).parse(d))
+  .inputValidator((d: { is_public: boolean }) => z.object({ is_public: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { error } = await admin
@@ -284,7 +284,7 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
 
 export const getPublicProfile = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .validator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
+  .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player: viewer } = context;
 

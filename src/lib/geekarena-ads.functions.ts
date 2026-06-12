@@ -176,7 +176,7 @@ export const listSponsors = createServerFn({ method: "POST" })
 // ─── Admin: create sponsor ─────────────────────────────────────────────────
 export const createSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .validator((d: { name: string; priority_rank: number; view_limit: number }) =>
+  .inputValidator((d: { name: string; priority_rank: number; view_limit: number }) =>
     z
       .object({
         name: z.string().min(2).max(120),
@@ -201,7 +201,7 @@ export const createSponsor = createServerFn({ method: "POST" })
 // ─── Admin: update sponsor images ─────────────────────────────────────────
 export const updateSponsorImages = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .validator((d: { sponsor_id: string; logo_url?: string; vertical_url?: string; horizontal_url?: string }) =>
+  .inputValidator((d: { sponsor_id: string; logo_url?: string; vertical_url?: string; horizontal_url?: string }) =>
     z
       .object({
         sponsor_id: z.string().uuid(),
@@ -225,7 +225,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
 // ─── Admin: update sponsor settings ───────────────────────────────────────
 export const updateSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .validator(
+  .inputValidator(
     (d: { sponsor_id: string; name?: string; priority_rank?: number; view_limit?: number; is_active?: boolean }) =>
       z
         .object({
@@ -247,7 +247,7 @@ export const updateSponsor = createServerFn({ method: "POST" })
 // ─── Admin: reset a sponsor's view count ──────────────────────────────────
 export const resetSponsorViews = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .validator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.admin.from("sponsors").update({ views_count: 0 }).eq("id", data.sponsor_id);
     if (error) throw new Error(error.message);
@@ -257,7 +257,7 @@ export const resetSponsorViews = createServerFn({ method: "POST" })
 // ─── Admin: delete a sponsor ─────────────────────────────────────────────
 export const deleteSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .validator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 

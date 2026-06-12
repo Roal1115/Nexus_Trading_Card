@@ -110,7 +110,7 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
 
 export const updateHomeStore = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { error } = await admin.from("players").update({ home_store_id: data.store_id }).eq("id", player.id);
@@ -120,7 +120,7 @@ export const updateHomeStore = createServerFn({ method: "POST" })
 
 export const updateStoreInfo = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator(
+  .inputValidator(
     (d: {
       store_id: string;
       name: string;
@@ -184,7 +184,7 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
 // ---------- Mis Torneos ----------
 export const getMyTournaments = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator((d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
+  .inputValidator((d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
     z
       .object({
         status: z.string().optional(),
@@ -284,7 +284,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
 
 export const deleteDraftTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: t, error: te } = await admin
@@ -308,7 +308,7 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
 // ---------- Subir Torneo (DRAFT vacío, legacy) ----------
 export const createTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator((d: { game_id: string; tournament_date: string; csv_url?: string | null }) =>
+  .inputValidator((d: { game_id: string; tournament_date: string; csv_url?: string | null }) =>
     z
       .object({
         game_id: z.string().uuid(),
@@ -354,7 +354,7 @@ const ResultRowSchema = z.object({
 
 export const uploadTournamentResults = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator(
+  .inputValidator(
     (d: {
       store_id: string;
       game_id: string;
@@ -534,7 +534,7 @@ export const listActiveStores = createServerFn({ method: "POST" })
 // ---------- Check existing player tags (for preview) ----------
 export const lookupPlayerTags = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator((d: { tags: string[] }) =>
+  .inputValidator((d: { tags: string[] }) =>
     z.object({ tags: z.array(z.string().min(1).max(120)).min(1).max(2000) }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -574,7 +574,7 @@ export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
 // ---------- Organizer read-only calendar (scoped to home_store) ----------
 export const getOrganizerCalendar = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .validator((d: { week_start?: string }) => z.object({ week_start: z.string().optional() }).parse(d))
+  .inputValidator((d: { week_start?: string }) => z.object({ week_start: z.string().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
