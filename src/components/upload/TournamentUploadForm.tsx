@@ -507,7 +507,7 @@ export function TournamentUploadForm({
     );
   }
 
-  if (!isAdmin && !homeStore) {
+  if (!isAdmin && !isManager && !homeStore) {
     return (
       <div className="glass rounded-2xl p-8 text-sm text-gray-300">
         No tienes una tienda asignada. Contacta al administrador.
