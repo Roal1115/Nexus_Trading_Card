@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import readXlsxFile from "read-excel-file";
+import readXlsxFile from "read-excel-file/browser";
 import {
   AlertCircle,
   ArrowLeft,
@@ -214,7 +214,8 @@ async function readFileToRows(file: File): Promise<string[][]> {
     return csvTextToRows(text);
   }
   try {
-    const data = await readXlsxFile(file);
+    const sheets = await readXlsxFile(file);
+    const data = sheets[0]?.data ?? [];
     // data is (string | number | boolean | Date | null)[][]
     const rows: string[][] = data.map((row) =>
       row.map((cell) => (cell == null ? "" : String(cell)))
