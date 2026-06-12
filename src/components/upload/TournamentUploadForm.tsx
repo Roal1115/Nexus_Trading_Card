@@ -333,6 +333,9 @@ export function TournamentUploadForm({
         if (isAdmin) {
           const s = await fetchStores();
           setStores(s.stores as Store[]);
+        } else if (isManager) {
+          const res: any = await fetchManagerStores();
+          setManagerStores((res.stores ?? []) as (Store & { available_game_ids: string[] })[]);
         } else if (ov.homeStore) {
           setStoreId((ov.homeStore as Store).id);
         }
