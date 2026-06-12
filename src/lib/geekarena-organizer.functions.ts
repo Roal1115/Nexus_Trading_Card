@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import {
-  requireGeekarenaOrganizer,
-} from "./geekarena-auth.middleware";
+import { requireGeekarenaOrganizer } from "./geekarena-auth.middleware";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
 function normalizeId(id: string): string {
@@ -31,11 +29,7 @@ async function resolvePlayer(
   }
 
   // 2. Fall back to geek_tag
-  const { data: byTag } = await admin
-    .from("players")
-    .select("id")
-    .eq("geek_tag", geekTag)
-    .maybeSingle();
+  const { data: byTag } = await admin.from("players").select("id").eq("geek_tag", geekTag).maybeSingle();
   if (byTag?.id) {
     return { id: byTag.id as string, isNew: false };
   }
@@ -55,17 +49,15 @@ async function resolvePlayer(
   }
 
   if (membershipId && newPlayer.id) {
-    await admin
-      .from("player_tcg_ids")
-      .upsert(
-        {
-          player_id: newPlayer.id,
-          game_id: gameId,
-          tcg_user_id: membershipId,
-          tcg_user_id_normalized: normalizeId(membershipId),
-        },
-        { onConflict: "player_id,game_id", ignoreDuplicates: true },
-      );
+    await admin.from("player_tcg_ids").upsert(
+      {
+        player_id: newPlayer.id,
+        game_id: gameId,
+        tcg_user_id: membershipId,
+        tcg_user_id_normalized: normalizeId(membershipId),
+      },
+      { onConflict: "player_id,game_id", ignoreDuplicates: true },
+    );
   }
 
   return { id: newPlayer.id as string, isNew: true };
@@ -118,51 +110,49 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
 
 export const updateHomeStore = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { store_id: string }) =>
-    z.object({ store_id: z.string().uuid() }).parse(d),
-  )
+  .validator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    const { error } = await admin
-      .from("players")
-      .update({ home_store_id: data.store_id })
-      .eq("id", player.id);
+    const { error } = await admin.from("players").update({ home_store_id: data.store_id }).eq("id", player.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const updateStoreInfo = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    store_id:        string;
-    name:            string;
-    city?:           string;
-    state?:          string;
-    address?:        string;
-    phone?:          string;
-    google_maps_url?: string;
-    description?:    string;
-    opening_hours?:  string;
-    instagram?:      string;
-    website?:        string;
-    twitter?:        string;
-    twitch?:         string;
-  }) =>
-    z.object({
-      store_id:        z.string().uuid(),
-      name:            z.string().min(1).max(120),
-      city:            z.string().max(120).optional(),
-      state:           z.string().max(120).optional(),
-      address:         z.string().max(300).optional(),
-      phone:           z.string().max(20).optional(),
-      google_maps_url: z.string().max(500).optional(),
-      description:     z.string().max(500).optional(),
-      opening_hours:   z.string().max(200).optional(),
-      instagram:       z.string().max(100).optional(),
-      website:         z.string().max(200).optional(),
-      twitter:         z.string().max(100).optional(),
-      twitch:          z.string().max(100).optional(),
-    }).parse(d),
+  .validator(
+    (d: {
+      store_id: string;
+      name: string;
+      city?: string;
+      state?: string;
+      address?: string;
+      phone?: string;
+      google_maps_url?: string;
+      description?: string;
+      opening_hours?: string;
+      instagram?: string;
+      website?: string;
+      twitter?: string;
+      twitch?: string;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          name: z.string().min(1).max(120),
+          city: z.string().max(120).optional(),
+          state: z.string().max(120).optional(),
+          address: z.string().max(300).optional(),
+          phone: z.string().max(20).optional(),
+          google_maps_url: z.string().max(500).optional(),
+          description: z.string().max(500).optional(),
+          opening_hours: z.string().max(200).optional(),
+          instagram: z.string().max(100).optional(),
+          website: z.string().max(200).optional(),
+          twitter: z.string().max(100).optional(),
+          twitch: z.string().max(100).optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -173,18 +163,18 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
     const { error } = await admin
       .from("stores")
       .update({
-        name:            fields.name,
-        city:            fields.city || null,
-        state:           fields.state || null,
-        address:         fields.address || null,
-        phone:           fields.phone || null,
+        name: fields.name,
+        city: fields.city || null,
+        state: fields.state || null,
+        address: fields.address || null,
+        phone: fields.phone || null,
         google_maps_url: fields.google_maps_url || null,
-        description:     fields.description || null,
-        opening_hours:   fields.opening_hours || null,
-        instagram:       fields.instagram || null,
-        website:         fields.website || null,
-        twitter:         fields.twitter || null,
-        twitch:          fields.twitch || null,
+        description: fields.description || null,
+        opening_hours: fields.opening_hours || null,
+        instagram: fields.instagram || null,
+        website: fields.website || null,
+        twitter: fields.twitter || null,
+        twitch: fields.twitch || null,
       })
       .eq("id", store_id);
     if (error) throw new Error(error.message);
@@ -194,23 +184,19 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
 // ---------- Mis Torneos ----------
 export const getMyTournaments = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    status?: string;
-    game_id?: string;
-    date_from?: string;
-    date_to?: string;
-  }) =>
-    z.object({
-      status: z.string().optional(),
-      game_id: z.string().optional(),
-      date_from: z.string().optional(),
-      date_to: z.string().optional(),
-    }).parse(d),
+  .validator((d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
+    z
+      .object({
+        status: z.string().optional(),
+        game_id: z.string().optional(),
+        date_from: z.string().optional(),
+        date_to: z.string().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    if (!player.home_store_id)
-      return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
+    if (!player.home_store_id) return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
 
     const { data: store } = await admin
       .from("stores")
@@ -218,8 +204,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       .eq("id", player.home_store_id)
       .maybeSingle();
 
-    const baseCols =
-      "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
+    const baseCols = "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
     const extraCols = ", rejection_reason, approved_by";
 
     let rows: any[] | null = null;
@@ -257,11 +242,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
     const tournamentIds = (rows ?? []).map((r) => r.id);
     const gameIds = Array.from(new Set((rows ?? []).map((r) => r.game_id)));
     const approverIds = Array.from(
-      new Set(
-        (rows ?? [])
-          .filter((r) => r.approved_by)
-          .map((r) => r.approved_by as string),
-      ),
+      new Set((rows ?? []).filter((r) => r.approved_by).map((r) => r.approved_by as string)),
     );
 
     const [gmsRes, approversRes, resultsRes] = await Promise.all([
@@ -272,35 +253,22 @@ export const getMyTournaments = createServerFn({ method: "POST" })
         ? admin.from("players").select("id, geek_tag").in("id", approverIds)
         : Promise.resolve({ data: [] as any[] }),
       tournamentIds.length
-        ? admin
-            .from("tournament_results")
-            .select("tournament_id")
-            .in("tournament_id", tournamentIds)
+        ? admin.from("tournament_results").select("tournament_id").in("tournament_id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
-    const gamesMap = Object.fromEntries(
-      (gmsRes.data ?? []).map((g: any) => [g.id, g.name]),
-    );
-    const approversMap = Object.fromEntries(
-      (approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]),
-    );
-    const participantMap = (resultsRes.data ?? []).reduce(
-      (acc: Record<string, number>, r: any) => {
-        acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
-        return acc;
-      },
-      {},
-    );
+    const gamesMap = Object.fromEntries((gmsRes.data ?? []).map((g: any) => [g.id, g.name]));
+    const approversMap = Object.fromEntries((approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]));
+    const participantMap = (resultsRes.data ?? []).reduce((acc: Record<string, number>, r: any) => {
+      acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
+      return acc;
+    }, {});
 
-    const stats = (rows ?? []).reduce(
-      (acc: Record<string, number>, t: any) => {
-        const key = t.rejection_reason && t.status === "DRAFT" ? "REJECTED" : t.status;
-        acc[key] = (acc[key] ?? 0) + 1;
-        return acc;
-      },
-      {},
-    );
+    const stats = (rows ?? []).reduce((acc: Record<string, number>, t: any) => {
+      const key = t.rejection_reason && t.status === "DRAFT" ? "REJECTED" : t.status;
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
 
     return {
       store_name: store ? `${store.name} — ${store.city ?? ""}`.trim() : null,
@@ -308,7 +276,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       tournaments: (rows ?? []).map((r: any) => ({
         ...r,
         game_name: gamesMap[r.game_id] ?? "—",
-        approved_by_tag: r.approved_by ? approversMap[r.approved_by] ?? "—" : null,
+        approved_by_tag: r.approved_by ? (approversMap[r.approved_by] ?? "—") : null,
         participants: participantMap[r.id] ?? 0,
       })),
     };
@@ -316,9 +284,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
 
 export const deleteDraftTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { tournament_id: string }) =>
-    z.object({ tournament_id: z.string().uuid() }).parse(d),
-  )
+  .validator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: t, error: te } = await admin
@@ -342,16 +308,14 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
 // ---------- Subir Torneo (DRAFT vacío, legacy) ----------
 export const createTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    game_id: string;
-    tournament_date: string;
-    csv_url?: string | null;
-  }) =>
-    z.object({
-      game_id: z.string().uuid(),
-      tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      csv_url: z.string().url().max(2048).optional().nullable(),
-    }).parse(d),
+  .validator((d: { game_id: string; tournament_date: string; csv_url?: string | null }) =>
+    z
+      .object({
+        game_id: z.string().uuid(),
+        tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        csv_url: z.string().url().max(2048).optional().nullable(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -390,22 +354,25 @@ const ResultRowSchema = z.object({
 
 export const uploadTournamentResults = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    store_id: string;
-    game_id: string;
-    tournament_date: string;
-    rows: Array<z.infer<typeof ResultRowSchema>>;
-    tournament_id?: string;
-    csv_url?: string | null;
-  }) =>
-    z.object({
-      store_id: z.string().uuid(),
-      game_id: z.string().uuid(),
-      tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      rows: z.array(ResultRowSchema).min(1).max(2000),
-      tournament_id: z.string().uuid().optional(),
-      csv_url: z.string().url().max(2048).nullable().optional(),
-    }).parse(d),
+  .validator(
+    (d: {
+      store_id: string;
+      game_id: string;
+      tournament_date: string;
+      rows: Array<z.infer<typeof ResultRowSchema>>;
+      tournament_id?: string;
+      csv_url?: string | null;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          game_id: z.string().uuid(),
+          tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          rows: z.array(ResultRowSchema).min(1).max(2000),
+          tournament_id: z.string().uuid().optional(),
+          csv_url: z.string().url().max(2048).nullable().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -460,8 +427,6 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       }
     }
 
-
-
     const { data: existing, error: dupErr } = await admin
       .from("tournaments")
       .select("id")
@@ -474,8 +439,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       return {
         ok: false as const,
         reason: "duplicate" as const,
-        message:
-          "Ya existe un torneo registrado para esta tienda, juego y fecha.",
+        message: "Ya existe un torneo registrado para esta tienda, juego y fecha.",
       };
     }
 
@@ -489,11 +453,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       csv_url: data.csv_url ?? null,
     };
     if (data.tournament_id) insertPayload.id = data.tournament_id;
-    const { data: tournament, error: te } = await admin
-      .from("tournaments")
-      .insert(insertPayload)
-      .select("id")
-      .single();
+    const { data: tournament, error: te } = await admin.from("tournaments").insert(insertPayload).select("id").single();
     if (te) throw new Error(te.message);
     const tournamentId = tournament.id;
 
@@ -541,12 +501,9 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       await cleanup((e as Error).message);
     }
 
-
     let insertErr = (await admin.from("tournament_results").insert(baseRows)).error;
     if (insertErr && /column .* does not exist/i.test(insertErr.message)) {
-      const stripped = baseRows.map(
-        ({ match_points: _m, omw_percentage: _o, ...rest }) => rest,
-      );
+      const stripped = baseRows.map(({ match_points: _m, omw_percentage: _o, ...rest }) => rest);
       insertErr = (await admin.from("tournament_results").insert(stripped)).error;
     }
     if (insertErr) await cleanup(insertErr.message);
@@ -577,15 +534,12 @@ export const listActiveStores = createServerFn({ method: "POST" })
 // ---------- Check existing player tags (for preview) ----------
 export const lookupPlayerTags = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { tags: string[] }) =>
+  .validator((d: { tags: string[] }) =>
     z.object({ tags: z.array(z.string().min(1).max(120)).min(1).max(2000) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const { data: rows, error } = await admin
-      .from("players")
-      .select("geek_tag")
-      .in("geek_tag", data.tags);
+    const { data: rows, error } = await admin.from("players").select("geek_tag").in("geek_tag", data.tags);
     if (error) throw new Error(error.message);
     return { existing: (rows ?? []).map((r) => r.geek_tag) };
   });
@@ -620,9 +574,7 @@ export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
 // ---------- Organizer read-only calendar (scoped to home_store) ----------
 export const getOrganizerCalendar = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { week_start?: string }) =>
-    z.object({ week_start: z.string().optional() }).parse(d),
-  )
+  .validator((d: { week_start?: string }) => z.object({ week_start: z.string().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
@@ -658,9 +610,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
 
     const { data: schedules, error: se } = await admin
       .from("store_schedules")
-      .select(
-        "id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)",
-      )
+      .select("id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)")
       .eq("store_id", player.home_store_id);
     if (se) throw new Error(se.message);
 
@@ -703,8 +653,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       const hasEnded = isPast || (isToday && nowMs > tEnd.getTime());
       const isSubmitted =
         tournament &&
-        (tournament.status !== "DRAFT" ||
-          (tournament.status === "DRAFT" && !tournament.rejection_reason));
+        (tournament.status !== "DRAFT" || (tournament.status === "DRAFT" && !tournament.rejection_reason));
       let reportStatus: "submitted" | "overdue" | "pending" | "upcoming";
       if (isSubmitted) reportStatus = "submitted";
       else if (hasEnded && !tournament) reportStatus = "overdue";
@@ -747,8 +696,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
         days_elapsed: elapsedEntries.length,
         total_expected: entries.length,
         today_expected: entries.filter((e: any) => e.is_today).length,
-        today_submitted: entries.filter((e: any) => e.is_today && e.report_status === "submitted")
-          .length,
+        today_submitted: entries.filter((e: any) => e.is_today && e.report_status === "submitted").length,
       },
     };
   });

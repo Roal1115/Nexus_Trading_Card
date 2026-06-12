@@ -39,11 +39,7 @@ export const getActiveSponsor = createServerFn({ method: "POST" }).handler(async
     return first ?? null;
   }
 
-  const { data: sponsor } = await admin
-    .from("sponsors")
-    .select("*")
-    .eq("id", metrics.current_sponsor_id)
-    .maybeSingle();
+  const { data: sponsor } = await admin.from("sponsors").select("*").eq("id", metrics.current_sponsor_id).maybeSingle();
 
   return sponsor ?? null;
 });
@@ -82,11 +78,7 @@ export const registerAdView = createServerFn({ method: "POST" }).handler(async (
       .eq("id", metrics.id);
   }
 
-  const { data: current } = await admin
-    .from("sponsors")
-    .select("*")
-    .eq("id", currentId)
-    .maybeSingle();
+  const { data: current } = await admin.from("sponsors").select("*").eq("id", currentId).maybeSingle();
   if (!current) return null;
 
   const newViews = (current.views_count ?? 0) + 1;
@@ -163,20 +155,10 @@ export const listSponsors = createServerFn({ method: "POST" })
     ]);
 
     const sponsors = sponsorsRes.data ?? [];
-    const totalViewLimit = sponsors.reduce(
-      (sum: number, s: any) => sum + (s.view_limit ?? 0),
-      0,
-    );
+    const totalViewLimit = sponsors.reduce((sum: number, s: any) => sum + (s.view_limit ?? 0), 0);
     const updatedAt = metricsRes.data?.updated_at;
-    const days = updatedAt
-      ? Math.max(
-          Math.ceil((Date.now() - new Date(updatedAt).getTime()) / 86400000),
-          1,
-        )
-      : 1;
-    const avgDailyViews = metricsRes.data?.total_views
-      ? Math.round((metricsRes.data.total_views ?? 0) / days)
-      : 0;
+    const days = updatedAt ? Math.max(Math.ceil((Date.now() - new Date(updatedAt).getTime()) / 86400000), 1) : 1;
+    const avgDailyViews = metricsRes.data?.total_views ? Math.round((metricsRes.data.total_views ?? 0) / days) : 0;
 
     return {
       sponsors,
@@ -194,7 +176,7 @@ export const listSponsors = createServerFn({ method: "POST" })
 // ─── Admin: create sponsor ─────────────────────────────────────────────────
 export const createSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { name: string; priority_rank: number; view_limit: number }) =>
+  .validator((d: { name: string; priority_rank: number; view_limit: number }) =>
     z
       .object({
         name: z.string().min(2).max(120),
@@ -219,21 +201,15 @@ export const createSponsor = createServerFn({ method: "POST" })
 // ─── Admin: update sponsor images ─────────────────────────────────────────
 export const updateSponsorImages = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator(
-    (d: {
-      sponsor_id: string;
-      logo_url?: string;
-      vertical_url?: string;
-      horizontal_url?: string;
-    }) =>
-      z
-        .object({
-          sponsor_id: z.string().uuid(),
-          logo_url: z.string().url().optional(),
-          vertical_url: z.string().url().optional(),
-          horizontal_url: z.string().url().optional(),
-        })
-        .parse(d),
+  .validator((d: { sponsor_id: string; logo_url?: string; vertical_url?: string; horizontal_url?: string }) =>
+    z
+      .object({
+        sponsor_id: z.string().uuid(),
+        logo_url: z.string().url().optional(),
+        vertical_url: z.string().url().optional(),
+        horizontal_url: z.string().url().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const update: Record<string, string> = {};
@@ -241,10 +217,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
     if (data.vertical_url) update.vertical_url = data.vertical_url;
     if (data.horizontal_url) update.horizontal_url = data.horizontal_url;
     if (Object.keys(update).length === 0) return { success: true };
-    const { error } = await context.admin
-      .from("sponsors")
-      .update(update)
-      .eq("id", data.sponsor_id);
+    const { error } = await context.admin.from("sponsors").update(update).eq("id", data.sponsor_id);
     if (error) throw new Error(error.message);
     return { success: true };
   });
@@ -252,14 +225,8 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
 // ─── Admin: update sponsor settings ───────────────────────────────────────
 export const updateSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator(
-    (d: {
-      sponsor_id: string;
-      name?: string;
-      priority_rank?: number;
-      view_limit?: number;
-      is_active?: boolean;
-    }) =>
+  .validator(
+    (d: { sponsor_id: string; name?: string; priority_rank?: number; view_limit?: number; is_active?: boolean }) =>
       z
         .object({
           sponsor_id: z.string().uuid(),
@@ -272,10 +239,7 @@ export const updateSponsor = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { sponsor_id, ...fields } = data;
-    const { error } = await context.admin
-      .from("sponsors")
-      .update(fields)
-      .eq("id", sponsor_id);
+    const { error } = await context.admin.from("sponsors").update(fields).eq("id", sponsor_id);
     if (error) throw new Error(error.message);
     return { success: true };
   });
@@ -283,14 +247,9 @@ export const updateSponsor = createServerFn({ method: "POST" })
 // ─── Admin: reset a sponsor's view count ──────────────────────────────────
 export const resetSponsorViews = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { sponsor_id: string }) =>
-    z.object({ sponsor_id: z.string().uuid() }).parse(d),
-  )
+  .validator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.admin
-      .from("sponsors")
-      .update({ views_count: 0 })
-      .eq("id", data.sponsor_id);
+    const { error } = await context.admin.from("sponsors").update({ views_count: 0 }).eq("id", data.sponsor_id);
     if (error) throw new Error(error.message);
     return { success: true };
   });
@@ -298,9 +257,7 @@ export const resetSponsorViews = createServerFn({ method: "POST" })
 // ─── Admin: delete a sponsor ─────────────────────────────────────────────
 export const deleteSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { sponsor_id: string }) =>
-    z.object({ sponsor_id: z.string().uuid() }).parse(d),
-  )
+  .validator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
@@ -312,27 +269,15 @@ export const deleteSponsor = createServerFn({ method: "POST" })
       .maybeSingle();
 
     // If this was the active sponsor, clear current_sponsor_id in metrics
-    await admin
-      .from("ad_metrics")
-      .update({ current_sponsor_id: null })
-      .eq("current_sponsor_id", data.sponsor_id);
+    await admin.from("ad_metrics").update({ current_sponsor_id: null }).eq("current_sponsor_id", data.sponsor_id);
 
-    const { error } = await admin
-      .from("sponsors")
-      .delete()
-      .eq("id", data.sponsor_id);
+    const { error } = await admin.from("sponsors").delete().eq("id", data.sponsor_id);
 
     if (error) throw new Error(error.message);
 
-    await logAction(
-      admin,
-      player,
-      "SPONSOR_DELETED",
-      "sponsor",
-      data.sponsor_id,
-      sponsor?.name ?? data.sponsor_id,
-      { priority_rank: sponsor?.priority_rank },
-    );
+    await logAction(admin, player, "SPONSOR_DELETED", "sponsor", data.sponsor_id, sponsor?.name ?? data.sponsor_id, {
+      priority_rank: sponsor?.priority_rank,
+    });
 
     return { success: true };
   });

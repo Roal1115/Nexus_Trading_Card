@@ -4,49 +4,53 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
-export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(
-  async () => {
-    const admin = getGeekarenaAdmin();
-    const [gamesRes, storesRes, monthsRes] = await Promise.all([
-      admin
-        .from("games")
-        .select("id, slug, name")
-        .eq("is_active", true)
-        .order("name"),
-      admin
-        .from("stores")
-        .select("id, name, city")
-        .eq("is_active", true)
-        .order("city", { ascending: true })
-        .order("name", { ascending: true }),
-      admin
-        .from("tournaments")
-        .select("qualifying_month, qualifying_year")
-        .in("status", ["APPROVED", "PUBLISHED"])
-        .order("qualifying_year", { ascending: false })
-        .order("qualifying_month", { ascending: false }),
-    ]);
-    if (gamesRes.error) throw new Error(gamesRes.error.message);
-    if (storesRes.error) throw new Error(storesRes.error.message);
-    if (monthsRes.error) throw new Error(monthsRes.error.message);
+export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(async () => {
+  const admin = getGeekarenaAdmin();
+  const [gamesRes, storesRes, monthsRes] = await Promise.all([
+    admin.from("games").select("id, slug, name").eq("is_active", true).order("name"),
+    admin
+      .from("stores")
+      .select("id, name, city")
+      .eq("is_active", true)
+      .order("city", { ascending: true })
+      .order("name", { ascending: true }),
+    admin
+      .from("tournaments")
+      .select("qualifying_month, qualifying_year")
+      .in("status", ["APPROVED", "PUBLISHED"])
+      .order("qualifying_year", { ascending: false })
+      .order("qualifying_month", { ascending: false }),
+  ]);
+  if (gamesRes.error) throw new Error(gamesRes.error.message);
+  if (storesRes.error) throw new Error(storesRes.error.message);
+  if (monthsRes.error) throw new Error(monthsRes.error.message);
 
-    const monthSet = new Set<string>();
-    for (const r of monthsRes.data ?? []) {
-      monthSet.add(`${r.qualifying_year}-${String(r.qualifying_month).padStart(2, "0")}`);
-    }
-    const months = Array.from(monthSet).sort().reverse();
+  const monthSet = new Set<string>();
+  for (const r of monthsRes.data ?? []) {
+    monthSet.add(`${r.qualifying_year}-${String(r.qualifying_month).padStart(2, "0")}`);
+  }
+  const months = Array.from(monthSet).sort().reverse();
 
-    return {
-      games: gamesRes.data ?? [],
-      stores: storesRes.data ?? [],
-      months,
-    };
-  },
-);
+  return {
+    games: gamesRes.data ?? [],
+    stores: storesRes.data ?? [],
+    months,
+  };
+});
 
 const MONTH_NAMES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 async function getSeasonForMonth(
@@ -70,18 +74,25 @@ function monthLabel(monthValue: string): string {
 }
 
 export const getLeaderboard = createServerFn({ method: "POST" })
-  .inputValidator((d: {
-    game_id?: string | null;
-    city?: string | null;
-    store_id?: string | null;
-    month?: string | null; // "YYYY-MM"
-  }) =>
-    z.object({
-      game_id: z.string().uuid().nullable().optional(),
-      city: z.string().max(120).nullable().optional(),
-      store_id: z.string().uuid().nullable().optional(),
-      month: z.string().regex(/^\d{4}-\d{2}$/).nullable().optional(),
-    }).parse(d),
+  .validator(
+    (d: {
+      game_id?: string | null;
+      city?: string | null;
+      store_id?: string | null;
+      month?: string | null; // "YYYY-MM"
+    }) =>
+      z
+        .object({
+          game_id: z.string().uuid().nullable().optional(),
+          city: z.string().max(120).nullable().optional(),
+          store_id: z.string().uuid().nullable().optional(),
+          month: z
+            .string()
+            .regex(/^\d{4}-\d{2}$/)
+            .nullable()
+            .optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data }) => {
     const admin = getGeekarenaAdmin();
@@ -126,9 +137,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       if (!timeframeValue) return [];
       let q = admin
         .from("leaderboard_snapshots")
-        .select(
-          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position, omw_percentage",
-        )
+        .select("player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position, omw_percentage")
         .eq("timeframe_type", timeframeType)
         .eq("timeframe_value", timeframeValue);
       if (data.game_id) q = q.eq("game_id", data.game_id);
@@ -144,10 +153,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
 
       const { data: rows, error } = await q;
       if (error) {
-        console.error(
-          `[leaderboard] querySnapshots(${timeframeType}, ${timeframeValue}) failed:`,
-          error.message,
-        );
+        console.error(`[leaderboard] querySnapshots(${timeframeType}, ${timeframeValue}) failed:`, error.message);
         return [];
       }
       return rows ?? [];
@@ -158,15 +164,9 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       querySnapshots("SEMESTRAL", seasonKey, { applyStoreId: false }),
     ]);
 
-    const playerIds = Array.from(
-      new Set([...monthlyRaw, ...semestralRaw].map((r) => r.player_id)),
-    );
+    const playerIds = Array.from(new Set([...monthlyRaw, ...semestralRaw].map((r) => r.player_id)));
     const allStoreIds = Array.from(
-      new Set(
-        [...monthlyRaw, ...semestralRaw]
-          .map((r) => r.store_id)
-          .filter((v): v is string => !!v),
-      ),
+      new Set([...monthlyRaw, ...semestralRaw].map((r) => r.store_id).filter((v): v is string => !!v)),
     );
 
     const [playersRes, storesRes] = await Promise.all([
@@ -240,8 +240,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
           a.omw_count += 1;
         }
         if (r.rank_position != null) {
-          a.best_rank =
-            a.best_rank == null ? r.rank_position : Math.min(a.best_rank, r.rank_position);
+          a.best_rank = a.best_rank == null ? r.rank_position : Math.min(a.best_rank, r.rank_position);
         }
         const city = r.store_id ? storeMap.get(r.store_id)?.city : null;
         if (city) a.cities.add(city);
@@ -250,19 +249,11 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         .map(([pid, a]) => ({
           player_id: pid,
           geek_tag: playerMap.get(pid)?.geek_tag ?? "—",
-          city:
-            a.cities.size === 1
-              ? Array.from(a.cities)[0]
-              : a.cities.size > 1
-                ? "Varias"
-                : "—",
+          city: a.cities.size === 1 ? Array.from(a.cities)[0] : a.cities.size > 1 ? "Varias" : "—",
           points: a.points,
           tournaments_won: a.won,
           tournaments_played: a.played,
-          omw_percentage:
-            a.omw_count > 0
-              ? Math.round((a.omw_sum / a.omw_count) * 100) / 100
-              : 0,
+          omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
           best_rank: a.best_rank,
         }))
         .sort((x, y) => {
