@@ -772,3 +772,120 @@ export const listManagerStores = createServerFn({ method: "POST" })
       .order("name");
     return { stores: data ?? [] };
   });
+
+export const getManagerResponsibleStores = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    const gameIds = await getManagerGameIds(admin, player);
+    if (gameIds.length === 0) return { stores: [], games: [] };
+
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("store_id, game_id")
+      .in("game_id", gameIds);
+
+    const storeIds = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
+    if (storeIds.length === 0) return { stores: [], games: [] };
+
+    const { data: stores, error } = await admin
+      .from("stores")
+      .select("id, name, city, state, country, is_active, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch, zone")
+      .in("id", storeIds)
+      .order("name");
+    if (error) throw new Error(error.message);
+
+    const { data: games } = await admin
+      .from("games").select("id, name").in("id", gameIds);
+
+    const storeGamesMap = new Map<string, string[]>();
+    (schedules ?? []).forEach((s: any) => {
+      const arr = storeGamesMap.get(s.store_id) ?? [];
+      if (!arr.includes(s.game_id)) arr.push(s.game_id);
+      storeGamesMap.set(s.store_id, arr);
+    });
+
+    return {
+      stores: (stores ?? []).map((s: any) => ({
+        ...s,
+        available_game_ids: storeGamesMap.get(s.id) ?? [],
+      })),
+      games: games ?? [],
+    };
+  });
+
+export const updateStoreData = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: {
+    store_id:        string;
+    name:            string;
+    city?:           string;
+    state?:          string;
+    address?:        string;
+    phone?:          string;
+    google_maps_url?: string;
+    description?:    string;
+    opening_hours?:  string;
+    instagram?:      string;
+    website?:        string;
+    twitter?:        string;
+    twitch?:         string;
+  }) =>
+    z.object({
+      store_id:        z.string().uuid(),
+      name:            z.string().min(1).max(120),
+      city:            z.string().max(120).optional(),
+      state:           z.string().max(120).optional(),
+      address:         z.string().max(300).optional(),
+      phone:           z.string().max(20).optional(),
+      google_maps_url: z.string().max(500).optional(),
+      description:     z.string().max(500).optional(),
+      opening_hours:   z.string().max(200).optional(),
+      instagram:       z.string().max(100).optional(),
+      website:         z.string().max(200).optional(),
+      twitter:         z.string().max(100).optional(),
+      twitch:          z.string().max(100).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    if (player.role !== "admin") {
+      const gameIds = await getManagerGameIds(admin, player);
+      const { data: schedule } = await admin
+        .from("store_schedules")
+        .select("id")
+        .eq("store_id", data.store_id)
+        .in("game_id", gameIds)
+        .limit(1)
+        .maybeSingle();
+      if (!schedule) {
+        throw new Error("No tienes permisos sobre esta tienda");
+      }
+    }
+
+    const { store_id, ...fields } = data;
+    const { error } = await admin
+      .from("stores")
+      .update({
+        name:            fields.name,
+        city:            fields.city || null,
+        state:           fields.state || null,
+        address:         fields.address || null,
+        phone:           fields.phone || null,
+        google_maps_url: fields.google_maps_url || null,
+        description:     fields.description || null,
+        opening_hours:   fields.opening_hours || null,
+        instagram:       fields.instagram || null,
+        website:         fields.website || null,
+        twitter:         fields.twitter || null,
+        twitch:          fields.twitch || null,
+      })
+      .eq("id", store_id);
+    if (error) throw new Error(error.message);
+
+    await logAction(admin, player, "STORE_UPDATED", "store", store_id, fields.name);
+    return { ok: true };
+  });
+

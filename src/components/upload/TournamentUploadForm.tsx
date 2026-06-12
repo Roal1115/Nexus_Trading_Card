@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import {
   AlertCircle,
   ArrowLeft,
@@ -22,6 +22,7 @@ import {
   lookupPlayerTags,
   uploadTournamentResults,
 } from "@/lib/geekarena-organizer.functions";
+import { getManagerResponsibleStores } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -214,15 +215,21 @@ async function readFileToRows(file: File): Promise<string[][]> {
   }
   const buf = await file.arrayBuffer();
   try {
-    const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
-    const sheetName = wb.SheetNames[0];
-    const sheet = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      raw: false,
-      defval: "",
-      blankrows: false,
-    }) as unknown as string[][];
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const sheet = wb.worksheets[0];
+    if (!sheet) throw new Error("No se encontró ninguna hoja en el archivo.");
+    const rows: string[][] = [];
+    sheet.eachRow({ includeEmpty: false }, (row) => {
+      const values = (row.values as any[]).slice(1);
+      rows.push(
+        values.map((v: any) => {
+          if (v == null) return "";
+          if (typeof v === "object" && v.result != null) return String(v.result);
+          return String(v);
+        })
+      );
+    });
     return rows;
   } catch {
     throw new Error(
@@ -286,9 +293,11 @@ export function TournamentUploadForm({
   const navigate = useNavigate();
   const { player, loading: roleLoading } = useGeekarenaRole();
   const isAdmin = player?.role === "admin";
+  const isManager = player?.role === "tcg_manager";
 
   const fetchOverview = useServerFn(getOrganizerOverview);
   const fetchStores = useServerFn(listActiveStores);
+  const fetchManagerStores = useServerFn(getManagerResponsibleStores);
   const submitUpload = useServerFn(uploadTournamentResults);
   const lookupTags = useServerFn(lookupPlayerTags);
 
@@ -296,6 +305,7 @@ export function TournamentUploadForm({
   const [step, setStep] = useState<1 | 2>(1);
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [managerStores, setManagerStores] = useState<(Store & { available_game_ids: string[] })[]>([]);
   const [homeStore, setHomeStore] = useState<Store | null>(null);
 
   const [storeId, setStoreId] = useState<string>("");
@@ -323,6 +333,9 @@ export function TournamentUploadForm({
         if (isAdmin) {
           const s = await fetchStores();
           setStores(s.stores as Store[]);
+        } else if (isManager) {
+          const res: any = await fetchManagerStores();
+          setManagerStores((res.stores ?? []) as (Store & { available_game_ids: string[] })[]);
         } else if (ov.homeStore) {
           setStoreId((ov.homeStore as Store).id);
         }
@@ -339,8 +352,23 @@ export function TournamentUploadForm({
   const colMap = selectedGame ? TCG_COLUMN_MAP[selectedGame.slug] : undefined;
   const tcgSupported = colMap && colMap.platform !== "unknown";
 
+  const availableStoresForGame = useMemo(() => {
+    if (!isManager) return stores;
+    if (!gameId) return managerStores;
+    return managerStores.filter((s) => s.available_game_ids.includes(gameId));
+  }, [isManager, managerStores, stores, gameId]);
+
+  useEffect(() => {
+    if (!isManager) return;
+    if (storeId && !availableStoresForGame.some((s) => s.id === storeId)) {
+      setStoreId("");
+    }
+  }, [gameId, availableStoresForGame, isManager, storeId]);
+
   const selectedStore =
-    stores.find((s) => s.id === storeId) ?? (homeStore?.id === storeId ? homeStore : null);
+    stores.find((s) => s.id === storeId) ??
+    managerStores.find((s) => s.id === storeId) ??
+    (homeStore?.id === storeId ? homeStore : null);
 
   const qualifying = useMemo(() => {
     if (!date) return null;
@@ -479,7 +507,7 @@ export function TournamentUploadForm({
     );
   }
 
-  if (!isAdmin && !homeStore) {
+  if (!isAdmin && !isManager && !homeStore) {
     return (
       <div className="glass rounded-2xl p-8 text-sm text-gray-300">
         No tienes una tienda asignada. Contacta al administrador.
@@ -507,11 +535,11 @@ export function TournamentUploadForm({
         <section className="glass space-y-5 rounded-2xl p-6">
           <div className="space-y-2">
             <Label className="text-xs text-gray-400">
-              {isAdmin ? "Seleccionar tienda *" : "Tienda"}
+              {isAdmin || isManager ? "Seleccionar tienda *" : "Tienda"}
             </Label>
-            {isAdmin ? (
+            {isAdmin || isManager ? (
               <StoreCombobox
-                stores={stores}
+                stores={isManager ? availableStoresForGame : stores}
                 value={storeId}
                 onChange={setStoreId}
               />
@@ -520,7 +548,7 @@ export function TournamentUploadForm({
                 Tienda: {homeStore?.name} — {homeStore?.city ?? "—"}
               </div>
             )}
-            {isAdmin && !storeId && (
+            {(isAdmin || isManager) && !storeId && (
               <p className="text-xs text-amber-400">
                 Debes seleccionar una tienda para continuar
               </p>
