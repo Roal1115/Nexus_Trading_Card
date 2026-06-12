@@ -214,13 +214,10 @@ async function readFileToRows(file: File): Promise<string[][]> {
     return csvTextToRows(text);
   }
   const buf = await file.arrayBuffer();
-  try {
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
-    const sheet = wb.worksheets[0];
-    if (!sheet) throw new Error("No se encontró ninguna hoja en el archivo.");
+
+  const extractRows = (sheet: any): string[][] => {
     const rows: string[][] = [];
-    sheet.eachRow({ includeEmpty: false }, (row) => {
+    sheet.eachRow({ includeEmpty: false }, (row: any) => {
       const values = (row.values as any[]).slice(1);
       rows.push(
         values.map((v: any) => {
@@ -234,15 +231,54 @@ async function readFileToRows(file: File): Promise<string[][]> {
         })
       );
     });
-    if (rows.length === 0) {
-      throw new Error("El archivo no contiene filas con datos.");
-    }
+    return rows;
+  };
+
+  try {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const sheet = wb.worksheets[0];
+    if (!sheet) throw new Error("No se encontró ninguna hoja en el archivo.");
+    const rows = extractRows(sheet);
+    if (rows.length === 0) throw new Error("El archivo no contiene filas con datos.");
     return rows;
   } catch (err) {
-    console.error("Error parsing XLSX:", err);
-    throw new Error(
-      `No se pudo leer el archivo Excel: ${(err as Error).message ?? "formato no soportado"}. Intenta exportarlo de nuevo o usar formato CSV.`,
-    );
+    const msg = (err as Error).message ?? "";
+    if (!/cannot include any of the following characters/i.test(msg)) {
+      console.error("Error parsing XLSX:", err);
+      throw new Error(
+        `No se pudo leer el archivo Excel: ${msg || "formato no soportado"}. Intenta exportarlo de nuevo o usar formato CSV.`,
+      );
+    }
+
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = await JSZip.loadAsync(buf);
+
+      const workbookXmlFile = zip.file("xl/workbook.xml");
+      if (!workbookXmlFile) throw new Error("Estructura de archivo inválida.");
+      let workbookXml = await workbookXmlFile.async("string");
+
+      workbookXml = workbookXml.replace(
+        /(<sheet[^>]*\sname=")([^"]*)(")/g,
+        (_m, pre, name, post) => pre + name.replace(/[\*\?:\\\/\[\]]/g, "_") + post,
+      );
+      zip.file("xl/workbook.xml", workbookXml);
+
+      const patchedBuf = await zip.generateAsync({ type: "arraybuffer" });
+      const wb2 = new ExcelJS.Workbook();
+      await wb2.xlsx.load(patchedBuf);
+      const sheet2 = wb2.worksheets[0];
+      if (!sheet2) throw new Error("No se encontró ninguna hoja en el archivo.");
+      const rows = extractRows(sheet2);
+      if (rows.length === 0) throw new Error("El archivo no contiene filas con datos.");
+      return rows;
+    } catch (err2) {
+      console.error("Error parsing XLSX (fallback):", err2);
+      throw new Error(
+        "No se pudo leer el archivo Excel debido al nombre de la hoja (contiene caracteres especiales como [ ]). Renombra la hoja en Excel o usa formato CSV.",
+      );
+    }
   }
 }
 
