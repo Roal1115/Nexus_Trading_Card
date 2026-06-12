@@ -548,7 +548,7 @@ export function TournamentUploadForm({
                 Tienda: {homeStore?.name} — {homeStore?.city ?? "—"}
               </div>
             )}
-            {isAdmin && !storeId && (
+            {(isAdmin || isManager) && !storeId && (
               <p className="text-xs text-amber-400">
                 Debes seleccionar una tienda para continuar
               </p>
