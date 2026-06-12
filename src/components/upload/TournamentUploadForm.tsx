@@ -352,8 +352,23 @@ export function TournamentUploadForm({
   const colMap = selectedGame ? TCG_COLUMN_MAP[selectedGame.slug] : undefined;
   const tcgSupported = colMap && colMap.platform !== "unknown";
 
+  const availableStoresForGame = useMemo(() => {
+    if (!isManager) return stores;
+    if (!gameId) return managerStores;
+    return managerStores.filter((s) => s.available_game_ids.includes(gameId));
+  }, [isManager, managerStores, stores, gameId]);
+
+  useEffect(() => {
+    if (!isManager) return;
+    if (storeId && !availableStoresForGame.some((s) => s.id === storeId)) {
+      setStoreId("");
+    }
+  }, [gameId, availableStoresForGame, isManager, storeId]);
+
   const selectedStore =
-    stores.find((s) => s.id === storeId) ?? (homeStore?.id === storeId ? homeStore : null);
+    stores.find((s) => s.id === storeId) ??
+    managerStores.find((s) => s.id === storeId) ??
+    (homeStore?.id === storeId ? homeStore : null);
 
   const qualifying = useMemo(() => {
     if (!date) return null;
