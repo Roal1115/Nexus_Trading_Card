@@ -84,7 +84,7 @@ async function assertManagerOwnsGame(admin: any, player: { id: string; role: str
 
 export const getManagerTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: t } = await admin.from("tournaments").select("game_id").eq("id", data.tournament_id).maybeSingle();
@@ -95,7 +95,7 @@ export const getManagerTournamentDetail = createServerFn({ method: "POST" })
 
 export const managerApproveTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: tournament } = await admin
@@ -134,7 +134,7 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
 
 export const managerRejectTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { tournament_id: string; reason: string }) =>
+  .inputValidator((d: { tournament_id: string; reason: string }) =>
     z
       .object({
         tournament_id: z.string().uuid(),
@@ -176,7 +176,7 @@ export const managerRejectTournament = createServerFn({ method: "POST" })
 
 export const managerUndoApproval = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: tournament } = await admin
@@ -219,7 +219,7 @@ export const listAllGames = createServerFn({ method: "POST" })
 // Admin-only: get a manager's currently assigned game ids
 export const getManagerAssignedGameIds = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .validator((d: { player_id: string }) => z.object({ player_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { player_id: string }) => z.object({ player_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const { data: rows, error } = await admin.from("manager_games").select("game_id").eq("player_id", data.player_id);
@@ -229,7 +229,7 @@ export const getManagerAssignedGameIds = createServerFn({ method: "POST" })
 
 export const assignManagerGames = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .validator((d: { player_id: string; game_ids: string[] }) =>
+  .inputValidator((d: { player_id: string; game_ids: string[] }) =>
     z
       .object({
         player_id: z.string().uuid(),
@@ -295,7 +295,7 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
 // ---------- Mi Historial ----------
 export const getManagerHistory = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { action_type?: string; date_from?: string; date_to?: string; page?: number }) =>
+  .inputValidator((d: { action_type?: string; date_from?: string; date_to?: string; page?: number }) =>
     z
       .object({
         action_type: z.string().optional(),
@@ -361,7 +361,7 @@ export const getManagerHistory = createServerFn({ method: "POST" })
 
 export const getManagerCalendar = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { game_id?: string; week_start?: string }) =>
+  .inputValidator((d: { game_id?: string; week_start?: string }) =>
     z
       .object({
         game_id: z.string().uuid().optional(),
@@ -551,7 +551,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
 
 export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const gameIds = await getManagerGameIds(admin, player);
@@ -578,7 +578,7 @@ export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
 
 export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { store_id: string; game_id: string; day_of_week: number; start_time: string; id?: string }) =>
+  .inputValidator((d: { store_id: string; game_id: string; day_of_week: number; start_time: string; id?: string }) =>
     z
       .object({
         store_id: z.string().uuid(),
@@ -622,7 +622,7 @@ export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
 
 export const deleteStoreScheduleManager = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { schedule_id: string }) => z.object({ schedule_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { schedule_id: string }) => z.object({ schedule_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: row } = await admin
@@ -644,7 +644,7 @@ export const deleteStoreScheduleManager = createServerFn({ method: "POST" })
 
 export const unapproveManagerTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator((d: { tournament_id: string; reason: string }) =>
+  .inputValidator((d: { tournament_id: string; reason: string }) =>
     z
       .object({
         tournament_id: z.string().uuid(),
@@ -738,7 +738,7 @@ export const getManagerResponsibleStores = createServerFn({ method: "POST" })
 
 export const updateStoreData = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .validator(
+  .inputValidator(
     (d: {
       store_id: string;
       name: string;
