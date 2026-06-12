@@ -548,7 +548,14 @@ export function TournamentUploadForm({
                 const { min, max } = getWeekDateRange();
                 return (
                   <>
-                    <Input type="date" min={min} max={max} value={date} onChange={(e) => setDate(e.target.value)} />
+                    <Input
+                      type="date"
+                      min={min}
+                      max={max}
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
                     <p className="mt-1 text-xs text-gray-500">
                       Solo se permiten torneos de la semana actual ({min} al {max}).
                     </p>
