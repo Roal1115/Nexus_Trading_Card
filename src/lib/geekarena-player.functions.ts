@@ -103,7 +103,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         "rank, points_earned, match_points, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
       )
       .eq("player_id", player.id)
-      .eq("tournaments.status", "PUBLISHED")
+      .in("tournaments.status", ["APPROVED", "PUBLISHED"])
       .order("tournaments(tournament_date)", { ascending: false })
       .limit(100);
 
