@@ -863,15 +863,23 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       : { data: [] as Array<{ id: string; geek_tag: string }> };
     const geekTagMap = new Map((playersData ?? []).map((p) => [p.id, p.geek_tag]));
 
-    // ---------- 1. Total players in range ----------
-    const playersInRange = new Set<string>();
-    for (const [pid, dates] of playerDatesAll.entries()) {
-      const inRange = dates.some((d) => {
-        const dt = new Date(d + "T12:00:00");
-        return dt >= rangeStart && dt <= rangeEnd;
-      });
-      if (inRange) playersInRange.add(pid);
-    }
+    // gameBreakdown is computed below from the unfiltered allResults/tournamentMap so
+    // the TCG tabs always show every game in the store. The filter for game_id is
+    // applied AFTER gameBreakdown, replacing playerDatesAll for all downstream metrics.
+
+    // ---------- 1. Total players in range (computed AFTER possible game_id filter) ----------
+    const computePlayersInRange = () => {
+      const s = new Set<string>();
+      for (const [pid, dates] of playerDatesAll.entries()) {
+        const inRange = dates.some((d) => {
+          const dt = new Date(d + "T12:00:00");
+          return dt >= rangeStart && dt <= rangeEnd;
+        });
+        if (inRange) s.add(pid);
+      }
+      return s;
+    };
+    let playersInRange = computePlayersInRange();
 
     // ---------- 2. Breakdown by TCG (only games in store_schedules) ----------
     const { data: schedules } = await admin
