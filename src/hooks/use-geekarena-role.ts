@@ -31,12 +31,14 @@ export function useGeekarenaRole() {
       if (!s?.user?.email) {
         if (mounted) {
           setPlayer(null);
-          if (showLoading) setLoading(false);
+          if (showLoading && !hasInitializedRef.current) setLoading(false);
+          hasInitializedRef.current = true;
         }
         return;
       }
 
-      if (showLoading) setLoading(true);
+      // Solo mostramos loading en el primerísimo render. Después nunca más.
+      if (showLoading && !hasInitializedRef.current) setLoading(true);
 
       const { data } = await geekarena
         .from("players")
@@ -52,7 +54,8 @@ export function useGeekarenaRole() {
         return (data as PlayerRow | null) ?? null;
       });
 
-      if (showLoading) setLoading(false);
+      if (!hasInitializedRef.current) setLoading(false);
+      hasInitializedRef.current = true;
     };
 
     geekarena.auth.getSession().then(({ data }) => {
