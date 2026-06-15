@@ -391,6 +391,21 @@ function OrganizerHome() {
           empezar a subir torneos.
         </section>
       )}
+
+      {/* Temporal: botón de prueba para analytics */}
+      <div className="glass rounded-2xl p-6 space-y-3">
+        <button
+          onClick={handleTestAnalytics}
+          className="inline-flex items-center gap-2 rounded-md border border-primary/60 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10"
+        >
+          Probar Analytics (temporal)
+        </button>
+        {analyticsResult && (
+          <pre className="mt-3 max-h-96 overflow-auto rounded-lg bg-black/40 p-4 text-xs text-green-300">
+            {analyticsResult}
+          </pre>
+        )}
+      </div>
     </div>
   );
 }
