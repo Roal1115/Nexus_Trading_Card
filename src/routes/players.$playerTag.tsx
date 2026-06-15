@@ -9,7 +9,27 @@ import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 
 export const Route = createFileRoute("/players/$playerTag")({
-  head: () => ({ meta: [{ title: "Perfil de Jugador — Geek Arena" }] }),
+  head: ({ params }) => ({
+    meta: [{ title: `Perfil de ${params.playerTag} — Geek Arena` }],
+    links: [
+      { rel: "canonical", href: `https://mxntcg.lovable.app/players/${params.playerTag}` },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ProfilePage",
+          mainEntity: {
+            "@type": "Person",
+            identifier: params.playerTag,
+            alternateName: params.playerTag,
+            url: `https://mxntcg.lovable.app/players/${params.playerTag}`,
+          },
+        }),
+      },
+    ],
+  }),
   component: PublicProfilePage,
 });
 
