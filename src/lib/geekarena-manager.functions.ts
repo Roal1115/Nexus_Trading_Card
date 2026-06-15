@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaManager, requireGeekarenaAdmin } from "./geekarena-auth.middleware";
 import { loadTournamentDetail } from "./geekarena-tournament-detail.server";
-import { logAction } from "./geekarena-admin.functions";
+import { logAction, recomputeSnapshot, tfMonth } from "./geekarena-admin.functions";
 
 async function getManagerGameIds(admin: any, player: { id: string; role: string }): Promise<string[]> {
   if (player.role === "admin") {
