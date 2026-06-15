@@ -336,7 +336,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
           "rank, points_earned, match_points, omw_percentage, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
         )
         .eq("player_id", t.id)
-        .eq("tournaments.status", "PUBLISHED")
+        .in("tournaments.status", ["APPROVED", "PUBLISHED"])
         .order("tournaments(tournament_date)", { ascending: false })
         .limit(100),
     ]);
