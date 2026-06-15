@@ -31,6 +31,7 @@ import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tou
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
 import { Route as OrganizerCalendarRouteImport } from './routes/organizer.calendar'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
+import { Route as AdminTournamentsPanelRouteImport } from './routes/admin.tournaments-panel'
 import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
@@ -154,6 +155,11 @@ const AdminUploadRoute = AdminUploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTournamentsPanelRoute = AdminTournamentsPanelRouteImport.update({
+  id: '/tournaments-panel',
+  path: '/tournaments-panel',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminStoresRoute = AdminStoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
+  '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByTo {
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
+  '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -304,6 +312,7 @@ export interface FileRoutesById {
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
+  '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin/publish'
     | '/admin/seasons'
     | '/admin/stores'
+    | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/organizer/calendar'
     | '/organizer/new'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/admin/publish'
     | '/admin/seasons'
     | '/admin/stores'
+    | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/organizer/calendar'
     | '/organizer/new'
@@ -411,6 +422,7 @@ export interface FileRouteTypes {
     | '/admin/publish'
     | '/admin/seasons'
     | '/admin/stores'
+    | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/organizer/calendar'
     | '/organizer/new'
@@ -598,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUploadRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/tournaments-panel': {
+      id: '/admin/tournaments-panel'
+      path: '/tournaments-panel'
+      fullPath: '/admin/tournaments-panel'
+      preLoaderRoute: typeof AdminTournamentsPanelRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/stores': {
       id: '/admin/stores'
       path: '/stores'
@@ -707,6 +726,7 @@ interface AdminRouteChildren {
   AdminPublishRoute: typeof AdminPublishRoute
   AdminSeasonsRoute: typeof AdminSeasonsRoute
   AdminStoresRoute: typeof AdminStoresRoute
+  AdminTournamentsPanelRoute: typeof AdminTournamentsPanelRoute
   AdminUploadRoute: typeof AdminUploadRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminTournamentsIdRoute: typeof AdminTournamentsIdRoute
@@ -722,6 +742,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPublishRoute: AdminPublishRoute,
   AdminSeasonsRoute: AdminSeasonsRoute,
   AdminStoresRoute: AdminStoresRoute,
+  AdminTournamentsPanelRoute: AdminTournamentsPanelRoute,
   AdminUploadRoute: AdminUploadRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminTournamentsIdRoute: AdminTournamentsIdRoute,
