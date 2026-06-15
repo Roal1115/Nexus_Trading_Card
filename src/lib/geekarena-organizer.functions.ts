@@ -1031,3 +1031,138 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       top_players: topPlayers,
     };
   });
+
+// ---------- Historial de Torneos (organizer scoped) ----------
+export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
+  .inputValidator(
+    (d: {
+      status?: string;
+      game_id?: string;
+      date_from?: string;
+      date_to?: string;
+      season_id?: string;
+      page?: number;
+    }) =>
+      z
+        .object({
+          status: z.string().optional(),
+          game_id: z.string().optional(),
+          date_from: z.string().optional(),
+          date_to: z.string().optional(),
+          season_id: z.string().optional(),
+          page: z.number().min(1).default(1),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const PAGE_SIZE = 25;
+    const page = data.page ?? 1;
+    const offset = (page - 1) * PAGE_SIZE;
+
+    if (!player.home_store_id) {
+      return { total: 0, page, stats: {}, tournaments: [] };
+    }
+
+    const baseCols = "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
+    const extraCols = ", rejection_reason, approved_by, season_id";
+
+    const build = (cols: string) => {
+      let q = admin
+        .from("tournaments")
+        .select(cols, { count: "exact" })
+        .eq("store_id", player.home_store_id)
+        .order("tournament_date", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (data.status) q = q.eq("status", data.status);
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+      if (data.date_from) q = q.gte("tournament_date", data.date_from);
+      if (data.date_to) q = q.lte("tournament_date", data.date_to);
+      if (data.season_id) q = q.eq("season_id", data.season_id);
+      return q;
+    };
+
+    let res = await build(baseCols + extraCols);
+    if (res.error && /column .* does not exist/i.test(res.error.message)) {
+      res = await build(baseCols);
+    }
+    if (res.error) throw new Error(res.error.message);
+
+    const rows = (res.data ?? []) as any[];
+    const count = res.count;
+    const gameIds = Array.from(new Set(rows.map((r) => r.game_id)));
+    const approverIds = Array.from(new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)));
+    const tournamentIds = rows.map((r) => r.id);
+
+    const [gmsRes, storeRes, approversRes, resultsRes, allStatsRes] = await Promise.all([
+      gameIds.length
+        ? admin.from("games").select("id, name").in("id", gameIds)
+        : Promise.resolve({ data: [] as any[] }),
+      admin.from("stores").select("id, name, city").eq("id", player.home_store_id).maybeSingle(),
+      approverIds.length
+        ? admin.from("players").select("id, geek_tag, role").in("id", approverIds)
+        : Promise.resolve({ data: [] as any[] }),
+      tournamentIds.length
+        ? admin.from("tournament_results").select("tournament_id").in("tournament_id", tournamentIds)
+        : Promise.resolve({ data: [] as any[] }),
+      admin.from("tournaments").select("status").eq("store_id", player.home_store_id),
+    ]);
+
+    const gamesMap = Object.fromEntries((gmsRes.data ?? []).map((g: any) => [g.id, g.name]));
+    const store: any = storeRes.data;
+    const approversMap = Object.fromEntries((approversRes.data ?? []).map((p: any) => [p.id, p]));
+    const participantMap = (resultsRes.data ?? []).reduce((acc: Record<string, number>, r: any) => {
+      acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
+      return acc;
+    }, {});
+    const globalStats = (allStatsRes.data ?? []).reduce((acc: Record<string, number>, t: any) => {
+      acc[t.status] = (acc[t.status] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      total: count ?? 0,
+      page,
+      stats: globalStats,
+      tournaments: rows.map((r) => {
+        const approver: any = r.approved_by ? approversMap[r.approved_by] : null;
+        return {
+          ...r,
+          game_name: gamesMap[r.game_id] ?? "—",
+          store_name: store?.name ?? "—",
+          store_city: store?.city ?? "—",
+          approved_by_tag: approver?.geek_tag ?? null,
+          approved_by_role: approver?.role ?? null,
+          participants: participantMap[r.id] ?? 0,
+        };
+      }),
+    };
+  });
+
+export const getOrganizerFilterOptions = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    if (!player.home_store_id) {
+      return { games: [], stores: [], seasons: [] };
+    }
+
+    const [schedulesRes, seasonsRes] = await Promise.all([
+      admin.from("store_schedules").select("game_id, games(id, name)").eq("store_id", player.home_store_id),
+      admin.from("seasons").select("id, name, slug, status").order("start_date", { ascending: false }),
+    ]);
+
+    const gamesMap = new Map<string, string>();
+    for (const s of (schedulesRes.data ?? []) as any[]) {
+      if (s.games?.id) gamesMap.set(s.games.id, s.games.name);
+    }
+    const games = Array.from(gamesMap.entries()).map(([id, name]) => ({ id, name }));
+
+    return {
+      games,
+      stores: [],
+      seasons: seasonsRes.data ?? [],
+    };
+  });
