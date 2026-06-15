@@ -193,13 +193,15 @@ function ManagerTournamentDetailPage() {
     <div className="space-y-6 pb-32">
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/tcg-manager" className="hover:text-primary">Torneos Pendientes</Link>
+          <Link to="/tcg-manager/tournaments-panel" className="hover:text-primary">
+            Torneos
+          </Link>
           <ChevronRight size={12} />
           <span className="text-white">Detalle del Torneo</span>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/tcg-manager">
+            <Link to="/tcg-manager/tournaments-panel">
               <ArrowLeft size={14} className="mr-1" /> Regresar
             </Link>
           </Button>

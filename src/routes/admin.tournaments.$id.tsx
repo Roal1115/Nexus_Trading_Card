@@ -198,8 +198,8 @@ function TournamentDetailPage() {
       {/* Header */}
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/admin" className="hover:text-primary">
-            Torneos Pendientes
+          <Link to="/admin/tournaments-panel" className="hover:text-primary">
+            Torneos
           </Link>
           <ChevronRight size={12} />
           <span className="text-white">Detalle del Torneo</span>
