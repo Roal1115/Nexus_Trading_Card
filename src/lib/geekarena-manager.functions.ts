@@ -812,3 +812,97 @@ export const updateStoreData = createServerFn({ method: "POST" })
     await logAction(admin, player, "STORE_UPDATED", "store", store_id, fields.name);
     return { ok: true };
   });
+
+export const getManagerPublishedTournaments = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+    const gameIds = await getManagerGameIds(admin, player);
+    if (gameIds.length === 0) return [];
+
+    const { data, error } = await admin
+      .from("tournaments")
+      .select(
+        "id, tournament_date, status, published_at, csv_url, store_id, game_id, stores(name, city, state), games(name)",
+      )
+      .eq("status", "PUBLISHED")
+      .in("game_id", gameIds)
+      .order("published_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const unpublishManagerTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: { tournament_id: string; reason: string }) =>
+    z
+      .object({
+        tournament_id: z.string().uuid(),
+        reason: z.string().min(10, "El motivo debe tener al menos 10 caracteres"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select(
+        "status, game_id, store_id, tournament_date, qualifying_year, qualifying_month, season_id",
+      )
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (!t || (t as any).status !== "PUBLISHED") {
+      throw new Error("Solo se pueden despublicar torneos en estado Publicado");
+    }
+    await assertManagerOwnsGame(admin, player, (t as any).game_id);
+
+    const { error } = await admin
+      .from("tournaments")
+      .update({
+        status: "UNPUBLISHED",
+        unpublish_reason: data.reason,
+        unpublished_at: new Date().toISOString(),
+        unpublished_by: player.id,
+      } as any)
+      .eq("id", data.tournament_id);
+    if (error) throw new Error(error.message);
+
+    const monthKey = tfMonth((t as any).qualifying_month, (t as any).qualifying_year);
+    await recomputeSnapshot(
+      admin,
+      (t as any).game_id,
+      (t as any).store_id,
+      "MONTHLY",
+      monthKey,
+      { year: (t as any).qualifying_year, month: (t as any).qualifying_month },
+    );
+    if ((t as any).season_id) {
+      const { data: season } = await admin
+        .from("seasons")
+        .select("slug")
+        .eq("id", (t as any).season_id)
+        .maybeSingle();
+      if ((season as any)?.slug) {
+        await recomputeSnapshot(
+          admin,
+          (t as any).game_id,
+          (t as any).store_id,
+          "SEMESTRAL",
+          (season as any).slug,
+          { season_id: (t as any).season_id },
+          (t as any).season_id,
+        );
+      }
+    }
+
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_UNPUBLISHED",
+      "tournament",
+      data.tournament_id,
+      `${(t as any).game_id} — ${(t as any).store_id}`,
+      { reason: data.reason, unpublished_by_role: player.role },
+    );
+    return { success: true };
+  });
