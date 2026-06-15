@@ -1284,7 +1284,7 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
           .select("player_id, tournament_id")
           .in("tournament_id", sameDayIds)
           .in("player_id", playerIds);
-        const clashedPlayerIds = Array.from(new Set((clash ?? []).map((c: any) => c.player_id)));
+        const clashedPlayerIds = Array.from(new Set((clash ?? []).map((c: any) => c.player_id as string))) as string[];
         for (const pid of clashedPlayerIds) {
           const tag = pMap.get(pid)?.geek_tag ?? pid;
           alerts.push({
