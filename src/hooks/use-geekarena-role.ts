@@ -17,25 +17,35 @@ export function useGeekarenaRole() {
   const [player, setPlayer] = useState<PlayerRow | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const currentUserRef = useRef<string | null>(null);
+
   useEffect(() => {
     let mounted = true;
 
-    const loadPlayer = async (s: Session | null) => {
+    const loadPlayer = async (s: Session | null, showLoading: boolean) => {
       if (!s?.user?.email) {
         if (mounted) {
           setPlayer(null);
-          setLoading(false);
+          if (showLoading) setLoading(false);
         }
         return;
       }
+
+      if (showLoading) setLoading(true);
+
       const { data } = await geekarena
         .from("players")
         .select("id, geek_tag, email, role, home_store_id")
         .eq("email", s.user.email)
         .maybeSingle();
+
       if (!mounted) return;
-      setPlayer((data as PlayerRow | null) ?? null);
-      setLoading(false);
+
+      setPlayer((prev) => {data?.id && prev?.role === data?.role) return prev;
+        return (data as PlayerRow | null) ?? null;
+      });
+
+      if (showLoading) setLoading(false);
     };
 
     geekarena.auth.getSession().then(({ data }) => {
