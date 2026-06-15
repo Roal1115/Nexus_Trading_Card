@@ -44,8 +44,18 @@ export const Route = createFileRoute("/admin/tournaments/$id")({
 type Detail = Awaited<ReturnType<typeof getTournamentDetail>>;
 
 const MESES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 function formatDate(d: string) {
@@ -121,14 +131,8 @@ function TournamentDetailPage() {
 
   const countdown = useCountdown(data?.tournament.undo_deadline ?? null);
 
-  const criticalCount = useMemo(
-    () => (data?.alerts ?? []).filter((a) => a.level === "CRITICAL").length,
-    [data],
-  );
-  const newPlayersCount = useMemo(
-    () => (data?.results ?? []).filter((r) => r.is_new_player).length,
-    [data],
-  );
+  const criticalCount = useMemo(() => (data?.alerts ?? []).filter((a) => a.level === "CRITICAL").length, [data]);
+  const newPlayersCount = useMemo(() => (data?.results ?? []).filter((r) => r.is_new_player).length, [data]);
 
   if (loading || !data) {
     return (
@@ -194,13 +198,15 @@ function TournamentDetailPage() {
       {/* Header */}
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/admin" className="hover:text-primary">Torneos Pendientes</Link>
+          <Link to="/admin" className="hover:text-primary">
+            Torneos Pendientes
+          </Link>
           <ChevronRight size={12} />
           <span className="text-white">Detalle del Torneo</span>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/admin">
+            <Link to="/admin/tournaments-panel">
               <ArrowLeft size={14} className="mr-1" /> Regresar
             </Link>
           </Button>
@@ -210,7 +216,12 @@ function TournamentDetailPage() {
 
       {/* Resumen */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard icon={<StoreIcon size={16} />} title="Tienda" main={store.name} sub={[store.city, store.state].filter(Boolean).join(", ") || "—"} />
+        <SummaryCard
+          icon={<StoreIcon size={16} />}
+          title="Tienda"
+          main={store.name}
+          sub={[store.city, store.state].filter(Boolean).join(", ") || "—"}
+        />
         <SummaryCard icon={<Gamepad2 size={16} />} title="Juego" main={game.name} sub="" />
         <SummaryCard
           icon={<Calendar size={16} />}
@@ -282,11 +293,7 @@ function TournamentDetailPage() {
         )}
         {isDraft && criticalCount > 0 ? (
           <label className="mt-4 flex items-start gap-2 rounded-xl bg-white/5 p-3 text-sm text-gray-200">
-            <Checkbox
-              checked={acknowledged}
-              onCheckedChange={(v) => setAcknowledged(!!v)}
-              className="mt-0.5"
-            />
+            <Checkbox checked={acknowledged} onCheckedChange={(v) => setAcknowledged(!!v)} className="mt-0.5" />
             <span>Revisé las alertas críticas y confirmo que este torneo es válido</span>
           </label>
         ) : null}
@@ -342,11 +349,7 @@ function TournamentDetailPage() {
         <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           {isDraft ? (
             <>
-              <Button
-                variant="ghost"
-                onClick={() => setRejectOpen(true)}
-                disabled={acting}
-              >
+              <Button variant="ghost" onClick={() => setRejectOpen(true)} disabled={acting}>
                 Rechazar
               </Button>
               <Button onClick={onApprove} disabled={!canApprove || acting}>
@@ -358,9 +361,7 @@ function TournamentDetailPage() {
 
           {isApproved && !undoExpired ? (
             <>
-              <span className="text-xs text-yellow-300">
-                Ventana de corrección: {countdown?.text}
-              </span>
+              <span className="text-xs text-yellow-300">Ventana de corrección: {countdown?.text}</span>
               <Button variant="ghost" onClick={onUndo} disabled={acting}>
                 Deshacer aprobación
               </Button>
@@ -387,14 +388,10 @@ function TournamentDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rechazar torneo</DialogTitle>
-            <DialogDescription>
-              El organizador será notificado con el motivo del rechazo.
-            </DialogDescription>
+            <DialogDescription>El organizador será notificado con el motivo del rechazo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-300">
-              Motivo del rechazo (mínimo 20 caracteres)
-            </label>
+            <label className="text-xs font-medium text-gray-300">Motivo del rechazo (mínimo 20 caracteres)</label>
             <Textarea
               rows={4}
               value={rejectReason}
@@ -407,10 +404,7 @@ function TournamentDetailPage() {
             <Button variant="ghost" onClick={() => setRejectOpen(false)} disabled={acting}>
               Cancelar
             </Button>
-            <Button
-              onClick={onConfirmReject}
-              disabled={acting || rejectReason.trim().length < 20}
-            >
+            <Button onClick={onConfirmReject} disabled={acting || rejectReason.trim().length < 20}>
               Confirmar rechazo
             </Button>
           </DialogFooter>
@@ -420,17 +414,7 @@ function TournamentDetailPage() {
   );
 }
 
-function SummaryCard({
-  icon,
-  title,
-  main,
-  sub,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  main: string;
-  sub: string;
-}) {
+function SummaryCard({ icon, title, main, sub }: { icon: React.ReactNode; title: string; main: string; sub: string }) {
   return (
     <div className="glass rounded-2xl p-4">
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
