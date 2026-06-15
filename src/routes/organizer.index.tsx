@@ -208,12 +208,28 @@ function OrganizerAnalytics() {
                 <XAxis dataKey="game_name" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
                 <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
                 <Tooltip
-                  contentStyle={{ background: "#1f2937", border: "1px solid #ffffff30", fontSize: 12, color: "#fff" }}
-                  labelStyle={{ color: "#fff" }}
+                  contentStyle={{
+                    background: "#1f2937",
+                    border: "1px solid #4b5563",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "#f9fafb",
+                    padding: "8px 12px",
+                  }}
+                  labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: "#e5e7eb" }}
+                  cursor={false}
                 />
-                <Bar dataKey="players" name="Jugadores" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={800}>
+                <Bar
+                  dataKey="players"
+                  name="Jugadores"
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive
+                  animationDuration={800}
+                  activeBar={{ fill: "#a78bfa", stroke: "#a78bfa" }}
+                >
                   {data.game_breakdown.map((_, i) => (
-                    <Cell key={i} fill="#f97316" />
+                    <Cell key={i} fill="#8b5cf6" style={{ fill: "#8b5cf6" }} />
                   ))}
                 </Bar>
               </BarChart>
