@@ -64,6 +64,7 @@ async function getSeasonForMonth(
     .select("id, slug, name")
     .lte("start_date", firstDay)
     .gte("end_date", firstDay)
+    .eq("is_active", true)
     .maybeSingle();
   return (data as { id: string; slug: string; name: string } | null) ?? null;
 }
