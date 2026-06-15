@@ -395,13 +395,19 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
 
     // Restringir fecha a la semana actual (lunes → hoy). Admin puede saltar la validación.
     if (player.role !== "admin") {
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
+      // Calcular "hoy" en zona horaria de México (UTC-6), no UTC del servidor
+      const MX_OFFSET_HOURS = -6;
+      const nowUtc = new Date();
+      const mxNow = new Date(nowUtc.getTime() + MX_OFFSET_HOURS * 60 * 60 * 1000);
+      const todayStr = mxNow.toISOString().split("T")[0]; // "YYYY-MM-DD" en hora MX
+      const today = new Date(todayStr + "T12:00:00");
+
       const dayOfWeek = today.getDay();
       const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       const monday = new Date(today);
       monday.setDate(today.getDate() - daysSinceMonday);
       monday.setHours(0, 0, 0, 0);
+
       const tDate = new Date(data.tournament_date + "T12:00:00");
       if (tDate > today) {
         throw new Error("No se pueden subir torneos con fecha futura.");
