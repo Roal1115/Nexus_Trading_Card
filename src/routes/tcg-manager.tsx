@@ -82,11 +82,11 @@ function TcgManagerLayout() {
         </div>
 
         <div className="p-6 sm:p-8">
-          {loading ? (
+          {loading && !player ? (
             <div className="flex min-h-[60vh] items-center justify-center">
               <Loader2 className="animate-spin text-primary" />
             </div>
-          ) : role !== "tcg_manager" && role !== "admin" ? null : (
+          ) : (
             <Outlet />
           )}
         </div>
