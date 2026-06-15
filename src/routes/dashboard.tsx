@@ -312,6 +312,11 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                       <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">{t.date}</td>
                       <td className="px-4 py-3 text-white">
                         {t.store} <span className="text-xs text-gray-500">· {t.city}</span>
+                        {t.tournament_status === "APPROVED" && (
+                          <span className="ml-2 inline-block rounded bg-yellow-500/15 px-1.5 py-0.5 text-[10px] font-medium text-yellow-300 align-middle">
+                            Pendiente de conteo oficial
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
                       <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
