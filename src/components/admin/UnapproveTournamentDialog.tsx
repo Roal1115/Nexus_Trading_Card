@@ -101,7 +101,7 @@ export function UnapproveTournamentDialog({
             {saving ? (
               <Loader2 size={14} className="mr-1 animate-spin" />
             ) : null}
-            Des-aprobar
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
