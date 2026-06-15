@@ -173,6 +173,20 @@ function OrganizerAnalytics() {
         </div>
       </div>
 
+      {/* Filtro por TCG */}
+      {data.game_breakdown.length > 0 && (
+        <Tabs value={selectedGameId ?? "all"} onValueChange={handleTabChange}>
+          <TabsList className="flex flex-wrap h-auto">
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            {data.game_breakdown.map((g) => (
+              <TabsTrigger key={g.game_id} value={g.game_id}>
+                {g.game_name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
+
       {/* Jugadores totales + Desglose por TCG */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-lg border bg-card p-6 flex flex-col items-center justify-center text-center">
@@ -188,13 +202,20 @@ function OrganizerAnalytics() {
           {data.game_breakdown.length === 0 ? (
             <p className="text-sm text-muted-foreground">Esta tienda no tiene TCGs configurados.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={data.game_breakdown}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="game_name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
-                <Bar dataKey="players" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                <XAxis dataKey="game_name" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+                <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+                <Tooltip
+                  contentStyle={{ background: "#1f2937", border: "1px solid #ffffff30", fontSize: 12, color: "#fff" }}
+                  labelStyle={{ color: "#fff" }}
+                />
+                <Bar dataKey="players" name="Jugadores" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={800}>
+                  {data.game_breakdown.map((_, i) => (
+                    <Cell key={i} fill="#f97316" />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
