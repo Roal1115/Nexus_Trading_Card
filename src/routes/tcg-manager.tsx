@@ -50,7 +50,8 @@ function TcgManagerLayout() {
             title: "Moderación",
             items: [
               { to: "/tcg-manager/tournaments-panel", label: "Torneos", icon: <ShieldCheck size={16} />, badge: (counts?.pending ?? 0) + (counts?.approved ?? 0) },
-              { to: "/tcg-manager/history", label: "Mi Historial", icon: <History size={16} /> },
+              { to: "/tcg-manager/history", label: "Historial de Torneos", icon: <History size={16} /> },
+              { to: "/tcg-manager/my-history", label: "Mi Historial", icon: <History size={16} /> },
             ],
           },
           {

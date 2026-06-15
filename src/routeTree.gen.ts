@@ -25,6 +25,7 @@ import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.uploa
 import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
 import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
 import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my-history'
+import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
 import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.calendar'
 import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
 import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
@@ -126,6 +127,11 @@ const TcgManagerStoresRoute = TcgManagerStoresRouteImport.update({
 const TcgManagerMyHistoryRoute = TcgManagerMyHistoryRouteImport.update({
   id: '/my-history',
   path: '/my-history',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerHistoryRoute = TcgManagerHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => TcgManagerRoute,
 } as any)
 const TcgManagerCalendarRoute = TcgManagerCalendarRouteImport.update({
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
+  '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
+  '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
+  '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/players/$playerTag'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
+    | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
@@ -415,6 +425,7 @@ export interface FileRouteTypes {
     | '/players/$playerTag'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
+    | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/players/$playerTag'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
+    | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
@@ -591,6 +603,13 @@ declare module '@tanstack/react-router' {
       path: '/my-history'
       fullPath: '/tcg-manager/my-history'
       preLoaderRoute: typeof TcgManagerMyHistoryRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/history': {
+      id: '/tcg-manager/history'
+      path: '/history'
+      fullPath: '/tcg-manager/history'
+      preLoaderRoute: typeof TcgManagerHistoryRouteImport
       parentRoute: typeof TcgManagerRoute
     }
     '/tcg-manager/calendar': {
@@ -812,6 +831,7 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
 interface TcgManagerRouteChildren {
   TcgManagerApprovedRoute: typeof TcgManagerApprovedRoute
   TcgManagerCalendarRoute: typeof TcgManagerCalendarRoute
+  TcgManagerHistoryRoute: typeof TcgManagerHistoryRoute
   TcgManagerMyHistoryRoute: typeof TcgManagerMyHistoryRoute
   TcgManagerStoresRoute: typeof TcgManagerStoresRoute
   TcgManagerTournamentsPanelRoute: typeof TcgManagerTournamentsPanelRoute
@@ -823,6 +843,7 @@ interface TcgManagerRouteChildren {
 const TcgManagerRouteChildren: TcgManagerRouteChildren = {
   TcgManagerApprovedRoute: TcgManagerApprovedRoute,
   TcgManagerCalendarRoute: TcgManagerCalendarRoute,
+  TcgManagerHistoryRoute: TcgManagerHistoryRoute,
   TcgManagerMyHistoryRoute: TcgManagerMyHistoryRoute,
   TcgManagerStoresRoute: TcgManagerStoresRoute,
   TcgManagerTournamentsPanelRoute: TcgManagerTournamentsPanelRoute,
