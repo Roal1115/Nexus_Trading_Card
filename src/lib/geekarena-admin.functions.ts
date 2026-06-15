@@ -52,7 +52,7 @@ export const fetchActiveSeason = createServerFn({ method: "POST" })
     return getActiveSeason(context.admin);
   });
 
-function tfMonth(month: number, year: number) {
+export function tfMonth(month: number, year: number) {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 
@@ -72,7 +72,7 @@ function getWeekKey(dateStr: string): string {
 
 // Recompute leaderboard snapshots for a given game+timeframe based on
 // PUBLISHED tournaments in that period.
-async function recomputeSnapshot(
+export async function recomputeSnapshot(
   admin: ReturnType<typeof getGeekarenaAdmin>,
   game_id: string,
   store_id: string,
@@ -2038,6 +2038,122 @@ export const unapproveAdminTournament = createServerFn({ method: "POST" })
       data.tournament_id,
       `${(t as any).game_id} — ${(t as any).store_id}`,
       { reason: data.reason, unapproved_by_role: player.role },
+    );
+    return { success: true };
+  });
+
+export const unpublishTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { tournament_id: string; reason: string }) =>
+    z
+      .object({
+        tournament_id: z.string().uuid(),
+        reason: z.string().min(10, "El motivo debe tener al menos 10 caracteres"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select(
+        "status, game_id, store_id, tournament_date, qualifying_year, qualifying_month, season_id, stores(name), games(name)",
+      )
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (!t || (t as any).status !== "PUBLISHED") {
+      throw new Error("Solo se pueden despublicar torneos en estado Publicado");
+    }
+
+    const { error } = await admin
+      .from("tournaments")
+      .update({
+        status: "UNPUBLISHED",
+        unpublish_reason: data.reason,
+        unpublished_at: new Date().toISOString(),
+        unpublished_by: player.id,
+      } as any)
+      .eq("id", data.tournament_id);
+    if (error) throw new Error(error.message);
+
+    const monthKey = tfMonth((t as any).qualifying_month, (t as any).qualifying_year);
+    await recomputeSnapshot(
+      admin,
+      (t as any).game_id,
+      (t as any).store_id,
+      "MONTHLY",
+      monthKey,
+      { year: (t as any).qualifying_year, month: (t as any).qualifying_month },
+    );
+    if ((t as any).season_id) {
+      const { data: season } = await admin
+        .from("seasons")
+        .select("slug")
+        .eq("id", (t as any).season_id)
+        .maybeSingle();
+      if ((season as any)?.slug) {
+        await recomputeSnapshot(
+          admin,
+          (t as any).game_id,
+          (t as any).store_id,
+          "SEMESTRAL",
+          (season as any).slug,
+          { season_id: (t as any).season_id },
+          (t as any).season_id,
+        );
+      }
+    }
+
+    const game = (t as any).games;
+    const store = (t as any).stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_UNPUBLISHED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${(t as any).tournament_date}`,
+      { reason: data.reason },
+    );
+    return { success: true };
+  });
+
+export const republishTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("status")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (!t || (t as any).status !== "UNPUBLISHED") {
+      throw new Error("Solo se pueden re-aprobar torneos despublicados");
+    }
+    const now = new Date();
+    const undoDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const { error } = await admin
+      .from("tournaments")
+      .update({
+        status: "APPROVED",
+        approved_at: now.toISOString(),
+        undo_deadline: undoDeadline.toISOString(),
+        approved_by: player.id,
+        unpublish_reason: null,
+      } as any)
+      .eq("id", data.tournament_id);
+    if (error) throw new Error(error.message);
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_APPROVED",
+      "tournament",
+      data.tournament_id,
+      data.tournament_id,
+      { source: "republish" },
     );
     return { success: true };
   });
