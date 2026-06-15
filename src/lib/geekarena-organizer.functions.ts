@@ -921,6 +921,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       }
       for (const arr of filtered.values()) arr.sort();
       playerDatesAll = filtered;
+      playersInRange = computePlayersInRange();
     }
 
 
