@@ -17,10 +17,18 @@ export function UnapproveTournamentDialog({
   tournament,
   onClose,
   onConfirm,
+  title = "Des-aprobar torneo",
+  description,
+  confirmLabel = "Des-aprobar",
+  icon,
 }: {
   tournament: { id: string; label?: string } | null;
   onClose: () => void;
   onConfirm: (reason: string) => Promise<void>;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  icon?: React.ReactNode;
 }) {
   const open = !!tournament;
   const [reason, setReason] = useState("");
