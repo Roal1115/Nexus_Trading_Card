@@ -19,6 +19,10 @@ export function useGeekarenaRole() {
 
   // 🛡️ EL GUARDIÁN: Recuerda qué usuario está activo sin provocar re-renders
   const currentUserRef = useRef<string | null>(null);
+  // 🔒 Una vez resuelto el primer load, NUNCA volvemos a poner loading=true.
+  // Esto evita que los layouts desmonten <Outlet/> (y por ende modales abiertos)
+  // cuando supabase emite eventos al cambiar de pestaña del navegador.
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
