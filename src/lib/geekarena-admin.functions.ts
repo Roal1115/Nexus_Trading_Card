@@ -72,7 +72,7 @@ function getWeekKey(dateStr: string): string {
 
 // Recompute leaderboard snapshots for a given game+timeframe based on
 // PUBLISHED tournaments in that period.
-async function recomputeSnapshot(
+export async function recomputeSnapshot(
   admin: ReturnType<typeof getGeekarenaAdmin>,
   game_id: string,
   store_id: string,
