@@ -61,12 +61,16 @@ export function UnapproveTournamentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <XCircle size={18} className="text-red-400" /> Des-aprobar torneo
+            {icon ?? <XCircle size={18} className="text-red-400" />} {title}
           </DialogTitle>
           <DialogDescription>
-            {tournament?.label
-              ? `${tournament.label}. Este torneo volverá a estado borrador y se notificará al organizador.`
-              : "Este torneo volverá a estado borrador y se notificará al organizador."}
+            {description
+              ? tournament?.label
+                ? `${tournament.label}. ${description}`
+                : description
+              : tournament?.label
+                ? `${tournament.label}. Este torneo volverá a estado borrador y se notificará al organizador.`
+                : "Este torneo volverá a estado borrador y se notificará al organizador."}
           </DialogDescription>
         </DialogHeader>
 
