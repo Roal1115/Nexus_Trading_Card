@@ -37,6 +37,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/organizer/")({
   head: () => ({ meta: [{ title: "Analytics — Geek Arena" }] }),
@@ -67,14 +68,16 @@ function OrganizerAnalytics() {
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
-  const refresh = async (df?: string, dt?: string) => {
+  const refresh = async (df?: string, dt?: string, gameId?: string | null) => {
     setLoading(true);
     try {
       const res = await fetchAnalytics({
         data: {
           date_from: df || undefined,
           date_to: dt || undefined,
+          game_id: gameId || undefined,
         },
       });
       setData(res);
@@ -94,7 +97,13 @@ function OrganizerAnalytics() {
   }, [player?.id]);
 
   const handleApplyRange = () => {
-    void refresh(dateFrom, dateTo);
+    void refresh(dateFrom, dateTo, selectedGameId);
+  };
+
+  const handleTabChange = (gameId: string) => {
+    const gid = gameId === "all" ? null : gameId;
+    setSelectedGameId(gid);
+    void refresh(dateFrom, dateTo, gid);
   };
 
   if (roleLoading || (loading && !data)) {
@@ -164,6 +173,20 @@ function OrganizerAnalytics() {
         </div>
       </div>
 
+      {/* Filtro por TCG */}
+      {data.game_breakdown.length > 0 && (
+        <Tabs value={selectedGameId ?? "all"} onValueChange={handleTabChange}>
+          <TabsList className="flex flex-wrap h-auto">
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            {data.game_breakdown.map((g) => (
+              <TabsTrigger key={g.game_id} value={g.game_id}>
+                {g.game_name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
+
       {/* Jugadores totales + Desglose por TCG */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-lg border bg-card p-6 flex flex-col items-center justify-center text-center">
@@ -179,13 +202,20 @@ function OrganizerAnalytics() {
           {data.game_breakdown.length === 0 ? (
             <p className="text-sm text-muted-foreground">Esta tienda no tiene TCGs configurados.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={data.game_breakdown}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="game_name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
-                <Bar dataKey="players" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                <XAxis dataKey="game_name" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+                <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+                <Tooltip
+                  contentStyle={{ background: "#1f2937", border: "1px solid #ffffff30", fontSize: 12, color: "#fff" }}
+                  labelStyle={{ color: "#fff" }}
+                />
+                <Bar dataKey="players" name="Jugadores" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={800}>
+                  {data.game_breakdown.map((_, i) => (
+                    <Cell key={i} fill="#f97316" />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -198,22 +228,27 @@ function OrganizerAnalytics() {
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={data.attendance_trend}>
             <defs>
-              <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+              <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="week_start" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-            <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" />
-            <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+            <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+            <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+            <Tooltip
+              contentStyle={{ background: "#1f2937", border: "1px solid #ffffff30", fontSize: 12, color: "#fff" }}
+              labelStyle={{ color: "#fff" }}
+            />
             <Area
               type="monotone"
               dataKey="players"
-              stroke="hsl(var(--primary))"
-              fillOpacity={1}
-              fill="url(#colorAttendance)"
+              name="Jugadores"
+              stroke="#f97316"
+              strokeWidth={2}
+              fill="url(#attendanceGradient)"
               isAnimationActive
+              animationDuration={1000}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -241,7 +276,20 @@ function OrganizerAnalytics() {
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
-              <Pie data={donutData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2}>
+              <Pie
+                data={donutData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={70}
+                paddingAngle={2}
+                isAnimationActive
+                animationDuration={800}
+                label={({ name, value }) => (value > 0 ? `${name}: ${value}` : "")}
+                labelLine={false}
+              >
                 {donutData.map((entry) => (
                   <Cell key={entry.key} fill={CATEGORY_COLORS[entry.key] ?? "#888"} />
                 ))}

@@ -764,7 +764,7 @@ function classifyPlayer(
 export const getStoreAnalytics = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
   .inputValidator(
-    (d: { store_id?: string; date_from?: string; date_to?: string }) =>
+    (d: { store_id?: string; date_from?: string; date_to?: string; game_id?: string }) =>
       z
         .object({
           store_id: z.string().uuid().optional(),
@@ -776,6 +776,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
             .string()
             .regex(/^\d{4}-\d{2}-\d{2}$/)
             .optional(),
+          game_id: z.string().uuid().optional(),
         })
         .parse(d),
   )
@@ -846,7 +847,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       : { data: [] as Array<{ player_id: string; tournament_id: string }> };
 
     // Build per-player list of tournament dates (all-time, for inactivity calc)
-    const playerDatesAll = new Map<string, string[]>();
+    let playerDatesAll = new Map<string, string[]>();
     for (const r of allResults ?? []) {
       const t = tournamentMap.get(r.tournament_id);
       if (!t) continue;
@@ -862,15 +863,23 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       : { data: [] as Array<{ id: string; geek_tag: string }> };
     const geekTagMap = new Map((playersData ?? []).map((p) => [p.id, p.geek_tag]));
 
-    // ---------- 1. Total players in range ----------
-    const playersInRange = new Set<string>();
-    for (const [pid, dates] of playerDatesAll.entries()) {
-      const inRange = dates.some((d) => {
-        const dt = new Date(d + "T12:00:00");
-        return dt >= rangeStart && dt <= rangeEnd;
-      });
-      if (inRange) playersInRange.add(pid);
-    }
+    // gameBreakdown is computed below from the unfiltered allResults/tournamentMap so
+    // the TCG tabs always show every game in the store. The filter for game_id is
+    // applied AFTER gameBreakdown, replacing playerDatesAll for all downstream metrics.
+
+    // ---------- 1. Total players in range (computed AFTER possible game_id filter) ----------
+    const computePlayersInRange = () => {
+      const s = new Set<string>();
+      for (const [pid, dates] of playerDatesAll.entries()) {
+        const inRange = dates.some((d) => {
+          const dt = new Date(d + "T12:00:00");
+          return dt >= rangeStart && dt <= rangeEnd;
+        });
+        if (inRange) s.add(pid);
+      }
+      return s;
+    };
+    let playersInRange = computePlayersInRange();
 
     // ---------- 2. Breakdown by TCG (only games in store_schedules) ----------
     const { data: schedules } = await admin
@@ -898,6 +907,23 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
         players: players.size,
       };
     });
+
+    // If filtering by game_id, rebuild playerDatesAll using only that game's tournaments.
+    // gameBreakdown above intentionally stays unfiltered so the tabs always show every TCG.
+    if (data.game_id) {
+      const filtered = new Map<string, string[]>();
+      for (const r of allResults ?? []) {
+        const t = tournamentMap.get(r.tournament_id);
+        if (!t || t.game_id !== data.game_id) continue;
+        const arr = filtered.get(r.player_id) ?? [];
+        arr.push(t.tournament_date);
+        filtered.set(r.player_id, arr);
+      }
+      for (const arr of filtered.values()) arr.sort();
+      playerDatesAll = filtered;
+      playersInRange = computePlayersInRange();
+    }
+
 
     // ---------- 3. Attendance trend (weekly) ----------
     const weeks = getWeekRanges(rangeStart, rangeEnd);
