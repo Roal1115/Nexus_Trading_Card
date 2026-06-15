@@ -86,6 +86,18 @@ function OrganizerHome() {
   const [selectedStoreId, setSelectedStoreId] = useState<string>("");
   const [form, setForm] = useState<FormState>(emptyForm);
 
+  const fetchAnalytics = useServerFn(getStoreAnalytics);
+  const [analyticsResult, setAnalyticsResult] = useState<string | null>(null);
+
+  const handleTestAnalytics = async () => {
+    try {
+      const res = await fetchAnalytics({ data: {} });
+      setAnalyticsResult(JSON.stringify(res, null, 2));
+    } catch (e) {
+      setAnalyticsResult("ERROR: " + String((e as Error).message ?? e));
+    }
+  };
+
   const refresh = async () => {
     setLoading(true);
     try {
