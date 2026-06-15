@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { geekarena } from "@/integrations/geekarena/client";
 
@@ -41,7 +41,8 @@ export function useGeekarenaRole() {
 
       if (!mounted) return;
 
-      setPlayer((prev) => {data?.id && prev?.role === data?.role) return prev;
+      setPlayer((prev) => {
+        if (prev?.id === data?.id && prev?.role === data?.role) return prev;
         return (data as PlayerRow | null) ?? null;
       });
 
@@ -50,14 +51,24 @@ export function useGeekarenaRole() {
 
     geekarena.auth.getSession().then(({ data }) => {
       if (!mounted) return;
+      currentUserRef.current = data.session?.user?.id ?? null;
       setSession(data.session);
-      loadPlayer(data.session);
+      loadPlayer(data.session, true);
     });
 
-    const { data: sub } = geekarena.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = geekarena.auth.onAuthStateChange((event, s) => {
+      const newUserId = s?.user?.id ?? null;
+
+      if (currentUserRef.current === newUserId) {
+        return;
+      }
+
+      // Si llegamos aquí, es porque fue un Log In o Log Out real
+      currentUserRef.current = newUserId;
       setSession(s);
-      setLoading(true);
-      loadPlayer(s);
+
+      const isSignInOrOut = event === "SIGNED_IN" || event === "SIGNED_OUT";
+      loadPlayer(s, isSignInOrOut);
     });
 
     return () => {
