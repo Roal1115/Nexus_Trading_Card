@@ -253,8 +253,16 @@ function OrganizerAnalytics() {
             <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
             <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
             <Tooltip
-              contentStyle={{ background: "#1f2937", border: "1px solid #ffffff30", fontSize: 12, color: "#fff" }}
-              labelStyle={{ color: "#fff" }}
+              contentStyle={{
+                background: "#1f2937",
+                border: "1px solid #4b5563",
+                borderRadius: 8,
+                fontSize: 12,
+                color: "#f9fafb",
+                padding: "8px 12px",
+              }}
+              labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+              itemStyle={{ color: "#e5e7eb" }}
             />
             <Area
               type="monotone"
