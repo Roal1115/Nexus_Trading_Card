@@ -52,7 +52,7 @@ export const fetchActiveSeason = createServerFn({ method: "POST" })
     return getActiveSeason(context.admin);
   });
 
-function tfMonth(month: number, year: number) {
+export function tfMonth(month: number, year: number) {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 
