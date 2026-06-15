@@ -900,6 +900,22 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       };
     });
 
+    // If filtering by game_id, rebuild playerDatesAll using only that game's tournaments.
+    // gameBreakdown above intentionally stays unfiltered so the tabs always show every TCG.
+    if (data.game_id) {
+      const filtered = new Map<string, string[]>();
+      for (const r of allResults ?? []) {
+        const t = tournamentMap.get(r.tournament_id);
+        if (!t || t.game_id !== data.game_id) continue;
+        const arr = filtered.get(r.player_id) ?? [];
+        arr.push(t.tournament_date);
+        filtered.set(r.player_id, arr);
+      }
+      for (const arr of filtered.values()) arr.sort();
+      playerDatesAll = filtered;
+    }
+
+
     // ---------- 3. Attendance trend (weekly) ----------
     const weeks = getWeekRanges(rangeStart, rangeEnd);
     const attendanceTrend = weeks.map((w) => {
