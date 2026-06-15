@@ -1228,7 +1228,17 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
     const pMap = new Map<string, any>(((playersRes as any).data ?? []).map((p: any) => [p.id, p]));
 
     const tCreated = new Date(t.created_at ?? new Date().toISOString()).getTime();
-    const results = (resultsRes.data ?? []).map((r: any) => {
+    const results: Array<{
+      rank: number;
+      geek_tag: string;
+      match_points: number | null;
+      omw_percentage: number | null;
+      points_earned: number;
+      wins: number;
+      losses: number;
+      draws: number;
+      is_new_player: boolean;
+    }> = ((resultsRes.data ?? []) as any[]).map((r: any) => {
       const p = pMap.get(r.player_id);
       const pCreated = p?.created_at ? new Date(p.created_at).getTime() : 0;
       return {
