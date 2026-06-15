@@ -17,6 +17,7 @@ export function useGeekarenaRole() {
   const [player, setPlayer] = useState<PlayerRow | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 🛡️ EL GUARDIÁN: Recuerda qué usuario está activo sin provocar re-renders
   const currentUserRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export function useGeekarenaRole() {
       if (!mounted) return;
 
       setPlayer((prev) => {
+        // 🛡️ SEGUNDA BARRERA: Si los datos de la BD son idénticos a los que ya teníamos, anulamos el re-render
         if (prev?.id === data?.id && prev?.role === data?.role) return prev;
         return (data as PlayerRow | null) ?? null;
       });
@@ -59,7 +61,10 @@ export function useGeekarenaRole() {
     const { data: sub } = geekarena.auth.onAuthStateChange((event, s) => {
       const newUserId = s?.user?.id ?? null;
 
+      // 🔥 AQUÍ MATAMOS EL PROBLEMA DE LAS PESTAÑAS:
+      // Si el evento nos trae al MISMO usuario que ya tenemos registrado...
       if (currentUserRef.current === newUserId) {
+        // ...Ignoramos el evento. No tocamos `setSession`, no tocamos `setLoading`. Nada.
         return;
       }
 
