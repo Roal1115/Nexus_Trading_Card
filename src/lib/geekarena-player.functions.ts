@@ -171,6 +171,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         wins: calculatedWins,
         losses: calculatedLosses,
         totalRounds,
+        tournament_status: (t?.status ?? null) as "APPROVED" | "PUBLISHED" | null,
       };
     });
 
