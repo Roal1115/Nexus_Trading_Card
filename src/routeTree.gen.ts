@@ -32,6 +32,7 @@ import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTa
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
+import { Route as OrganizerHistoryRouteImport } from './routes/organizer.history'
 import { Route as OrganizerCalendarRouteImport } from './routes/organizer.calendar'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
 import { Route as AdminTournamentsPanelRouteImport } from './routes/admin.tournaments-panel'
@@ -164,6 +165,11 @@ const OrganizerNewRoute = OrganizerNewRouteImport.update({
   path: '/new',
   getParentRoute: () => OrganizerRoute,
 } as any)
+const OrganizerHistoryRoute = OrganizerHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 const OrganizerCalendarRoute = OrganizerCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
+  '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
+  '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
+  '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/organizer/calendar'
+    | '/organizer/history'
     | '/organizer/new'
     | '/organizer/store'
     | '/organizer/tournaments'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/organizer/calendar'
+    | '/organizer/history'
     | '/organizer/new'
     | '/organizer/store'
     | '/organizer/tournaments'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/organizer/calendar'
+    | '/organizer/history'
     | '/organizer/new'
     | '/organizer/store'
     | '/organizer/tournaments'
@@ -654,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerNewRouteImport
       parentRoute: typeof OrganizerRoute
     }
+    '/organizer/history': {
+      id: '/organizer/history'
+      path: '/history'
+      fullPath: '/organizer/history'
+      preLoaderRoute: typeof OrganizerHistoryRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/organizer/calendar': {
       id: '/organizer/calendar'
       path: '/calendar'
@@ -810,6 +829,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface OrganizerRouteChildren {
   OrganizerCalendarRoute: typeof OrganizerCalendarRoute
+  OrganizerHistoryRoute: typeof OrganizerHistoryRoute
   OrganizerNewRoute: typeof OrganizerNewRoute
   OrganizerStoreRoute: typeof OrganizerStoreRoute
   OrganizerTournamentsRoute: typeof OrganizerTournamentsRoute
@@ -818,6 +838,7 @@ interface OrganizerRouteChildren {
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerCalendarRoute: OrganizerCalendarRoute,
+  OrganizerHistoryRoute: OrganizerHistoryRoute,
   OrganizerNewRoute: OrganizerNewRoute,
   OrganizerStoreRoute: OrganizerStoreRoute,
   OrganizerTournamentsRoute: OrganizerTournamentsRoute,
