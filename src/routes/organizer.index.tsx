@@ -1,115 +1,85 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
-import { Store, Save, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useEffect, useState } from "react";
 import {
-  getOrganizerOverview,
-  updateHomeStore,
-  updateStoreInfo,
-} from "@/lib/geekarena-organizer.functions";
-import { Button } from "@/components/ui/button";
+  Loader2,
+  Users,
+  TrendingUp,
+  TrendingDown,
+  HelpCircle,
+  AlertTriangle,
+  Trophy,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from "recharts";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { getStoreAnalytics } from "@/lib/geekarena-organizer.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/organizer/")({
-  component: OrganizerHome,
+  head: () => ({ meta: [{ title: "Analytics — Geek Arena" }] }),
+  component: OrganizerAnalytics,
 });
 
-type StoreRow = {
-  id: string;
-  name: string;
-  city: string | null;
-  state: string | null;
-  address: string | null;
-  phone: string | null;
-  google_maps_url: string | null;
-  description: string | null;
-  opening_hours: string | null;
-  instagram: string | null;
-  website: string | null;
-  twitter: string | null;
-  twitch: string | null;
+type AnalyticsResult = Awaited<ReturnType<typeof getStoreAnalytics>>;
+
+const CATEGORY_LABELS: Record<string, string> = {
+  recurrente: "Recurrente",
+  ocasional: "Ocasional",
+  una_vez: "Una sola vez",
+  inactivo: "Inactivo",
 };
 
-type FormState = {
-  name: string;
-  city: string;
-  state: string;
-  address: string;
-  phone: string;
-  google_maps_url: string;
-  description: string;
-  opening_hours: string;
-  instagram: string;
-  website: string;
-  twitter: string;
-  twitch: string;
+const CATEGORY_COLORS: Record<string, string> = {
+  recurrente: "#22c55e",
+  ocasional: "#eab308",
+  una_vez: "#60a5fa",
+  inactivo: "#6b7280",
 };
 
-const emptyForm: FormState = {
-  name: "",
-  city: "",
-  state: "",
-  address: "",
-  phone: "",
-  google_maps_url: "",
-  description: "",
-  opening_hours: "",
-  instagram: "",
-  website: "",
-  twitter: "",
-  twitch: "",
-};
-
-function OrganizerHome() {
+function OrganizerAnalytics() {
   const { player, loading: roleLoading } = useGeekarenaRole();
-  const email = player?.email ?? null;
+  const fetchAnalytics = useServerFn(getStoreAnalytics);
 
-  const fetchOverview = useServerFn(getOrganizerOverview);
-  const saveHomeStore = useServerFn(updateHomeStore);
-  const saveStoreInfo = useServerFn(updateStoreInfo);
-
+  const [data, setData] = useState<AnalyticsResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [stores, setStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
-  const [homeStore, setHomeStore] = useState<StoreRow | null>(null);
-  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
-  const refresh = async () => {
+  const refresh = async (df?: string, dt?: string, gameId?: string | null) => {
     setLoading(true);
     try {
-      const res: any = await fetchOverview();
-      setStores(res.stores);
-      setHomeStore(res.homeStore);
-      setSelectedStoreId(res.player.home_store_id ?? "");
-      if (res.homeStore) {
-        setForm({
-          name:            res.homeStore.name ?? "",
-          city:            res.homeStore.city ?? "",
-          state:           res.homeStore.state ?? "",
-          address:         res.homeStore.address ?? "",
-          phone:           res.homeStore.phone ?? "",
-          google_maps_url: res.homeStore.google_maps_url ?? "",
-          description:     res.homeStore.description ?? "",
-          opening_hours:   res.homeStore.opening_hours ?? "",
-          instagram:       res.homeStore.instagram ?? "",
-          website:         res.homeStore.website ?? "",
-          twitter:         res.homeStore.twitter ?? "",
-          twitch:          res.homeStore.twitch ?? "",
-        });
-      } else {
-        setForm(emptyForm);
-      }
+      const res = await fetchAnalytics({
+        data: {
+          date_from: df || undefined,
+          date_to: dt || undefined,
+          game_id: gameId || undefined,
+        },
+      });
+      setData(res);
+      if (!df) setDateFrom(res.range.start);
+      if (!dt) setDateTo(res.range.end);
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -118,266 +88,342 @@ function OrganizerHome() {
   };
 
   useEffect(() => {
-    if (!email) return;
-    refresh();
+    if (!player) return;
+    void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email]);
+  }, [player?.id]);
 
-  const handleAssignStore = async () => {
-    if (!email || !selectedStoreId) return;
-    setSaving(true);
-    try {
-      await saveHomeStore({ data: { store_id: selectedStoreId } });
-      toast.success("Tienda asignada");
-      await refresh();
-    } catch (e) {
-      toast.error(String((e as Error).message ?? e));
-    } finally {
-      setSaving(false);
-    }
+  const handleApplyRange = () => {
+    void refresh(dateFrom, dateTo, selectedGameId);
   };
 
-  const handleSaveInfo = async () => {
-    if (!email || !homeStore) return;
-    setSaving(true);
-    try {
-      await saveStoreInfo({
-        data: {
-          store_id:        homeStore.id,
-          name:            form.name,
-          city:            form.city,
-          state:           form.state,
-          address:         form.address,
-          phone:           form.phone,
-          google_maps_url: form.google_maps_url,
-          description:     form.description,
-          opening_hours:   form.opening_hours,
-          instagram:       form.instagram,
-          website:         form.website,
-          twitter:         form.twitter,
-          twitch:          form.twitch,
-        },
-      });
-      toast.success("Datos de la tienda actualizados");
-      await refresh();
-    } catch (e) {
-      toast.error(String((e as Error).message ?? e));
-    } finally {
-      setSaving(false);
-    }
+  const handleTabChange = (gameId: string) => {
+    const gid = gameId === "all" ? null : gameId;
+    setSelectedGameId(gid);
+    void refresh(dateFrom, dateTo, gid);
   };
 
-  const storeOptions = useMemo(() => stores, [stores]);
-
-  if (roleLoading || loading) {
+  if (roleLoading || (loading && !data)) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">
+          Cargando experiencia personalizada...
+        </p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Mi Tienda
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-white">
-          Información de tu tienda
-        </h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Selecciona o edita la tienda que organizas.
-        </p>
-      </header>
+  if (!data) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        No se pudo cargar la información. Asegúrate de tener una tienda asignada con torneos.
+      </div>
+    );
+  }
 
-      <section className="glass space-y-4 rounded-2xl p-6">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Store size={16} className="text-primary" />
-          Tienda asignada
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-primary font-semibold">
+            Analytics
+          </p>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            Estadísticas de tu tienda
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Visualiza la actividad y retención de tus jugadores.
+          </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <div className="space-y-2">
-            <Label className="text-xs text-gray-400">
-              Elige una tienda existente
-            </Label>
-            <Select
-              value={selectedStoreId}
-              onValueChange={setSelectedStoreId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona una tienda" />
-              </SelectTrigger>
-              <SelectContent>
-                {storeOptions.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                    {s.city ? ` — ${s.city}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="date-from" className="text-xs">Desde</Label>
+            <Input
+              id="date-from"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="[color-scheme:dark]"
+            />
           </div>
-          <Button
-            onClick={handleAssignStore}
-            disabled={
-              !selectedStoreId ||
-              saving ||
-              selectedStoreId === homeStore?.id
-            }
-          >
-            {saving ? "Guardando..." : "Asignar"}
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="date-to" className="text-xs">Hasta</Label>
+            <Input
+              id="date-to"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="[color-scheme:dark]"
+            />
+          </div>
+          <Button onClick={handleApplyRange} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
           </Button>
         </div>
-      </section>
+      </div>
 
-      {homeStore ? (
-        <section className="glass space-y-6 rounded-2xl p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-white">
-              Información de mi tienda
-            </h2>
-            <Button onClick={handleSaveInfo} disabled={saving}>
-              {saving ? (
-                <Loader2 size={14} className="animate-spin mr-1" />
-              ) : (
-                <Save size={14} className="mr-1" />
-              )}
-              Guardar cambios
-            </Button>
-          </div>
-
-          {/* SECCIÓN 1 — Información esencial */}
-          <div className="space-y-3">
-            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-              Información esencial
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Nombre de la tienda *</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Ciudad</Label>
-                <Input
-                  value={form.city}
-                  onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Estado</Label>
-                <Input
-                  value={form.state}
-                  onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Dirección física</Label>
-                <Input
-                  value={form.address}
-                  onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-                  placeholder="Calle, número, colonia"
-                />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Enlace Google Maps</Label>
-                <Input
-                  value={form.google_maps_url}
-                  onChange={(e) => setForm((f) => ({ ...f, google_maps_url: e.target.value }))}
-                  placeholder="https://maps.google.com/..."
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Teléfono de contacto</Label>
-                <Input
-                  value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  placeholder="+52 81 1234 5678"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Horarios de atención</Label>
-                <Input
-                  value={form.opening_hours}
-                  onChange={(e) => setForm((f) => ({ ...f, opening_hours: e.target.value }))}
-                  placeholder="Lun-Vie 12:00-21:00"
-                />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Descripción</Label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  rows={3}
-                  placeholder="Breve descripción de la tienda..."
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary resize-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 2 — Presencia digital */}
-          <div className="space-y-3 pt-4 border-t border-white/10">
-            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-              Presencia digital
-              <span className="ml-2 text-gray-600 normal-case tracking-normal font-normal">
-                — Opcional
-              </span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Página web</Label>
-                <Input
-                  value={form.website}
-                  onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Instagram</Label>
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-500 text-sm">@</span>
-                  <Input
-                    value={form.instagram}
-                    onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
-                    placeholder="usuario"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">X / Twitter</Label>
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-500 text-sm">@</span>
-                  <Input
-                    value={form.twitter}
-                    onChange={(e) => setForm((f) => ({ ...f, twitter: e.target.value }))}
-                    placeholder="usuario"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Twitch</Label>
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-500 text-sm">twitch.tv/</span>
-                  <Input
-                    value={form.twitch}
-                    onChange={(e) => setForm((f) => ({ ...f, twitch: e.target.value }))}
-                    placeholder="canal"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <section className="glass rounded-2xl p-6 text-sm text-gray-400">
-          Aún no tienes una tienda asignada. Selecciona una arriba para
-          empezar a subir torneos.
-        </section>
+      {/* Filtro por TCG */}
+      {data.game_breakdown.length > 0 && (
+        <Tabs value={selectedGameId ?? "all"} onValueChange={handleTabChange}>
+          <TabsList className="flex flex-wrap h-auto">
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            {data.game_breakdown.map((g) => (
+              <TabsTrigger key={g.game_id} value={g.game_id}>
+                {g.game_name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       )}
+
+      {/* Jugadores totales + Clasificación de Jugadores */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="glass col-span-1 flex flex-col items-center justify-center rounded-2xl p-6 sm:col-span-1">
+          <Users size={28} className="mb-2 text-primary" />
+          <div className="text-4xl font-bold text-white">{data.total_players}</div>
+          <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">
+            Jugadores totales en el periodo
+          </p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold">Clasificación de Jugadores</h2>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground" aria-label="Cómo se calculan">
+                  <HelpCircle className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 text-xs space-y-2">
+                <p className="font-semibold">¿Cómo se calculan las categorías?</p>
+                <p><span className="font-semibold text-green-500">Recurrente:</span> vino al menos una vez por semana, sin faltar ninguna semana del periodo.</p>
+                <p><span className="font-semibold text-yellow-500">Ocasional:</span> jugó 2+ veces, pero con semanas sin actividad.</p>
+                <p><span className="font-semibold text-blue-400">Una sola vez:</span> solo asistió una vez en el periodo.</p>
+                <p><span className="font-semibold text-gray-400">Inactivo:</span> no ha venido en más de {data.settings.inactive_threshold_days} días.</p>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(["recurrente", "ocasional", "una_vez", "inactivo"] as const).map((key) => (
+              <div
+                key={key}
+                className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center"
+                style={{ borderColor: `${CATEGORY_COLORS[key]}30` }}
+              >
+                <div
+                  className="mb-2 flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${CATEGORY_COLORS[key]}20` }}
+                >
+                  <Users size={18} style={{ color: CATEGORY_COLORS[key] }} />
+                </div>
+                <p className="text-3xl font-bold text-white">{data.category_summary[key]}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{CATEGORY_LABELS[key]}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tendencia de asistencia */}
+      <div className="rounded-lg border bg-card p-4">
+        <h2 className="text-sm font-semibold mb-3">Tendencia de Asistencia</h2>
+        <ResponsiveContainer width="100%" height={280}>
+          <AreaChart data={data.attendance_trend}>
+            <defs>
+              <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+            <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+            <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+            <Tooltip
+              contentStyle={{
+                background: "#1f2937",
+                border: "1px solid #4b5563",
+                borderRadius: 8,
+                fontSize: 12,
+                color: "#f9fafb",
+                padding: "8px 12px",
+              }}
+              labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+              itemStyle={{ color: "#e5e7eb" }}
+            />
+            <Area
+              type="monotone"
+              dataKey="players"
+              name="Jugadores"
+              stroke="#f97316"
+              strokeWidth={2}
+              fill="url(#attendanceGradient)"
+              isAnimationActive
+              animationDuration={1000}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Desglose por TCG + Top jugadores */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-lg border bg-card p-4">
+          <h2 className="text-sm font-semibold mb-3">Desglose por TCG</h2>
+          {data.game_breakdown.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Esta tienda no tiene TCGs configurados.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={data.game_breakdown}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                <XAxis dataKey="game_name" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+                <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1f2937",
+                    border: "1px solid #4b5563",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "#f9fafb",
+                    padding: "8px 12px",
+                  }}
+                  labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: "#e5e7eb" }}
+                  cursor={false}
+                />
+                <Bar
+                  dataKey="players"
+                  name="Jugadores"
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive
+                  animationDuration={800}
+                  activeBar={{ fill: "#fb923c", stroke: "#fb923c" }}
+                >
+                  {data.game_breakdown.map((_, i) => (
+                    <Cell key={i} fill="#f97316" style={{ fill: "#f97316" }} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Top jugadores */}
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Trophy className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Top Jugadores</h2>
+          </div>
+          {data.top_players.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin datos en este periodo.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2 px-2">#</th>
+                    <th className="text-left py-2 px-2">Geek Tag</th>
+                    <th className="text-right py-2 px-2">Torneos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.top_players.map((p, i) => (
+                    <tr key={p.player_id} className="border-b last:border-0">
+                      <td className="py-2 px-2 font-semibold">{i + 1}</td>
+                      <td className="py-2 px-2">{p.geek_tag}</td>
+                      <td className="py-2 px-2 text-right">{p.tournaments}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Jugadores en riesgo */}
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <h2 className="text-sm font-semibold">Jugadores en Riesgo</h2>
+          <span className="text-xs text-muted-foreground">
+            (más de {data.settings.at_risk_threshold_days} días sin venir)
+          </span>
+        </div>
+        {data.at_risk.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay jugadores en riesgo actualmente.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground border-b">
+                <tr>
+                  <th className="text-left py-2 px-2">Geek Tag</th>
+                  <th className="text-right py-2 px-2">Días sin venir</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.at_risk.map((p) => (
+                  <tr key={p.player_id} className="border-b last:border-0">
+                    <td className="py-2 px-2">{p.geek_tag}</td>
+                    <td className="py-2 px-2 text-right">{p.days_since} días</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Tabla de clasificación completa */}
+      <div className="rounded-lg border bg-card p-4">
+        <h2 className="text-sm font-semibold mb-3">Detalle por Jugador</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-xs text-muted-foreground border-b">
+              <tr>
+                <th className="text-left py-2 px-2">Geek Tag</th>
+                <th className="text-right py-2 px-2">Torneos (rango)</th>
+                <th className="text-left py-2 px-2">Categoría (rango)</th>
+                <th className="text-left py-2 px-2">Categoría (actual)</th>
+                <th className="text-left py-2 px-2">Tendencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.classification.map((c) => (
+                <tr key={c.player_id} className="border-b last:border-0">
+                  <td className="py-2 px-2">{c.geek_tag}</td>
+                  <td className="py-2 px-2 text-right">{c.tournaments_in_range}</td>
+                  <td className="py-2 px-2">
+                    <Badge variant="outline" style={{ borderColor: CATEGORY_COLORS[c.category_range], color: CATEGORY_COLORS[c.category_range] }}>
+                      {CATEGORY_LABELS[c.category_range]}
+                    </Badge>
+                  </td>
+                  <td className="py-2 px-2">
+                    <Badge variant="outline" style={{ borderColor: CATEGORY_COLORS[c.category_current], color: CATEGORY_COLORS[c.category_current] }}>
+                      {CATEGORY_LABELS[c.category_current]}
+                    </Badge>
+                  </td>
+                  <td className="py-2 px-2">
+                    {c.trend === "down" && (
+                      <span className="inline-flex items-center gap-1 text-red-500 text-xs">
+                        <TrendingDown className="h-3 w-3" /> Bajó
+                      </span>
+                    )}
+                    {c.trend === "up" && (
+                      <span className="inline-flex items-center gap-1 text-green-500 text-xs">
+                        <TrendingUp className="h-3 w-3" /> Mejoró
+                      </span>
+                    )}
+                    {c.trend === "same" && <span className="text-muted-foreground text-xs">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

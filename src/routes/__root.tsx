@@ -76,17 +76,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "National Geek" },
-      { name: "description", content: "Geek Tag Circuit tracks physical TCG player rankings and tournament results." },
+      { name: "description", content: "yes" },
       { name: "author", content: "Geek Collector" },
       { property: "og:title", content: "National Geek" },
-      { property: "og:description", content: "Geek Tag Circuit tracks physical TCG player rankings and tournament results." },
+      { property: "og:description", content: "yes" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "National Geek" },
-      { name: "twitter:description", content: "Geek Tag Circuit tracks physical TCG player rankings and tournament results." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5734a5ef-190b-451e-9f10-94bd389d95b4/id-preview-e5f47e3e--2ac0e0f9-4b32-4438-b51b-c9d18a4ae341.lovable.app-1779740882975.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5734a5ef-190b-451e-9f10-94bd389d95b4/id-preview-e5f47e3e--2ac0e0f9-4b32-4438-b51b-c9d18a4ae341.lovable.app-1779740882975.png" },
+      { name: "twitter:description", content: "yes" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png" },
     ],
     links: [
       {
@@ -98,6 +98,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Geek Arena",
+          url: "https://mxntcg.lovable.app",
+          logo: "https://mxntcg.lovable.app/favicon.ico",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Geek Arena",
+          url: "https://mxntcg.lovable.app",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://mxntcg.lovable.app/players/{search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
       },
     ],
   }),

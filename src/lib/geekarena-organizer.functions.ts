@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import {
-  requireGeekarenaOrganizer,
-} from "./geekarena-auth.middleware";
+import { requireGeekarenaOrganizer } from "./geekarena-auth.middleware";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
 function normalizeId(id: string): string {
@@ -31,11 +29,7 @@ async function resolvePlayer(
   }
 
   // 2. Fall back to geek_tag
-  const { data: byTag } = await admin
-    .from("players")
-    .select("id")
-    .eq("geek_tag", geekTag)
-    .maybeSingle();
+  const { data: byTag } = await admin.from("players").select("id").eq("geek_tag", geekTag).maybeSingle();
   if (byTag?.id) {
     return { id: byTag.id as string, isNew: false };
   }
@@ -55,17 +49,15 @@ async function resolvePlayer(
   }
 
   if (membershipId && newPlayer.id) {
-    await admin
-      .from("player_tcg_ids")
-      .upsert(
-        {
-          player_id: newPlayer.id,
-          game_id: gameId,
-          tcg_user_id: membershipId,
-          tcg_user_id_normalized: normalizeId(membershipId),
-        },
-        { onConflict: "player_id,game_id", ignoreDuplicates: true },
-      );
+    await admin.from("player_tcg_ids").upsert(
+      {
+        player_id: newPlayer.id,
+        game_id: gameId,
+        tcg_user_id: membershipId,
+        tcg_user_id_normalized: normalizeId(membershipId),
+      },
+      { onConflict: "player_id,game_id", ignoreDuplicates: true },
+    );
   }
 
   return { id: newPlayer.id as string, isNew: true };
@@ -118,51 +110,52 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
 
 export const updateHomeStore = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { store_id: string }) =>
-    z.object({ store_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    const { error } = await admin
-      .from("players")
-      .update({ home_store_id: data.store_id })
-      .eq("id", player.id);
+    if (player.role !== "admin") {
+      throw new Error("Tu tienda es asignada por el administrador. Contacta a soporte para cambios.");
+    }
+    const { error } = await admin.from("players").update({ home_store_id: data.store_id }).eq("id", player.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const updateStoreInfo = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    store_id:        string;
-    name:            string;
-    city?:           string;
-    state?:          string;
-    address?:        string;
-    phone?:          string;
-    google_maps_url?: string;
-    description?:    string;
-    opening_hours?:  string;
-    instagram?:      string;
-    website?:        string;
-    twitter?:        string;
-    twitch?:         string;
-  }) =>
-    z.object({
-      store_id:        z.string().uuid(),
-      name:            z.string().min(1).max(120),
-      city:            z.string().max(120).optional(),
-      state:           z.string().max(120).optional(),
-      address:         z.string().max(300).optional(),
-      phone:           z.string().max(20).optional(),
-      google_maps_url: z.string().max(500).optional(),
-      description:     z.string().max(500).optional(),
-      opening_hours:   z.string().max(200).optional(),
-      instagram:       z.string().max(100).optional(),
-      website:         z.string().max(200).optional(),
-      twitter:         z.string().max(100).optional(),
-      twitch:          z.string().max(100).optional(),
-    }).parse(d),
+  .inputValidator(
+    (d: {
+      store_id: string;
+      name: string;
+      city?: string;
+      state?: string;
+      address?: string;
+      phone?: string;
+      google_maps_url?: string;
+      description?: string;
+      opening_hours?: string;
+      instagram?: string;
+      website?: string;
+      twitter?: string;
+      twitch?: string;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          name: z.string().min(1).max(120),
+          city: z.string().max(120).optional(),
+          state: z.string().max(120).optional(),
+          address: z.string().max(300).optional(),
+          phone: z.string().max(20).optional(),
+          google_maps_url: z.string().max(500).optional(),
+          description: z.string().max(500).optional(),
+          opening_hours: z.string().max(200).optional(),
+          instagram: z.string().max(100).optional(),
+          website: z.string().max(200).optional(),
+          twitter: z.string().max(100).optional(),
+          twitch: z.string().max(100).optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -173,18 +166,18 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
     const { error } = await admin
       .from("stores")
       .update({
-        name:            fields.name,
-        city:            fields.city || null,
-        state:           fields.state || null,
-        address:         fields.address || null,
-        phone:           fields.phone || null,
+        name: fields.name,
+        city: fields.city || null,
+        state: fields.state || null,
+        address: fields.address || null,
+        phone: fields.phone || null,
         google_maps_url: fields.google_maps_url || null,
-        description:     fields.description || null,
-        opening_hours:   fields.opening_hours || null,
-        instagram:       fields.instagram || null,
-        website:         fields.website || null,
-        twitter:         fields.twitter || null,
-        twitch:          fields.twitch || null,
+        description: fields.description || null,
+        opening_hours: fields.opening_hours || null,
+        instagram: fields.instagram || null,
+        website: fields.website || null,
+        twitter: fields.twitter || null,
+        twitch: fields.twitch || null,
       })
       .eq("id", store_id);
     if (error) throw new Error(error.message);
@@ -194,23 +187,19 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
 // ---------- Mis Torneos ----------
 export const getMyTournaments = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    status?: string;
-    game_id?: string;
-    date_from?: string;
-    date_to?: string;
-  }) =>
-    z.object({
-      status: z.string().optional(),
-      game_id: z.string().optional(),
-      date_from: z.string().optional(),
-      date_to: z.string().optional(),
-    }).parse(d),
+  .inputValidator((d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
+    z
+      .object({
+        status: z.string().optional(),
+        game_id: z.string().optional(),
+        date_from: z.string().optional(),
+        date_to: z.string().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    if (!player.home_store_id)
-      return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
+    if (!player.home_store_id) return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
 
     const { data: store } = await admin
       .from("stores")
@@ -218,8 +207,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       .eq("id", player.home_store_id)
       .maybeSingle();
 
-    const baseCols =
-      "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
+    const baseCols = "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
     const extraCols = ", rejection_reason, approved_by";
 
     let rows: any[] | null = null;
@@ -257,11 +245,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
     const tournamentIds = (rows ?? []).map((r) => r.id);
     const gameIds = Array.from(new Set((rows ?? []).map((r) => r.game_id)));
     const approverIds = Array.from(
-      new Set(
-        (rows ?? [])
-          .filter((r) => r.approved_by)
-          .map((r) => r.approved_by as string),
-      ),
+      new Set((rows ?? []).filter((r) => r.approved_by).map((r) => r.approved_by as string)),
     );
 
     const [gmsRes, approversRes, resultsRes] = await Promise.all([
@@ -272,35 +256,22 @@ export const getMyTournaments = createServerFn({ method: "POST" })
         ? admin.from("players").select("id, geek_tag").in("id", approverIds)
         : Promise.resolve({ data: [] as any[] }),
       tournamentIds.length
-        ? admin
-            .from("tournament_results")
-            .select("tournament_id")
-            .in("tournament_id", tournamentIds)
+        ? admin.from("tournament_results").select("tournament_id").in("tournament_id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
-    const gamesMap = Object.fromEntries(
-      (gmsRes.data ?? []).map((g: any) => [g.id, g.name]),
-    );
-    const approversMap = Object.fromEntries(
-      (approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]),
-    );
-    const participantMap = (resultsRes.data ?? []).reduce(
-      (acc: Record<string, number>, r: any) => {
-        acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
-        return acc;
-      },
-      {},
-    );
+    const gamesMap = Object.fromEntries((gmsRes.data ?? []).map((g: any) => [g.id, g.name]));
+    const approversMap = Object.fromEntries((approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]));
+    const participantMap = (resultsRes.data ?? []).reduce((acc: Record<string, number>, r: any) => {
+      acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
+      return acc;
+    }, {});
 
-    const stats = (rows ?? []).reduce(
-      (acc: Record<string, number>, t: any) => {
-        const key = t.rejection_reason && t.status === "DRAFT" ? "REJECTED" : t.status;
-        acc[key] = (acc[key] ?? 0) + 1;
-        return acc;
-      },
-      {},
-    );
+    const stats = (rows ?? []).reduce((acc: Record<string, number>, t: any) => {
+      const key = t.rejection_reason && t.status === "DRAFT" ? "REJECTED" : t.status;
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
 
     return {
       store_name: store ? `${store.name} — ${store.city ?? ""}`.trim() : null,
@@ -308,7 +279,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       tournaments: (rows ?? []).map((r: any) => ({
         ...r,
         game_name: gamesMap[r.game_id] ?? "—",
-        approved_by_tag: r.approved_by ? approversMap[r.approved_by] ?? "—" : null,
+        approved_by_tag: r.approved_by ? (approversMap[r.approved_by] ?? "—") : null,
         participants: participantMap[r.id] ?? 0,
       })),
     };
@@ -316,9 +287,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
 
 export const deleteDraftTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { tournament_id: string }) =>
-    z.object({ tournament_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: t, error: te } = await admin
@@ -342,16 +311,14 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
 // ---------- Subir Torneo (DRAFT vacío, legacy) ----------
 export const createTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    game_id: string;
-    tournament_date: string;
-    csv_url?: string | null;
-  }) =>
-    z.object({
-      game_id: z.string().uuid(),
-      tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      csv_url: z.string().url().max(2048).optional().nullable(),
-    }).parse(d),
+  .inputValidator((d: { game_id: string; tournament_date: string; csv_url?: string | null }) =>
+    z
+      .object({
+        game_id: z.string().uuid(),
+        tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        csv_url: z.string().url().max(2048).optional().nullable(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -390,38 +357,60 @@ const ResultRowSchema = z.object({
 
 export const uploadTournamentResults = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: {
-    store_id: string;
-    game_id: string;
-    tournament_date: string;
-    rows: Array<z.infer<typeof ResultRowSchema>>;
-    tournament_id?: string;
-    csv_url?: string | null;
-  }) =>
-    z.object({
-      store_id: z.string().uuid(),
-      game_id: z.string().uuid(),
-      tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      rows: z.array(ResultRowSchema).min(1).max(2000),
-      tournament_id: z.string().uuid().optional(),
-      csv_url: z.string().url().max(2048).nullable().optional(),
-    }).parse(d),
+  .inputValidator(
+    (d: {
+      store_id: string;
+      game_id: string;
+      tournament_date: string;
+      rows: Array<z.infer<typeof ResultRowSchema>>;
+      tournament_id?: string;
+      csv_url?: string | null;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          game_id: z.string().uuid(),
+          tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          rows: z.array(ResultRowSchema).min(1).max(2000),
+          tournament_id: z.string().uuid().optional(),
+          csv_url: z.string().url().max(2048).nullable().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    if (player.role !== "admin" && player.home_store_id !== data.store_id) {
+    if (player.role !== "admin" && player.role !== "tcg_manager" && player.home_store_id !== data.store_id) {
       throw new Error("No puedes subir un torneo para esta tienda");
+    }
+
+    // Validar que el manager tiene autoridad sobre este TCG
+    if (player.role === "tcg_manager") {
+      const { data: mg } = await admin
+        .from("manager_games")
+        .select("id")
+        .eq("player_id", player.id)
+        .eq("game_id", data.game_id)
+        .maybeSingle();
+      if (!mg) {
+        throw new Error("No tienes permisos para subir torneos de este TCG.");
+      }
     }
 
     // Restringir fecha a la semana actual (lunes → hoy). Admin puede saltar la validación.
     if (player.role !== "admin") {
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
+      // Calcular "hoy" en zona horaria de México (UTC-6), no UTC del servidor
+      const MX_OFFSET_HOURS = -6;
+      const nowUtc = new Date();
+      const mxNow = new Date(nowUtc.getTime() + MX_OFFSET_HOURS * 60 * 60 * 1000);
+      const todayStr = mxNow.toISOString().split("T")[0]; // "YYYY-MM-DD" en hora MX
+      const today = new Date(todayStr + "T12:00:00");
+
       const dayOfWeek = today.getDay();
       const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       const monday = new Date(today);
       monday.setDate(today.getDate() - daysSinceMonday);
       monday.setHours(0, 0, 0, 0);
+
       const tDate = new Date(data.tournament_date + "T12:00:00");
       if (tDate > today) {
         throw new Error("No se pueden subir torneos con fecha futura.");
@@ -430,6 +419,20 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
         throw new Error(
           `Solo se pueden subir torneos de la semana actual (desde el ${monday.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}).`,
         );
+      }
+    }
+
+    // Validar que la tienda ofrece este TCG
+    if (player.role !== "admin") {
+      const { data: scheduleCheck } = await admin
+        .from("store_schedules")
+        .select("id")
+        .eq("store_id", data.store_id)
+        .eq("game_id", data.game_id)
+        .limit(1)
+        .maybeSingle();
+      if (!scheduleCheck) {
+        throw new Error("Esta tienda no tiene este TCG configurado en su calendario de torneos.");
       }
     }
 
@@ -445,8 +448,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       return {
         ok: false as const,
         reason: "duplicate" as const,
-        message:
-          "Ya existe un torneo registrado para esta tienda, juego y fecha.",
+        message: "Ya existe un torneo registrado para esta tienda, juego y fecha.",
       };
     }
 
@@ -460,11 +462,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       csv_url: data.csv_url ?? null,
     };
     if (data.tournament_id) insertPayload.id = data.tournament_id;
-    const { data: tournament, error: te } = await admin
-      .from("tournaments")
-      .insert(insertPayload)
-      .select("id")
-      .single();
+    const { data: tournament, error: te } = await admin.from("tournaments").insert(insertPayload).select("id").single();
     if (te) throw new Error(te.message);
     const tournamentId = tournament.id;
 
@@ -512,12 +510,9 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       await cleanup((e as Error).message);
     }
 
-
     let insertErr = (await admin.from("tournament_results").insert(baseRows)).error;
     if (insertErr && /column .* does not exist/i.test(insertErr.message)) {
-      const stripped = baseRows.map(
-        ({ match_points: _m, omw_percentage: _o, ...rest }) => rest,
-      );
+      const stripped = baseRows.map(({ match_points: _m, omw_percentage: _o, ...rest }) => rest);
       insertErr = (await admin.from("tournament_results").insert(stripped)).error;
     }
     if (insertErr) await cleanup(insertErr.message);
@@ -553,10 +548,7 @@ export const lookupPlayerTags = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const { data: rows, error } = await admin
-      .from("players")
-      .select("geek_tag")
-      .in("geek_tag", data.tags);
+    const { data: rows, error } = await admin.from("players").select("geek_tag").in("geek_tag", data.tags);
     if (error) throw new Error(error.message);
     return { existing: (rows ?? []).map((r) => r.geek_tag) };
   });
@@ -591,9 +583,7 @@ export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
 // ---------- Organizer read-only calendar (scoped to home_store) ----------
 export const getOrganizerCalendar = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
-  .inputValidator((d: { week_start?: string }) =>
-    z.object({ week_start: z.string().optional() }).parse(d),
-  )
+  .inputValidator((d: { week_start?: string }) => z.object({ week_start: z.string().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
@@ -629,9 +619,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
 
     const { data: schedules, error: se } = await admin
       .from("store_schedules")
-      .select(
-        "id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)",
-      )
+      .select("id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)")
       .eq("store_id", player.home_store_id);
     if (se) throw new Error(se.message);
 
@@ -674,8 +662,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       const hasEnded = isPast || (isToday && nowMs > tEnd.getTime());
       const isSubmitted =
         tournament &&
-        (tournament.status !== "DRAFT" ||
-          (tournament.status === "DRAFT" && !tournament.rejection_reason));
+        (tournament.status !== "DRAFT" || (tournament.status === "DRAFT" && !tournament.rejection_reason));
       let reportStatus: "submitted" | "overdue" | "pending" | "upcoming";
       if (isSubmitted) reportStatus = "submitted";
       else if (hasEnded && !tournament) reportStatus = "overdue";
@@ -718,8 +705,329 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
         days_elapsed: elapsedEntries.length,
         total_expected: entries.length,
         today_expected: entries.filter((e: any) => e.is_today).length,
-        today_submitted: entries.filter((e: any) => e.is_today && e.report_status === "submitted")
-          .length,
+        today_submitted: entries.filter((e: any) => e.is_today && e.report_status === "submitted").length,
       },
+    };
+  });
+
+// ---------- Store Analytics ----------
+
+type PlayerCategory = "recurrente" | "ocasional" | "una_vez" | "inactivo";
+
+const CATEGORY_RANK: Record<PlayerCategory, number> = {
+  recurrente: 3,
+  ocasional: 2,
+  una_vez: 1,
+  inactivo: 0,
+};
+
+function getMondayOf(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getWeekRanges(start: Date, end: Date): Array<{ start: Date; end: Date }> {
+  const weeks: Array<{ start: Date; end: Date }> = [];
+  let cur = getMondayOf(start);
+  while (cur <= end) {
+    const weekEnd = new Date(cur);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+    weeks.push({ start: new Date(cur), end: weekEnd });
+    cur = new Date(cur);
+    cur.setDate(cur.getDate() + 7);
+  }
+  return weeks;
+}
+
+function classifyPlayer(
+  tournamentDates: string[], // ISO date strings "YYYY-MM-DD", sorted
+  rangeStart: Date,
+  rangeEnd: Date,
+): PlayerCategory {
+  const datesInRange = tournamentDates
+    .map((d) => new Date(d + "T12:00:00"))
+    .filter((d) => d >= rangeStart && d <= rangeEnd);
+
+  if (datesInRange.length === 0) return "inactivo";
+  if (datesInRange.length === 1) return "una_vez";
+
+  const weeks = getWeekRanges(rangeStart, rangeEnd);
+  const allWeeksCovered = weeks.every((w) =>
+    datesInRange.some((d) => d >= w.start && d <= w.end),
+  );
+
+  return allWeeksCovered ? "recurrente" : "ocasional";
+}
+
+export const getStoreAnalytics = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaOrganizer])
+  .inputValidator(
+    (d: { store_id?: string; date_from?: string; date_to?: string; game_id?: string }) =>
+      z
+        .object({
+          store_id: z.string().uuid().optional(),
+          date_from: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          date_to: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          game_id: z.string().uuid().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    // Scope: organizer can only query their own store; admin can pass any store_id
+    let storeId = player.home_store_id;
+    if (data.store_id) {
+      if (player.role === "admin") {
+        storeId = data.store_id;
+      } else if (data.store_id !== player.home_store_id) {
+        throw new Error("No tienes permiso para ver analytics de esta tienda");
+      }
+    }
+    if (!storeId) {
+      throw new Error("Esta tienda no tiene torneos registrados aún");
+    }
+
+    // Threshold settings (defaults if no row exists)
+    const { data: settings } = await admin
+      .from("store_analytics_settings")
+      .select("inactive_threshold_days, at_risk_threshold_days")
+      .eq("store_id", storeId)
+      .maybeSingle();
+    const inactiveThresholdDays = settings?.inactive_threshold_days ?? 45;
+    const atRiskThresholdDays = settings?.at_risk_threshold_days ?? 21;
+
+    // Date range: default = first tournament of store -> today
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    let rangeStart: Date;
+    let rangeEnd: Date = data.date_to ? new Date(data.date_to + "T23:59:59") : today;
+
+    if (data.date_from) {
+      rangeStart = new Date(data.date_from + "T00:00:00");
+    } else {
+      const { data: firstT } = await admin
+        .from("tournaments")
+        .select("tournament_date")
+        .eq("store_id", storeId)
+        .order("tournament_date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      rangeStart = firstT?.tournament_date
+        ? new Date(firstT.tournament_date + "T00:00:00")
+        : new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    // Fetch all results for this store with tournament date + game_id + player info
+    const { data: tournamentsInStore } = await admin
+      .from("tournaments")
+      .select("id, tournament_date, game_id")
+      .eq("store_id", storeId)
+      .in("status", ["APPROVED", "PUBLISHED"]);
+
+    const tournamentIds = (tournamentsInStore ?? []).map((t) => t.id);
+    const tournamentMap = new Map(
+      (tournamentsInStore ?? []).map((t) => [t.id, t]),
+    );
+
+    const { data: allResults } = tournamentIds.length
+      ? await admin
+          .from("tournament_results")
+          .select("player_id, tournament_id")
+          .in("tournament_id", tournamentIds)
+      : { data: [] as Array<{ player_id: string; tournament_id: string }> };
+
+    // Build per-player list of tournament dates (all-time, for inactivity calc)
+    let playerDatesAll = new Map<string, string[]>();
+    for (const r of allResults ?? []) {
+      const t = tournamentMap.get(r.tournament_id);
+      if (!t) continue;
+      const arr = playerDatesAll.get(r.player_id) ?? [];
+      arr.push(t.tournament_date);
+      playerDatesAll.set(r.player_id, arr);
+    }
+    for (const arr of playerDatesAll.values()) arr.sort();
+
+    const playerIds = Array.from(playerDatesAll.keys());
+    const { data: playersData } = playerIds.length
+      ? await admin.from("players").select("id, geek_tag").in("id", playerIds)
+      : { data: [] as Array<{ id: string; geek_tag: string }> };
+    const geekTagMap = new Map((playersData ?? []).map((p) => [p.id, p.geek_tag]));
+
+    // gameBreakdown is computed below from the unfiltered allResults/tournamentMap so
+    // the TCG tabs always show every game in the store. The filter for game_id is
+    // applied AFTER gameBreakdown, replacing playerDatesAll for all downstream metrics.
+
+    // ---------- 1. Total players in range (computed AFTER possible game_id filter) ----------
+    const computePlayersInRange = () => {
+      const s = new Set<string>();
+      for (const [pid, dates] of playerDatesAll.entries()) {
+        const inRange = dates.some((d) => {
+          const dt = new Date(d + "T12:00:00");
+          return dt >= rangeStart && dt <= rangeEnd;
+        });
+        if (inRange) s.add(pid);
+      }
+      return s;
+    };
+    let playersInRange = computePlayersInRange();
+
+    // ---------- 2. Breakdown by TCG (only games in store_schedules) ----------
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("game_id, games(id, name)")
+      .eq("store_id", storeId);
+    const storeGameIds = Array.from(
+      new Set((schedules ?? []).map((s: any) => s.game_id)),
+    );
+    const gameNameMap = new Map(
+      (schedules ?? []).map((s: any) => [s.game_id, s.games?.name ?? "—"]),
+    );
+
+    const gameBreakdown = storeGameIds.map((gameId) => {
+      const players = new Set<string>();
+      for (const r of allResults ?? []) {
+        const t = tournamentMap.get(r.tournament_id);
+        if (!t || t.game_id !== gameId) continue;
+        const dt = new Date(t.tournament_date + "T12:00:00");
+        if (dt >= rangeStart && dt <= rangeEnd) players.add(r.player_id);
+      }
+      return {
+        game_id: gameId,
+        game_name: gameNameMap.get(gameId) ?? "—",
+        players: players.size,
+      };
+    });
+
+    // If filtering by game_id, rebuild playerDatesAll using only that game's tournaments.
+    // gameBreakdown above intentionally stays unfiltered so the tabs always show every TCG.
+    if (data.game_id) {
+      const filtered = new Map<string, string[]>();
+      for (const r of allResults ?? []) {
+        const t = tournamentMap.get(r.tournament_id);
+        if (!t || t.game_id !== data.game_id) continue;
+        const arr = filtered.get(r.player_id) ?? [];
+        arr.push(t.tournament_date);
+        filtered.set(r.player_id, arr);
+      }
+      for (const arr of filtered.values()) arr.sort();
+      playerDatesAll = filtered;
+      playersInRange = computePlayersInRange();
+    }
+
+
+    // ---------- 3. Attendance trend (weekly) ----------
+    const weeks = getWeekRanges(rangeStart, rangeEnd);
+    const attendanceTrend = weeks.map((w) => {
+      const players = new Set<string>();
+      for (const [pid, dates] of playerDatesAll.entries()) {
+        const has = dates.some((d) => {
+          const dt = new Date(d + "T12:00:00");
+          return dt >= w.start && dt <= w.end;
+        });
+        if (has) players.add(pid);
+      }
+      return {
+        week_start: w.start.toISOString().split("T")[0],
+        players: players.size,
+      };
+    });
+
+    // ---------- 4. Player classification (range + current) ----------
+    const currentRangeEnd = today;
+    const currentRangeStart = new Date(today);
+    currentRangeStart.setDate(currentRangeStart.getDate() - 45); // matches inactive threshold
+
+    const classification = Array.from(playerDatesAll.entries())
+      .map(([pid, dates]) => {
+        const categoryInRange = classifyPlayer(dates, rangeStart, rangeEnd);
+        const categoryCurrent = classifyPlayer(dates, currentRangeStart, currentRangeEnd);
+        const lastVisit = dates[dates.length - 1];
+        return {
+          player_id: pid,
+          geek_tag: geekTagMap.get(pid) ?? "—",
+          tournaments_in_range: dates.filter((d) => {
+            const dt = new Date(d + "T12:00:00");
+            return dt >= rangeStart && dt <= rangeEnd;
+          }).length,
+          category_range: categoryInRange,
+          category_current: categoryCurrent,
+          last_visit: lastVisit,
+          trend:
+            CATEGORY_RANK[categoryCurrent] === CATEGORY_RANK[categoryInRange]
+              ? "same"
+              : CATEGORY_RANK[categoryCurrent] < CATEGORY_RANK[categoryInRange]
+                ? "down"
+                : "up",
+        };
+      })
+      .filter((c) => playersInRange.has(c.player_id) || c.category_current !== c.category_range);
+
+    // ---------- 5. Category summary (donut) ----------
+    const categorySummary: Record<PlayerCategory, number> = {
+      recurrente: 0,
+      ocasional: 0,
+      una_vez: 0,
+      inactivo: 0,
+    };
+    for (const c of classification) {
+      if (playersInRange.has(c.player_id)) {
+        categorySummary[c.category_range]++;
+      }
+    }
+
+    // ---------- 6. At-risk players (always vs today) ----------
+    const atRisk = Array.from(playerDatesAll.entries())
+      .map(([pid, dates]) => {
+        const lastVisit = new Date(dates[dates.length - 1] + "T12:00:00");
+        const daysSince = Math.floor((today.getTime() - lastVisit.getTime()) / 86_400_000);
+        return { player_id: pid, geek_tag: geekTagMap.get(pid) ?? "—", days_since: daysSince };
+      })
+      .filter((p) => p.days_since > atRiskThresholdDays && p.days_since <= inactiveThresholdDays)
+      .sort((a, b) => a.days_since - b.days_since);
+
+    // ---------- 7. Top players ----------
+    const topPlayers = Array.from(playerDatesAll.entries())
+      .map(([pid, dates]) => ({
+        player_id: pid,
+        geek_tag: geekTagMap.get(pid) ?? "—",
+        tournaments: dates.filter((d) => {
+          const dt = new Date(d + "T12:00:00");
+          return dt >= rangeStart && dt <= rangeEnd;
+        }).length,
+      }))
+      .filter((p) => p.tournaments > 0)
+      .sort((a, b) => b.tournaments - a.tournaments)
+      .slice(0, 10);
+
+    return {
+      store_id: storeId,
+      range: {
+        start: rangeStart.toISOString().split("T")[0],
+        end: rangeEnd.toISOString().split("T")[0],
+      },
+      settings: {
+        inactive_threshold_days: inactiveThresholdDays,
+        at_risk_threshold_days: atRiskThresholdDays,
+      },
+      total_players: playersInRange.size,
+      game_breakdown: gameBreakdown,
+      attendance_trend: attendanceTrend,
+      category_summary: categorySummary,
+      classification,
+      at_risk: atRisk,
+      top_players: topPlayers,
     };
   });

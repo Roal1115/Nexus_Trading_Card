@@ -8,11 +8,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     const { admin, player } = context;
 
     const storeRes = player.home_store_id
-      ? await admin
-          .from("stores")
-          .select("city, name")
-          .eq("id", player.home_store_id)
-          .maybeSingle()
+      ? await admin.from("stores").select("city, name").eq("id", player.home_store_id).maybeSingle()
       : { data: null as { city: string | null; name: string | null } | null };
 
     const now = new Date();
@@ -31,22 +27,22 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     const snapshotsRes = semKey
       ? await admin
           .from("leaderboard_snapshots")
-          .select(
-            "game_id, total_points, tournaments_played, tournaments_won, rank_position",
-          )
+          .select("game_id, total_points, tournaments_played, tournaments_won, rank_position")
           .eq("player_id", player.id)
           .eq("timeframe_type", "SEMESTRAL")
           .eq("timeframe_value", semKey)
       : { data: [] as any[] };
     const rawSnapshots = snapshotsRes.data ?? [];
     const snapshots = Array.from(
-      rawSnapshots.reduce((map: Map<string, any>, s: any) => {
-        const existing = map.get(s.game_id);
-        if (!existing || (s.total_points ?? 0) > (existing.total_points ?? 0)) {
-          map.set(s.game_id, s);
-        }
-        return map;
-      }, new Map<string, any>()).values(),
+      rawSnapshots
+        .reduce((map: Map<string, any>, s: any) => {
+          const existing = map.get(s.game_id);
+          if (!existing || (s.total_points ?? 0) > (existing.total_points ?? 0)) {
+            map.set(s.game_id, s);
+          }
+          return map;
+        }, new Map<string, any>())
+        .values(),
     );
 
     const monthKey = `${year}-${String(month).padStart(2, "0")}`;
@@ -63,27 +59,17 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       const existing = monthlyMap.get(m.game_id);
       const rank = m.rank_position ?? 0;
       const pts = m.total_points ?? 0;
-      if (
-        !existing ||
-        (rank > 0 && (existing.rank === 0 || rank < existing.rank)) ||
-        pts > existing.points
-      ) {
+      if (!existing || (rank > 0 && (existing.rank === 0 || rank < existing.rank)) || pts > existing.points) {
         monthlyMap.set(m.game_id, { rank, points: pts });
       }
     }
 
-
     const snapGameIds = (snapshots ?? []).map((s) => s.game_id);
     const { data: snapGames } = snapGameIds.length
-      ? await admin
-          .from("games")
-          .select("id, name, slug")
-          .in("id", snapGameIds)
+      ? await admin.from("games").select("id, name, slug").in("id", snapGameIds)
       : { data: [] as Array<{ id: string; name: string; slug: string }> };
 
-    const snapGameMap = new Map(
-      (snapGames ?? []).map((g) => [g.id, g]),
-    );
+    const snapGameMap = new Map((snapGames ?? []).map((g) => [g.id, g]));
 
     const tcgStats = (snapshots ?? [])
       .map((s) => ({
@@ -109,8 +95,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       .select("id, is_profile_public" as any)
       .eq("id", player.id)
       .maybeSingle();
-    const isProfilePublic =
-      ((privacyRow as any)?.is_profile_public ?? true) as boolean;
+    const isProfilePublic = ((privacyRow as any)?.is_profile_public ?? true) as boolean;
 
     const { data: results } = await admin
       .from("tournament_results")
@@ -118,13 +103,11 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         "rank, points_earned, match_points, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
       )
       .eq("player_id", player.id)
-      .eq("tournaments.status", "PUBLISHED")
+      .in("tournaments.status", ["APPROVED", "PUBLISHED"])
       .order("tournaments(tournament_date)", { ascending: false })
       .limit(100);
 
-    const tournamentIds = Array.from(
-      new Set((results ?? []).map((r: any) => r.tournament_id)),
-    );
+    const tournamentIds = Array.from(new Set((results ?? []).map((r: any) => r.tournament_id)));
 
     const { data: maxPoints } = tournamentIds.length
       ? await admin
@@ -134,24 +117,10 @@ export const getMyDashboard = createServerFn({ method: "POST" })
           .eq("rank", 1)
       : { data: [] as Array<{ tournament_id: string; match_points: number | null }> };
 
-    const maxPointsMap = new Map(
-      (maxPoints ?? []).map((m: any) => [m.tournament_id, m.match_points ?? 0]),
-    );
+    const maxPointsMap = new Map((maxPoints ?? []).map((m: any) => [m.tournament_id, m.match_points ?? 0]));
 
-    const storeIds = Array.from(
-      new Set(
-        (results ?? [])
-          .map((r: any) => r.tournaments?.store_id)
-          .filter(Boolean),
-      ),
-    );
-    const allGameIds = Array.from(
-      new Set(
-        (results ?? [])
-          .map((r: any) => r.tournaments?.game_id)
-          .filter(Boolean),
-      ),
-    );
+    const storeIds = Array.from(new Set((results ?? []).map((r: any) => r.tournaments?.store_id).filter(Boolean)));
+    const allGameIds = Array.from(new Set((results ?? []).map((r: any) => r.tournaments?.game_id).filter(Boolean)));
 
     const [storesData, gamesData] = await Promise.all([
       storeIds.length
@@ -164,12 +133,8 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
     ]);
 
-    const storeMap = new Map(
-      (storesData.data ?? []).map((s: any) => [s.id, s]),
-    );
-    const gameMap = new Map(
-      (gamesData.data ?? []).map((g: any) => [g.id, g.name as string]),
-    );
+    const storeMap = new Map((storesData.data ?? []).map((s: any) => [s.id, s]));
+    const gameMap = new Map((gamesData.data ?? []).map((g: any) => [g.id, g.name as string]));
 
     const events = (results ?? []).map((r: any) => {
       const t = r.tournaments;
@@ -206,14 +171,13 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         wins: calculatedWins,
         losses: calculatedLosses,
         totalRounds,
+        tournament_status: (t?.status ?? null) as "APPROVED" | "PUBLISHED" | null,
       };
     });
 
     return {
-      storeCity:
-        (storeRes.data as { city: string | null } | null)?.city ?? null,
-      storeName:
-        (storeRes.data as { name: string | null } | null)?.name ?? null,
+      storeCity: (storeRes.data as { city: string | null } | null)?.city ?? null,
+      storeName: (storeRes.data as { name: string | null } | null)?.name ?? null,
       tcgStats,
       semesterLabel,
       monthLabel: new Date(year, month - 1).toLocaleString("es-MX", {
@@ -228,59 +192,37 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
 export const getTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { tournament_id: string }) =>
-    z.object({ tournament_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
     const { data: tournament } = await admin
       .from("tournaments")
-      .select(
-        "id, tournament_date, qualifying_month, qualifying_year, qualifying_semester, game_id, store_id, status",
-      )
+      .select("id, tournament_date, qualifying_month, qualifying_year, qualifying_semester, game_id, store_id, status")
       .eq("id", data.tournament_id)
-      .eq("status", "PUBLISHED")
+      .in("status", ["APPROVED", "PUBLISHED"])
       .single();
 
     if (!tournament) throw new Error("Torneo no encontrado");
 
     const [{ data: store }, { data: game }, { data: results }] = await Promise.all([
-      admin
-        .from("stores")
-        .select("name, city, state, country")
-        .eq("id", tournament.store_id)
-        .single(),
-      admin
-        .from("games")
-        .select("name, publisher")
-        .eq("id", tournament.game_id)
-        .single(),
+      admin.from("stores").select("name, city, state, country").eq("id", tournament.store_id).single(),
+      admin.from("games").select("name, publisher").eq("id", tournament.game_id).single(),
       admin
         .from("tournament_results")
-        .select(
-          "player_id, rank, match_points, points_earned, omw_percentage, wins, losses, draws",
-        )
+        .select("player_id, rank, match_points, points_earned, omw_percentage, wins, losses, draws")
         .eq("tournament_id", data.tournament_id)
         .order("rank", { ascending: true }),
     ]);
 
     const playerIds = (results ?? []).map((r: any) => r.player_id);
     const { data: players } = playerIds.length
-      ? await admin
-          .from("players")
-          .select("id, geek_tag")
-          .in("id", playerIds)
+      ? await admin.from("players").select("id, geek_tag").in("id", playerIds)
       : { data: [] as Array<{ id: string; geek_tag: string }> };
 
-    const playerMap = new Map(
-      (players ?? []).map((p: any) => [p.id, p.geek_tag]),
-    );
+    const playerMap = new Map((players ?? []).map((p: any) => [p.id, p.geek_tag]));
 
-    const maxMatchPoints = Math.max(
-      0,
-      ...(results ?? []).map((r: any) => r.match_points ?? 0),
-    );
+    const maxMatchPoints = Math.max(0, ...(results ?? []).map((r: any) => r.match_points ?? 0));
 
     const rankings = (results ?? []).map((r: any) => {
       let calcWins: number | null = r.wins ?? null;
@@ -330,9 +272,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
 
 export const toggleProfilePrivacy = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { is_public: boolean }) =>
-    z.object({ is_public: z.boolean() }).parse(d),
-  )
+  .inputValidator((d: { is_public: boolean }) => z.object({ is_public: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { error } = await admin
@@ -345,17 +285,13 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
 
 export const getPublicProfile = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { player_tag: string }) =>
-    z.object({ player_tag: z.string() }).parse(d),
-  )
+  .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player: viewer } = context;
 
     const { data: target } = await admin
       .from("players")
-      .select(
-        "id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public" as any,
-      )
+      .select("id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public" as any)
       .eq("geek_tag", data.player_tag)
       .maybeSingle();
 
@@ -384,11 +320,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
 
     const [storeRes, snapshotsRes, resultsRes] = await Promise.all([
       t.home_store_id
-        ? admin
-            .from("stores")
-            .select("name, city")
-            .eq("id", t.home_store_id)
-            .maybeSingle()
+        ? admin.from("stores").select("name, city").eq("id", t.home_store_id).maybeSingle()
         : Promise.resolve({ data: null as any }),
       admin
         .from("leaderboard_snapshots")
@@ -404,7 +336,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
           "rank, points_earned, match_points, omw_percentage, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
         )
         .eq("player_id", t.id)
-        .eq("tournaments.status", "PUBLISHED")
+        .in("tournaments.status", ["APPROVED", "PUBLISHED"])
         .order("tournaments(tournament_date)", { ascending: false })
         .limit(100),
     ]);
@@ -421,14 +353,9 @@ export const getPublicProfile = createServerFn({ method: "POST" })
 
     const results = (resultsRes.data ?? []) as any[];
 
-    const tStoreIds = Array.from(
-      new Set(results.map((r: any) => r.tournaments?.store_id).filter(Boolean)),
-    );
+    const tStoreIds = Array.from(new Set(results.map((r: any) => r.tournaments?.store_id).filter(Boolean)));
     const gameIds = Array.from(
-      new Set([
-        ...snaps.map((s) => s.game_id),
-        ...results.map((r: any) => r.tournaments?.game_id).filter(Boolean),
-      ]),
+      new Set([...snaps.map((s) => s.game_id), ...results.map((r: any) => r.tournaments?.game_id).filter(Boolean)]),
     );
     const tournamentIds = results.map((r: any) => r.tournament_id);
 
@@ -464,7 +391,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
       if (r.wins == null && r.match_points != null && maxMp > 0) {
         const totalRounds = Math.round(maxMp / 3);
         calcWins = Math.floor((r.match_points ?? 0) / 3);
-        const draws = ((r.match_points ?? 0) % 3 === 1) ? 1 : 0;
+        const draws = (r.match_points ?? 0) % 3 === 1 ? 1 : 0;
         calcLosses = totalRounds - calcWins - draws;
       }
 

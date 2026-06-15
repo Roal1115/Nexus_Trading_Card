@@ -1,16 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Eye, ArrowRight, FileDown, FileX } from "lucide-react";
+import { Loader2, Eye, ArrowRight, FileDown, FileX, XCircle } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   getManagerApprovedTournaments,
   managerUndoApproval,
+  unapproveManagerTournament,
 } from "@/lib/geekarena-manager.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 
 export const Route = createFileRoute("/tcg-manager/approved")({
   component: ManagerApprovedTournaments,
@@ -44,10 +46,12 @@ function ManagerApprovedTournaments() {
   const email = player?.email ?? null;
   const fetchList = useServerFn(getManagerApprovedTournaments);
   const undoFn = useServerFn(managerUndoApproval);
+  const unapproveFn = useServerFn(unapproveManagerTournament);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [unapproveTarget, setUnapproveTarget] = useState<Row | null>(null);
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -167,8 +171,15 @@ function ManagerApprovedTournaments() {
                               ) : (
                                 "Deshacer"
                               )}
-                            </Button>
+                          </Button>
                           )}
+                          <button
+                            onClick={() => setUnapproveTarget(r)}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-red-400/60 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                          >
+                            <XCircle size={13} />
+                            Des-aprobar
+                          </button>
                           <button
                             onClick={() =>
                               navigate({
@@ -192,6 +203,24 @@ function ManagerApprovedTournaments() {
           </div>
         </div>
       )}
+
+      <UnapproveTournamentDialog
+        tournament={
+          unapproveTarget
+            ? {
+                id: unapproveTarget.id,
+                label: `${unapproveTarget.games?.name ?? "Torneo"} — ${unapproveTarget.stores?.name ?? ""} (${unapproveTarget.tournament_date})`,
+              }
+            : null
+        }
+        onClose={() => setUnapproveTarget(null)}
+        onConfirm={async (reason) => {
+          if (!unapproveTarget) return;
+          await unapproveFn({ data: { tournament_id: unapproveTarget.id, reason } });
+          toast.success("Torneo des-aprobado");
+          await refresh();
+        }}
+      />
     </div>
   );
 }

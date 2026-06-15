@@ -13,6 +13,7 @@ import {
   Search,
   ShieldCheck,
   Store as StoreIcon,
+  Trash2,
   UserCog,
   X,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import {
   getPlayerDetail,
   updatePlayerDetail,
   getManagerAssignedGames,
+  deletePlayerAccount,
 } from "@/lib/geekarena-admin.functions";
 import { assignManagerGames } from "@/lib/geekarena-manager.functions";
 import { Input } from "@/components/ui/input";
@@ -89,6 +91,8 @@ function AdminPlayersPage() {
   const fetchStores = useServerFn(listStoresWithOrganizers);
   const setRole = useServerFn(setPlayerRole);
   const setActive = useServerFn(setPlayerActive);
+  const deleteAccountFn = useServerFn(deletePlayerAccount);
+
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -108,6 +112,8 @@ function AdminPlayersPage() {
   const [adminConfirmEmail, setAdminConfirmEmail] = useState("");
   const [storeModal, setStoreModal] = useState<{ p: P; next: string } | null>(null);
   const [activeModal, setActiveModal] = useState<P | null>(null);
+  const [deleteModal, setDeleteModal] = useState<P | null>(null);
+  const [deleteConfirmTag, setDeleteConfirmTag] = useState("");
   const [acting, setActing] = useState(false);
 
   // detail modal
@@ -612,6 +618,10 @@ function AdminPlayersPage() {
                             });
                           }}
                           onAssignGames={() => openTcgModal(p.id, p.geek_tag)}
+                          onDeleteAccount={() => {
+                            setDeleteModal(p);
+                            setDeleteConfirmTag("");
+                          }}
                         />
                       </td>
                     </tr>
@@ -797,6 +807,92 @@ function AdminPlayersPage() {
                 disabled={acting}
               >
                 {acting ? <Loader2 className="animate-spin" size={14} /> : "Desactivar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete account modal */}
+        <Dialog
+          open={!!deleteModal}
+          onOpenChange={(o) => {
+            if (!o) {
+              setDeleteModal(null);
+              setDeleteConfirmTag("");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-300">
+                <Trash2 size={18} /> Eliminar cuenta
+              </DialogTitle>
+              <DialogDescription>
+                {deleteModal && (
+                  <>
+                    Esta acción es <strong>permanente</strong>. Se eliminará la
+                    cuenta de{" "}
+                    <strong className="text-white">{deleteModal.geek_tag}</strong>,
+                    sus credenciales y su perfil. Los torneos y resultados
+                    asociados pueden verse afectados.
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <label className="text-xs text-gray-400">
+                Escribe el Player Tag exacto para confirmar
+              </label>
+              <Input
+                value={deleteConfirmTag}
+                onChange={(e) => setDeleteConfirmTag(e.target.value)}
+                placeholder={deleteModal?.geek_tag ?? ""}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setDeleteModal(null);
+                  setDeleteConfirmTag("");
+                }}
+                disabled={acting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={
+                  acting ||
+                  !deleteModal ||
+                  deleteConfirmTag.trim() !== deleteModal.geek_tag
+                }
+                onClick={async () => {
+                  if (!deleteModal) return;
+                  setActing(true);
+                  try {
+                    await deleteAccountFn({
+                      data: {
+                        player_id: deleteModal.id,
+                        confirm_tag: deleteConfirmTag.trim(),
+                      },
+                    });
+                    toast.success("Cuenta eliminada");
+                    setDeleteModal(null);
+                    setDeleteConfirmTag("");
+                    refresh();
+                  } catch (e) {
+                    toast.error(String((e as Error).message ?? e));
+                  } finally {
+                    setActing(false);
+                  }
+                }}
+              >
+                {acting ? (
+                  <Loader2 className="animate-spin" size={14} />
+                ) : (
+                  "Eliminar definitivamente"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1213,6 +1309,7 @@ function RowActions({
   onAssignStore,
   onToggleActive,
   onAssignGames,
+  onDeleteAccount,
 }: {
   p: P;
   onViewDetail: () => void;
@@ -1220,6 +1317,7 @@ function RowActions({
   onAssignStore: () => void;
   onToggleActive: () => void;
   onAssignGames: () => void;
+  onDeleteAccount: () => void;
 }) {
   const canAssignStore = p.role === "organizer";
   const canAssignGames = p.role === "tcg_manager";
@@ -1284,6 +1382,13 @@ function RowActions({
         <DropdownMenuItem onClick={onToggleActive}>
           <Power size={14} className="mr-2" />
           {p.is_active ? "Desactivar cuenta" : "Activar cuenta"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={onDeleteAccount}
+          disabled={p.role === "admin"}
+          className="text-red-300 focus:bg-red-500/10 focus:text-red-300"
+        >
+          <Trash2 size={14} className="mr-2" /> Eliminar cuenta
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

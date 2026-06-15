@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Calendar, Loader2, Menu, Store, Trophy, Upload } from "lucide-react";
+import { BarChart3, Calendar, Loader2, Menu, Store, Trophy, Upload } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts } from "@/hooks/use-badge-counts";
@@ -36,7 +36,8 @@ function OrganizerLayout() {
         mobileOpen={menuOpen}
         onMobileClose={() => setMenuOpen(false)}
         items={[
-          { to: "/organizer", label: "Mi Tienda", icon: <Store size={16} />, exact: true },
+          { to: "/organizer", label: "Analytics", icon: <BarChart3 size={16} />, exact: true },
+          { to: "/organizer/store", label: "Mi Tienda", icon: <Store size={16} /> },
           { to: "/organizer/tournaments", label: "Mis Torneos", icon: <Trophy size={16} />, badge: counts?.pending ?? 0 },
           { to: "/organizer/calendar", label: "Calendario", icon: <Calendar size={16} /> },
           { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },

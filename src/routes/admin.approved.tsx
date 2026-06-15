@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Upload, Eye, ArrowRight, FileDown, FileX } from "lucide-react";
+import { Loader2, Upload, Eye, ArrowRight, FileDown, FileX, XCircle } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   listTournamentsByStatus,
   publishTournaments,
+  unapproveAdminTournament,
 } from "@/lib/geekarena-admin.functions";
+import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,11 +47,13 @@ function ApprovedTournaments() {
   const email = player?.email ?? null;
   const fetchList = useServerFn(listTournamentsByStatus);
   const publish = useServerFn(publishTournaments);
+  const unapproveFn = useServerFn(unapproveAdminTournament);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [publishing, setPublishing] = useState(false);
+  const [unapproveTarget, setUnapproveTarget] = useState<Row | null>(null);
 
   const refresh = async (em: string) => {
     setLoading(true);
@@ -202,18 +206,24 @@ function ApprovedTournaments() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <FileLink url={r.csv_url} />
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate({ to: "/admin/tournaments/$id", params: { id: r.id } });
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
-                      >
-                        <Eye size={13} />
-                        Revisar
-                        <ArrowRight size={13} />
-                      </button>
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          onClick={() => setUnapproveTarget(r)}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-red-400/60 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                        >
+                          <XCircle size={13} />
+                          Des-aprobar
+                        </button>
+                        <button
+                          onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                        >
+                          <Eye size={13} />
+                          Revisar
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -222,6 +232,24 @@ function ApprovedTournaments() {
           </div>
         </div>
       )}
+
+      <UnapproveTournamentDialog
+        tournament={
+          unapproveTarget
+            ? {
+                id: unapproveTarget.id,
+                label: `${unapproveTarget.game_name} — ${unapproveTarget.store.name} (${unapproveTarget.tournament_date})`,
+              }
+            : null
+        }
+        onClose={() => setUnapproveTarget(null)}
+        onConfirm={async (reason) => {
+          if (!unapproveTarget) return;
+          await unapproveFn({ data: { tournament_id: unapproveTarget.id, reason } });
+          toast.success("Torneo des-aprobado");
+          if (email) await refresh(email);
+        }}
+      />
     </div>
   );
 }

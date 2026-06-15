@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as XLSX from "xlsx";
+import readXlsxFile from "read-excel-file/browser";
 import {
   AlertCircle,
   ArrowLeft,
@@ -22,25 +22,13 @@ import {
   lookupPlayerTags,
   uploadTournamentResults,
 } from "@/lib/geekarena-organizer.functions";
+import { getManagerResponsibleStores } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 type Game = { id: string; slug: string; name: string };
@@ -59,9 +47,30 @@ type ColumnMap = {
 };
 
 const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
-  "one-piece": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
-  "dragon-ball": { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
-  gundam: { platform: "bandai", rank: "Ranking", geekTag: "User Name", matchPoints: "Win Points", omw: "OMW %", membershipId: "Membership Number" },
+  "one-piece": {
+    platform: "bandai",
+    rank: "Ranking",
+    geekTag: "User Name",
+    matchPoints: "Win Points",
+    omw: "OMW %",
+    membershipId: "Membership Number",
+  },
+  "dragon-ball": {
+    platform: "bandai",
+    rank: "Ranking",
+    geekTag: "User Name",
+    matchPoints: "Win Points",
+    omw: "OMW %",
+    membershipId: "Membership Number",
+  },
+  gundam: {
+    platform: "bandai",
+    rank: "Ranking",
+    geekTag: "User Name",
+    matchPoints: "Win Points",
+    omw: "OMW %",
+    membershipId: "Membership Number",
+  },
   riftbound: {
     platform: "limitless",
     rank: "Rank",
@@ -89,9 +98,7 @@ function normalizarPuntos(rows: ParsedRow[]): ParsedRow[] {
   return rows.map((r) => ({
     ...r,
     points_earned:
-      r.match_points != null && r.match_points > 0
-        ? Math.round((r.match_points / maxPoints) * 10000) / 100
-        : 0,
+      r.match_points != null && r.match_points > 0 ? Math.round((r.match_points / maxPoints) * 10000) / 100 : 0,
   }));
 }
 
@@ -142,8 +149,7 @@ function parsePct(raw: string | undefined, platform: Platform): number | null {
 function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
   if (rows.length < 2) return [];
   const headers = (rows[0] ?? []).map((h) => String(h ?? "").trim());
-  const idx = (key: string | undefined) =>
-    key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1;
+  const idx = (key: string | undefined) => (key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1);
 
   const iRank = idx(map.rank);
   const iTag = idx(map.geekTag);
@@ -152,7 +158,6 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
   const iRec = idx(map.record);
   const iSt = idx(map.status);
   const iMem = idx(map.membershipId);
-
 
   const out: ParsedRow[] = [];
   for (let li = 1; li < rows.length; li++) {
@@ -174,8 +179,7 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
 
     const rank = iRank !== -1 ? Number(cols[iRank]) : NaN;
     const mp = iPts !== -1 ? Number(cols[iPts]) : NaN;
-    const dropped =
-      iSt !== -1 && (cols[iSt] || "").toUpperCase() === "DROPPED";
+    const dropped = iSt !== -1 && (cols[iSt] || "").toUpperCase() === "DROPPED";
 
     let error: string | undefined;
     if (!isFinite(rank) || rank < 1) error = "Ranking inválido";
@@ -212,21 +216,19 @@ async function readFileToRows(file: File): Promise<string[][]> {
     const text = await file.text();
     return csvTextToRows(text);
   }
-  const buf = await file.arrayBuffer();
   try {
-    const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
-    const sheetName = wb.SheetNames[0];
-    const sheet = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      raw: false,
-      defval: "",
-      blankrows: false,
-    }) as unknown as string[][];
+    const sheets = await readXlsxFile(file);
+    const data = sheets[0]?.data ?? [];
+    // data is (string | number | boolean | Date | null)[][]
+    const rows: string[][] = data.map((row) => row.map((cell) => (cell == null ? "" : String(cell))));
+    if (rows.length === 0) {
+      throw new Error("El archivo no contiene filas con datos.");
+    }
     return rows;
-  } catch {
+  } catch (err) {
+    console.error("Error parsing XLSX:", err);
     throw new Error(
-      "No se pudo leer el archivo. Verifica que sea un archivo Excel válido.",
+      `No se pudo leer el archivo Excel: ${(err as Error).message ?? "formato no soportado"}. Intenta exportarlo de nuevo o usar formato CSV.`,
     );
   }
 }
@@ -241,10 +243,7 @@ const ALLOWED_TYPES = new Set([
 ]);
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-async function uploadFileToStorage(
-  file: File,
-  tournamentId: string,
-): Promise<string | null> {
+async function uploadFileToStorage(file: File, tournamentId: string): Promise<string | null> {
   try {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "csv";
     const path = `tournaments/${tournamentId}.${ext}`;
@@ -255,9 +254,7 @@ async function uploadFileToStorage(
       console.error("Storage upload error:", error.message);
       return null;
     }
-    const { data } = await geekarena.storage
-      .from("tournament-files")
-      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    const { data } = await geekarena.storage.from("tournament-files").createSignedUrl(path, 60 * 60 * 24 * 365);
     return data?.signedUrl ?? null;
   } catch (e) {
     console.error("Storage error:", e);
@@ -279,16 +276,20 @@ function getWeekDateRange(): { min: string; max: string } {
 export function TournamentUploadForm({
   cancelTo = "/organizer/tournaments",
   successTo = "/organizer/tournaments",
+  gamesOverride,
 }: {
   cancelTo?: string;
   successTo?: string;
+  gamesOverride?: Game[];
 } = {}) {
   const navigate = useNavigate();
   const { player, loading: roleLoading } = useGeekarenaRole();
   const isAdmin = player?.role === "admin";
+  const isManager = player?.role === "tcg_manager";
 
   const fetchOverview = useServerFn(getOrganizerOverview);
   const fetchStores = useServerFn(listActiveStores);
+  const fetchManagerStores = useServerFn(getManagerResponsibleStores);
   const submitUpload = useServerFn(uploadTournamentResults);
   const lookupTags = useServerFn(lookupPlayerTags);
 
@@ -296,6 +297,7 @@ export function TournamentUploadForm({
   const [step, setStep] = useState<1 | 2>(1);
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [managerStores, setManagerStores] = useState<(Store & { available_game_ids: string[] })[]>([]);
   const [homeStore, setHomeStore] = useState<Store | null>(null);
 
   const [storeId, setStoreId] = useState<string>("");
@@ -318,11 +320,14 @@ export function TournamentUploadForm({
         const { data: sess } = await geekarena.auth.getSession();
         if (!sess.session) return;
         const ov = await fetchOverview();
-        setGames(ov.games as Game[]);
+        setGames(gamesOverride !== undefined ? gamesOverride : (ov.games as Game[]));
         setHomeStore((ov.homeStore as Store) ?? null);
         if (isAdmin) {
           const s = await fetchStores();
           setStores(s.stores as Store[]);
+        } else if (isManager) {
+          const res: any = await fetchManagerStores();
+          setManagerStores((res.stores ?? []) as (Store & { available_game_ids: string[] })[]);
         } else if (ov.homeStore) {
           setStoreId((ov.homeStore as Store).id);
         }
@@ -339,8 +344,23 @@ export function TournamentUploadForm({
   const colMap = selectedGame ? TCG_COLUMN_MAP[selectedGame.slug] : undefined;
   const tcgSupported = colMap && colMap.platform !== "unknown";
 
+  const availableStoresForGame = useMemo(() => {
+    if (!isManager) return stores;
+    if (!gameId) return managerStores;
+    return managerStores.filter((s) => s.available_game_ids.includes(gameId));
+  }, [isManager, managerStores, stores, gameId]);
+
+  useEffect(() => {
+    if (!isManager) return;
+    if (storeId && !availableStoresForGame.some((s) => s.id === storeId)) {
+      setStoreId("");
+    }
+  }, [gameId, availableStoresForGame, isManager, storeId]);
+
   const selectedStore =
-    stores.find((s) => s.id === storeId) ?? (homeStore?.id === storeId ? homeStore : null);
+    stores.find((s) => s.id === storeId) ??
+    managerStores.find((s) => s.id === storeId) ??
+    (homeStore?.id === storeId ? homeStore : null);
 
   const qualifying = useMemo(() => {
     if (!date) return null;
@@ -352,9 +372,7 @@ export function TournamentUploadForm({
 
   const canContinue = Boolean(storeId && gameId && date && tcgSupported);
   const totalErrors = rows.filter((r) => r.error).length;
-  const newPlayers = rows.filter(
-    (r) => !r.error && !registeredTags.has(r.geek_tag),
-  ).length;
+  const newPlayers = rows.filter((r) => !r.error && !registeredTags.has(r.geek_tag)).length;
   const canSubmit = rows.length > 0 && totalErrors === 0 && !saving;
 
   const handleFile = async (file: File | null) => {
@@ -381,9 +399,7 @@ export function TournamentUploadForm({
       const rawParsed = parseTable(tableRows, colMap);
       const parsed = normalizarPuntos(rawParsed);
       if (parsed.length === 0) {
-        toast.error(
-          "No se encontraron filas válidas. Verifica las columnas requeridas.",
-        );
+        toast.error("No se encontraron filas válidas. Verifica las columnas requeridas.");
         setParsing(false);
         return;
       }
@@ -394,10 +410,7 @@ export function TournamentUploadForm({
         const res = await lookupTags({ data: { tags } });
         setRegisteredTags(new Set(res.existing));
       } catch (err) {
-        toast.error(
-          "Error al verificar jugadores: " +
-            String((err as Error).message ?? err),
-        );
+        toast.error("Error al verificar jugadores: " + String((err as Error).message ?? err));
       }
     } catch (err) {
       toast.error(String((err as Error).message ?? err));
@@ -416,9 +429,7 @@ export function TournamentUploadForm({
   };
 
   const updateRow = <K extends keyof ParsedRow>(i: number, key: K, value: ParsedRow[K]) => {
-    setRows((prev) =>
-      prev.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)),
-    );
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
   };
 
   const handleSubmit = async () => {
@@ -438,9 +449,7 @@ export function TournamentUploadForm({
       }));
 
       const tournamentId = crypto.randomUUID();
-      const csvUrl = selectedFile
-        ? await uploadFileToStorage(selectedFile, tournamentId)
-        : null;
+      const csvUrl = selectedFile ? await uploadFileToStorage(selectedFile, tournamentId) : null;
 
       const result = await submitUpload({
         data: {
@@ -453,10 +462,7 @@ export function TournamentUploadForm({
         },
       });
       if (result && (result as { ok?: boolean }).ok === false) {
-        toast.error(
-          (result as { message?: string }).message ??
-            "No se pudo subir el torneo.",
-        );
+        toast.error((result as { message?: string }).message ?? "No se pudo subir el torneo.");
         return;
       }
       toast.success("Torneo enviado correctamente. Un administrador lo revisará pronto.");
@@ -464,7 +470,8 @@ export function TournamentUploadForm({
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
       if (msg.toLowerCase().includes("ya existe")) toast.error(msg);
-      else if (msg.toLowerCase().includes("fetch")) toast.error("Error al subir el torneo. Verifica tu conexión e intenta de nuevo.");
+      else if (msg.toLowerCase().includes("fetch"))
+        toast.error("Error al subir el torneo. Verifica tu conexión e intenta de nuevo.");
       else toast.error(msg);
     } finally {
       setSaving(false);
@@ -479,7 +486,7 @@ export function TournamentUploadForm({
     );
   }
 
-  if (!isAdmin && !homeStore) {
+  if (!isAdmin && !isManager && !homeStore) {
     return (
       <div className="glass rounded-2xl p-8 text-sm text-gray-300">
         No tienes una tienda asignada. Contacta al administrador.
@@ -490,28 +497,22 @@ export function TournamentUploadForm({
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Subir Torneo · Paso {step} de 2
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Subir Torneo · Paso {step} de 2</p>
         <h1 className="mt-2 text-3xl font-bold text-white">
           {step === 1 ? "Detalles del torneo" : "Resultados del torneo"}
         </h1>
         {step === 1 && (
-          <p className="mt-1 text-sm text-gray-400">
-            Se creará como Borrador hasta que un administrador lo apruebe.
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Se creará como Borrador hasta que un administrador lo apruebe.</p>
         )}
       </header>
 
       {step === 1 && (
         <section className="glass space-y-5 rounded-2xl p-6">
           <div className="space-y-2">
-            <Label className="text-xs text-gray-400">
-              {isAdmin ? "Seleccionar tienda *" : "Tienda"}
-            </Label>
-            {isAdmin ? (
+            <Label className="text-xs text-gray-400">{isAdmin || isManager ? "Seleccionar tienda *" : "Tienda"}</Label>
+            {isAdmin || isManager ? (
               <StoreCombobox
-                stores={stores}
+                stores={isManager ? availableStoresForGame : stores}
                 value={storeId}
                 onChange={setStoreId}
               />
@@ -520,10 +521,8 @@ export function TournamentUploadForm({
                 Tienda: {homeStore?.name} — {homeStore?.city ?? "—"}
               </div>
             )}
-            {isAdmin && !storeId && (
-              <p className="text-xs text-amber-400">
-                Debes seleccionar una tienda para continuar
-              </p>
+            {(isAdmin || isManager) && !storeId && (
+              <p className="text-xs text-amber-400">Debes seleccionar una tienda para continuar</p>
             )}
           </div>
 
@@ -555,6 +554,7 @@ export function TournamentUploadForm({
                       max={max}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      className="[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                     <p className="mt-1 text-xs text-gray-500">
                       Solo se permiten torneos de la semana actual ({min} al {max}).
@@ -581,10 +581,7 @@ export function TournamentUploadForm({
           )}
 
           <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => navigate({ to: cancelTo })}
-            >
+            <Button variant="ghost" onClick={() => navigate({ to: cancelTo })}>
               Cancelar
             </Button>
             <Button onClick={() => setStep(2)} disabled={!canContinue}>
@@ -656,9 +653,7 @@ export function TournamentUploadForm({
                 <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/30">
                   <UploadCloud size={28} className="text-primary" />
                 </div>
-                <p className="text-sm font-semibold text-white">
-                  Arrastra tu archivo aquí, o haz clic para buscar
-                </p>
+                <p className="text-sm font-semibold text-white">Arrastra tu archivo aquí, o haz clic para buscar</p>
                 <p className="mt-1 text-xs text-gray-500">
                   Formato detectado: {colMap?.platform === "bandai" ? "Bandai TCG+" : "Limitless"}
                 </p>
@@ -680,11 +675,12 @@ export function TournamentUploadForm({
                         {fileName}
                       </span>
                       <span className="text-xs text-gray-400 mt-0.5">
-                        {parsing
-                          ? "Procesando…"
-                          : `${rows.length} participantes`}
+                        {parsing ? "Procesando…" : `${rows.length} participantes`}
                         {!parsing && newPlayers > 0 && (
-                          <> · <span className="text-orange-400">{newPlayers} nuevos</span></>
+                          <>
+                            {" "}
+                            · <span className="text-orange-400">{newPlayers} nuevos</span>
+                          </>
                         )}
                       </span>
                     </div>
@@ -731,12 +727,8 @@ export function TournamentUploadForm({
                                   className="w-full rounded bg-transparent px-2 py-1 font-medium text-white outline-none ring-inset focus:bg-white/10 focus:ring-1 focus:ring-primary"
                                 />
                               </td>
-                              <td className="px-3 py-2.5 text-xs text-gray-500 font-mono">
-                                {r.membership_id ?? "—"}
-                              </td>
-                              <td className="px-3 py-2 text-right font-mono text-white">
-                                {r.match_points ?? "—"}
-                              </td>
+                              <td className="px-3 py-2.5 text-xs text-gray-500 font-mono">{r.membership_id ?? "—"}</td>
+                              <td className="px-3 py-2 text-right font-mono text-white">{r.match_points ?? "—"}</td>
                               <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">
                                 {r.omw_percentage != null ? `${r.omw_percentage}%` : "—"}
                               </td>
@@ -817,17 +809,12 @@ function StoreCombobox({
           className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm text-white transition hover:border-primary/40"
         >
           <span className={selected ? "text-white" : "text-gray-400"}>
-            {selected
-              ? `${selected.name} — ${selected.city ?? "—"}`
-              : "Buscar y seleccionar tienda..."}
+            {selected ? `${selected.name} — ${selected.city ?? "—"}` : "Buscar y seleccionar tienda..."}
           </span>
           <ChevronsUpDown size={14} className="ml-2 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0"
-        align="start"
-      >
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command
           filter={(val, search) => {
             return val.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
@@ -848,10 +835,7 @@ function StoreCombobox({
                       setOpen(false);
                     }}
                   >
-                    <Check
-                      size={14}
-                      className={`mr-2 ${value === s.id ? "opacity-100" : "opacity-0"}`}
-                    />
+                    <Check size={14} className={`mr-2 ${value === s.id ? "opacity-100" : "opacity-0"}`} />
                     {label}
                   </CommandItem>
                 );
@@ -863,4 +847,3 @@ function StoreCombobox({
     </Popover>
   );
 }
-
