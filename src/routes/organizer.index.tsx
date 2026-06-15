@@ -68,14 +68,16 @@ function OrganizerAnalytics() {
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
-  const refresh = async (df?: string, dt?: string) => {
+  const refresh = async (df?: string, dt?: string, gameId?: string | null) => {
     setLoading(true);
     try {
       const res = await fetchAnalytics({
         data: {
           date_from: df || undefined,
           date_to: dt || undefined,
+          game_id: gameId || undefined,
         },
       });
       setData(res);
@@ -95,7 +97,13 @@ function OrganizerAnalytics() {
   }, [player?.id]);
 
   const handleApplyRange = () => {
-    void refresh(dateFrom, dateTo);
+    void refresh(dateFrom, dateTo, selectedGameId);
+  };
+
+  const handleTabChange = (gameId: string) => {
+    const gid = gameId === "all" ? null : gameId;
+    setSelectedGameId(gid);
+    void refresh(dateFrom, dateTo, gid);
   };
 
   if (roleLoading || (loading && !data)) {
