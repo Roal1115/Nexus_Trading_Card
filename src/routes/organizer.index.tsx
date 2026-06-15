@@ -21,10 +21,7 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
   Cell,
-  Legend,
 } from "recharts";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getStoreAnalytics } from "@/lib/geekarena-organizer.functions";
@@ -125,11 +122,6 @@ function OrganizerAnalytics() {
     );
   }
 
-  const donutData = Object.entries(data.category_summary).map(([key, value]) => ({
-    name: CATEGORY_LABELS[key] ?? key,
-    value,
-    key,
-  }));
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -189,10 +181,10 @@ function OrganizerAnalytics() {
 
       {/* Jugadores totales + Desglose por TCG */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-lg border bg-card p-6 flex flex-col items-center justify-center text-center">
-          <Users className="h-8 w-8 text-primary mb-2" />
-          <p className="text-5xl font-bold">{data.total_players}</p>
-          <p className="text-sm text-muted-foreground mt-2">
+        <div className="glass col-span-1 flex flex-col items-center justify-center rounded-2xl p-6 sm:col-span-1">
+          <Users size={28} className="mb-2 text-primary" />
+          <div className="text-4xl font-bold text-white">{data.total_players}</div>
+          <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">
             Jugadores totales en el periodo
           </p>
         </div>
@@ -226,10 +218,10 @@ function OrganizerAnalytics() {
                   radius={[4, 4, 0, 0]}
                   isAnimationActive
                   animationDuration={800}
-                  activeBar={{ fill: "#a78bfa", stroke: "#a78bfa" }}
+                  activeBar={{ fill: "#fb923c", stroke: "#fb923c" }}
                 >
                   {data.game_breakdown.map((_, i) => (
-                    <Cell key={i} fill="#8b5cf6" style={{ fill: "#8b5cf6" }} />
+                    <Cell key={i} fill="#f97316" style={{ fill: "#f97316" }} />
                   ))}
                 </Bar>
               </BarChart>
@@ -298,41 +290,24 @@ function OrganizerAnalytics() {
               </PopoverContent>
             </Popover>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={donutData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={70}
-                paddingAngle={2}
-                isAnimationActive
-                animationDuration={800}
-                label={({ name, value }) => (value > 0 ? `${name}: ${value}` : "")}
-                labelLine={false}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(["recurrente", "ocasional", "una_vez", "inactivo"] as const).map((key) => (
+              <div
+                key={key}
+                className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center"
+                style={{ borderColor: `${CATEGORY_COLORS[key]}30` }}
               >
-                {donutData.map((entry) => (
-                  <Cell key={entry.key} fill={CATEGORY_COLORS[entry.key] ?? "#888"} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  background: "#1f2937",
-                  border: "1px solid #4b5563",
-                  borderRadius: 8,
-                  fontSize: 12,
-                  color: "#f9fafb",
-                  padding: "8px 12px",
-                }}
-                labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
-                itemStyle={{ color: "#e5e7eb" }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+                <div
+                  className="mb-2 flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${CATEGORY_COLORS[key]}20` }}
+                >
+                  <Users size={18} style={{ color: CATEGORY_COLORS[key] }} />
+                </div>
+                <p className="text-3xl font-bold text-white">{data.category_summary[key]}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{CATEGORY_LABELS[key]}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Top jugadores */}
