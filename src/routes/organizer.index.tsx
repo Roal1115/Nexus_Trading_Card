@@ -228,22 +228,27 @@ function OrganizerAnalytics() {
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={data.attendance_trend}>
             <defs>
-              <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+              <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="week_start" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-            <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" />
-            <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+            <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+            <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+            <Tooltip
+              contentStyle={{ background: "#1f2937", border: "1px solid #ffffff30", fontSize: 12, color: "#fff" }}
+              labelStyle={{ color: "#fff" }}
+            />
             <Area
               type="monotone"
               dataKey="players"
-              stroke="hsl(var(--primary))"
-              fillOpacity={1}
-              fill="url(#colorAttendance)"
+              name="Jugadores"
+              stroke="#f97316"
+              strokeWidth={2}
+              fill="url(#attendanceGradient)"
               isAnimationActive
+              animationDuration={1000}
             />
           </AreaChart>
         </ResponsiveContainer>
