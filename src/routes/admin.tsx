@@ -56,17 +56,10 @@ function AdminLayout() {
             title: "Administración",
             items: [
               {
-                to: "/admin",
-                label: "Torneos Pendientes",
+                to: "/admin/tournaments-panel",
+                label: "Torneos",
                 icon: <ShieldCheck size={16} />,
-                exact: true,
-                badge: counts?.pending ?? 0,
-              },
-              {
-                to: "/admin/approved",
-                label: "Torneos Aprobados",
-                icon: <CheckCircle2 size={16} />,
-                badge: counts?.approvedActive ?? 0,
+                badge: (counts?.pending ?? 0) + (counts?.approvedActive ?? 0),
               },
               { to: "/admin/history", label: "Historial de Torneos", icon: <History size={16} /> },
               { to: "/admin/stores", label: "Tiendas y Staff", icon: <Store size={16} /> },

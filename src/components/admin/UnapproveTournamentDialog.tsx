@@ -17,10 +17,18 @@ export function UnapproveTournamentDialog({
   tournament,
   onClose,
   onConfirm,
+  title = "Des-aprobar torneo",
+  description,
+  confirmLabel = "Des-aprobar",
+  icon,
 }: {
   tournament: { id: string; label?: string } | null;
   onClose: () => void;
   onConfirm: (reason: string) => Promise<void>;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  icon?: React.ReactNode;
 }) {
   const open = !!tournament;
   const [reason, setReason] = useState("");
@@ -53,12 +61,16 @@ export function UnapproveTournamentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <XCircle size={18} className="text-red-400" /> Des-aprobar torneo
+            {icon ?? <XCircle size={18} className="text-red-400" />} {title}
           </DialogTitle>
           <DialogDescription>
-            {tournament?.label
-              ? `${tournament.label}. Este torneo volverá a estado borrador y se notificará al organizador.`
-              : "Este torneo volverá a estado borrador y se notificará al organizador."}
+            {description
+              ? tournament?.label
+                ? `${tournament.label}. ${description}`
+                : description
+              : tournament?.label
+                ? `${tournament.label}. Este torneo volverá a estado borrador y se notificará al organizador.`
+                : "Este torneo volverá a estado borrador y se notificará al organizador."}
           </DialogDescription>
         </DialogHeader>
 
@@ -89,7 +101,7 @@ export function UnapproveTournamentDialog({
             {saving ? (
               <Loader2 size={14} className="mr-1 animate-spin" />
             ) : null}
-            Des-aprobar
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
