@@ -847,7 +847,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       : { data: [] as Array<{ player_id: string; tournament_id: string }> };
 
     // Build per-player list of tournament dates (all-time, for inactivity calc)
-    const playerDatesAll = new Map<string, string[]>();
+    let playerDatesAll = new Map<string, string[]>();
     for (const r of allResults ?? []) {
       const t = tournamentMap.get(r.tournament_id);
       if (!t) continue;
