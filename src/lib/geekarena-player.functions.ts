@@ -200,7 +200,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       .from("tournaments")
       .select("id, tournament_date, qualifying_month, qualifying_year, qualifying_semester, game_id, store_id, status")
       .eq("id", data.tournament_id)
-      .eq("status", "PUBLISHED")
+      .in("status", ["APPROVED", "PUBLISHED"])
       .single();
 
     if (!tournament) throw new Error("Torneo no encontrado");
