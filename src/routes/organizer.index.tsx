@@ -318,7 +318,18 @@ function OrganizerAnalytics() {
                   <Cell key={entry.key} fill={CATEGORY_COLORS[entry.key] ?? "#888"} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+              <Tooltip
+                contentStyle={{
+                  background: "#1f2937",
+                  border: "1px solid #4b5563",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: "#f9fafb",
+                  padding: "8px 12px",
+                }}
+                labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+                itemStyle={{ color: "#e5e7eb" }}
+              />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
