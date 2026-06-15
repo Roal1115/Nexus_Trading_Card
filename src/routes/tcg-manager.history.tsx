@@ -1,40 +1,60 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Filter, History, Loader2 } from "lucide-react";
-import { getManagerHistory } from "@/lib/geekarena-manager.functions";
+import { Filter, History, Info, Eye } from "lucide-react";
+import { FileLink } from "@/components/ui/FileLink";
+import {
+  getManagerTournamentHistory,
+  getManagerFilterOptions,
+} from "@/lib/geekarena-manager.functions";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/tcg-manager/history")({
-  head: () => ({ meta: [{ title: "Mi Historial — TCG Manager" }] }),
-  component: HistoryPage,
+  head: () => ({ meta: [{ title: "Historial de Torneos — TCG Manager" }] }),
+  component: ManagerHistoryPage,
 });
 
-type Entry = {
+type Row = {
   id: string;
-  action: string;
+  tournament_date: string;
+  status: string;
+  csv_url: string | null;
+  approved_at: string | null;
+  published_at: string | null;
   created_at: string;
-  reason: string | null;
-  tournament_id: string | null;
-  tournament_date: string | null;
+  rejection_reason?: string | null;
   game_name: string;
   store_name: string;
   store_city: string;
-  tournament_status: string | null;
+  approved_by_tag: string | null;
+  approved_by_role: string | null;
+  participants: number;
 };
 
 type Filters = {
-  action_type: string;
+  status: string;
+  game_id: string;
+  store_id: string;
+  season_id: string;
   date_from: string;
   date_to: string;
   page: number;
 };
 
-const INITIAL: Filters = { action_type: "", date_from: "", date_to: "", page: 1 };
-
-const ACTION_INFO: Record<string, { label: string; icon: string; color: string }> = {
-  TOURNAMENT_APPROVED: { label: "Aprobado", icon: "✅", color: "text-green-400" },
-  TOURNAMENT_REJECTED: { label: "Rechazado", icon: "❌", color: "text-red-400" },
-  APPROVAL_UNDONE: { label: "Aprobación deshecha", icon: "↩️", color: "text-yellow-400" },
+const INITIAL: Filters = {
+  status: "",
+  game_id: "",
+  store_id: "",
+  season_id: "",
+  date_from: "",
+  date_to: "",
+  page: 1,
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -47,23 +67,37 @@ const STATUS_COLOR: Record<string, string> = {
   APPROVED: "bg-green-500/15 text-green-300 border-green-400/30",
   PUBLISHED: "bg-primary/15 text-primary border-primary/30",
 };
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Admin",
+  tcg_manager: "TCG Manager",
+  organizer: "Organizador",
+  player: "Jugador",
+};
 
-function fmtDateTime(s: string) {
+function fmtDate(s?: string | null) {
+  if (!s) return "—";
   return new Date(s).toLocaleDateString("es-MX", {
     day: "numeric",
     month: "short",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }
 
-function HistoryPage() {
+function ManagerHistoryPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>(INITIAL);
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
-  const fetchHist = useServerFn(getManagerHistory);
+  const [opts, setOpts] = useState<{
+    games: { id: string; name: string }[];
+    stores: { id: string; name: string; city: string | null }[];
+    seasons: { id: string; name: string; status: string }[];
+  }>({ games: [], stores: [], seasons: [] });
+
+  const fetchHist = useServerFn(getManagerTournamentHistory);
+  const fetchOpts = useServerFn(getManagerFilterOptions);
 
   const load = async (overrides: Partial<Filters> = {}) => {
     const f = { ...filters, ...overrides };
@@ -72,37 +106,68 @@ function HistoryPage() {
     try {
       const res = await fetchHist({
         data: {
-          ...(f.action_type && { action_type: f.action_type }),
+          ...(f.status && { status: f.status }),
+          ...(f.game_id && { game_id: f.game_id }),
+          ...(f.store_id && { store_id: f.store_id }),
+          ...(f.season_id && { season_id: f.season_id }),
           ...(f.date_from && { date_from: f.date_from }),
           ...(f.date_to && { date_to: f.date_to }),
           page: f.page,
         },
       });
-      setEntries(res.entries as Entry[]);
+      setRows(res.tournaments as Row[]);
       setTotal(res.total);
+      setStats(res.stats ?? {});
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    fetchOpts().then(setOpts).catch(() => {});
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const totalPages = Math.max(1, Math.ceil(total / 25));
-  const activeFilters = [filters.action_type, filters.date_from, filters.date_to].filter(Boolean).length;
+  const activeFilters = [
+    filters.status,
+    filters.game_id,
+    filters.store_id,
+    filters.season_id,
+    filters.date_from,
+    filters.date_to,
+  ].filter(Boolean).length;
+
+  const grandTotal =
+    (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) + (stats.PUBLISHED ?? 0);
 
   return (
     <div className="space-y-6">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">TCG Manager</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Mi Historial</h1>
+        <h1 className="mt-2 text-3xl font-bold text-white">Historial de Torneos</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Torneos que has aprobado, rechazado o procesado.
+          Torneos de los TCGs que administras.
         </p>
       </header>
 
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        {[
+          { label: "Total", value: grandTotal, color: "text-white" },
+          { label: "Borradores", value: stats.DRAFT ?? 0, color: "text-gray-300" },
+          { label: "Aprobados", value: stats.APPROVED ?? 0, color: "text-green-400" },
+          { label: "Publicados", value: stats.PUBLISHED ?? 0, color: "text-primary" },
+        ].map((s) => (
+          <div key={s.label} className="glass rounded-2xl p-3 sm:p-4">
+            <div className="text-xs text-gray-400">{s.label}</div>
+            <div className={`mt-1 text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
       <div className="glass rounded-2xl p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-3 text-sm text-gray-300">
           <Filter size={14} />
@@ -114,20 +179,51 @@ function HistoryPage() {
             <button
               onClick={() => load({ ...INITIAL })}
               className="ml-auto text-xs text-gray-400 hover:text-white border border-white/10 rounded-lg px-2 py-1"
-            >
-              Limpiar
-            </button>
+            >Limpiar</button>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           <select
-            value={filters.action_type}
-            onChange={(e) => load({ action_type: e.target.value, page: 1 })}
+            value={filters.status}
+            onChange={(e) => load({ status: e.target.value, page: 1 })}
             className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
           >
-            <option value="">Todas las acciones</option>
-            <option value="approved">Aprobados</option>
-            <option value="rejected">Rechazados</option>
+            <option value="">Todos los estados</option>
+            <option value="DRAFT">DRAFT</option>
+            <option value="APPROVED">APPROVED</option>
+            <option value="PUBLISHED">PUBLISHED</option>
+          </select>
+          <select
+            value={filters.game_id}
+            onChange={(e) => load({ game_id: e.target.value, page: 1 })}
+            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">Todos los TCG</option>
+            {opts.games.map((g) => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+          <select
+            value={filters.store_id}
+            onChange={(e) => load({ store_id: e.target.value, page: 1 })}
+            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">Todas las tiendas</option>
+            {opts.stores.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}{s.city ? ` — ${s.city}` : ""}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.season_id}
+            onChange={(e) => load({ season_id: e.target.value, page: 1 })}
+            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">Todas las temporadas</option>
+            {opts.seasons.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
           </select>
           <input
             type="date"
@@ -148,94 +244,148 @@ function HistoryPage() {
         <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 py-3">
           <div className="flex items-center gap-2">
             <History size={16} className="text-primary" />
-            <h2 className="text-sm font-semibold text-white">Tus acciones</h2>
+            <h2 className="text-sm font-semibold text-white">Torneos</h2>
           </div>
           <div className="text-xs text-gray-400">
             {loading ? "Cargando..." : `${total.toLocaleString("es-MX")} registros`}
           </div>
         </div>
 
-        {/* Desktop table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-white/5 text-xs uppercase tracking-wider text-gray-400">
+        {/* Desktop */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-white/5 uppercase tracking-wider text-gray-400">
               <tr>
-                <th className="text-left px-4 py-2 font-medium">Fecha acción</th>
-                <th className="text-left px-4 py-2 font-medium">Acción</th>
-                <th className="text-left px-4 py-2 font-medium">TCG</th>
-                <th className="text-left px-4 py-2 font-medium">Tienda</th>
-                <th className="text-left px-4 py-2 font-medium">Fecha torneo</th>
-                <th className="text-left px-4 py-2 font-medium">Estado actual</th>
+                <th className="text-left px-3 py-2 font-medium">Fecha torneo</th>
+                <th className="text-left px-3 py-2 font-medium">TCG</th>
+                <th className="text-left px-3 py-2 font-medium">Tienda</th>
+                <th className="text-left px-3 py-2 font-medium">Ciudad</th>
+                <th className="text-left px-3 py-2 font-medium">Part.</th>
+                <th className="text-left px-3 py-2 font-medium">Estado</th>
+                <th className="text-left px-3 py-2 font-medium">Subido</th>
+                <th className="text-left px-3 py-2 font-medium">Aprobado por</th>
+                <th className="text-left px-3 py-2 font-medium">Aprobado</th>
+                <th className="text-left px-3 py-2 font-medium">Publicado</th>
+                <th className="text-left px-3 py-2 font-medium">CSV</th>
+                <th className="text-left px-3 py-2 font-medium">Acción</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Cargando...</td></tr>
-              ) : entries.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Sin registros.</td></tr>
-              ) : entries.map((e) => {
-                const info = ACTION_INFO[e.action] ?? { label: e.action, icon: "•", color: "text-gray-400" };
-                return (
-                  <tr key={e.id} className="border-t border-white/5">
-                    <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{fmtDateTime(e.created_at)}</td>
-                    <td className="px-4 py-3">
-                      <div className={info.color}>{info.icon} {info.label}</div>
-                      {e.action === "TOURNAMENT_REJECTED" && e.reason && (
-                        <div className="text-xs text-red-400/80 mt-0.5">"{e.reason}"</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-300">{e.game_name}</td>
-                    <td className="px-4 py-3 text-gray-300">
-                      {e.store_name}
-                      <span className="text-gray-500"> · {e.store_city}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{e.tournament_date ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      {e.tournament_status ? (
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_COLOR[e.tournament_status] ?? STATUS_COLOR.DRAFT}`}>
-                          {STATUS_LABEL[e.tournament_status] ?? e.tournament_status}
-                        </span>
-                      ) : <span className="text-gray-500">—</span>}
-                    </td>
-                  </tr>
-                );
-              })}
+                <tr><td colSpan={12} className="px-3 py-8 text-center text-gray-400">Cargando...</td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={12} className="px-3 py-8 text-center text-gray-400">Sin registros.</td></tr>
+              ) : rows.map((r) => (
+                <tr key={r.id} className="border-t border-white/5">
+                  <td className="px-3 py-2 text-white whitespace-nowrap">{r.tournament_date}</td>
+                  <td className="px-3 py-2 text-gray-300">{r.game_name}</td>
+                  <td className="px-3 py-2 text-gray-300">{r.store_name}</td>
+                  <td className="px-3 py-2 text-gray-400">{r.store_city}</td>
+                  <td className="px-3 py-2 text-gray-300">{r.participants}</td>
+                  <td className="px-3 py-2">
+                    {r.status === "DRAFT" && r.rejection_reason ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-help items-center gap-1 rounded-full border border-red-400/40 bg-red-500/15 px-2 py-0.5 font-semibold text-red-200">
+                              Rechazado <Info size={10} />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-xs font-semibold">Motivo:</p>
+                            <p className="mt-1 text-xs">{r.rejection_reason}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className={`px-2 py-0.5 rounded-full border ${STATUS_COLOR[r.status] ?? STATUS_COLOR.DRAFT}`}>
+                        {STATUS_LABEL[r.status] ?? r.status}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.created_at)}</td>
+                  <td className="px-3 py-2 text-gray-300">
+                    {r.approved_by_tag ? (
+                      <span className="inline-flex items-center gap-1">
+                        {r.approved_by_tag}
+                        {r.approved_by_role && (
+                          <Badge variant="outline" className="text-[10px] px-1 py-0">
+                            {ROLE_LABEL[r.approved_by_role] ?? r.approved_by_role}
+                          </Badge>
+                        )}
+                      </span>
+                    ) : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.approved_at)}</td>
+                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.published_at)}</td>
+                  <td className="px-3 py-2">
+                    <FileLink url={r.csv_url} />
+                  </td>
+                  <td className="px-3 py-2">
+                    <Link
+                      to="/tcg-manager/tournaments/$id"
+                      params={{ id: r.id }}
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Eye size={12} /> Detalle
+                    </Link>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-white/5">
+        {/* Mobile + tablet cards */}
+        <div className="lg:hidden divide-y divide-white/5">
           {loading ? (
             <p className="px-4 py-6 text-center text-sm text-gray-400">Cargando...</p>
-          ) : entries.length === 0 ? (
+          ) : rows.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-gray-400">Sin registros.</p>
-          ) : entries.map((e) => {
-            const info = ACTION_INFO[e.action] ?? { label: e.action, icon: "•", color: "text-gray-400" };
-            return (
-              <div key={e.id} className="px-4 py-3 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm ${info.color}`}>{info.icon} {info.label}</span>
-                  <span className="text-xs text-gray-500">{fmtDateTime(e.created_at)}</span>
-                </div>
-                {e.action === "TOURNAMENT_REJECTED" && e.reason && (
-                  <div className="text-xs text-red-400/80">"{e.reason}"</div>
+          ) : rows.map((r) => (
+            <div key={r.id} className="px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">{r.game_name}</span>
+                {r.status === "DRAFT" && r.rejection_reason ? (
+                  <span className="text-xs inline-flex items-center gap-1 rounded-full border border-red-400/40 bg-red-500/15 px-2 py-0.5 font-semibold text-red-200">
+                    Rechazado
+                  </span>
+                ) : (
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_COLOR[r.status] ?? STATUS_COLOR.DRAFT}`}>
+                    {STATUS_LABEL[r.status] ?? r.status}
+                  </span>
                 )}
-                <div className="text-sm text-white">{e.game_name}</div>
-                <div className="text-xs text-gray-400">
-                  {e.store_name} · {e.store_city}
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-500">Fecha torneo: {e.tournament_date ?? "—"}</span>
-                  {e.tournament_status && (
-                    <span className={`px-2 py-0.5 rounded-full border ${STATUS_COLOR[e.tournament_status] ?? STATUS_COLOR.DRAFT}`}>
-                      {STATUS_LABEL[e.tournament_status] ?? e.tournament_status}
-                    </span>
-                  )}
-                </div>
               </div>
-            );
-          })}
+
+              <div className="text-xs text-gray-400">
+                {r.store_name} · {r.store_city} · {new Date(r.tournament_date + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div><span className="text-gray-500">Participantes:</span> <span className="text-gray-200">{r.participants}</span></div>
+                <div><span className="text-gray-500">Subido:</span> <span className="text-gray-200">{new Date(r.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}</span></div>
+                {r.approved_at && (
+                  <div><span className="text-gray-500">Aprobado:</span> <span className="text-gray-200">{new Date(r.approved_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}</span></div>
+                )}
+                {r.approved_by_tag && (
+                  <div className="col-span-2"><span className="text-gray-500">Por:</span> <span className="text-gray-200">{r.approved_by_tag}</span> {r.approved_by_role && (<span className="text-[10px] text-gray-400">({r.approved_by_role === "admin" ? "Admin" : "Manager"})</span>)}</div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <FileLink url={r.csv_url} />
+                <button onClick={() => navigate({ to: "/tcg-manager/tournaments/$id", params: { id: r.id } })} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                  <Eye size={12} /> Ver detalle
+                </button>
+              </div>
+
+              {r.rejection_reason && (
+                <div className="text-xs text-red-400/80 bg-red-500/10 rounded-lg px-2 py-1">
+                  Motivo: "{r.rejection_reason}"
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         {totalPages > 1 && (

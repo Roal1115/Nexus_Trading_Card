@@ -113,6 +113,9 @@ export const updateHomeStore = createServerFn({ method: "POST" })
   .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
+    if (player.role !== "admin") {
+      throw new Error("Tu tienda es asignada por el administrador. Contacta a soporte para cambios.");
+    }
     const { error } = await admin.from("players").update({ home_store_id: data.store_id }).eq("id", player.id);
     if (error) throw new Error(error.message);
     return { ok: true };
