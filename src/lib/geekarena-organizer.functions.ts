@@ -764,7 +764,7 @@ function classifyPlayer(
 export const getStoreAnalytics = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaOrganizer])
   .inputValidator(
-    (d: { store_id?: string; date_from?: string; date_to?: string }) =>
+    (d: { store_id?: string; date_from?: string; date_to?: string; game_id?: string }) =>
       z
         .object({
           store_id: z.string().uuid().optional(),
@@ -776,6 +776,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
             .string()
             .regex(/^\d{4}-\d{2}-\d{2}$/)
             .optional(),
+          game_id: z.string().uuid().optional(),
         })
         .parse(d),
   )
