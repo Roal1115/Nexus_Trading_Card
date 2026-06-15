@@ -46,6 +46,7 @@ import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
+import { Route as OrganizerTournamentsIdRouteImport } from './routes/organizer.tournaments.$id'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 
@@ -235,6 +236,11 @@ const TcgManagerTournamentsIdRoute = TcgManagerTournamentsIdRouteImport.update({
   path: '/tournaments/$id',
   getParentRoute: () => TcgManagerRoute,
 } as any)
+const OrganizerTournamentsIdRoute = OrganizerTournamentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => OrganizerTournamentsRoute,
+} as any)
 const AdminTournamentsIdRoute = AdminTournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
@@ -271,7 +277,7 @@ export interface FileRoutesByFullPath {
   '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/store': typeof OrganizerStoreRoute
-  '/organizer/tournaments': typeof OrganizerTournamentsRoute
+  '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRoutesByTo {
@@ -309,7 +316,7 @@ export interface FileRoutesByTo {
   '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/store': typeof OrganizerStoreRoute
-  '/organizer/tournaments': typeof OrganizerTournamentsRoute
+  '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
@@ -323,6 +330,7 @@ export interface FileRoutesByTo {
   '/tcg-manager': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRoutesById {
@@ -351,7 +359,7 @@ export interface FileRoutesById {
   '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/store': typeof OrganizerStoreRoute
-  '/organizer/tournaments': typeof OrganizerTournamentsRoute
+  '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
@@ -365,6 +373,7 @@ export interface FileRoutesById {
   '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRouteTypes {
@@ -408,6 +417,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/organizer/tournaments/$id'
     | '/tcg-manager/tournaments/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -446,6 +456,7 @@ export interface FileRouteTypes {
     | '/tcg-manager'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/organizer/tournaments/$id'
     | '/tcg-manager/tournaments/$id'
   id:
     | '__root__'
@@ -487,6 +498,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/organizer/tournaments/$id'
     | '/tcg-manager/tournaments/$id'
   fileRoutesById: FileRoutesById
 }
@@ -764,6 +776,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TcgManagerTournamentsIdRouteImport
       parentRoute: typeof TcgManagerRoute
     }
+    '/organizer/tournaments/$id': {
+      id: '/organizer/tournaments/$id'
+      path: '/$id'
+      fullPath: '/organizer/tournaments/$id'
+      preLoaderRoute: typeof OrganizerTournamentsIdRouteImport
+      parentRoute: typeof OrganizerTournamentsRoute
+    }
     '/admin/tournaments/$id': {
       id: '/admin/tournaments/$id'
       path: '/tournaments/$id'
@@ -827,12 +846,23 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface OrganizerTournamentsRouteChildren {
+  OrganizerTournamentsIdRoute: typeof OrganizerTournamentsIdRoute
+}
+
+const OrganizerTournamentsRouteChildren: OrganizerTournamentsRouteChildren = {
+  OrganizerTournamentsIdRoute: OrganizerTournamentsIdRoute,
+}
+
+const OrganizerTournamentsRouteWithChildren =
+  OrganizerTournamentsRoute._addFileChildren(OrganizerTournamentsRouteChildren)
+
 interface OrganizerRouteChildren {
   OrganizerCalendarRoute: typeof OrganizerCalendarRoute
   OrganizerHistoryRoute: typeof OrganizerHistoryRoute
   OrganizerNewRoute: typeof OrganizerNewRoute
   OrganizerStoreRoute: typeof OrganizerStoreRoute
-  OrganizerTournamentsRoute: typeof OrganizerTournamentsRoute
+  OrganizerTournamentsRoute: typeof OrganizerTournamentsRouteWithChildren
   OrganizerIndexRoute: typeof OrganizerIndexRoute
 }
 
@@ -841,7 +871,7 @@ const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerHistoryRoute: OrganizerHistoryRoute,
   OrganizerNewRoute: OrganizerNewRoute,
   OrganizerStoreRoute: OrganizerStoreRoute,
-  OrganizerTournamentsRoute: OrganizerTournamentsRoute,
+  OrganizerTournamentsRoute: OrganizerTournamentsRouteWithChildren,
   OrganizerIndexRoute: OrganizerIndexRoute,
 }
 
