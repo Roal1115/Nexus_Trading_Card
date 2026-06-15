@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Loader2 } from "lucide-react";
 import { getManagerHistory } from "@/lib/geekarena-manager.functions";
 
-export const Route = createFileRoute("/tcg-manager/history")({
+export const Route = createFileRoute("/tcg-manager/my-history")({
   head: () => ({ meta: [{ title: "Mi Historial — TCG Manager" }] }),
   component: HistoryPage,
 });
