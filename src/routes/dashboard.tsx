@@ -368,7 +368,14 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{t.store}</p>
+                      <p className="text-sm font-semibold text-white truncate">
+                        {t.store}
+                        {t.tournament_status === "APPROVED" && (
+                          <span className="ml-2 inline-block rounded bg-yellow-500/15 px-1.5 py-0.5 text-[10px] font-medium text-yellow-300 align-middle">
+                            Pendiente
+                          </span>
+                        )}
+                      </p>
                       <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                         <span>{t.city}</span>
                         <span>·</span>
