@@ -194,41 +194,43 @@ function LeaderboardPage() {
 
 
       <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <FilterSelect
-            label="TCG"
-            value={tcg}
-            onChange={setTcg}
-            options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
-          />
-          <FilterSelect
-            label="Ciudad"
-            value={city}
-            onChange={(v) => setCity(v)}
-            options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
-          />
-          <FilterSelect
-            label="Tienda"
-            value={storeId}
-            onChange={setStoreId}
-            options={[
-              { value: ALL, label: "Todas las tiendas" },
-              ...visibleStores.map((s) => ({
-                value: s.id,
-                label: `${s.name}${s.city ? ` — ${s.city}` : ""}`,
-              })),
-            ]}
-          />
-          <FilterSelect
-            label="Mes"
-            value={month}
-            onChange={setMonth}
-            options={[
-              { value: ALL, label: "Más reciente" },
-              ...months.map((m) => ({ value: m, label: monthLabel(m) })),
-            ]}
-          />
-          <div className="relative ml-auto min-w-[200px] flex-1 sm:flex-none">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterSelect
+              label="TCG"
+              value={tcg}
+              onChange={setTcg}
+              options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
+            />
+            <FilterSelect
+              label="Ciudad"
+              value={city}
+              onChange={(v) => setCity(v)}
+              options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
+            />
+            <FilterSelect
+              label="Tienda"
+              value={storeId}
+              onChange={setStoreId}
+              options={[
+                { value: ALL, label: "Todas las tiendas" },
+                ...visibleStores.map((s) => ({
+                  value: s.id,
+                  label: `${s.name}${s.city ? ` — ${s.city}` : ""}`,
+                })),
+              ]}
+            />
+            <FilterSelect
+              label="Mes"
+              value={month}
+              onChange={setMonth}
+              options={[
+                { value: ALL, label: "Más reciente" },
+                ...months.map((m) => ({ value: m, label: monthLabel(m) })),
+              ]}
+            />
+          </div>
+          <div className="relative w-full">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               value={search}
