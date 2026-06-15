@@ -179,7 +179,7 @@ function OrganizerAnalytics() {
         </Tabs>
       )}
 
-      {/* Jugadores totales + Desglose por TCG */}
+      {/* Jugadores totales + Clasificación de Jugadores */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass col-span-1 flex flex-col items-center justify-center rounded-2xl p-6 sm:col-span-1">
           <Users size={28} className="mb-2 text-primary" />
@@ -190,43 +190,41 @@ function OrganizerAnalytics() {
         </div>
 
         <div className="rounded-lg border bg-card p-4">
-          <h2 className="text-sm font-semibold mb-3">Desglose por TCG</h2>
-          {data.game_breakdown.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Esta tienda no tiene TCGs configurados.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={data.game_breakdown}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
-                <XAxis dataKey="game_name" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
-                <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
-                <Tooltip
-                  contentStyle={{
-                    background: "#1f2937",
-                    border: "1px solid #4b5563",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: "#f9fafb",
-                    padding: "8px 12px",
-                  }}
-                  labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
-                  itemStyle={{ color: "#e5e7eb" }}
-                  cursor={false}
-                />
-                <Bar
-                  dataKey="players"
-                  name="Jugadores"
-                  radius={[4, 4, 0, 0]}
-                  isAnimationActive
-                  animationDuration={800}
-                  activeBar={{ fill: "#fb923c", stroke: "#fb923c" }}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold">Clasificación de Jugadores</h2>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground" aria-label="Cómo se calculan">
+                  <HelpCircle className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 text-xs space-y-2">
+                <p className="font-semibold">¿Cómo se calculan las categorías?</p>
+                <p><span className="font-semibold text-green-500">Recurrente:</span> vino al menos una vez por semana, sin faltar ninguna semana del periodo.</p>
+                <p><span className="font-semibold text-yellow-500">Ocasional:</span> jugó 2+ veces, pero con semanas sin actividad.</p>
+                <p><span className="font-semibold text-blue-400">Una sola vez:</span> solo asistió una vez en el periodo.</p>
+                <p><span className="font-semibold text-gray-400">Inactivo:</span> no ha venido en más de {data.settings.inactive_threshold_days} días.</p>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(["recurrente", "ocasional", "una_vez", "inactivo"] as const).map((key) => (
+              <div
+                key={key}
+                className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center"
+                style={{ borderColor: `${CATEGORY_COLORS[key]}30` }}
+              >
+                <div
+                  className="mb-2 flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${CATEGORY_COLORS[key]}20` }}
                 >
-                  {data.game_breakdown.map((_, i) => (
-                    <Cell key={i} fill="#f97316" style={{ fill: "#f97316" }} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+                  <Users size={18} style={{ color: CATEGORY_COLORS[key] }} />
+                </div>
+                <p className="text-3xl font-bold text-white">{data.category_summary[key]}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{CATEGORY_LABELS[key]}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -270,44 +268,46 @@ function OrganizerAnalytics() {
         </ResponsiveContainer>
       </div>
 
-      {/* Donut + Top jugadores */}
+      {/* Desglose por TCG + Top jugadores */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold">Clasificación de Jugadores</h2>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="text-muted-foreground hover:text-foreground" aria-label="Cómo se calculan">
-                  <HelpCircle className="h-4 w-4" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 text-xs space-y-2">
-                <p className="font-semibold">¿Cómo se calculan las categorías?</p>
-                <p><span className="font-semibold text-green-500">Recurrente:</span> vino al menos una vez por semana, sin faltar ninguna semana del periodo.</p>
-                <p><span className="font-semibold text-yellow-500">Ocasional:</span> jugó 2+ veces, pero con semanas sin actividad.</p>
-                <p><span className="font-semibold text-blue-400">Una sola vez:</span> solo asistió una vez en el periodo.</p>
-                <p><span className="font-semibold text-gray-400">Inactivo:</span> no ha venido en más de {data.settings.inactive_threshold_days} días.</p>
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {(["recurrente", "ocasional", "una_vez", "inactivo"] as const).map((key) => (
-              <div
-                key={key}
-                className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center"
-                style={{ borderColor: `${CATEGORY_COLORS[key]}30` }}
-              >
-                <div
-                  className="mb-2 flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ backgroundColor: `${CATEGORY_COLORS[key]}20` }}
+          <h2 className="text-sm font-semibold mb-3">Desglose por TCG</h2>
+          {data.game_breakdown.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Esta tienda no tiene TCGs configurados.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={data.game_breakdown}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                <XAxis dataKey="game_name" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+                <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1f2937",
+                    border: "1px solid #4b5563",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "#f9fafb",
+                    padding: "8px 12px",
+                  }}
+                  labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: "#e5e7eb" }}
+                  cursor={false}
+                />
+                <Bar
+                  dataKey="players"
+                  name="Jugadores"
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive
+                  animationDuration={800}
+                  activeBar={{ fill: "#fb923c", stroke: "#fb923c" }}
                 >
-                  <Users size={18} style={{ color: CATEGORY_COLORS[key] }} />
-                </div>
-                <p className="text-3xl font-bold text-white">{data.category_summary[key]}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{CATEGORY_LABELS[key]}</p>
-              </div>
-            ))}
-          </div>
+                  {data.game_breakdown.map((_, i) => (
+                    <Cell key={i} fill="#f97316" style={{ fill: "#f97316" }} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Top jugadores */}
