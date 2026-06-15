@@ -276,7 +276,20 @@ function OrganizerAnalytics() {
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
-              <Pie data={donutData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2}>
+              <Pie
+                data={donutData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={70}
+                paddingAngle={2}
+                isAnimationActive
+                animationDuration={800}
+                label={({ name, value }) => (value > 0 ? `${name}: ${value}` : "")}
+                labelLine={false}
+              >
                 {donutData.map((entry) => (
                   <Cell key={entry.key} fill={CATEGORY_COLORS[entry.key] ?? "#888"} />
                 ))}
