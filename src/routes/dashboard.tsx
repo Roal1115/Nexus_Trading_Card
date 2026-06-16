@@ -570,7 +570,6 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                   />
                 </div>
               </div>
-              </div>
             ) : (
               <div className="py-16 text-center text-sm text-gray-500">No se pudo cargar el torneo.</div>
             )}
