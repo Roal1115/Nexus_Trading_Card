@@ -463,7 +463,8 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
             {loadingDetail ? (
               <div className="py-16 text-center text-sm text-gray-500">Cargando detalles…</div>
             ) : tournamentDetail ? (
-              <div className="mt-5 space-y-6">
+              <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
+                <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                   <div>
                     <p className="text-[10px] uppercase tracking-widest text-gray-500">Tienda</p>
