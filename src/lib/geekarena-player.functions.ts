@@ -251,6 +251,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
 
     return {
       tournament_id: tournament.id,
+      game_id: tournament.game_id,
       date: tournament.tournament_date,
       month: tournament.qualifying_month,
       year: tournament.qualifying_year,

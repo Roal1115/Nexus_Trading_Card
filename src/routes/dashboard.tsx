@@ -442,7 +442,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="glass relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-6 sm:p-8"
+            className="glass relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-6 sm:p-8"
           >
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
               <div>
@@ -463,7 +463,8 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
             {loadingDetail ? (
               <div className="py-16 text-center text-sm text-gray-500">Cargando detalles…</div>
             ) : tournamentDetail ? (
-              <div className="mt-5 space-y-6">
+              <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
+                <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                   <div>
                     <p className="text-[10px] uppercase tracking-widest text-gray-500">Tienda</p>
@@ -559,6 +560,15 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     </table>
                   </div>
                 </div>
+                <div className="border-t border-white/10 pt-6 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+                  <PerformanceTrackerModal
+                    tournamentId={tournamentDetail.tournament_id}
+                    gameId={tournamentDetail.game_id}
+                    onClose={() => {}}
+                    embedded
+                  />
+                </div>
+              </div>
               </div>
             ) : (
               <div className="py-16 text-center text-sm text-gray-500">No se pudo cargar el torneo.</div>
