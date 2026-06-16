@@ -2,12 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
-import { Award, ChevronRight, Crown, Globe, HelpCircle, Lock, Swords, Target, TrendingUp, X } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Crown, Globe, HelpCircle, Lock, Swords, Target, TrendingUp, X } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getMyDashboard, getTournamentDetail, toggleProfilePrivacy } from "@/lib/geekarena-player.functions";
 import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
+import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
 
 
 export const Route = createFileRoute("/dashboard")({
@@ -32,6 +33,7 @@ function DashboardPage() {
   const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const PAGE_SIZE = 10;
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+  const [trackerTournament, setTrackerTournament] = useState<{ id: string; game_id: string } | null>(null);
   const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -335,7 +337,19 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                         +{Number(t.pointsEarned).toFixed(2)}
                       </td>
                       <td className="px-2 py-3 text-gray-500">
-                        <ChevronRight size={14} />
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTrackerTournament({ id: t.id, game_id: t.game_id });
+                            }}
+                            title="Performance Tracker"
+                            className="rounded-md p-1.5 text-gray-500 hover:bg-primary/15 hover:text-primary transition"
+                          >
+                            <BarChart3 size={16} />
+                          </button>
+                          <ChevronRight size={14} />
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -389,9 +403,21 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 ml-3">
-                      <span className={`font-mono-stat text-sm font-semibold ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
-                        #{t.placement}
-                      </span>
+                      <div className="flex items-center justify-end gap-1 mb-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTrackerTournament({ id: t.id, game_id: t.game_id });
+                          }}
+                          title="Performance Tracker"
+                          className="rounded-md p-1.5 text-gray-500 hover:bg-primary/15 hover:text-primary transition"
+                        >
+                          <BarChart3 size={16} />
+                        </button>
+                        <span className={`font-mono-stat text-sm font-semibold ${t.placement <= 3 ? "text-primary" : "text-white"}`}>
+                          #{t.placement}
+                        </span>
+                      </div>
                       <p className="text-xs font-mono-stat font-semibold text-white">+{Number(t.pointsEarned).toFixed(2)}</p>
                     </div>
                   </div>
@@ -539,6 +565,14 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
             )}
           </div>
         </div>
+      )}
+
+      {trackerTournament && (
+        <PerformanceTrackerModal
+          tournamentId={trackerTournament.id}
+          gameId={trackerTournament.game_id}
+          onClose={() => setTrackerTournament(null)}
+        />
       )}
     </main>
       <aside className="hidden xl:block">
