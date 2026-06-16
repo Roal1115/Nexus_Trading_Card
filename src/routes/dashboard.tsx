@@ -9,6 +9,7 @@ import { getMyDashboard, getTournamentDetail, toggleProfilePrivacy } from "@/lib
 import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
+import { RoundsAccordionReadOnly } from "@/components/tournament-tracker/RoundsAccordionReadOnly";
 
 
 export const Route = createFileRoute("/dashboard")({
@@ -562,12 +563,10 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                 </div>
                 </div>
                 <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[75vh] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
-                  <PerformanceTrackerModal
-                    tournamentId={tournamentDetail.tournament_id}
-                    gameId={tournamentDetail.game_id}
-                    onClose={() => {}}
-                    embedded
-                  />
+                  <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
+                    Performance Tracker
+                  </h3>
+                  <RoundsAccordionReadOnly tournamentId={tournamentDetail.tournament_id} />
                 </div>
               </div>
             ) : (
