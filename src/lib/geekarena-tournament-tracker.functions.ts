@@ -84,7 +84,11 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
       .filter((id: string) => id !== player.id);
 
     const { data: opponents } = opponentIds.length
-      ? await admin.from("players").select("id, geek_tag").in("id", opponentIds)
+      ? await admin
+          .from("players")
+          .select("id, geek_tag")
+          .in("id", opponentIds)
+          .order("geek_tag", { ascending: true })
       : { data: [] as Array<{ id: string; geek_tag: string }> };
 
     const { data: myRounds } = await admin
@@ -96,11 +100,40 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
       .eq("player_id", player.id)
       .order("round_number", { ascending: true });
 
+    const leaderIds = Array.from(
+      new Set(
+        (myRounds ?? [])
+          .flatMap((r: any) => [r.player_leader_id, r.opponent_leader_id])
+          .filter((id: string | null): id is string => !!id),
+      ),
+    );
+
+    const { data: leaderRows } = leaderIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, card_name, base_name, colors, card_image, card_image_id, set_code, card_set_id")
+          .in("id", leaderIds)
+      : { data: [] as any[] };
+
+    const leaderMap = new Map((leaderRows ?? []).map((l: any) => [l.id, l]));
+
+    const roundsWithLeaders = (myRounds ?? []).map((r: any) => ({
+      ...r,
+      player_leader: r.player_leader_id ? leaderMap.get(r.player_leader_id) ?? null : null,
+      opponent_leader: r.opponent_leader_id ? leaderMap.get(r.opponent_leader_id) ?? null : null,
+    }));
+
+    const myLeaderId = roundsWithLeaders.find(
+      (r: any) => !r.is_auto_populated && r.player_leader_id,
+    )?.player_leader_id;
+    const myTournamentLeader = myLeaderId ? leaderMap.get(myLeaderId) ?? null : null;
+
     return {
       game_id: tournament.game_id,
       max_rounds: maxRounds,
       opponents: opponents ?? [],
-      rounds: myRounds ?? [],
+      rounds: roundsWithLeaders,
+      my_tournament_leader: myTournamentLeader,
     };
   });
 
