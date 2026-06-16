@@ -180,8 +180,8 @@ function LeaderSelect({
                     key={v.id}
                     type="button"
                     onClick={() => onChange(v)}
-                    className={`h-10 w-7 overflow-hidden rounded border ${
-                      v.id === value.id ? "border-primary" : "border-white/10"
+                    className={`h-24 w-16 overflow-hidden rounded-md border-2 transition ${
+                      v.id === value.id ? "border-primary" : "border-white/10 hover:border-white/30"
                     }`}
                   >
                     {v.card_image && (
