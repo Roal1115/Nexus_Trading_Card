@@ -695,7 +695,9 @@ export function PerformanceTrackerModal({
                 gameId={gameId}
                 onChange={(patch) => updateRound(idx, patch)}
                 onSave={() => handleSaveRound(idx)}
+                onDelete={() => handleDeleteRound(idx)}
                 saving={savingRound === idx}
+                deleting={deletingRound === idx}
               />
             ))}
           </div>
