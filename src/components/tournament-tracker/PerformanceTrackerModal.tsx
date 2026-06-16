@@ -43,6 +43,10 @@ const COLOR_HEX: Record<string, string> = {
   Yellow: "#eab308",
 };
 
+function cleanDisplayName(name: string): string {
+  return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
+}
+
 function ColorDots({ colors }: { colors: string[] | null }) {
   if (!colors || colors.length === 0) return null;
   return (
