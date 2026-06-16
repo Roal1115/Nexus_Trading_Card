@@ -246,12 +246,24 @@ export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState<RoundWithLeaders[]>([]);
   const [opponentMap, setOpponentMap] = useState<Record<string, string>>({});
+  const [summary, setSummary] = useState<{
+    store_name: string | null;
+    tournament_date: string;
+    wins: number;
+    losses: number;
+    win_rate: number | null;
+    toughest_opponent_tag: string | null;
+    toughest_opponent_rank: number | null;
+  } | null>(null);
+  const [leader, setLeader] = useState<{ base_name: string; card_image: string | null } | null>(null);
 
   useEffect(() => {
     setLoading(true);
     fetchRounds({ data: { tournament_id: tournamentId } })
       .then((res: any) => {
         setRounds(res.rounds ?? []);
+        setSummary(res.summary ?? null);
+        setLeader(res.my_tournament_leader ?? null);
         const map: Record<string, string> = {};
         for (const o of res.opponents ?? []) map[o.id] = o.geek_tag;
         setOpponentMap(map);
@@ -274,14 +286,17 @@ export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string
   }
 
   return (
-    <div className="space-y-2">
-      {rounds.map((r) => (
-        <RoundAccordionItem
-          key={r.id ?? `r-${r.round_number}`}
-          round={r}
-          opponentTag={r.opponent_player_id ? opponentMap[r.opponent_player_id] ?? "—" : "—"}
-        />
-      ))}
+    <div className="space-y-3">
+      {summary && <SummaryCard summary={summary} leader={leader} />}
+      <div className="space-y-2">
+        {rounds.map((r) => (
+          <RoundAccordionItem
+            key={r.id ?? `r-${r.round_number}`}
+            round={r}
+            opponentTag={r.opponent_player_id ? opponentMap[r.opponent_player_id] ?? "—" : "—"}
+          />
+        ))}
+      </div>
     </div>
   );
 }
