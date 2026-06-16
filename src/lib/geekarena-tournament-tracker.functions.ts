@@ -7,8 +7,14 @@ import { requireGeekarenaUser } from "./geekarena-auth.middleware";
 // ============================================================
 export const getDeckIdentifiers = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { game_id: string; search?: string }) =>
-    z.object({ game_id: z.string().uuid(), search: z.string().max(100).optional() }).parse(d),
+  .inputValidator((d: { game_id: string; search?: string; basic_only?: boolean }) =>
+    z
+      .object({
+        game_id: z.string().uuid(),
+        search: z.string().max(100).optional(),
+        basic_only: z.boolean().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
@@ -17,16 +23,21 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
       .select("id, card_name, base_name, colors, card_image, card_image_id, set_code, card_set_id")
       .eq("game_id", data.game_id)
       .eq("is_active", true)
-      .order("set_code", { ascending: false })
+      .order("card_set_id", { ascending: false })
       .order("base_name", { ascending: true });
 
     if (data.search && data.search.trim().length > 0) {
       q = q.ilike("base_name", `%${data.search.trim()}%`);
     }
 
-    const { data: rows, error } = await q.limit(500);
+    const { data: rows, error } = await q.limit(800);
     if (error) throw new Error(error.message);
-    return rows ?? [];
+
+    const basicOnly = data.basic_only ?? true;
+    if (!basicOnly) return rows ?? [];
+
+    // Versión "base" de cada carta: card_image_id === card_set_id (sin sufijo de variante)
+    return (rows ?? []).filter((r: any) => r.card_image_id === r.card_set_id);
   });
 
 // ============================================================
