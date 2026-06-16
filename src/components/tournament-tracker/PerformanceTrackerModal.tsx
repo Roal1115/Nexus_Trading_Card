@@ -432,10 +432,12 @@ export function PerformanceTrackerModal({
   tournamentId,
   gameId,
   onClose,
+  embedded = false,
 }: {
   tournamentId: string;
   gameId: string;
   onClose: () => void;
+  embedded?: boolean;
 }) {
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const saveRound = useServerFn(saveRoundResult);
@@ -536,6 +538,79 @@ export function PerformanceTrackerModal({
     }
   };
 
+  const content = (
+    <>
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start gap-3">
+          <Trophy className="text-primary mt-1" size={22} />
+          <div>
+            <h2 className="text-xl font-extrabold text-white">Performance Tracker</h2>
+            <p className="mt-1 text-xs text-gray-400">
+              Registra el detalle de cada ronda: contra quién jugaste, qué leader usaste, y el resultado.
+            </p>
+          </div>
+        </div>
+        {!embedded && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+          >
+            <X size={18} />
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <p className="py-10 text-center text-sm text-gray-400">Cargando…</p>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+              Tu Leader en este torneo
+            </label>
+            <LeaderSelect
+              gameId={gameId}
+              value={myLeader}
+              onChange={setMyLeader}
+              placeholder="Selecciona tu leader…"
+            />
+          </div>
+
+          <div className="space-y-3">
+            {rounds.map((round, idx) => (
+              <RoundCard
+                key={round.id ?? `new-${idx}`}
+                round={round}
+                opponents={opponents.filter(
+                  (o) => o.id === round.opponent_player_id || !usedOpponentIds.has(o.id),
+                )}
+                gameId={gameId}
+                onChange={(patch) => updateRound(idx, patch)}
+                onSave={() => handleSaveRound(idx)}
+                saving={savingRound === idx}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={addRound}
+            disabled={rounds.length >= maxRounds || maxRounds === 0}
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-white/20 py-3 text-sm font-medium text-gray-300 hover:border-primary hover:text-primary transition disabled:opacity-40 disabled:hover:border-white/20 disabled:hover:text-gray-300"
+          >
+            <Plus size={14} /> Agregar Ronda{" "}
+            {rounds.length >= maxRounds && maxRounds > 0 ? "(máximo alcanzado)" : ""}
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  if (embedded) {
+    return <div className="h-full overflow-y-auto pr-1">{content}</div>;
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
@@ -545,68 +620,7 @@ export function PerformanceTrackerModal({
         onClick={(e) => e.stopPropagation()}
         className="glass relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
       >
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-start gap-3">
-            <Trophy className="text-primary mt-1" size={22} />
-            <div>
-              <h2 className="text-xl font-extrabold text-white">Performance Tracker</h2>
-              <p className="mt-1 text-xs text-gray-400">
-                Registra el detalle de cada ronda: contra quién jugaste, qué leader usaste, y el resultado.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {loading ? (
-          <p className="py-10 text-center text-sm text-gray-400">Cargando…</p>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Tu Leader en este torneo
-              </label>
-              <LeaderSelect
-                gameId={gameId}
-                value={myLeader}
-                onChange={setMyLeader}
-                placeholder="Selecciona tu leader…"
-              />
-            </div>
-
-            <div className="space-y-3">
-              {rounds.map((round, idx) => (
-                <RoundCard
-                  key={round.id ?? `new-${idx}`}
-                  round={round}
-                  opponents={opponents.filter(
-                    (o) => o.id === round.opponent_player_id || !usedOpponentIds.has(o.id),
-                  )}
-                  gameId={gameId}
-                  onChange={(patch) => updateRound(idx, patch)}
-                  onSave={() => handleSaveRound(idx)}
-                  saving={savingRound === idx}
-                />
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={addRound}
-              disabled={rounds.length >= maxRounds || maxRounds === 0}
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-white/20 py-3 text-sm font-medium text-gray-300 hover:border-primary hover:text-primary transition disabled:opacity-40 disabled:hover:border-white/20 disabled:hover:text-gray-300"
-            >
-              <Plus size={14} /> Agregar Ronda{" "}
-              {rounds.length >= maxRounds && maxRounds > 0 ? "(máximo alcanzado)" : ""}
-            </button>
-          </div>
-        )}
+        {content}
       </div>
     </div>
   );
