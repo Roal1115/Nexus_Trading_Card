@@ -442,7 +442,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="glass relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-6 sm:p-8"
+            className="glass relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-6 sm:p-8"
           >
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
               <div>
