@@ -37,7 +37,8 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
       q = q.ilike("base_name", `%${data.search.trim()}%`);
     }
 
-    const { data: rows, error } = await q.limit(800);
+    const limit = data.search && data.search.trim().length > 0 ? 100 : 800;
+    const { data: rows, error } = await q.limit(limit);
     if (error) throw new Error(error.message);
 
     const basicOnly = data.basic_only ?? true;
@@ -261,5 +262,26 @@ export const saveRoundResult = createServerFn({ method: "POST" })
       }
     }
 
+    return { success: true };
+  });
+
+// ============================================================
+// clearTournamentRounds — borra todas las rondas del jugador actual para un torneo
+// ============================================================
+export const clearTournamentRounds = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { error } = await admin
+      .from("tournament_round_results")
+      .delete()
+      .eq("tournament_id", data.tournament_id)
+      .eq("player_id", player.id);
+
+    if (error) throw new Error(error.message);
     return { success: true };
   });
