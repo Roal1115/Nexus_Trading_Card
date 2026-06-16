@@ -463,8 +463,8 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
             {loadingDetail ? (
               <div className="py-16 text-center text-sm text-gray-500">Cargando detalles…</div>
             ) : tournamentDetail ? (
-              <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.4fr_1fr]">
-                <div className="space-y-6">
+              <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                <div className="space-y-6 lg:col-span-2">
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                   <div>
                     <p className="text-[10px] uppercase tracking-widest text-gray-500">Tienda</p>
@@ -560,7 +560,8 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     </table>
                   </div>
                 </div>
-                <div className="border-t border-white/10 pt-6 lg:border-t-0 lg:border-l lg:max-h-[75vh] lg:pl-6 lg:pt-0">
+                </div>
+                <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[75vh] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
                   <PerformanceTrackerModal
                     tournamentId={tournamentDetail.tournament_id}
                     gameId={tournamentDetail.game_id}
@@ -568,7 +569,6 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     embedded
                   />
                 </div>
-              </div>
               </div>
             ) : (
               <div className="py-16 text-center text-sm text-gray-500">No se pudo cargar el torneo.</div>

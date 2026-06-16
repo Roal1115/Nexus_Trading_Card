@@ -2,6 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
 
+const EXCLUDED_EVENT_LEADER_IDS = ["P-900", "P-800", "P-700"];
+
+function groupOrder(cardSetId: string): number {
+  if (cardSetId.startsWith("OP")) return 0;
+  if (cardSetId.startsWith("ST")) return 1;
+  return 2; // P, EB, PRB, etc.
+}
+
 // ============================================================
 // getDeckIdentifiers — búsqueda de leaders para el dropdown
 // ============================================================
@@ -23,8 +31,7 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
       .select("id, card_name, base_name, colors, card_image, card_image_id, set_code, card_set_id")
       .eq("game_id", data.game_id)
       .eq("is_active", true)
-      .order("card_set_id", { ascending: false })
-      .order("base_name", { ascending: true });
+      .not("card_set_id", "in", `(${EXCLUDED_EVENT_LEADER_IDS.join(",")})`);
 
     if (data.search && data.search.trim().length > 0) {
       q = q.ilike("base_name", `%${data.search.trim()}%`);
@@ -34,10 +41,16 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const basicOnly = data.basic_only ?? true;
-    if (!basicOnly) return rows ?? [];
+    const filtered = basicOnly
+      ? (rows ?? []).filter((r: any) => r.card_image_id === r.card_set_id)
+      : (rows ?? []);
 
-    // Versión "base" de cada carta: card_image_id === card_set_id (sin sufijo de variante)
-    return (rows ?? []).filter((r: any) => r.card_image_id === r.card_set_id);
+    // Orden: grupo (OP < ST < P) → dentro de cada grupo, card_set_id descendente (más reciente arriba)
+    return filtered.sort((a: any, b: any) => {
+      const groupDiff = groupOrder(a.card_set_id) - groupOrder(b.card_set_id);
+      if (groupDiff !== 0) return groupDiff;
+      return b.card_set_id.localeCompare(a.card_set_id);
+    });
   });
 
 // ============================================================
