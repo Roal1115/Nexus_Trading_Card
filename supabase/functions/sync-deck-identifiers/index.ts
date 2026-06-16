@@ -38,6 +38,8 @@ Deno.serve(async (req) => {
       }
       const json = await res.json();
       const cards: any[] = Array.isArray(json) ? json : (json?.results ?? json?.data ?? []);
+      console.log(`[sync] ${url} → ${cards.length} cards recibidas`);
+
 
       for (const card of cards) {
         const cardSetId: string | undefined = card.card_set_id;
