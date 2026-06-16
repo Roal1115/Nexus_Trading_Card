@@ -4,9 +4,9 @@ const ONE_PIECE_GAME_ID = "5b608762-d0a3-4a93-9739-e5cd150b01cd";
 const EXCLUDED_SET_PREFIXES = ["OP01", "OP02", "OP03", "OP04"];
 
 const ENDPOINTS = [
-  { url: "https://www.optcgapi.com/api/sets/filtered/?card_type=Leader", source: "set" },
-  { url: "https://www.optcgapi.com/api/decks/filtered/?card_type=Leader", source: "deck" },
-  { url: "https://www.optcgapi.com/api/promos/filtered/?card_type=Leader", source: "promo" },
+  "https://www.optcgapi.com/api/sets/filtered/?card_type=Leader",
+  "https://www.optcgapi.com/api/decks/filtered/?card_type=Leader",
+  "https://www.optcgapi.com/api/promos/filtered/?card_type=Leader",
 ];
 
 function isExcluded(cardSetId: string): boolean {
@@ -14,7 +14,6 @@ function isExcluded(cardSetId: string): boolean {
 }
 
 function deriveBaseName(cardName: string): string {
-  // Quita todo lo que esté entre paréntesis, ej. "Rebecca (039) (Alternate Art)" -> "Rebecca"
   return cardName.replace(/\s*\([^)]*\)/g, "").trim();
 }
 
@@ -28,20 +27,16 @@ Deno.serve(async (req) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const admin = createClient(supabaseUrl, serviceRoleKey);
 
-  let added = 0;
-  let updated = 0;
-  let deactivated = 0;
   const seenCardSetIds = new Set<string>();
+  const rowsToUpsert: Record<string, unknown>[] = [];
 
   try {
-    for (const endpoint of ENDPOINTS) {
-      const res = await fetch(endpoint.url);
+    for (const url of ENDPOINTS) {
+      const res = await fetch(url);
       if (!res.ok) {
-        throw new Error(`${endpoint.url} respondió ${res.status}`);
+        throw new Error(`${url} respondió ${res.status}`);
       }
       const json = await res.json();
-      // La API puede regresar un array directo o un objeto paginado {results: [...]}.
-      // Manejar ambos casos defensivamente.
       const cards: any[] = Array.isArray(json) ? json : (json?.results ?? json?.data ?? []);
 
       for (const card of cards) {
@@ -49,20 +44,17 @@ Deno.serve(async (req) => {
         const cardName: string | undefined = card.card_name;
         if (!cardSetId || !cardName) continue;
         if (isExcluded(cardSetId)) continue;
-
+        if (seenCardSetIds.has(cardSetId)) continue; // evitar duplicados entre endpoints
         seenCardSetIds.add(cardSetId);
 
-        const baseName = deriveBaseName(cardName);
-        const colors = parseColors(card.card_color);
-
-        const row = {
+        rowsToUpsert.push({
           game_id: ONE_PIECE_GAME_ID,
-          identifier_type: "leader" as const,
-          source: "api" as const,
+          identifier_type: "leader",
+          source: "api",
           card_set_id: cardSetId,
           card_name: cardName,
-          base_name: baseName,
-          colors,
+          base_name: deriveBaseName(cardName),
+          colors: parseColors(card.card_color),
           card_image: card.card_image ?? null,
           card_image_id: card.card_image_id ?? null,
           set_code: card.set_id ?? null,
@@ -70,42 +62,38 @@ Deno.serve(async (req) => {
           rarity: card.rarity ?? null,
           is_active: true,
           synced_at: new Date().toISOString(),
-        };
-
-        const { data: existing } = await admin
-          .from("deck_identifiers")
-          .select("id")
-          .eq("game_id", ONE_PIECE_GAME_ID)
-          .eq("card_set_id", cardSetId)
-          .maybeSingle();
-
-        if (existing) {
-          const { error } = await admin
-            .from("deck_identifiers")
-            .update(row)
-            .eq("id", existing.id);
-          if (error) throw new Error(`Update failed for ${cardSetId}: ${error.message}`);
-          updated++;
-        } else {
-          const { error } = await admin.from("deck_identifiers").insert(row);
-          if (error) throw new Error(`Insert failed for ${cardSetId}: ${error.message}`);
-          added++;
-        }
+        });
       }
     }
 
-    // Soft-delete: cualquier leader que ya estaba activo pero no apareció en esta corrida
-    const { data: activeRows } = await admin
+    if (rowsToUpsert.length === 0) {
+      throw new Error("No se recibieron leaders válidos de ninguna fuente");
+    }
+
+    // Upsert masivo en batches de 200 para evitar payloads excesivos
+    const BATCH_SIZE = 200;
+    for (let i = 0; i < rowsToUpsert.length; i += BATCH_SIZE) {
+      const batch = rowsToUpsert.slice(i, i + BATCH_SIZE);
+      const { error } = await admin
+        .from("deck_identifiers")
+        .upsert(batch, { onConflict: "game_id,card_set_id" });
+      if (error) throw new Error(`Upsert batch failed: ${error.message}`);
+    }
+
+    // Soft-delete: leaders activos en DB que ya no aparecieron en esta corrida
+    const { data: activeRows, error: activeErr } = await admin
       .from("deck_identifiers")
       .select("id, card_set_id")
       .eq("game_id", ONE_PIECE_GAME_ID)
       .eq("source", "api")
       .eq("is_active", true);
+    if (activeErr) throw new Error(`Fetch active rows failed: ${activeErr.message}`);
 
     const toDeactivate = (activeRows ?? [])
       .filter((r: any) => r.card_set_id && !seenCardSetIds.has(r.card_set_id))
       .map((r: any) => r.id);
 
+    let deactivated = 0;
     if (toDeactivate.length > 0) {
       const { error } = await admin
         .from("deck_identifiers")
@@ -117,22 +105,22 @@ Deno.serve(async (req) => {
 
     await admin.from("deck_identifiers_sync_log").insert({
       game_id: ONE_PIECE_GAME_ID,
-      leaders_added: added,
-      leaders_updated: updated,
+      leaders_added: rowsToUpsert.length,
+      leaders_updated: 0,
       leaders_deactivated: deactivated,
       status: "success",
     });
 
     return new Response(
-      JSON.stringify({ ok: true, added, updated, deactivated }),
+      JSON.stringify({ ok: true, total_processed: rowsToUpsert.length, deactivated }),
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
     await admin.from("deck_identifiers_sync_log").insert({
       game_id: ONE_PIECE_GAME_ID,
-      leaders_added: added,
-      leaders_updated: updated,
-      leaders_deactivated: deactivated,
+      leaders_added: 0,
+      leaders_updated: 0,
+      leaders_deactivated: 0,
       status: "error",
       error_message: String((err as Error).message ?? err),
     });
