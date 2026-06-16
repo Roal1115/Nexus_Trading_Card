@@ -133,12 +133,46 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
     )?.player_leader_id;
     const myTournamentLeader = myLeaderId ? leaderMap.get(myLeaderId) ?? null : null;
 
+    const rankMap = new Map((results ?? []).map((r: any) => [r.player_id, r.rank]));
+
+    const completedRounds = roundsWithLeaders.filter((r: any) => !r.is_bye && r.won_match !== null);
+    const wins = completedRounds.filter((r: any) => r.won_match === true).length;
+    const losses = completedRounds.filter((r: any) => r.won_match === false).length;
+    const byeWins = roundsWithLeaders.filter((r: any) => r.is_bye && r.won_match === true).length;
+    const totalWins = wins + byeWins;
+    const totalPlayed = completedRounds.length + roundsWithLeaders.filter((r: any) => r.is_bye).length;
+    const winRate = totalPlayed > 0 ? Math.round((totalWins / totalPlayed) * 100) : null;
+
+    let toughestOpponent: { player_id: string; rank: number } | null = null;
+    for (const r of roundsWithLeaders) {
+      if (r.is_bye || !r.opponent_player_id) continue;
+      const oppRank = rankMap.get(r.opponent_player_id);
+      if (oppRank == null) continue;
+      if (!toughestOpponent || oppRank < toughestOpponent.rank) {
+        toughestOpponent = { player_id: r.opponent_player_id, rank: oppRank };
+      }
+    }
+    const toughestOpponentTag = toughestOpponent
+      ? (opponents ?? []).find((o: any) => o.id === toughestOpponent!.player_id)?.geek_tag ?? null
+      : null;
+
+    const summary = {
+      store_name: (store as any)?.name ?? null,
+      tournament_date: tournament.tournament_date,
+      wins: totalWins,
+      losses,
+      win_rate: winRate,
+      toughest_opponent_tag: toughestOpponentTag,
+      toughest_opponent_rank: toughestOpponent?.rank ?? null,
+    };
+
     return {
       game_id: tournament.game_id,
       max_rounds: maxRounds,
       opponents: opponents ?? [],
       rounds: roundsWithLeaders,
       my_tournament_leader: myTournamentLeader,
+      summary,
     };
   });
 
