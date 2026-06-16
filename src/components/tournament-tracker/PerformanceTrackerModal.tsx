@@ -496,6 +496,7 @@ export function PerformanceTrackerModal({
       .then((res: any) => {
         setMaxRounds(res.max_rounds);
         setOpponents(res.opponents);
+        setMyLeader(res.my_tournament_leader ?? null);
         setRounds(
           res.rounds.map((r: any) => ({
             id: r.id,
@@ -504,6 +505,7 @@ export function PerformanceTrackerModal({
             opponent_player_id: r.opponent_player_id,
             player_leader_id: r.player_leader_id,
             opponent_leader_id: r.opponent_leader_id,
+            opponent_leader: r.opponent_leader ?? null,
             won_die_roll: r.won_die_roll,
             turn_order: r.turn_order,
             won_match: r.won_match,
