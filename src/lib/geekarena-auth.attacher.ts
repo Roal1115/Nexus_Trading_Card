@@ -6,8 +6,20 @@ import { geekarena } from "@/integrations/geekarena/client";
 
 export const attachGeekarenaAuth = createMiddleware({ type: "function" }).client(
   async ({ next }) => {
-    const { data } = await geekarena.auth.getSession();
-    const token = data.session?.access_token;
+    let token: string | undefined;
+    try {
+      const { data, error } = await geekarena.auth.getSession();
+      if (error) {
+        // Stale/invalid refresh token — clear local session so the user is
+        // redirected to /login on next interaction instead of looping 401s.
+        if (typeof window !== "undefined") {
+          await geekarena.auth.signOut().catch(() => {});
+        }
+      }
+      token = data.session?.access_token;
+    } catch {
+      token = undefined;
+    }
     return next({
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
