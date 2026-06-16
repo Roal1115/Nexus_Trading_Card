@@ -617,6 +617,24 @@ export function PerformanceTrackerModal({
     }
   };
 
+  const handleDeleteRound = async (idx: number) => {
+    const round = rounds[idx];
+    setDeletingRound(idx);
+    try {
+      if (round.id) {
+        await deleteRound({
+          data: { tournament_id: tournamentId, round_number: round.round_number },
+        });
+      }
+      setRounds((prev) => prev.filter((_, i) => i !== idx));
+      toast.success(`Ronda ${round.round_number} eliminada`);
+    } catch {
+      toast.error("Error al eliminar la ronda");
+    } finally {
+      setDeletingRound(null);
+    }
+  };
+
   const content = (
     <>
       <div className="flex items-start justify-between mb-6">
