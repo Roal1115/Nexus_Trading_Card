@@ -68,9 +68,12 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log(`[sync] total rowsToUpsert antes de upsert: ${rowsToUpsert.length}`);
+
     if (rowsToUpsert.length === 0) {
       throw new Error("No se recibieron leaders válidos de ninguna fuente");
     }
+
 
     // Upsert masivo en batches de 200 para evitar payloads excesivos
     const BATCH_SIZE = 200;
