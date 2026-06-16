@@ -510,7 +510,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                         <tr>
                           <th className="px-3 py-2 text-left">#</th>
                           <th className="px-3 py-2 text-left">Geek Tag</th>
-                          <th className="px-3 py-2 text-center">V / D</th>
+                          <th className="px-3 py-2 text-center whitespace-nowrap">V / D</th>
                           <th className="px-3 py-2 text-right">OMW%</th>
                           <th className="px-3 py-2 text-right">Pts Arena</th>
                         </tr>
