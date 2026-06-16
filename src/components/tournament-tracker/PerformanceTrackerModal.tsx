@@ -7,6 +7,7 @@ import {
   getTournamentRoundsForPlayer,
   saveRoundResult,
   clearTournamentRounds,
+  deleteRoundResult,
 } from "@/lib/geekarena-tournament-tracker.functions";
 
 type DeckIdentifier = {
@@ -339,14 +340,18 @@ function RoundCard({
   gameId,
   onChange,
   onSave,
+  onDelete,
   saving,
+  deleting,
 }: {
   round: RoundRow;
   opponents: Array<{ id: string; geek_tag: string }>;
   gameId: string;
   onChange: (patch: Partial<RoundRow>) => void;
   onSave: () => void;
+  onDelete: () => void;
   saving: boolean;
+  deleting: boolean;
 }) {
   
 
@@ -458,14 +463,24 @@ function RoundCard({
         />
       </div>
 
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={saving}
-        className="mt-3 flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground disabled:opacity-50"
-      >
-        <Save size={13} /> {saving ? "Guardando…" : "Guardar Ronda"}
-      </button>
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving}
+          className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground disabled:opacity-50"
+        >
+          <Save size={13} /> {saving ? "Guardando…" : "Guardar Ronda"}
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={deleting}
+          className="flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition"
+        >
+          <Trash2 size={13} /> {deleting ? "Eliminando…" : ""}
+        </button>
+      </div>
     </div>
   );
 }
@@ -484,6 +499,7 @@ export function PerformanceTrackerModal({
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const saveRound = useServerFn(saveRoundResult);
   const clearRounds = useServerFn(clearTournamentRounds);
+  const deleteRound = useServerFn(deleteRoundResult);
 
   const [loading, setLoading] = useState(true);
   const [maxRounds, setMaxRounds] = useState(0);
@@ -491,6 +507,7 @@ export function PerformanceTrackerModal({
   const [rounds, setRounds] = useState<RoundRow[]>([]);
   const [myLeader, setMyLeader] = useState<DeckIdentifier | null>(null);
   const [savingRound, setSavingRound] = useState<number | null>(null);
+  const [deletingRound, setDeletingRound] = useState<number | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [clearing, setClearing] = useState(false);
 
@@ -600,6 +617,24 @@ export function PerformanceTrackerModal({
     }
   };
 
+  const handleDeleteRound = async (idx: number) => {
+    const round = rounds[idx];
+    setDeletingRound(idx);
+    try {
+      if (round.id) {
+        await deleteRound({
+          data: { tournament_id: tournamentId, round_number: round.round_number },
+        });
+      }
+      setRounds((prev) => prev.filter((_, i) => i !== idx));
+      toast.success(`Ronda ${round.round_number} eliminada`);
+    } catch {
+      toast.error("Error al eliminar la ronda");
+    } finally {
+      setDeletingRound(null);
+    }
+  };
+
   const content = (
     <>
       <div className="flex items-start justify-between mb-6">
@@ -660,7 +695,9 @@ export function PerformanceTrackerModal({
                 gameId={gameId}
                 onChange={(patch) => updateRound(idx, patch)}
                 onSave={() => handleSaveRound(idx)}
+                onDelete={() => handleDeleteRound(idx)}
                 saving={savingRound === idx}
+                deleting={deletingRound === idx}
               />
             ))}
           </div>
