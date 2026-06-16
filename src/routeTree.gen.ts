@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TcgManagerRouteImport } from './routes/tcg-manager'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -63,6 +64,11 @@ const SignupRoute = SignupRouteImport.update({
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizerRoute = OrganizerRouteImport.update({
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/organizer': typeof OrganizerRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/tcg-manager': typeof TcgManagerRouteWithChildren
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/admin/activity': typeof AdminActivityRoute
@@ -341,6 +349,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/organizer': typeof OrganizerRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/tcg-manager': typeof TcgManagerRouteWithChildren
@@ -385,6 +394,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/organizer'
+    | '/reset-password'
     | '/setup'
     | '/signup'
     | '/tcg-manager'
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/check-inbox'
     | '/dashboard'
     | '/login'
+    | '/reset-password'
     | '/setup'
     | '/signup'
     | '/admin/activity'
@@ -466,6 +477,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/organizer'
+    | '/reset-password'
     | '/setup'
     | '/signup'
     | '/tcg-manager'
@@ -509,6 +521,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
   TcgManagerRoute: typeof TcgManagerRouteWithChildren
@@ -536,6 +549,13 @@ declare module '@tanstack/react-router' {
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizer': {
@@ -914,6 +934,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
   TcgManagerRoute: TcgManagerRouteWithChildren,
@@ -922,3 +943,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
