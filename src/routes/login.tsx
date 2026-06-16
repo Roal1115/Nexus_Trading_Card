@@ -16,18 +16,14 @@ function translateAuthError(msg: string): string {
   const m = msg.toLowerCase();
   if (m.includes("invalid login credentials") || m.includes("invalid_credentials"))
     return "Contraseña incorrecta. Intenta de nuevo";
-  if (m.includes("user not found") || m.includes("no user"))
-    return "No encontramos una cuenta con ese correo";
-  if (m.includes("email not confirmed"))
-    return "Debes verificar tu correo antes de entrar";
-  if (m.includes("invalid email"))
-    return "Ingresa un correo electrónico válido";
+  if (m.includes("user not found") || m.includes("no user")) return "No encontramos una cuenta con ese correo";
+  if (m.includes("email not confirmed")) return "Debes verificar tu correo antes de entrar";
+  if (m.includes("invalid email")) return "Ingresa un correo electrónico válido";
   if (m.includes("already registered") || m.includes("user already"))
     return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Demasiados intentos. Espera un momento e intenta de nuevo";
-  if (m.includes("network") || m.includes("fetch"))
-    return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
+  if (m.includes("network") || m.includes("fetch")) return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
   return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
 }
 
@@ -134,9 +130,7 @@ function LoginPage() {
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
       <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Geek Arena
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Geek Arena</p>
           <h1 className="mt-2 text-3xl font-bold text-white">
             {forgotMode ? "Recupera tu acceso" : "Bienvenido de vuelta"}
           </h1>
@@ -175,7 +169,7 @@ function LoginPage() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
-                placeholder="RedLotus o jugador@geekarena.gg"
+                placeholder="Geek Tag o jugador@geekarena.gg"
                 className="input-base"
               />
             </Field>
@@ -221,10 +215,7 @@ function LoginPage() {
                 {forgotMode ? "← Volver" : "¿Olvidaste tu contraseña?"}
               </button>
               {!forgotMode && (
-                <Link
-                  to="/signup"
-                  className="font-semibold text-primary hover:text-primary/80"
-                >
+                <Link to="/signup" className="font-semibold text-primary hover:text-primary/80">
                   ¿No tienes cuenta? Únete al Circuito →
                 </Link>
               )}
@@ -261,18 +252,10 @@ function LoginPage() {
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-        {label}
-      </label>
+      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">{label}</label>
       {children}
     </div>
   );
