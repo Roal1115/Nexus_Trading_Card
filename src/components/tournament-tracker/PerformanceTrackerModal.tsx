@@ -724,16 +724,19 @@ export function PerformanceTrackerModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-      onClick={onClose}
-    >
+    <>
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="glass relative w-full max-w-3xl max-h-[90vh] min-h-[500px] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+        onClick={onClose}
       >
-        {content}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="glass relative w-full max-w-3xl max-h-[90vh] min-h-[500px] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+        >
+          {content}
+        </div>
       </div>
-    </div>
+      {clearConfirmModal}
+    </>
   );
 }
