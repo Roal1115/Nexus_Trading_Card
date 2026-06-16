@@ -1,7 +1,115 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, ShieldQuestion, Swords } from "lucide-react";
+import { ChevronDown, ShieldQuestion, Swords, TrendingDown } from "lucide-react";
 import { getTournamentRoundsForPlayer } from "@/lib/geekarena-tournament-tracker.functions";
+
+function WinRateRing({ percent }: { percent: number }) {
+  const radius = 22;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percent / 100) * circumference;
+  return (
+    <div className="flex items-center gap-2">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+        <circle
+          cx="26"
+          cy="26"
+          r={radius}
+          fill="none"
+          stroke="#3B82F6"
+          strokeWidth="5"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 26 26)"
+        />
+      </svg>
+      <span className="text-sm font-bold text-white">{percent}%</span>
+    </div>
+  );
+}
+
+function SummaryCard({
+  summary,
+  leader,
+}: {
+  summary: {
+    store_name: string | null;
+    tournament_date: string;
+    wins: number;
+    losses: number;
+    win_rate: number | null;
+    toughest_opponent_tag: string | null;
+    toughest_opponent_rank: number | null;
+  };
+  leader: { base_name: string; card_image: string | null } | null;
+}) {
+  const dateLabel = new Date(summary.tournament_date + "T12:00:00").toLocaleDateString("es-MX", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex items-start justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            {summary.store_name ?? "—"} · {dateLabel}
+          </p>
+          <p className="mt-1 text-[10px] text-gray-500">
+            {dateLabel}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-3">
+        <div className="flex flex-col items-center gap-1">
+          {leader?.card_image ? (
+            <img
+              src={leader.card_image}
+              alt={leader.base_name}
+              className="h-16 w-auto rounded-md border border-white/10"
+            />
+          ) : (
+            <div className="flex h-16 w-12 items-center justify-center rounded-md border border-white/10 bg-white/5">
+              <ShieldQuestion size={16} className="text-gray-500" />
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Leader</p>
+          <p className="text-sm font-semibold text-white">
+            {leader?.base_name ?? "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Récord</p>
+          <div className="mt-0.5 flex items-baseline gap-1">
+            <span className="text-xl font-bold text-white">
+              {summary.wins}-{summary.losses}
+            </span>
+          </div>
+        </div>
+        {summary.win_rate !== null && <WinRateRing percent={summary.win_rate} />}
+      </div>
+
+      {summary.toughest_opponent_tag && (
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
+          <TrendingDown size={14} className="text-amber-400" />
+          Tu oponente más difícil fue{" "}
+          <span className="font-semibold text-white">{summary.toughest_opponent_tag}</span>
+          {summary.toughest_opponent_rank && (
+            <span className="text-gray-500">(terminó #{summary.toughest_opponent_rank})</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type RoundWithLeaders = {
   id?: string;
@@ -138,12 +246,24 @@ export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState<RoundWithLeaders[]>([]);
   const [opponentMap, setOpponentMap] = useState<Record<string, string>>({});
+  const [summary, setSummary] = useState<{
+    store_name: string | null;
+    tournament_date: string;
+    wins: number;
+    losses: number;
+    win_rate: number | null;
+    toughest_opponent_tag: string | null;
+    toughest_opponent_rank: number | null;
+  } | null>(null);
+  const [leader, setLeader] = useState<{ base_name: string; card_image: string | null } | null>(null);
 
   useEffect(() => {
     setLoading(true);
     fetchRounds({ data: { tournament_id: tournamentId } })
       .then((res: any) => {
         setRounds(res.rounds ?? []);
+        setSummary(res.summary ?? null);
+        setLeader(res.my_tournament_leader ?? null);
         const map: Record<string, string> = {};
         for (const o of res.opponents ?? []) map[o.id] = o.geek_tag;
         setOpponentMap(map);
@@ -166,14 +286,17 @@ export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string
   }
 
   return (
-    <div className="space-y-2">
-      {rounds.map((r) => (
-        <RoundAccordionItem
-          key={r.id ?? `r-${r.round_number}`}
-          round={r}
-          opponentTag={r.opponent_player_id ? opponentMap[r.opponent_player_id] ?? "—" : "—"}
-        />
-      ))}
+    <div className="space-y-3">
+      {summary && <SummaryCard summary={summary} leader={leader} />}
+      <div className="space-y-2">
+        {rounds.map((r) => (
+          <RoundAccordionItem
+            key={r.id ?? `r-${r.round_number}`}
+            round={r}
+            opponentTag={r.opponent_player_id ? opponentMap[r.opponent_player_id] ?? "—" : "—"}
+          />
+        ))}
+      </div>
     </div>
   );
 }
