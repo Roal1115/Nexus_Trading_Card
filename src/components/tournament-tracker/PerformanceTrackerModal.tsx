@@ -43,6 +43,10 @@ const COLOR_HEX: Record<string, string> = {
   Yellow: "#eab308",
 };
 
+function cleanDisplayName(name: string): string {
+  return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
+}
+
 function ColorDots({ colors }: { colors: string[] | null }) {
   if (!colors || colors.length === 0) return null;
   return (
@@ -109,7 +113,7 @@ function LeaderSelect({
         <span className="flex items-center truncate">
           {value ? (
             <>
-              {value.base_name}
+              {cleanDisplayName(value.base_name)}
               <ColorDots colors={value.colors} />
             </>
           ) : (
@@ -149,7 +153,7 @@ function LeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate text-white">{opt.base_name}</span>
+                  <span className="flex-1 truncate text-white">{cleanDisplayName(opt.base_name)}</span>
                   <ColorDots colors={opt.colors} />
                 </button>
               ))
@@ -227,7 +231,7 @@ function OpponentLeaderSelect({
         <span className="flex items-center truncate">
           {value ? (
             <>
-              {value.base_name}
+              {cleanDisplayName(value.base_name)}
               <ColorDots colors={value.colors} />
             </>
           ) : (
@@ -266,11 +270,60 @@ function OpponentLeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate text-white">{opt.base_name}</span>
+                  <span className="flex-1 truncate text-white">{cleanDisplayName(opt.base_name)}</span>
                   <ColorDots colors={opt.colors} />
                 </button>
               ))
             )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SimpleSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+      >
+        <span className="truncate">
+          {selected ? selected.label : <span className="text-gray-500">{placeholder}</span>}
+        </span>
+        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+          <div className="max-h-60 overflow-y-auto">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -324,18 +377,12 @@ function RoundCard({
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               Contra quién jugaste
             </label>
-            <select
+            <SimpleSelect
               value={round.opponent_player_id ?? ""}
-              onChange={(e) => onChange({ opponent_player_id: e.target.value || null })}
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-            >
-              <option value="">Selecciona oponente…</option>
-              {opponents.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.geek_tag}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => onChange({ opponent_player_id: v || null })}
+              placeholder="Selecciona oponente…"
+              options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
+            />
           </div>
 
           <div className="mb-3">
@@ -357,31 +404,27 @@ function RoundCard({
               <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
                 ¿Quién ganó el dado?
               </label>
-              <select
+              <SimpleSelect
                 value={round.won_die_roll === null ? "" : round.won_die_roll ? "me" : "opp"}
-                onChange={(e) =>
-                  onChange({ won_die_roll: e.target.value === "" ? null : e.target.value === "me" })
-                }
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-              >
-                <option value="">—</option>
-                <option value="me">Yo</option>
-                <option value="opp">Oponente</option>
-              </select>
+                onChange={(v) => onChange({ won_die_roll: v === "" ? null : v === "me" })}
+                placeholder="—"
+                options={[
+                  { value: "me", label: "Yo" },
+                  { value: "opp", label: "Oponente" },
+                ]}
+              />
             </div>
             <div>
               <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">Tu turno</label>
-              <select
+              <SimpleSelect
                 value={round.turn_order ?? ""}
-                onChange={(e) =>
-                  onChange({ turn_order: (e.target.value || null) as "first" | "second" | null })
-                }
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-              >
-                <option value="">—</option>
-                <option value="first">Primero</option>
-                <option value="second">Segundo</option>
-              </select>
+                onChange={(v) => onChange({ turn_order: (v || null) as "first" | "second" | null })}
+                placeholder="—"
+                options={[
+                  { value: "first", label: "Primero" },
+                  { value: "second", label: "Segundo" },
+                ]}
+              />
             </div>
           </div>
 
@@ -389,17 +432,15 @@ function RoundCard({
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               ¿Quién ganó el match?
             </label>
-            <select
+            <SimpleSelect
               value={round.won_match === null ? "" : round.won_match ? "me" : "opp"}
-              onChange={(e) =>
-                onChange({ won_match: e.target.value === "" ? null : e.target.value === "me" })
-              }
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-            >
-              <option value="">—</option>
-              <option value="me">Yo</option>
-              <option value="opp">Oponente</option>
-            </select>
+              onChange={(v) => onChange({ won_match: v === "" ? null : v === "me" })}
+              placeholder="—"
+              options={[
+                { value: "me", label: "Yo" },
+                { value: "opp", label: "Oponente" },
+              ]}
+            />
           </div>
         </>
       )}
