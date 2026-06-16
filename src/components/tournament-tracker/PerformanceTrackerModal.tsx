@@ -113,7 +113,7 @@ function LeaderSelect({
         <span className="flex items-center truncate">
           {value ? (
             <>
-              {value.base_name}
+              {cleanDisplayName(value.base_name)}
               <ColorDots colors={value.colors} />
             </>
           ) : (
@@ -153,7 +153,7 @@ function LeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate text-white">{opt.base_name}</span>
+                  <span className="flex-1 truncate text-white">{cleanDisplayName(opt.base_name)}</span>
                   <ColorDots colors={opt.colors} />
                 </button>
               ))
@@ -231,7 +231,7 @@ function OpponentLeaderSelect({
         <span className="flex items-center truncate">
           {value ? (
             <>
-              {value.base_name}
+              {cleanDisplayName(value.base_name)}
               <ColorDots colors={value.colors} />
             </>
           ) : (
@@ -270,11 +270,60 @@ function OpponentLeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate text-white">{opt.base_name}</span>
+                  <span className="flex-1 truncate text-white">{cleanDisplayName(opt.base_name)}</span>
                   <ColorDots colors={opt.colors} />
                 </button>
               ))
             )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SimpleSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+      >
+        <span className="truncate">
+          {selected ? selected.label : <span className="text-gray-500">{placeholder}</span>}
+        </span>
+        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+          <div className="max-h-60 overflow-y-auto">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
