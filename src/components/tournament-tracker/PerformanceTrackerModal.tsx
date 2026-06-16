@@ -347,7 +347,7 @@ function RoundCard({
   onSave: () => void;
   saving: boolean;
 }) {
-  const [opponentLeader, setOpponentLeader] = useState<DeckIdentifier | null>(null);
+  
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-4">
