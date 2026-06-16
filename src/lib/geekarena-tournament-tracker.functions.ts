@@ -67,10 +67,14 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
 
     const { data: tournament } = await admin
       .from("tournaments")
-      .select("id, game_id")
+      .select("id, game_id, tournament_date, store_id")
       .eq("id", data.tournament_id)
       .single();
     if (!tournament) throw new Error("Torneo no encontrado");
+
+    const { data: store } = tournament.store_id
+      ? await admin.from("stores").select("name").eq("id", tournament.store_id).maybeSingle()
+      : { data: null as { name: string } | null };
 
     const { data: results } = await admin
       .from("tournament_results")
