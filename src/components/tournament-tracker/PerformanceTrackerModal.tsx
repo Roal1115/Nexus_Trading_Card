@@ -679,8 +679,48 @@ export function PerformanceTrackerModal({
     </>
   );
 
+  const clearConfirmModal = (
+    <>
+      {confirmingClear && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0f1117] p-6 text-center shadow-2xl">
+            <p className="text-base font-bold text-white">
+              ¿Eliminar todo el historial de este torneo?
+            </p>
+            <p className="mt-2 text-sm text-gray-400">
+              Se borrarán todas las rondas que registraste para este torneo. Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={handleClearAll}
+                disabled={clearing}
+                className="rounded-md bg-red-500 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-50"
+              >
+                {clearing ? "Eliminando…" : "Sí, eliminar todo"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(false)}
+                disabled={clearing}
+                className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   if (embedded) {
-    return <div className="h-full overflow-y-auto pr-1">{content}</div>;
+    return (
+      <>
+        {content}
+        {clearConfirmModal}
+      </>
+    );
   }
 
   return (
