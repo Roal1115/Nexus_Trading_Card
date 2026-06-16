@@ -285,3 +285,30 @@ export const clearTournamentRounds = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { success: true };
   });
+
+// ============================================================
+// deleteRoundResult — borra una ronda específica del jugador actual
+// ============================================================
+export const deleteRoundResult = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { tournament_id: string; round_number: number }) =>
+    z
+      .object({
+        tournament_id: z.string().uuid(),
+        round_number: z.number().int().min(1).max(10),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { error } = await admin
+      .from("tournament_round_results")
+      .delete()
+      .eq("tournament_id", data.tournament_id)
+      .eq("player_id", player.id)
+      .eq("round_number", data.round_number);
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
