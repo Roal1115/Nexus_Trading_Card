@@ -163,10 +163,8 @@ export const saveRoundResult = createServerFn({ method: "POST" })
     if (!data.is_bye && data.opponent_player_id) {
       const mirrorTurnOrder =
         data.turn_order === "first" ? "second" : data.turn_order === "second" ? "first" : null;
-      const mirrorWonDieRoll =
-        data.won_die_roll == null ? null : !data.won_die_roll;
-      const mirrorWonMatch =
-        data.won_match == null ? null : !data.won_match;
+      const mirrorWonDieRoll = data.won_die_roll == null ? null : !data.won_die_roll;
+      const mirrorWonMatch = data.won_match == null ? null : !data.won_match;
 
       const opponentRow = {
         tournament_id: data.tournament_id,
