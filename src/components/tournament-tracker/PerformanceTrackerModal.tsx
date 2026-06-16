@@ -392,10 +392,9 @@ function RoundCard({
             </label>
             <OpponentLeaderSelect
               gameId={gameId}
-              value={opponentLeader}
+              value={round.opponent_leader ?? null}
               onChange={(d) => {
-                setOpponentLeader(d);
-                onChange({ opponent_leader_id: d?.id ?? null });
+                onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
               }}
             />
           </div>
