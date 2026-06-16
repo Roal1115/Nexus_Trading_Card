@@ -131,7 +131,7 @@ function LeaderSelect({
               className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>
-          <div className="max-h-56 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
             {options.length === 0 ? (
               <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
             ) : (
@@ -248,7 +248,7 @@ function OpponentLeaderSelect({
               className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>
-          <div className="max-h-56 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
             {options.length === 0 ? (
               <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
             ) : (
@@ -618,7 +618,7 @@ export function PerformanceTrackerModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="glass relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+        className="glass relative w-full max-w-3xl max-h-[90vh] min-h-[500px] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
       >
         {content}
       </div>
