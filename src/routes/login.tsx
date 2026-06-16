@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveEmailByGeekTag } from "@/lib/geekarena-auth-helpers.functions";
 import { geekarena } from "@/integrations/geekarena/client";
 
 export const Route = createFileRoute("/login")({
