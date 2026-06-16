@@ -562,7 +562,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                   </div>
                 </div>
                 </div>
-                <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[75vh] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+                <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:h-[75vh] lg:overflow-y-auto lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
                   <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
                     Performance Tracker
                   </h3>
