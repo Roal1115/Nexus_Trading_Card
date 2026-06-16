@@ -78,7 +78,7 @@ function LeaderSelect({
   useEffect(() => {
     if (!open) return;
     const handle = setTimeout(() => {
-      fetchDeckIdentifiers({ data: { game_id: gameId, search: search || undefined } })
+      fetchDeckIdentifiers({ data: { game_id: gameId, search: search || undefined, basic_only: true } })
         .then((rows) => setOptions(rows as DeckIdentifier[]))
         .catch(() => setOptions([]));
     }, 200);
@@ -91,7 +91,7 @@ function LeaderSelect({
       setArtVariants([]);
       return;
     }
-    fetchDeckIdentifiers({ data: { game_id: gameId, search: value.base_name } })
+    fetchDeckIdentifiers({ data: { game_id: gameId, search: value.base_name, basic_only: false } })
       .then((rows) =>
         setArtVariants((rows as DeckIdentifier[]).filter((r) => r.base_name === value.base_name)),
       )
@@ -144,13 +144,13 @@ function LeaderSelect({
                     setOpen(false);
                     setSearch("");
                   }}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-white hover:bg-white/10"
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
                 >
-                  <span className="flex items-center truncate">
-                    {opt.card_name}
-                    <ColorDots colors={opt.colors} />
+                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                    {opt.card_set_id}
                   </span>
-                  <span className="text-[10px] text-gray-500 flex-shrink-0 ml-2">{opt.set_code}</span>
+                  <span className="flex-1 truncate text-white">{opt.base_name}</span>
+                  <ColorDots colors={opt.colors} />
                 </button>
               ))
             )}
@@ -209,7 +209,7 @@ function OpponentLeaderSelect({
   useEffect(() => {
     if (!open) return;
     const handle = setTimeout(() => {
-      fetchDeckIdentifiers({ data: { game_id: gameId, search: search || undefined } })
+      fetchDeckIdentifiers({ data: { game_id: gameId, search: search || undefined, basic_only: true } })
         .then((rows) => setOptions(rows as DeckIdentifier[]))
         .catch(() => setOptions([]));
     }, 200);
@@ -261,13 +261,13 @@ function OpponentLeaderSelect({
                     setOpen(false);
                     setSearch("");
                   }}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-white hover:bg-white/10"
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
                 >
-                  <span className="flex items-center truncate">
-                    {opt.card_name}
-                    <ColorDots colors={opt.colors} />
+                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                    {opt.card_set_id}
                   </span>
-                  <span className="text-[10px] text-gray-500 flex-shrink-0 ml-2">{opt.set_code}</span>
+                  <span className="flex-1 truncate text-white">{opt.base_name}</span>
+                  <ColorDots colors={opt.colors} />
                 </button>
               ))
             )}
@@ -618,7 +618,7 @@ export function PerformanceTrackerModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="glass relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+        className="glass relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
       >
         {content}
       </div>
