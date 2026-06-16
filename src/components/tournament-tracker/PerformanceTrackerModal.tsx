@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, X, Plus, Trophy, ChevronDown, Save } from "lucide-react";
+import { Search, X, Plus, Trophy, ChevronDown, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getDeckIdentifiers,
   getTournamentRoundsForPlayer,
   saveRoundResult,
+  clearTournamentRounds,
 } from "@/lib/geekarena-tournament-tracker.functions";
 
 type DeckIdentifier = {
@@ -482,6 +483,7 @@ export function PerformanceTrackerModal({
 }) {
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const saveRound = useServerFn(saveRoundResult);
+  const clearRounds = useServerFn(clearTournamentRounds);
 
   const [loading, setLoading] = useState(true);
   const [maxRounds, setMaxRounds] = useState(0);
@@ -489,6 +491,23 @@ export function PerformanceTrackerModal({
   const [rounds, setRounds] = useState<RoundRow[]>([]);
   const [myLeader, setMyLeader] = useState<DeckIdentifier | null>(null);
   const [savingRound, setSavingRound] = useState<number | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      await clearRounds({ data: { tournament_id: tournamentId } });
+      setRounds([]);
+      setMyLeader(null);
+      toast.success("Se eliminó todo el historial de este torneo");
+    } catch {
+      toast.error("Error al eliminar el historial");
+    } finally {
+      setClearing(false);
+      setConfirmingClear(false);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -593,6 +612,16 @@ export function PerformanceTrackerModal({
             </p>
           </div>
         </div>
+        {rounds.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setConfirmingClear(true)}
+            title="Eliminar todo el historial de este torneo"
+            className="rounded-md p-1.5 text-gray-400 hover:bg-red-500/15 hover:text-red-400 transition"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
         {!embedded && (
           <button
             type="button"
