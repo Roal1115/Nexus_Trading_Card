@@ -564,23 +564,36 @@ export function PerformanceTrackerModal({
     [rounds],
   );
 
-  const addRound = () => {
-    if (rounds.length >= maxRounds) return;
-    const nextNumber = rounds.length > 0 ? Math.max(...rounds.map((r) => r.round_number)) + 1 : 1;
-    setRounds((prev) => [
-      ...prev,
-      {
-        round_number: nextNumber,
-        is_bye: false,
-        opponent_player_id: null,
-        player_leader_id: null,
-        opponent_leader_id: null,
-        won_die_roll: null,
-        turn_order: null,
-        won_match: null,
-        notes: null,
-      },
-    ]);
+  const occupiedRoundNumbers = useMemo(
+    () => new Set(rounds.map((r) => r.round_number)),
+    [rounds],
+  );
+
+  const availableRoundNumbers = useMemo(() => {
+    const out: number[] = [];
+    for (let n = 1; n <= maxRounds; n++) {
+      if (!occupiedRoundNumbers.has(n)) out.push(n);
+    }
+    return out;
+  }, [maxRounds, occupiedRoundNumbers]);
+
+  const addRound = (roundNumber: number) => {
+    setRounds((prev) =>
+      [
+        ...prev,
+        {
+          round_number: roundNumber,
+          is_bye: false,
+          opponent_player_id: null,
+          player_leader_id: null,
+          opponent_leader_id: null,
+          won_die_roll: null,
+          turn_order: null,
+          won_match: null,
+          notes: null,
+        },
+      ].sort((a, b) => a.round_number - b.round_number),
+    );
   };
 
   const updateRound = (idx: number, patch: Partial<RoundRow>) => {
@@ -685,32 +698,57 @@ export function PerformanceTrackerModal({
           </div>
 
           <div className="space-y-3">
-            {rounds.map((round, idx) => (
-              <RoundCard
-                key={round.id ?? `new-${idx}`}
-                round={round}
-                opponents={opponents.filter(
-                  (o) => o.id === round.opponent_player_id || !usedOpponentIds.has(o.id),
-                )}
-                gameId={gameId}
-                onChange={(patch) => updateRound(idx, patch)}
-                onSave={() => handleSaveRound(idx)}
-                onDelete={() => handleDeleteRound(idx)}
-                saving={savingRound === idx}
-                deleting={deletingRound === idx}
-              />
-            ))}
+            {rounds.map((round, idx) =>
+              round.is_auto_populated ? (
+                <div
+                  key={round.id ?? `auto-${idx}`}
+                  className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-white">
+                      Ronda {round.round_number}{" "}
+                      <span className="ml-1 text-[10px] font-normal uppercase tracking-wider text-amber-400">
+                        Reportada por tu oponente
+                      </span>
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Este resultado fue registrado por tu rival en esta ronda. Por ahora no se puede editar
+                    desde aquí.
+                  </p>
+                </div>
+              ) : (
+                <RoundCard
+                  key={round.id ?? `new-${idx}`}
+                  round={round}
+                  opponents={opponents.filter(
+                    (o) => o.id === round.opponent_player_id || !usedOpponentIds.has(o.id),
+                  )}
+                  gameId={gameId}
+                  onChange={(patch) => updateRound(idx, patch)}
+                  onSave={() => handleSaveRound(idx)}
+                  onDelete={() => handleDeleteRound(idx)}
+                  saving={savingRound === idx}
+                  deleting={deletingRound === idx}
+                />
+              ),
+            )}
           </div>
 
-          <button
-            type="button"
-            onClick={addRound}
-            disabled={rounds.length >= maxRounds || maxRounds === 0}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-white/20 py-3 text-sm font-medium text-gray-300 hover:border-primary hover:text-primary transition disabled:opacity-40 disabled:hover:border-white/20 disabled:hover:text-gray-300"
-          >
-            <Plus size={14} /> Agregar Ronda{" "}
-            {rounds.length >= maxRounds && maxRounds > 0 ? "(máximo alcanzado)" : ""}
-          </button>
+          {availableRoundNumbers.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {availableRoundNumbers.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => addRound(n)}
+                  className="flex items-center gap-1.5 rounded-md border border-dashed border-white/20 px-4 py-2 text-sm font-medium text-gray-300 hover:border-primary hover:text-primary transition"
+                >
+                  <Plus size={14} /> Ronda {n}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </>
