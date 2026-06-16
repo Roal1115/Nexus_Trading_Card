@@ -98,13 +98,13 @@ function LeaderSelect({
       setArtVariants([]);
       return;
     }
-    fetchDeckIdentifiers({ data: { game_id: gameId, search: value.base_name, basic_only: false } })
-      .then((rows) =>
-        setArtVariants((rows as DeckIdentifier[]).filter((r) => r.base_name === value.base_name)),
-      )
+    fetchDeckIdentifiers({
+      data: { game_id: gameId, card_set_id: value.card_set_id ?? undefined },
+    })
+      .then((rows) => setArtVariants(rows as DeckIdentifier[]))
       .catch(() => setArtVariants([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value?.base_name]);
+  }, [value?.card_set_id]);
 
   return (
     <div className="relative">
