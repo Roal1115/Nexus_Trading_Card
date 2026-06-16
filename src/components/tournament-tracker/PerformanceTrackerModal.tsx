@@ -564,23 +564,36 @@ export function PerformanceTrackerModal({
     [rounds],
   );
 
-  const addRound = () => {
-    if (rounds.length >= maxRounds) return;
-    const nextNumber = rounds.length > 0 ? Math.max(...rounds.map((r) => r.round_number)) + 1 : 1;
-    setRounds((prev) => [
-      ...prev,
-      {
-        round_number: nextNumber,
-        is_bye: false,
-        opponent_player_id: null,
-        player_leader_id: null,
-        opponent_leader_id: null,
-        won_die_roll: null,
-        turn_order: null,
-        won_match: null,
-        notes: null,
-      },
-    ]);
+  const occupiedRoundNumbers = useMemo(
+    () => new Set(rounds.map((r) => r.round_number)),
+    [rounds],
+  );
+
+  const availableRoundNumbers = useMemo(() => {
+    const out: number[] = [];
+    for (let n = 1; n <= maxRounds; n++) {
+      if (!occupiedRoundNumbers.has(n)) out.push(n);
+    }
+    return out;
+  }, [maxRounds, occupiedRoundNumbers]);
+
+  const addRound = (roundNumber: number) => {
+    setRounds((prev) =>
+      [
+        ...prev,
+        {
+          round_number: roundNumber,
+          is_bye: false,
+          opponent_player_id: null,
+          player_leader_id: null,
+          opponent_leader_id: null,
+          won_die_roll: null,
+          turn_order: null,
+          won_match: null,
+          notes: null,
+        },
+      ].sort((a, b) => a.round_number - b.round_number),
+    );
   };
 
   const updateRound = (idx: number, patch: Partial<RoundRow>) => {
