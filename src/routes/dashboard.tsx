@@ -560,6 +560,15 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     </table>
                   </div>
                 </div>
+                <div className="border-t border-white/10 pt-6 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+                  <PerformanceTrackerModal
+                    tournamentId={tournamentDetail.tournament_id}
+                    gameId={tournamentDetail.game_id}
+                    onClose={() => {}}
+                    embedded
+                  />
+                </div>
+              </div>
               </div>
             ) : (
               <div className="py-16 text-center text-sm text-gray-500">No se pudo cargar el torneo.</div>
