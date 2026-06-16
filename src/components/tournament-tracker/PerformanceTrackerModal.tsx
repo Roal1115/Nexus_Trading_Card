@@ -377,18 +377,12 @@ function RoundCard({
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               Contra quién jugaste
             </label>
-            <select
+            <SimpleSelect
               value={round.opponent_player_id ?? ""}
-              onChange={(e) => onChange({ opponent_player_id: e.target.value || null })}
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-            >
-              <option value="">Selecciona oponente…</option>
-              {opponents.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.geek_tag}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => onChange({ opponent_player_id: v || null })}
+              placeholder="Selecciona oponente…"
+              options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
+            />
           </div>
 
           <div className="mb-3">
@@ -410,31 +404,27 @@ function RoundCard({
               <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
                 ¿Quién ganó el dado?
               </label>
-              <select
+              <SimpleSelect
                 value={round.won_die_roll === null ? "" : round.won_die_roll ? "me" : "opp"}
-                onChange={(e) =>
-                  onChange({ won_die_roll: e.target.value === "" ? null : e.target.value === "me" })
-                }
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-              >
-                <option value="">—</option>
-                <option value="me">Yo</option>
-                <option value="opp">Oponente</option>
-              </select>
+                onChange={(v) => onChange({ won_die_roll: v === "" ? null : v === "me" })}
+                placeholder="—"
+                options={[
+                  { value: "me", label: "Yo" },
+                  { value: "opp", label: "Oponente" },
+                ]}
+              />
             </div>
             <div>
               <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">Tu turno</label>
-              <select
+              <SimpleSelect
                 value={round.turn_order ?? ""}
-                onChange={(e) =>
-                  onChange({ turn_order: (e.target.value || null) as "first" | "second" | null })
-                }
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-              >
-                <option value="">—</option>
-                <option value="first">Primero</option>
-                <option value="second">Segundo</option>
-              </select>
+                onChange={(v) => onChange({ turn_order: (v || null) as "first" | "second" | null })}
+                placeholder="—"
+                options={[
+                  { value: "first", label: "Primero" },
+                  { value: "second", label: "Segundo" },
+                ]}
+              />
             </div>
           </div>
 
@@ -442,17 +432,15 @@ function RoundCard({
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               ¿Quién ganó el match?
             </label>
-            <select
+            <SimpleSelect
               value={round.won_match === null ? "" : round.won_match ? "me" : "opp"}
-              onChange={(e) =>
-                onChange({ won_match: e.target.value === "" ? null : e.target.value === "me" })
-              }
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-            >
-              <option value="">—</option>
-              <option value="me">Yo</option>
-              <option value="opp">Oponente</option>
-            </select>
+              onChange={(v) => onChange({ won_match: v === "" ? null : v === "me" })}
+              placeholder="—"
+              options={[
+                { value: "me", label: "Yo" },
+                { value: "opp", label: "Oponente" },
+              ]}
+            />
           </div>
         </>
       )}
