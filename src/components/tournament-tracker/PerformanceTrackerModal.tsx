@@ -26,6 +26,7 @@ type RoundRow = {
   opponent_player_id: string | null;
   player_leader_id: string | null;
   opponent_leader_id: string | null;
+  opponent_leader?: DeckIdentifier | null;
   won_die_roll: boolean | null;
   turn_order: "first" | "second" | null;
   won_match: boolean | null;
