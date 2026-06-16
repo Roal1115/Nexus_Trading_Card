@@ -26,6 +26,7 @@ type RoundRow = {
   opponent_player_id: string | null;
   player_leader_id: string | null;
   opponent_leader_id: string | null;
+  opponent_leader?: DeckIdentifier | null;
   won_die_roll: boolean | null;
   turn_order: "first" | "second" | null;
   won_match: boolean | null;
@@ -346,7 +347,7 @@ function RoundCard({
   onSave: () => void;
   saving: boolean;
 }) {
-  const [opponentLeader, setOpponentLeader] = useState<DeckIdentifier | null>(null);
+  
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-4">
@@ -391,10 +392,9 @@ function RoundCard({
             </label>
             <OpponentLeaderSelect
               gameId={gameId}
-              value={opponentLeader}
+              value={round.opponent_leader ?? null}
               onChange={(d) => {
-                setOpponentLeader(d);
-                onChange({ opponent_leader_id: d?.id ?? null });
+                onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
               }}
             />
           </div>
@@ -496,6 +496,7 @@ export function PerformanceTrackerModal({
       .then((res: any) => {
         setMaxRounds(res.max_rounds);
         setOpponents(res.opponents);
+        setMyLeader(res.my_tournament_leader ?? null);
         setRounds(
           res.rounds.map((r: any) => ({
             id: r.id,
@@ -504,6 +505,7 @@ export function PerformanceTrackerModal({
             opponent_player_id: r.opponent_player_id,
             player_leader_id: r.player_leader_id,
             opponent_leader_id: r.opponent_leader_id,
+            opponent_leader: r.opponent_leader ?? null,
             won_die_roll: r.won_die_roll,
             turn_order: r.turn_order,
             won_match: r.won_match,
