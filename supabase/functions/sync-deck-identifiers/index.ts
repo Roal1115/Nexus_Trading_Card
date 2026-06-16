@@ -3,10 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ONE_PIECE_GAME_ID = "5b608762-d0a3-4a93-9739-e5cd150b01cd";
 const EXCLUDED_SET_PREFIXES = ["OP01", "OP02", "OP03", "OP04"];
 
-const ENDPOINTS = [
-  "https://www.optcgapi.com/api/sets/filtered/?card_type=Leader",
-  "https://www.optcgapi.com/api/decks/filtered/?card_type=Leader",
-  "https://www.optcgapi.com/api/promos/filtered/?card_type=Leader",
+const ENDPOINTS: { url: string; source: "set" | "deck" | "promo" }[] = [
+  { url: "https://www.optcgapi.com/api/sets/filtered/?card_type=Leader", source: "set" },
+  { url: "https://www.optcgapi.com/api/decks/filtered/?card_type=Leader", source: "deck" },
+  { url: "https://www.optcgapi.com/api/promos/filtered/?card_type=Leader", source: "promo" },
 ];
 
 function isExcluded(cardSetId: string): boolean {
@@ -22,43 +22,47 @@ function parseColors(cardColor: string | null | undefined): string[] {
   return cardColor.split(/\s+/).filter(Boolean);
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (_req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const admin = createClient(supabaseUrl, serviceRoleKey);
 
-  const seenCardSetIds = new Set<string>();
+  // Clave de dedup ahora es (api_source, card_image_id) — único POR endpoint
+  const seenKeys = new Set<string>();
   const rowsToUpsert: Record<string, unknown>[] = [];
 
   try {
-    for (const url of ENDPOINTS) {
-      const res = await fetch(url);
+    for (const endpoint of ENDPOINTS) {
+      const res = await fetch(endpoint.url);
       if (!res.ok) {
-        throw new Error(`${url} respondió ${res.status}`);
+        throw new Error(`${endpoint.url} respondió ${res.status}`);
       }
       const json = await res.json();
       const cards: any[] = Array.isArray(json) ? json : (json?.results ?? json?.data ?? []);
-      console.log(`[sync] ${url} → ${cards.length} cards recibidas`);
-
+      console.log(`[sync] ${endpoint.url} → ${cards.length} cards recibidas`);
 
       for (const card of cards) {
         const cardSetId: string | undefined = card.card_set_id;
         const cardName: string | undefined = card.card_name;
-        if (!cardSetId || !cardName) continue;
+        const cardImageId: string | undefined = card.card_image_id ?? cardSetId;
+        if (!cardSetId || !cardName || !cardImageId) continue;
         if (isExcluded(cardSetId)) continue;
-        if (seenCardSetIds.has(cardSetId)) continue; // evitar duplicados entre endpoints
-        seenCardSetIds.add(cardSetId);
+
+        const dedupKey = `${endpoint.source}:${cardImageId}`;
+        if (seenKeys.has(dedupKey)) continue;
+        seenKeys.add(dedupKey);
 
         rowsToUpsert.push({
           game_id: ONE_PIECE_GAME_ID,
           identifier_type: "leader",
           source: "api",
+          api_source: endpoint.source,
           card_set_id: cardSetId,
           card_name: cardName,
           base_name: deriveBaseName(cardName),
           colors: parseColors(card.card_color),
           card_image: card.card_image ?? null,
-          card_image_id: card.card_image_id ?? null,
+          card_image_id: cardImageId,
           set_code: card.set_id ?? null,
           set_name: card.set_name ?? null,
           rarity: card.rarity ?? null,
@@ -74,28 +78,26 @@ Deno.serve(async (req) => {
       throw new Error("No se recibieron leaders válidos de ninguna fuente");
     }
 
-
-    // Upsert masivo en batches de 200 para evitar payloads excesivos
     const BATCH_SIZE = 200;
     for (let i = 0; i < rowsToUpsert.length; i += BATCH_SIZE) {
       const batch = rowsToUpsert.slice(i, i + BATCH_SIZE);
       const { error } = await admin
         .from("deck_identifiers")
-        .upsert(batch, { onConflict: "game_id,card_set_id" });
+        .upsert(batch, { onConflict: "game_id,card_image_id,api_source" });
       if (error) throw new Error(`Upsert batch failed: ${error.message}`);
     }
 
-    // Soft-delete: leaders activos en DB que ya no aparecieron en esta corrida
+    // Soft-delete: filas activas que ya no aparecieron en esta corrida
     const { data: activeRows, error: activeErr } = await admin
       .from("deck_identifiers")
-      .select("id, card_set_id")
+      .select("id, card_image_id, api_source")
       .eq("game_id", ONE_PIECE_GAME_ID)
       .eq("source", "api")
       .eq("is_active", true);
     if (activeErr) throw new Error(`Fetch active rows failed: ${activeErr.message}`);
 
     const toDeactivate = (activeRows ?? [])
-      .filter((r: any) => r.card_set_id && !seenCardSetIds.has(r.card_set_id))
+      .filter((r: any) => !seenKeys.has(`${r.api_source}:${r.card_image_id}`))
       .map((r: any) => r.id);
 
     let deactivated = 0;
