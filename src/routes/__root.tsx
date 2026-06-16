@@ -35,7 +35,48 @@ function NotFoundComponent() {
   );
 }
 
+const CHUNK_RELOAD_KEY = "__chunk_reload_at__";
+
+function isChunkLoadError(error: unknown): boolean {
+  const msg = (error as any)?.message ?? String(error ?? "");
+  return (
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /ChunkLoadError/i.test(msg) ||
+    /Loading chunk [\d]+ failed/i.test(msg)
+  );
+}
+
+if (typeof window !== "undefined") {
+  const tryReload = (err: unknown) => {
+    if (!isChunkLoadError(err)) return;
+    try {
+      const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? "0");
+      if (Date.now() - last < 10_000) return;
+      sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+    } catch {
+      // ignore storage errors
+    }
+    window.location.reload();
+  };
+  window.addEventListener("error", (e) => tryReload((e as ErrorEvent).error ?? e.message));
+  window.addEventListener("unhandledrejection", (e) =>
+    tryReload((e as PromiseRejectionEvent).reason),
+  );
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  if (typeof window !== "undefined" && isChunkLoadError(error)) {
+    try {
+      const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? "0");
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  }
   console.error(error);
   const router = useRouter();
 
