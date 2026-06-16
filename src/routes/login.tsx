@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveEmailByGeekTag } from "@/lib/geekarena-auth-helpers.functions";
 import { geekarena } from "@/integrations/geekarena/client";
 
 export const Route = createFileRoute("/login")({
@@ -31,13 +33,20 @@ function translateAuthError(msg: string): string {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const resolveEmail = useServerFn(resolveEmailByGeekTag);
+  const [identifier, setIdentifier] = useState(""); // Geek Tag o email
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
+
+  const resolveLoginEmail = async (value: string): Promise<string | null> => {
+    if (value.includes("@")) return value;
+    const { email: resolved } = await resolveEmail({ data: { geek_tag: value } });
+    return resolved;
+  };
 
   const startCooldown = () => {
     setCooldown(true);
@@ -50,28 +59,38 @@ function LoginPage() {
     setLoading(true);
     setNeedsConfirm(null);
 
-    const { data, error } = await geekarena.auth.signInWithPassword({ email, password });
+    const resolvedEmail = await resolveLoginEmail(identifier.trim());
+    if (!resolvedEmail) {
+      setLoading(false);
+      startCooldown();
+      toast.error("No encontramos una cuenta con ese correo o Geek Tag");
+      return;
+    }
+
+    const { data, error } = await geekarena.auth.signInWithPassword({
+      email: resolvedEmail,
+      password,
+    });
     setLoading(false);
     startCooldown();
 
     if (error) {
       if (/not confirmed/i.test(error.message)) {
-        setNeedsConfirm(email);
+        setNeedsConfirm(resolvedEmail);
         return;
       }
       toast.error(translateAuthError(error.message));
       return;
     }
     if (!data.user?.email_confirmed_at) {
-      setNeedsConfirm(email);
+      setNeedsConfirm(resolvedEmail);
       await geekarena.auth.signOut();
       return;
     }
-    // Redirect según rol leído desde la tabla players
     const { data: playerRow } = await geekarena
       .from("players")
       .select("role")
-      .eq("email", data.user?.email ?? email)
+      .eq("email", data.user?.email ?? resolvedEmail)
       .maybeSingle();
     const role = (playerRow as { role?: string } | null)?.role;
 
@@ -93,7 +112,16 @@ function LoginPage() {
     e.preventDefault();
     if (loading || cooldown) return;
     setLoading(true);
-    const { error } = await geekarena.auth.resetPasswordForEmail(email, {
+
+    const resolvedEmail = await resolveLoginEmail(identifier.trim());
+    if (!resolvedEmail) {
+      setLoading(false);
+      startCooldown();
+      toast.error("No encontramos una cuenta con ese correo o Geek Tag");
+      return;
+    }
+
+    const { error } = await geekarena.auth.resetPasswordForEmail(resolvedEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
@@ -141,13 +169,13 @@ function LoginPage() {
           </div>
         ) : (
           <form onSubmit={forgotMode ? sendReset : submit} className="space-y-4">
-            <Field label="Correo electrónico">
+            <Field label="Geek Tag o correo electrónico">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
-                placeholder="jugador@geekarena.gg"
+                placeholder="RedLotus o jugador@geekarena.gg"
                 className="input-base"
               />
             </Field>
