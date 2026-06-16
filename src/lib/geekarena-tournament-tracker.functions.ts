@@ -15,12 +15,13 @@ function groupOrder(cardSetId: string): number {
 // ============================================================
 export const getDeckIdentifiers = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { game_id: string; search?: string; basic_only?: boolean }) =>
+  .inputValidator((d: { game_id: string; search?: string; basic_only?: boolean; card_set_id?: string }) =>
     z
       .object({
         game_id: z.string().uuid(),
         search: z.string().max(100).optional(),
         basic_only: z.boolean().optional(),
+        card_set_id: z.string().max(20).optional(),
       })
       .parse(d),
   )
@@ -33,7 +34,10 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
       .eq("is_active", true)
       .not("card_set_id", "in", `(${EXCLUDED_EVENT_LEADER_IDS.join(",")})`);
 
-    if (data.search && data.search.trim().length > 0) {
+    if (data.card_set_id) {
+      // Búsqueda exacta de variantes de UNA carta específica (mismo card_set_id)
+      q = q.eq("card_set_id", data.card_set_id);
+    } else if (data.search && data.search.trim().length > 0) {
       q = q.ilike("base_name", `%${data.search.trim()}%`);
     }
 
@@ -41,7 +45,8 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
     const { data: rows, error } = await q.limit(limit);
     if (error) throw new Error(error.message);
 
-    const basicOnly = data.basic_only ?? true;
+    // basic_only no aplica cuando se busca por card_set_id exacto (queremos TODAS sus variantes)
+    const basicOnly = data.card_set_id ? false : (data.basic_only ?? true);
     const filtered = basicOnly
       ? (rows ?? []).filter((r: any) => r.card_image_id === r.card_set_id)
       : (rows ?? []);
