@@ -432,10 +432,12 @@ export function PerformanceTrackerModal({
   tournamentId,
   gameId,
   onClose,
+  embedded = false,
 }: {
   tournamentId: string;
   gameId: string;
   onClose: () => void;
+  embedded?: boolean;
 }) {
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const saveRound = useServerFn(saveRoundResult);
