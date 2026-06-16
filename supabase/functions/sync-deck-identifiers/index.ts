@@ -14,7 +14,10 @@ function isExcluded(cardSetId: string): boolean {
 }
 
 function deriveBaseName(cardName: string): string {
-  return cardName.replace(/\s*\([^)]*\)/g, "").trim();
+  return cardName
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "")
+    .trim();
 }
 
 function parseColors(cardColor: string | null | undefined): string[] {
