@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, ShieldQuestion, Swords, TrendingDown } from "lucide-react";
+import { ChevronDown, ShieldQuestion, Swords, TrendingDown, Scale } from "lucide-react";
 import { getTournamentRoundsForPlayer } from "@/lib/geekarena-tournament-tracker.functions";
+import { AppealForm } from "@/components/tournament-tracker/AppealForm";
 
 function SummaryCard({
   summary,
@@ -76,28 +77,38 @@ type RoundWithLeaders = {
   round_number: number;
   is_bye: boolean;
   opponent_player_id: string | null;
-  player_leader: { card_name: string; base_name: string; card_image: string | null } | null;
-  opponent_leader: { card_name: string; base_name: string; card_image: string | null } | null;
+  player_leader: { id: string; card_name: string; base_name: string; card_image: string | null; colors?: string[] | null; card_image_id?: string | null; set_code?: string | null; card_set_id?: string | null } | null;
+  opponent_leader: { id: string; card_name: string; base_name: string; card_image: string | null; colors?: string[] | null; card_image_id?: string | null; set_code?: string | null; card_set_id?: string | null } | null;
   won_die_roll: boolean | null;
   turn_order: "first" | "second" | null;
   won_match: boolean | null;
   notes: string | null;
+  is_auto_populated?: boolean;
+  status?: string;
 };
 
 function RoundAccordionItem({
   round,
   opponentTag,
+  gameId,
+  onAppealSubmitted,
 }: {
   round: RoundWithLeaders;
   opponentTag: string;
+  gameId: string;
+  onAppealSubmitted: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const resultBg =
-    round.won_match === true
-      ? "bg-gradient-to-r from-emerald-500/15 via-transparent to-transparent border-emerald-500/30"
-      : round.won_match === false
-      ? "bg-gradient-to-r from-red-500/15 via-transparent to-transparent border-red-500/30"
-      : "bg-white/[0.02] border-white/10";
+  const [showAppealForm, setShowAppealForm] = useState(false);
+  const underAppeal = round.status === "under_appeal";
+
+  const resultBg = underAppeal
+    ? "bg-gradient-to-r from-amber-500/15 via-transparent to-transparent border-amber-500/30"
+    : round.won_match === true
+    ? "bg-gradient-to-r from-emerald-500/15 via-transparent to-transparent border-emerald-500/30"
+    : round.won_match === false
+    ? "bg-gradient-to-r from-red-500/15 via-transparent to-transparent border-red-500/30"
+    : "bg-white/[0.02] border-white/10";
 
   return (
     <div className={`rounded-xl border ${resultBg} overflow-hidden`}>
@@ -115,16 +126,22 @@ function RoundAccordionItem({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {round.won_match !== null && (
-            <span
-              className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                round.won_match
-                  ? "bg-emerald-500/20 text-emerald-400"
-                  : "bg-red-500/20 text-red-400"
-              }`}
-            >
-              {round.won_match ? "Victoria" : "Derrota"}
+          {underAppeal ? (
+            <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-400">
+              En revisión
             </span>
+          ) : (
+            round.won_match !== null && (
+              <span
+                className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  round.won_match
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-red-500/20 text-red-400"
+                }`}
+              >
+                {round.won_match ? "Victoria" : "Derrota"}
+              </span>
+            )
           )}
           <ChevronDown
             size={14}
@@ -195,13 +212,38 @@ function RoundAccordionItem({
           {round.notes && (
             <p className="mt-2 text-xs text-gray-400 italic">{round.notes}</p>
           )}
+
+          {round.is_auto_populated && !underAppeal && (
+            <button
+              type="button"
+              onClick={() => setShowAppealForm(true)}
+              className="mt-2 flex items-center gap-1 text-xs text-amber-400 hover:underline"
+            >
+              <Scale size={12} />
+              ¿No estás de acuerdo con el resultado? Apela aquí
+            </button>
+          )}
         </div>
+      )}
+
+      {showAppealForm && round.id && (
+        <AppealForm
+          roundId={round.id}
+          gameId={gameId}
+          currentPlayerLeader={round.player_leader}
+          currentOpponentLeader={round.opponent_leader}
+          currentWonMatch={round.won_match}
+          currentWonDieRoll={round.won_die_roll}
+          currentTurnOrder={round.turn_order}
+          onClose={() => setShowAppealForm(false)}
+          onSubmitted={onAppealSubmitted}
+        />
       )}
     </div>
   );
 }
 
-export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string }) {
+export function RoundsAccordionReadOnly({ tournamentId, gameId }: { tournamentId: string; gameId: string }) {
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState<RoundWithLeaders[]>([]);
@@ -217,7 +259,7 @@ export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string
   } | null>(null);
   const [leader, setLeader] = useState<{ base_name: string; card_image: string | null } | null>(null);
 
-  useEffect(() => {
+  const reload = () => {
     setLoading(true);
     fetchRounds({ data: { tournament_id: tournamentId } })
       .then((res: any) => {
@@ -230,6 +272,10 @@ export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string
       })
       .catch(() => setRounds([]))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId]);
 
@@ -254,6 +300,8 @@ export function RoundsAccordionReadOnly({ tournamentId }: { tournamentId: string
             key={r.id ?? `r-${r.round_number}`}
             round={r}
             opponentTag={r.opponent_player_id ? opponentMap[r.opponent_player_id] ?? "—" : "—"}
+            gameId={gameId}
+            onAppealSubmitted={reload}
           />
         ))}
       </div>
