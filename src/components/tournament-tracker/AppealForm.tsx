@@ -9,11 +9,11 @@ type DeckIdentifier = {
   id: string;
   card_name: string;
   base_name: string;
-  colors: string[] | null;
+  colors?: string[] | null;
   card_image: string | null;
-  card_image_id: string | null;
-  set_code: string | null;
-  card_set_id: string | null;
+  card_image_id?: string | null;
+  set_code?: string | null;
+  card_set_id?: string | null;
 };
 
 export function AppealForm({
