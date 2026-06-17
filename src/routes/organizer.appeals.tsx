@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Scale, ShieldQuestion, CheckCircle2, XCircle } from "lucide-react";
+import { Scale, ShieldQuestion, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { getStoreAppeals, resolveAppeal } from "@/lib/geekarena-appeals.functions";
 
@@ -12,27 +12,23 @@ export const Route = createFileRoute("/organizer/appeals")({
 
 type LeaderRef = { id: string; base_name: string; card_image: string | null } | null;
 
+type VersionInfo = {
+  appellant_leader: LeaderRef;
+  reporter_leader: LeaderRef;
+  appellant_won: boolean | null;
+  won_die_roll: boolean | null;
+  turn_order: "first" | "second" | null;
+};
+
 type AppealRow = {
   id: string;
   tournament_id: string;
   tournament_date: string | null;
   round_number: number;
   appellant_tag: string;
-  original_reporter_tag: string;
-  original: {
-    player_leader: LeaderRef;
-    opponent_leader: LeaderRef;
-    won_match: boolean | null;
-    won_die_roll: boolean | null;
-    turn_order: "first" | "second" | null;
-  };
-  proposed: {
-    player_leader: LeaderRef;
-    opponent_leader: LeaderRef;
-    won_match: boolean | null;
-    won_die_roll: boolean | null;
-    turn_order: "first" | "second" | null;
-  };
+  reporter_tag: string;
+  original: VersionInfo;
+  proposed: VersionInfo;
   created_at: string;
 };
 
@@ -61,40 +57,68 @@ function LeaderThumb({ leader }: { leader: LeaderRef }) {
 function VersionColumn({
   label,
   version,
+  appellantTag,
+  reporterTag,
 }: {
+  tag?: string;
   label: string;
-  version: AppealRow["original"];
+  version: VersionInfo;
+  appellantTag: string;
+  reporterTag: string;
 }) {
+  const winnerTag =
+    version.appellant_won === true ? appellantTag : version.appellant_won === false ? reporterTag : null;
+  const winnerLeader =
+    version.appellant_won === true
+      ? version.appellant_leader
+      : version.appellant_won === false
+      ? version.reporter_leader
+      : null;
+
   return (
-    <div className="flex-1 rounded-lg border border-white/10 bg-white/5 p-4">
-      <div className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">
-        {label}
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</p>
+
+      {winnerTag && (
+        <p className="mb-2 text-sm font-bold text-white">
+          Ganador: <span className="text-emerald-400">{winnerTag}</span>
+          {winnerLeader && <span className="text-gray-400"> ({winnerLeader.base_name})</span>}
+        </p>
+      )}
+
+      <div className="flex items-center justify-center gap-2">
+        <div className="text-center">
+          <LeaderThumb leader={version.appellant_leader} />
+          <p className="mt-1 text-[10px] text-gray-400">{appellantTag}</p>
+        </div>
+        <span className="text-xs text-gray-500">vs</span>
+        <div className="text-center">
+          <LeaderThumb leader={version.reporter_leader} />
+          <p className="mt-1 text-[10px] text-gray-400">{reporterTag}</p>
+        </div>
       </div>
 
-      <div className="mb-2 flex items-center gap-2 text-sm text-white">
-        <LeaderThumb leader={version.player_leader} />
-        <span className="text-gray-500">vs</span>
-        <LeaderThumb leader={version.opponent_leader} />
-      </div>
-
-      <div className="space-y-1 text-xs text-gray-400">
-        <div>
-          Resultado:{" "}
+      <div className="mt-2 space-y-1 border-t border-white/5 pt-2 text-xs text-gray-300">
+        <p>
+          Dado:{" "}
           <span className="text-white">
-            {version.won_match === true ? "Ganó" : version.won_match === false ? "Perdió" : "—"}
+            {version.won_die_roll === null
+              ? "—"
+              : version.won_die_roll
+              ? `Ganó ${appellantTag}`
+              : `Ganó ${reporterTag}`}
           </span>
-        </div>
-
-        <div>
-          Dado: {version.won_die_roll === null ? "—" : version.won_die_roll ? "Sí" : "No"}
-        </div>
-
-        <div>
+        </p>
+        <p>
           Turno:{" "}
           <span className="text-white">
-            {version.turn_order === "first" ? "Primero" : version.turn_order === "second" ? "Segundo" : "—"}
+            {version.turn_order === "first"
+              ? `${appellantTag} fue primero`
+              : version.turn_order === "second"
+              ? `${appellantTag} fue segundo`
+              : "—"}
           </span>
-        </div>
+        </p>
       </div>
     </div>
   );
@@ -119,25 +143,31 @@ function AppealCard({ appeal, onResolved }: { appeal: AppealRow; onResolved: () 
 
   return (
     <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Scale size={18} className="text-amber-400" />
-          <span className="text-sm font-bold text-white">
-            Ronda {appeal.round_number}
-          </span>
-          <span className="text-xs text-gray-500">
-            {appeal.original_reporter_tag} vs {appeal.appellant_tag}
-          </span>
-        </div>
-
-        <span className="text-xs text-gray-500">
-          {appeal.tournament_date ?? "—"}
-        </span>
+      <div className="mb-1 flex items-center gap-2">
+        <Scale size={16} className="text-amber-400" />
+        <p className="text-sm font-bold text-white">Ronda {appeal.round_number}</p>
+        <span className="ml-auto text-xs text-gray-500">{appeal.tournament_date ?? "—"}</span>
       </div>
+      <p className="mb-3 text-xs text-gray-400">
+        Esta apelación es de <span className="font-semibold text-white">{appeal.appellant_tag}</span> contra{" "}
+        <span className="font-semibold text-white">{appeal.reporter_tag}</span>
+      </p>
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <VersionColumn label="Original (reportada)" version={appeal.original} />
-        <VersionColumn label="Propuesta (apelante)" version={appeal.proposed} />
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <VersionColumn
+          tag="original"
+          label={`Original (reportada por ${appeal.reporter_tag})`}
+          version={appeal.original}
+          appellantTag={appeal.appellant_tag}
+          reporterTag={appeal.reporter_tag}
+        />
+        <VersionColumn
+          tag="proposed"
+          label={`Propuesta (de ${appeal.appellant_tag})`}
+          version={appeal.proposed}
+          appellantTag={appeal.appellant_tag}
+          reporterTag={appeal.reporter_tag}
+        />
       </div>
 
       <div className="flex gap-2">
@@ -191,9 +221,7 @@ function OrganizerAppealsPage() {
       {loading ? (
         <p className="text-sm text-gray-400">Cargando…</p>
       ) : appeals.length === 0 ? (
-        <p className="text-sm text-gray-400">
-          No hay apelaciones pendientes en tu tienda.
-        </p>
+        <p className="text-sm text-gray-400">No hay apelaciones pendientes en tu tienda.</p>
       ) : (
         <div className="space-y-4">
           {appeals.map((a) => (
