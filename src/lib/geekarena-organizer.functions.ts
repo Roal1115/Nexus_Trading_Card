@@ -559,9 +559,9 @@ export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
-    if (!player.home_store_id) return { pending: 0, approved: 0 };
+    if (!player.home_store_id) return { pending: 0, approved: 0, appeals: 0 };
 
-    const [pending, approved] = await Promise.all([
+    const [pending, approved, appealsRes] = await Promise.all([
       admin
         .from("tournaments")
         .select("*", { count: "exact", head: true })
@@ -572,11 +572,17 @@ export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
         .select("*", { count: "exact", head: true })
         .eq("store_id", player.home_store_id)
         .eq("status", "APPROVED"),
+      admin
+        .from("round_appeals")
+        .select("*", { count: "exact", head: true })
+        .eq("store_id", player.home_store_id)
+        .eq("status", "pending"),
     ]);
 
     return {
       pending: pending.count ?? 0,
       approved: approved.count ?? 0,
+      appeals: appealsRes.count ?? 0,
     };
   });
 
