@@ -1374,3 +1374,21 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
       alerts,
     };
   });
+
+export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    if (!player.home_store_id) {
+      return { appeals: 0 };
+    }
+
+    const { count } = await admin
+      .from("round_appeals")
+      .select("*", { count: "exact", head: true })
+      .eq("store_id", player.home_store_id)
+      .eq("status", "pending");
+
+    return { appeals: count ?? 0 };
+  });
