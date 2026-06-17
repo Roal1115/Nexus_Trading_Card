@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaOrganizer } from "./geekarena-auth.middleware";
+import { requireGeekarenaOrganizer, requireGeekarenaUser } from "./geekarena-auth.middleware";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
 function normalizeId(id: string): string {
