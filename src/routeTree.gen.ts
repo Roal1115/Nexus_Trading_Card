@@ -35,6 +35,7 @@ import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
 import { Route as OrganizerHistoryRouteImport } from './routes/organizer.history'
 import { Route as OrganizerCalendarRouteImport } from './routes/organizer.calendar'
+import { Route as OrganizerAppealsRouteImport } from './routes/organizer.appeals'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
 import { Route as AdminTournamentsPanelRouteImport } from './routes/admin.tournaments-panel'
 import { Route as AdminStoresRouteImport } from './routes/admin.stores'
@@ -182,6 +183,11 @@ const OrganizerCalendarRoute = OrganizerCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => OrganizerRoute,
 } as any)
+const OrganizerAppealsRoute = OrganizerAppealsRouteImport.update({
+  id: '/appeals',
+  path: '/appeals',
+  getParentRoute: () => OrganizerRoute,
+} as any)
 const AdminUploadRoute = AdminUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -280,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/admin/stores': typeof AdminStoresRoute
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/organizer/appeals': typeof OrganizerAppealsRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/admin/stores': typeof AdminStoresRoute
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/organizer/appeals': typeof OrganizerAppealsRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/admin/stores': typeof AdminStoresRoute
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/organizer/appeals': typeof OrganizerAppealsRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/history': typeof OrganizerHistoryRoute
   '/organizer/new': typeof OrganizerNewRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/tournaments-panel'
     | '/admin/upload'
+    | '/organizer/appeals'
     | '/organizer/calendar'
     | '/organizer/history'
     | '/organizer/new'
@@ -449,6 +459,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/tournaments-panel'
     | '/admin/upload'
+    | '/organizer/appeals'
     | '/organizer/calendar'
     | '/organizer/history'
     | '/organizer/new'
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/tournaments-panel'
     | '/admin/upload'
+    | '/organizer/appeals'
     | '/organizer/calendar'
     | '/organizer/history'
     | '/organizer/new'
@@ -712,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerCalendarRouteImport
       parentRoute: typeof OrganizerRoute
     }
+    '/organizer/appeals': {
+      id: '/organizer/appeals'
+      path: '/appeals'
+      fullPath: '/organizer/appeals'
+      preLoaderRoute: typeof OrganizerAppealsRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/admin/upload': {
       id: '/admin/upload'
       path: '/upload'
@@ -878,6 +897,7 @@ const OrganizerTournamentsRouteWithChildren =
   OrganizerTournamentsRoute._addFileChildren(OrganizerTournamentsRouteChildren)
 
 interface OrganizerRouteChildren {
+  OrganizerAppealsRoute: typeof OrganizerAppealsRoute
   OrganizerCalendarRoute: typeof OrganizerCalendarRoute
   OrganizerHistoryRoute: typeof OrganizerHistoryRoute
   OrganizerNewRoute: typeof OrganizerNewRoute
@@ -887,6 +907,7 @@ interface OrganizerRouteChildren {
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerAppealsRoute: OrganizerAppealsRoute,
   OrganizerCalendarRoute: OrganizerCalendarRoute,
   OrganizerHistoryRoute: OrganizerHistoryRoute,
   OrganizerNewRoute: OrganizerNewRoute,
