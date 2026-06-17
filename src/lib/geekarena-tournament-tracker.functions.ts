@@ -181,6 +181,42 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
     };
   });
 
+async function validateMaxWins(
+  admin: any,
+  tournamentId: string,
+  playerId: string,
+  roundNumberBeingSaved: number,
+  willBeWin: boolean,
+) {
+  if (!willBeWin) return;
+
+  const { data: myResult } = await admin
+    .from("tournament_results")
+    .select("match_points")
+    .eq("tournament_id", tournamentId)
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  const matchPoints = myResult?.match_points ?? 0;
+  const maxWins = Math.floor(matchPoints / 3);
+
+  const { data: existingWins } = await admin
+    .from("tournament_round_results")
+    .select("round_number, won_match, is_bye")
+    .eq("tournament_id", tournamentId)
+    .eq("player_id", playerId)
+    .eq("won_match", true)
+    .neq("round_number", roundNumberBeingSaved);
+
+  const currentWinCount = (existingWins ?? []).length;
+
+  if (currentWinCount + 1 > maxWins) {
+    throw new Error(
+      `No puedes registrar más de ${maxWins} victorias en este torneo (tuviste ${matchPoints} puntos de match). Revisa tus rondas guardadas.`,
+    );
+  }
+}
+
 // ============================================================
 // saveRoundResult — guarda una ronda + auto-pobla la fila espejo del oponente
 // ============================================================
@@ -223,6 +259,8 @@ export const saveRoundResult = createServerFn({ method: "POST" })
     }
 
     const wonMatch = data.is_bye ? true : (data.won_match ?? null);
+
+    await validateMaxWins(admin, data.tournament_id, player.id, data.round_number, wonMatch === true);
 
     const myRow = {
       tournament_id: data.tournament_id,
