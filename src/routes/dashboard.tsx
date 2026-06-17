@@ -566,7 +566,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                   <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
                     Performance Tracker
                   </h3>
-                  <RoundsAccordionReadOnly tournamentId={tournamentDetail.tournament_id} />
+                  <RoundsAccordionReadOnly tournamentId={tournamentDetail.tournament_id} gameId={tournamentDetail.game_id} />
                 </div>
               </div>
             ) : (
