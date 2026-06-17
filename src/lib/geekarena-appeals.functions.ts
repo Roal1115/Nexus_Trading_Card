@@ -169,25 +169,27 @@ export const getStoreAppeals = createServerFn({ method: "POST" })
 
     const shaped = appeals.map((a: any) => {
       const r = roundMap.get(a.original_round_id);
-      const originalReporterId = r?.opponent_player_id; // quien reportó (el otro jugador)
+      const reporterId = r?.opponent_player_id;
+      const reporterTag = reporterId ? playerMap.get(reporterId) ?? "—" : "—";
+      const appellantTag = playerMap.get(a.appellant_player_id) ?? "—";
       return {
         id: a.id,
         tournament_id: a.tournament_id,
         tournament_date: tournamentMap.get(a.tournament_id) ?? null,
         round_number: a.round_number,
-        appellant_tag: playerMap.get(a.appellant_player_id) ?? "—",
-        original_reporter_tag: originalReporterId ? playerMap.get(originalReporterId) ?? "—" : "—",
+        appellant_tag: appellantTag,
+        reporter_tag: reporterTag,
         original: {
-          player_leader: a.original_player_leader_id ? leaderMap.get(a.original_player_leader_id) ?? null : null,
-          opponent_leader: a.original_opponent_leader_id ? leaderMap.get(a.original_opponent_leader_id) ?? null : null,
-          won_match: a.original_won_match,
+          appellant_leader: a.original_player_leader_id ? leaderMap.get(a.original_player_leader_id) ?? null : null,
+          reporter_leader: a.original_opponent_leader_id ? leaderMap.get(a.original_opponent_leader_id) ?? null : null,
+          appellant_won: a.original_won_match,
           won_die_roll: a.original_won_die_roll,
           turn_order: a.original_turn_order,
         },
         proposed: {
-          player_leader: a.proposed_player_leader_id ? leaderMap.get(a.proposed_player_leader_id) ?? null : null,
-          opponent_leader: a.proposed_opponent_leader_id ? leaderMap.get(a.proposed_opponent_leader_id) ?? null : null,
-          won_match: a.proposed_won_match,
+          appellant_leader: a.proposed_player_leader_id ? leaderMap.get(a.proposed_player_leader_id) ?? null : null,
+          reporter_leader: a.proposed_opponent_leader_id ? leaderMap.get(a.proposed_opponent_leader_id) ?? null : null,
+          appellant_won: a.proposed_won_match,
           won_die_roll: a.proposed_won_die_roll,
           turn_order: a.proposed_turn_order,
         },
