@@ -42,6 +42,7 @@ function OrganizerLayout() {
           { to: "/organizer/history", label: "Historial de Torneos", icon: <History size={16} /> },
           { to: "/organizer/calendar", label: "Calendario", icon: <Calendar size={16} /> },
           { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
+          { to: "/organizer/appeals", label: "Apelaciones", icon: <Scale size={16} />, badge: counts?.appeals ?? 0 },
         ]}
       />
       <main className="min-w-0 flex-1">
