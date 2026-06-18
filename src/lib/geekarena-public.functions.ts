@@ -19,9 +19,10 @@ export const getPublicStores = createServerFn({ method: "POST" }).handler(async 
     : { data: [] as any[] };
 
   const gamesByStore = new Map<string, Array<{ id: string; name: string }>>();
-  for (const s of schedules ?? []) {
+  for (const s of (schedules ?? []) as any[]) {
     const arr = gamesByStore.get(s.store_id) ?? [];
-    if (s.games && !arr.some((g) => g.id === s.games.id)) arr.push(s.games);
+    const g = Array.isArray(s.games) ? s.games[0] : s.games;
+    if (g && !arr.some((x) => x.id === g.id)) arr.push(g);
     gamesByStore.set(s.store_id, arr);
   }
 
@@ -54,8 +55,9 @@ export const getPublicStoreProfile = createServerFn({ method: "POST" })
       .eq("store_id", store.id);
 
     const games: Array<{ id: string; name: string }> = [];
-    for (const s of schedules ?? []) {
-      if (s.games && !games.some((g) => g.id === s.games.id)) games.push(s.games);
+    for (const s of (schedules ?? []) as any[]) {
+      const g = Array.isArray(s.games) ? s.games[0] : s.games;
+      if (g && !games.some((x) => x.id === g.id)) games.push(g);
     }
 
     return { store: { ...store, games } };
