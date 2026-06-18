@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Menu, Shield, Trophy, User, X } from "lucide-react";
+import { LogOut, Menu, Shield, Store, Trophy, User, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { geekarena } from "@/integrations/geekarena/client";
@@ -39,6 +39,7 @@ export function AppHeader() {
 
         <nav className="hidden items-center gap-1 text-sm sm:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
+          <NavItem to="/tiendas" icon={<Store size={14} />} label="Tiendas" />
           {role === "player" && (
             <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
@@ -96,6 +97,15 @@ export function AppHeader() {
             >
               <Trophy size={16} />
               Ranking
+            </Link>
+
+            <Link
+              to="/tiendas"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
+            >
+              <Store size={16} />
+              Tiendas
             </Link>
 
             {role === "player" && (
