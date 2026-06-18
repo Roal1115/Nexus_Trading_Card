@@ -654,6 +654,7 @@ type EditStorePayload = {
   city: string;
   state: string;
   country: string;
+  zone: string;
   address?: string;
   phone?: string;
   google_maps_url?: string;
@@ -664,6 +665,19 @@ type EditStorePayload = {
   twitter?: string;
   twitch?: string;
 };
+
+const ZONE_OPTIONS = ["Zona Monterrey", "Zona CDMX", "Zona Guadalajara", "Zona Nacional"];
+
+function inferZone(city: string): string {
+  const c = city.toLowerCase();
+  const mtyMetro = ["monterrey", "san nicolás", "san nicolas", "guadalupe", "san pedro", "apodaca", "escobedo", "santa catarina"];
+  const cdmxMetro = ["cdmx", "ciudad de méxico", "ciudad de mexico"];
+  const gdlMetro = ["guadalajara", "zapopan", "tlaquepaque", "tonalá", "tonala"];
+  if (mtyMetro.some((m) => c.includes(m))) return "Zona Monterrey";
+  if (cdmxMetro.some((m) => c.includes(m))) return "Zona CDMX";
+  if (gdlMetro.some((m) => c.includes(m))) return "Zona Guadalajara";
+  return "Zona Nacional";
+}
 
 function EditStoreDialog({
   store,
@@ -679,6 +693,7 @@ function EditStoreDialog({
     city: "",
     state: "",
     country: "MX",
+    zone: "Zona Nacional",
     address: "",
     phone: "",
     google_maps_url: "",
@@ -698,6 +713,7 @@ function EditStoreDialog({
         city: store.city ?? "",
         state: store.state ?? "",
         country: "MX",
+        zone: (store as any).zone || inferZone(store.city ?? ""),
         address: store.address ?? "",
         phone: store.phone ?? "",
         google_maps_url: store.google_maps_url ?? "",
@@ -724,6 +740,7 @@ function EditStoreDialog({
         city: form.city.trim(),
         state: form.state.trim(),
         country: (form.country || "MX").trim().toUpperCase(),
+        zone: form.zone,
         address: form.address.trim() || undefined,
         phone: form.phone.trim() || undefined,
         google_maps_url: form.google_maps_url.trim() || undefined,
@@ -741,6 +758,11 @@ function EditStoreDialog({
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [k]: e.target.value });
+
+  const setCity = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const city = e.target.value;
+    setForm((f) => ({ ...f, city, zone: inferZone(city) }));
+  };
 
   return (
     <Dialog open={!!store} onOpenChange={(o) => !o && onClose()}>
@@ -761,12 +783,30 @@ function EditStoreDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-gray-400">Ciudad *</Label>
-                <Input value={form.city} onChange={set("city")} />
+                <Input value={form.city} onChange={setCity} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-gray-400">Estado *</Label>
                 <Input value={form.state} onChange={set("state")} />
               </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Zona del circuito</Label>
+              <Select value={form.zone} onValueChange={(v) => setForm({ ...form, zone: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ZONE_OPTIONS.map((z) => (
+                    <SelectItem key={z} value={z}>
+                      {z}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-gray-500">
+                Se sugiere automáticamente según la ciudad, pero puedes ajustarla.
+              </p>
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">País</Label>

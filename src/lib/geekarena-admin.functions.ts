@@ -1236,6 +1236,7 @@ export const updateStore = createServerFn({ method: "POST" })
       city?: string;
       state?: string;
       country?: string;
+      zone?: string;
       address?: string;
       phone?: string;
       google_maps_url?: string;
@@ -1253,6 +1254,7 @@ export const updateStore = createServerFn({ method: "POST" })
           city: z.string().max(120).optional(),
           state: z.string().max(120).optional(),
           country: z.string().min(2).max(2).optional(),
+          zone: z.string().max(50).optional(),
           address: z.string().max(300).optional(),
           phone: z.string().max(20).optional(),
           google_maps_url: z.string().url().optional().or(z.literal("")),
@@ -1274,6 +1276,7 @@ export const updateStore = createServerFn({ method: "POST" })
         city: data.city || null,
         state: data.state || null,
         country: (data.country || "MX").toUpperCase(),
+        zone: data.zone || null,
         address: data.address || null,
         phone: data.phone || null,
         google_maps_url: data.google_maps_url || null,
