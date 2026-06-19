@@ -665,18 +665,6 @@ type EditStorePayload = {
   twitch?: string;
 };
 
-const ZONE_OPTIONS = ["Zona Monterrey", "Zona CDMX", "Zona Guadalajara", "Zona Nacional"];
-
-function inferZone(city: string): string {
-  const c = city.toLowerCase();
-  const mtyMetro = ["monterrey", "san nicolás", "san nicolas", "guadalupe", "san pedro", "apodaca", "escobedo", "santa catarina"];
-  const cdmxMetro = ["cdmx", "ciudad de méxico", "ciudad de mexico"];
-  const gdlMetro = ["guadalajara", "zapopan", "tlaquepaque", "tonalá", "tonala"];
-  if (mtyMetro.some((m) => c.includes(m))) return "Zona Monterrey";
-  if (cdmxMetro.some((m) => c.includes(m))) return "Zona CDMX";
-  if (gdlMetro.some((m) => c.includes(m))) return "Zona Guadalajara";
-  return "Zona Nacional";
-}
 
 function EditStoreDialog({
   store,
