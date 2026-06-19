@@ -9,7 +9,7 @@ export const Route = createFileRoute("/tiendas/")({
   component: TiendasPage,
 });
 
-const ZONES = ["Zona Monterrey", "Zona CDMX", "Zona Guadalajara", "Zona Nacional"];
+const ZONES = ["Zona Monterrey", "Zona Guadalajara", "Zona Centro", "Zona Extendida"];
 
 type StoreCard = {
   id: string;
