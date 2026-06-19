@@ -654,7 +654,6 @@ type EditStorePayload = {
   city: string;
   state: string;
   country: string;
-  zone: string;
   address?: string;
   phone?: string;
   google_maps_url?: string;
