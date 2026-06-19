@@ -20,6 +20,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckInboxRouteImport } from './routes/check-inbox'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TiendasIndexRouteImport } from './routes/tiendas.index'
 import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -108,6 +109,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TiendasIndexRoute = TiendasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TiendasRoute,
 } as any)
 const TcgManagerIndexRoute = TcgManagerIndexRouteImport.update({
   id: '/',
@@ -317,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
+  '/tiendas/': typeof TiendasIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
@@ -330,7 +337,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
-  '/tiendas': typeof TiendasRouteWithChildren
   '/admin/activity': typeof AdminActivityRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
@@ -360,6 +366,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/tcg-manager': typeof TcgManagerIndexRoute
+  '/tiendas': typeof TiendasIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
@@ -407,6 +414,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
+  '/tiendas/': typeof TiendasIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
@@ -455,6 +463,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/organizer/'
     | '/tcg-manager/'
+    | '/tiendas/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
@@ -468,7 +477,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/setup'
     | '/signup'
-    | '/tiendas'
     | '/admin/activity'
     | '/admin/ads'
     | '/admin/approved'
@@ -498,6 +506,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/organizer'
     | '/tcg-manager'
+    | '/tiendas'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
@@ -544,6 +553,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/organizer/'
     | '/tcg-manager/'
+    | '/tiendas/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
@@ -643,6 +653,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/tiendas/': {
+      id: '/tiendas/'
+      path: '/'
+      fullPath: '/tiendas/'
+      preLoaderRoute: typeof TiendasIndexRouteImport
+      parentRoute: typeof TiendasRoute
     }
     '/tcg-manager/': {
       id: '/tcg-manager/'
@@ -989,10 +1006,12 @@ const TcgManagerRouteWithChildren = TcgManagerRoute._addFileChildren(
 
 interface TiendasRouteChildren {
   TiendasSlugRoute: typeof TiendasSlugRoute
+  TiendasIndexRoute: typeof TiendasIndexRoute
 }
 
 const TiendasRouteChildren: TiendasRouteChildren = {
   TiendasSlugRoute: TiendasSlugRoute,
+  TiendasIndexRoute: TiendasIndexRoute,
 }
 
 const TiendasRouteWithChildren =
