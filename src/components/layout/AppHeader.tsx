@@ -39,7 +39,7 @@ export function AppHeader() {
 
         <nav className="hidden items-center gap-1 text-sm sm:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
-          <NavItem to="/tiendas" icon={<Store size={14} />} label="Tiendas" />
+          <NavItem to="/stores" icon={<Store size={14} />} label="Tiendas" />
           {role === "player" && (
             <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
@@ -100,7 +100,7 @@ export function AppHeader() {
             </Link>
 
             <Link
-              to="/tiendas"
+              to="/stores"
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
             >
