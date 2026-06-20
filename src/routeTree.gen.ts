@@ -24,7 +24,6 @@ import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as TiendasSlugRouteImport } from './routes/tiendas.$slug'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
 import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
 import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
@@ -130,11 +129,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
-} as any)
-const TiendasSlugRoute = TiendasSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => TiendasRoute,
 } as any)
 const TcgManagerUploadRoute = TcgManagerUploadRouteImport.update({
   id: '/upload',
@@ -326,7 +320,6 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
-  '/tiendas/$slug': typeof TiendasSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/stores/': typeof StoresIndexRoute
@@ -370,7 +363,6 @@ export interface FileRoutesByTo {
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
-  '/tiendas/$slug': typeof TiendasSlugRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/stores': typeof StoresIndexRoute
@@ -419,7 +411,6 @@ export interface FileRoutesById {
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
-  '/tiendas/$slug': typeof TiendasSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/stores/': typeof StoresIndexRoute
@@ -469,7 +460,6 @@ export interface FileRouteTypes {
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
-    | '/tiendas/$slug'
     | '/admin/'
     | '/organizer/'
     | '/stores/'
@@ -513,7 +503,6 @@ export interface FileRouteTypes {
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
-    | '/tiendas/$slug'
     | '/admin'
     | '/organizer'
     | '/stores'
@@ -561,7 +550,6 @@ export interface FileRouteTypes {
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
-    | '/tiendas/$slug'
     | '/admin/'
     | '/organizer/'
     | '/stores/'
@@ -693,13 +681,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/tiendas/$slug': {
-      id: '/tiendas/$slug'
-      path: '/$slug'
-      fullPath: '/tiendas/$slug'
-      preLoaderRoute: typeof TiendasSlugRouteImport
-      parentRoute: typeof TiendasRoute
     }
     '/tcg-manager/upload': {
       id: '/tcg-manager/upload'
