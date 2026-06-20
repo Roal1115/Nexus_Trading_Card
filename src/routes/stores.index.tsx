@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch } from "lucide-react";
-import { getPublicStores } from "@/lib/geekarena-public.functions";
+import { getPublicStoresList } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/")({
   head: () => ({ meta: [{ title: "Tiendas — Geek Arena" }] }),
@@ -82,7 +82,7 @@ function StoreCardItem({ store }: { store: StoreCard }) {
 }
 
 function TiendasPage() {
-  const fetchStores = useServerFn(getPublicStores);
+  const fetchStores = useServerFn(getPublicStoresList);
   const [loading, setLoading] = useState(true);
   const [stores, setStores] = useState<StoreCard[]>([]);
 
