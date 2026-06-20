@@ -101,7 +101,7 @@ function StoreProfilePage() {
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
           {store.google_maps_url && (
-            <a
+            
               href={store.google_maps_url}
               target="_blank"
               rel="noreferrer"
