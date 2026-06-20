@@ -90,7 +90,6 @@ function StoreProfilePage() {
           {store.opening_hours && (
             <div className="rounded-md border border-white/10 bg-white/[0.02] p-3">
               <p className="flex items-center gap-1.5 text-xs text-gray-400">
-                <p>asdhkajsdhkj</p>
                 <Clock size={12} /> {store.opening_hours}
               </p>
             </div>
