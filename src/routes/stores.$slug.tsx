@@ -1,7 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, MessageCircle } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  Navigation,
+  Clock,
+  Instagram,
+  Globe,
+  Twitter,
+  Twitch,
+  ArrowLeft,
+  Phone,
+  MessageCircle,
+} from "lucide-react";
 import { getStoreProfile } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/$slug")({
@@ -45,7 +57,10 @@ function StoreProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
-      <Link to="/stores" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary">
+      <Link
+        to="/stores"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary"
+      >
         <ArrowLeft size={12} /> Volver al directorio
       </Link>
 
@@ -81,13 +96,13 @@ function StoreProfilePage() {
           )}
           {store.phone && (
             <div className="flex gap-2 rounded-md border border-white/10 bg-white/[0.02] p-3">
-              
+              <a
                 href={`tel:${store.phone.replace(/\s+/g, "")}`}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white/5 px-2 py-1.5 text-xs font-semibold text-gray-300 hover:bg-white/10"
               >
                 <Phone size={12} /> Llamar
               </a>
-              
+              <a
                 href={`https://wa.me/${store.phone.replace(/[^\d]/g, "")}`}
                 target="_blank"
                 rel="noreferrer"
@@ -101,7 +116,7 @@ function StoreProfilePage() {
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
           {store.google_maps_url && (
-            
+            <a
               href={store.google_maps_url}
               target="_blank"
               rel="noreferrer"
@@ -111,7 +126,12 @@ function StoreProfilePage() {
             </a>
           )}
           {store.instagram && (
-            <a href={`https://instagram.com/${store.instagram.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
+            <a
+              href={`https://instagram.com/${store.instagram.replace("@", "")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-400 hover:text-primary"
+            >
               <Instagram size={18} />
             </a>
           )}
@@ -121,12 +141,22 @@ function StoreProfilePage() {
             </a>
           )}
           {store.twitter && (
-            <a href={`https://x.com/${store.twitter.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
+            <a
+              href={`https://x.com/${store.twitter.replace("@", "")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-400 hover:text-primary"
+            >
               <Twitter size={18} />
             </a>
           )}
           {store.twitch && (
-            <a href={`https://twitch.tv/${store.twitch.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
+            <a
+              href={`https://twitch.tv/${store.twitch.replace("@", "")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-400 hover:text-primary"
+            >
               <Twitch size={18} />
             </a>
           )}
