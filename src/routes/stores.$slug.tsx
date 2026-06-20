@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone } from "lucide-react";
+import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, MessageCircle } from "lucide-react";
 import { getStoreProfile } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/$slug")({
@@ -80,10 +80,21 @@ function StoreProfilePage() {
             </div>
           )}
           {store.phone && (
-            <div className="rounded-md border border-white/10 bg-white/[0.02] p-3">
-              <p className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Phone size={12} /> {store.phone}
-              </p>
+            <div className="flex gap-2 rounded-md border border-white/10 bg-white/[0.02] p-3">
+              
+                href={`tel:${store.phone.replace(/\s+/g, "")}`}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white/5 px-2 py-1.5 text-xs font-semibold text-gray-300 hover:bg-white/10"
+              >
+                <Phone size={12} /> Llamar
+              </a>
+              
+                href={`https://wa.me/${store.phone.replace(/[^\d]/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-emerald-500/15 px-2 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/25"
+              >
+                <MessageCircle size={12} /> WhatsApp
+              </a>
             </div>
           )}
         </div>
