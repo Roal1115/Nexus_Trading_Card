@@ -9,8 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TiendasRouteImport } from './routes/tiendas'
 import { Route as TcgManagerRouteImport } from './routes/tcg-manager'
+import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -20,8 +20,8 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckInboxRouteImport } from './routes/check-inbox'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TiendasIndexRouteImport } from './routes/tiendas.index'
 import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
+import { Route as StoresIndexRouteImport } from './routes/stores.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TiendasSlugRouteImport } from './routes/tiendas.$slug'
@@ -32,6 +32,7 @@ import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my
 import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
 import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.calendar'
 import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
+import { Route as StoresSlugRouteImport } from './routes/stores.$slug'
 import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
@@ -55,14 +56,14 @@ import { Route as OrganizerTournamentsIdRouteImport } from './routes/organizer.t
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 
-const TiendasRoute = TiendasRouteImport.update({
-  id: '/tiendas',
-  path: '/tiendas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TcgManagerRoute = TcgManagerRouteImport.update({
   id: '/tcg-manager',
   path: '/tcg-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoresRoute = StoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -110,15 +111,15 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TiendasIndexRoute = TiendasIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => TiendasRoute,
-} as any)
 const TcgManagerIndexRoute = TcgManagerIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TcgManagerRoute,
+} as any)
+const StoresIndexRoute = StoresIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoresRoute,
 } as any)
 const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
   id: '/',
@@ -170,6 +171,11 @@ const TcgManagerApprovedRoute = TcgManagerApprovedRouteImport.update({
   id: '/approved',
   path: '/approved',
   getParentRoute: () => TcgManagerRoute,
+} as any)
+const StoresSlugRoute = StoresSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => StoresRoute,
 } as any)
 const PlayersPlayerTagRoute = PlayersPlayerTagRouteImport.update({
   id: '/players/$playerTag',
@@ -292,8 +298,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/stores': typeof StoresRouteWithChildren
   '/tcg-manager': typeof TcgManagerRouteWithChildren
-  '/tiendas': typeof TiendasRouteWithChildren
   '/admin/activity': typeof AdminActivityRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/stores/$slug': typeof StoresSlugRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
@@ -322,8 +329,8 @@ export interface FileRoutesByFullPath {
   '/tiendas/$slug': typeof TiendasSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
-  '/tiendas/': typeof TiendasIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
@@ -355,6 +362,7 @@ export interface FileRoutesByTo {
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/stores/$slug': typeof StoresSlugRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
@@ -365,8 +373,8 @@ export interface FileRoutesByTo {
   '/tiendas/$slug': typeof TiendasSlugRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
+  '/stores': typeof StoresIndexRoute
   '/tcg-manager': typeof TcgManagerIndexRoute
-  '/tiendas': typeof TiendasIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
@@ -383,8 +391,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
+  '/stores': typeof StoresRouteWithChildren
   '/tcg-manager': typeof TcgManagerRouteWithChildren
-  '/tiendas': typeof TiendasRouteWithChildren
   '/admin/activity': typeof AdminActivityRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
@@ -403,6 +411,7 @@ export interface FileRoutesById {
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/stores/$slug': typeof StoresSlugRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
@@ -413,8 +422,8 @@ export interface FileRoutesById {
   '/tiendas/$slug': typeof TiendasSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
-  '/tiendas/': typeof TiendasIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
@@ -432,8 +441,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/setup'
     | '/signup'
+    | '/stores'
     | '/tcg-manager'
-    | '/tiendas'
     | '/admin/activity'
     | '/admin/ads'
     | '/admin/approved'
@@ -452,6 +461,7 @@ export interface FileRouteTypes {
     | '/organizer/store'
     | '/organizer/tournaments'
     | '/players/$playerTag'
+    | '/stores/$slug'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
@@ -462,8 +472,8 @@ export interface FileRouteTypes {
     | '/tiendas/$slug'
     | '/admin/'
     | '/organizer/'
+    | '/stores/'
     | '/tcg-manager/'
-    | '/tiendas/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
@@ -495,6 +505,7 @@ export interface FileRouteTypes {
     | '/organizer/store'
     | '/organizer/tournaments'
     | '/players/$playerTag'
+    | '/stores/$slug'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
@@ -505,8 +516,8 @@ export interface FileRouteTypes {
     | '/tiendas/$slug'
     | '/admin'
     | '/organizer'
+    | '/stores'
     | '/tcg-manager'
-    | '/tiendas'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
@@ -522,8 +533,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/setup'
     | '/signup'
+    | '/stores'
     | '/tcg-manager'
-    | '/tiendas'
     | '/admin/activity'
     | '/admin/ads'
     | '/admin/approved'
@@ -542,6 +553,7 @@ export interface FileRouteTypes {
     | '/organizer/store'
     | '/organizer/tournaments'
     | '/players/$playerTag'
+    | '/stores/$slug'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
@@ -552,8 +564,8 @@ export interface FileRouteTypes {
     | '/tiendas/$slug'
     | '/admin/'
     | '/organizer/'
+    | '/stores/'
     | '/tcg-manager/'
-    | '/tiendas/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
@@ -570,25 +582,25 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
+  StoresRoute: typeof StoresRouteWithChildren
   TcgManagerRoute: typeof TcgManagerRouteWithChildren
-  TiendasRoute: typeof TiendasRouteWithChildren
   PlayersPlayerTagRoute: typeof PlayersPlayerTagRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tiendas': {
-      id: '/tiendas'
-      path: '/tiendas'
-      fullPath: '/tiendas'
-      preLoaderRoute: typeof TiendasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/tcg-manager': {
       id: '/tcg-manager'
       path: '/tcg-manager'
       fullPath: '/tcg-manager'
       preLoaderRoute: typeof TcgManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stores': {
+      id: '/stores'
+      path: '/stores'
+      fullPath: '/stores'
+      preLoaderRoute: typeof StoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -654,19 +666,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tiendas/': {
-      id: '/tiendas/'
-      path: '/'
-      fullPath: '/tiendas/'
-      preLoaderRoute: typeof TiendasIndexRouteImport
-      parentRoute: typeof TiendasRoute
-    }
     '/tcg-manager/': {
       id: '/tcg-manager/'
       path: '/'
       fullPath: '/tcg-manager/'
       preLoaderRoute: typeof TcgManagerIndexRouteImport
       parentRoute: typeof TcgManagerRoute
+    }
+    '/stores/': {
+      id: '/stores/'
+      path: '/'
+      fullPath: '/stores/'
+      preLoaderRoute: typeof StoresIndexRouteImport
+      parentRoute: typeof StoresRoute
     }
     '/organizer/': {
       id: '/organizer/'
@@ -737,6 +749,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tcg-manager/approved'
       preLoaderRoute: typeof TcgManagerApprovedRouteImport
       parentRoute: typeof TcgManagerRoute
+    }
+    '/stores/$slug': {
+      id: '/stores/$slug'
+      path: '/$slug'
+      fullPath: '/stores/$slug'
+      preLoaderRoute: typeof StoresSlugRouteImport
+      parentRoute: typeof StoresRoute
     }
     '/players/$playerTag': {
       id: '/players/$playerTag'
@@ -976,6 +995,19 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
   OrganizerRouteChildren,
 )
 
+interface StoresRouteChildren {
+  StoresSlugRoute: typeof StoresSlugRoute
+  StoresIndexRoute: typeof StoresIndexRoute
+}
+
+const StoresRouteChildren: StoresRouteChildren = {
+  StoresSlugRoute: StoresSlugRoute,
+  StoresIndexRoute: StoresIndexRoute,
+}
+
+const StoresRouteWithChildren =
+  StoresRoute._addFileChildren(StoresRouteChildren)
+
 interface TcgManagerRouteChildren {
   TcgManagerApprovedRoute: typeof TcgManagerApprovedRoute
   TcgManagerCalendarRoute: typeof TcgManagerCalendarRoute
@@ -1004,19 +1036,6 @@ const TcgManagerRouteWithChildren = TcgManagerRoute._addFileChildren(
   TcgManagerRouteChildren,
 )
 
-interface TiendasRouteChildren {
-  TiendasSlugRoute: typeof TiendasSlugRoute
-  TiendasIndexRoute: typeof TiendasIndexRoute
-}
-
-const TiendasRouteChildren: TiendasRouteChildren = {
-  TiendasSlugRoute: TiendasSlugRoute,
-  TiendasIndexRoute: TiendasIndexRoute,
-}
-
-const TiendasRouteWithChildren =
-  TiendasRoute._addFileChildren(TiendasRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -1027,8 +1046,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
+  StoresRoute: StoresRouteWithChildren,
   TcgManagerRoute: TcgManagerRouteWithChildren,
-  TiendasRoute: TiendasRouteWithChildren,
   PlayersPlayerTagRoute: PlayersPlayerTagRoute,
 }
 export const routeTree = rootRouteImport
