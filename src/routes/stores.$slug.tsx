@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone } from "lucide-react";
 import { getPublicStoreProfile } from "@/lib/geekarena-public.functions";
 
-export const Route = createFileRoute("/tiendas/$slug")({
+export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
   component: StoreProfilePage,
 });
@@ -36,7 +36,7 @@ function StoreProfilePage() {
     return (
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-16 text-center sm:px-6">
         <p className="text-sm text-gray-400">No encontramos esta tienda.</p>
-        <Link to="/tiendas" className="text-sm font-semibold text-primary hover:underline">
+        <Link to="/stores" className="text-sm font-semibold text-primary hover:underline">
           ← Volver al directorio
         </Link>
       </div>
@@ -45,7 +45,7 @@ function StoreProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
-      <Link to="/tiendas" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary">
+      <Link to="/stores" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary">
         <ArrowLeft size={12} /> Volver al directorio
       </Link>
 

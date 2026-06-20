@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch } from "lucide-react";
 import { getPublicStores } from "@/lib/geekarena-public.functions";
 
-export const Route = createFileRoute("/tiendas/")({
+export const Route = createFileRoute("/stores/")({
   head: () => ({ meta: [{ title: "Tiendas — Geek Arena" }] }),
   component: TiendasPage,
 });
@@ -30,7 +30,7 @@ type StoreCard = {
 function StoreCardItem({ store }: { store: StoreCard }) {
   return (
     <Link
-      to="/tiendas/$slug"
+      to="/stores/$slug"
       params={{ slug: store.slug }}
       className="glass block rounded-2xl p-5 transition hover:border-primary/40 hover:bg-white/[0.04]"
     >
