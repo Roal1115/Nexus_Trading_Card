@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
-export const getPublicStores = createServerFn({ method: "POST" }).handler(async () => {
+export const getPublicStoresList = createServerFn({ method: "POST" }).handler(async () => {
   const admin = getGeekarenaAdmin();
   const { data: stores, error } = await admin
     .from("stores")
@@ -34,7 +34,7 @@ export const getPublicStores = createServerFn({ method: "POST" }).handler(async 
   };
 });
 
-export const getPublicStoreProfile = createServerFn({ method: "POST" })
+export const getStoreProfile = createServerFn({ method: "POST" })
   .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data }) => {
     const admin = getGeekarenaAdmin();

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone } from "lucide-react";
-import { getPublicStoreProfile } from "@/lib/geekarena-public.functions";
+import { getStoreProfile } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/stores/$slug")({
 
 function StoreProfilePage() {
   const { slug } = Route.useParams();
-  const fetchProfile = useServerFn(getPublicStoreProfile);
+  const fetchProfile = useServerFn(getStoreProfile);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
