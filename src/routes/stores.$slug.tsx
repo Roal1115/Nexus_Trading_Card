@@ -22,11 +22,15 @@ export const Route = createFileRoute("/stores/$slug")({
   component: StoreProfilePage,
 });
 
+const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
 function StoreProfilePage() {
   const { slug } = Route.useParams();
   const fetchProfile = useServerFn(getStoreProfile);
+  const fetchSchedule = useServerFn(getStoreWeeklySchedule);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<any>(null);
+  const [schedule, setSchedule] = useState<any[]>([]);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -34,6 +38,9 @@ function StoreProfilePage() {
       .then((res: any) => setStore(res.store))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
+    fetchSchedule({ data: { slug } })
+      .then((res: any) => setSchedule(res.schedule ?? []))
+      .catch(() => setSchedule([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
