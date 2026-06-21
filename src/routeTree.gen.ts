@@ -31,6 +31,7 @@ import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my
 import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
 import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.calendar'
 import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
+import { Route as TcgManagerAnalyticsRouteImport } from './routes/tcg-manager.analytics'
 import { Route as StoresSlugRouteImport } from './routes/stores.$slug'
 import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
@@ -164,6 +165,11 @@ const TcgManagerCalendarRoute = TcgManagerCalendarRouteImport.update({
 const TcgManagerApprovedRoute = TcgManagerApprovedRouteImport.update({
   id: '/approved',
   path: '/approved',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerAnalyticsRoute = TcgManagerAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => TcgManagerRoute,
 } as any)
 const StoresSlugRoute = StoresSlugRouteImport.update({
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/stores/$slug': typeof StoresSlugRoute
+  '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/stores/$slug': typeof StoresSlugRoute
+  '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
@@ -404,6 +412,7 @@ export interface FileRoutesById {
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/stores/$slug': typeof StoresSlugRoute
+  '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
@@ -453,6 +462,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/players/$playerTag'
     | '/stores/$slug'
+    | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/players/$playerTag'
     | '/stores/$slug'
+    | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
@@ -543,6 +554,7 @@ export interface FileRouteTypes {
     | '/organizer/tournaments'
     | '/players/$playerTag'
     | '/stores/$slug'
+    | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
     | '/tcg-manager/history'
@@ -729,6 +741,13 @@ declare module '@tanstack/react-router' {
       path: '/approved'
       fullPath: '/tcg-manager/approved'
       preLoaderRoute: typeof TcgManagerApprovedRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/analytics': {
+      id: '/tcg-manager/analytics'
+      path: '/analytics'
+      fullPath: '/tcg-manager/analytics'
+      preLoaderRoute: typeof TcgManagerAnalyticsRouteImport
       parentRoute: typeof TcgManagerRoute
     }
     '/stores/$slug': {
@@ -990,6 +1009,7 @@ const StoresRouteWithChildren =
   StoresRoute._addFileChildren(StoresRouteChildren)
 
 interface TcgManagerRouteChildren {
+  TcgManagerAnalyticsRoute: typeof TcgManagerAnalyticsRoute
   TcgManagerApprovedRoute: typeof TcgManagerApprovedRoute
   TcgManagerCalendarRoute: typeof TcgManagerCalendarRoute
   TcgManagerHistoryRoute: typeof TcgManagerHistoryRoute
@@ -1002,6 +1022,7 @@ interface TcgManagerRouteChildren {
 }
 
 const TcgManagerRouteChildren: TcgManagerRouteChildren = {
+  TcgManagerAnalyticsRoute: TcgManagerAnalyticsRoute,
   TcgManagerApprovedRoute: TcgManagerApprovedRoute,
   TcgManagerCalendarRoute: TcgManagerCalendarRoute,
   TcgManagerHistoryRoute: TcgManagerHistoryRoute,

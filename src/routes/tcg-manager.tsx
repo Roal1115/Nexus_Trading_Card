@@ -64,6 +64,7 @@ function TcgManagerLayout() {
           {
             title: "Circuito",
             items: [
+              { to: "/tcg-manager/analytics", label: "Analytics", icon: <BarChart3 size={16} /> },
               { to: "/tcg-manager/calendar", label: "Calendario", icon: <Calendar size={16} /> },
               { to: "/tcg-manager/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
             ],
