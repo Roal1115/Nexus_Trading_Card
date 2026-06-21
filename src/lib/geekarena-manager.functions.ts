@@ -1067,3 +1067,129 @@ export const getManagerFilterOptions = createServerFn({ method: "POST" })
       seasons: seasonsRes.data ?? [],
     };
   });
+
+export const getManagerAnalyticsOverview = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator(
+    (d: { game_id: string; zone?: string; store_id?: string; date_from?: string; date_to?: string }) =>
+      z
+        .object({
+          game_id: z.string().uuid(),
+          zone: z.string().max(50).optional(),
+          store_id: z.string().uuid().optional(),
+          date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+          date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    await assertManagerOwnsGame(admin, player, data.game_id);
+
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("store_id")
+      .eq("game_id", data.game_id);
+    const storeIdsWithGame = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
+    if (storeIdsWithGame.length === 0) {
+      return { total_players: 0, zone_breakdown: [], store_ranking: [], stores_offering_count: 0 };
+    }
+
+    let storeQuery = admin
+      .from("stores")
+      .select("id, name, city, zone")
+      .in("id", storeIdsWithGame)
+      .eq("is_active", true);
+    if (data.zone) storeQuery = storeQuery.eq("zone", data.zone);
+    if (data.store_id) storeQuery = storeQuery.eq("id", data.store_id);
+    const { data: stores } = await storeQuery;
+    const filteredStoreIds = (stores ?? []).map((s: any) => s.id);
+    const storeMap = new Map((stores ?? []).map((s: any) => [s.id, s]));
+
+    if (filteredStoreIds.length === 0) {
+      return { total_players: 0, zone_breakdown: [], store_ranking: [], stores_offering_count: 0 };
+    }
+
+    let tQuery = admin
+      .from("tournaments")
+      .select("id, store_id, tournament_date")
+      .eq("game_id", data.game_id)
+      .eq("status", "PUBLISHED")
+      .in("store_id", filteredStoreIds);
+    if (data.date_from) tQuery = tQuery.gte("tournament_date", data.date_from);
+    if (data.date_to) tQuery = tQuery.lte("tournament_date", data.date_to);
+    const { data: tournaments } = await tQuery;
+    const tournamentIds = (tournaments ?? []).map((t: any) => t.id);
+    const tournamentMap = new Map((tournaments ?? []).map((t: any) => [t.id, t]));
+
+    if (tournamentIds.length === 0) {
+      return {
+        total_players: 0,
+        zone_breakdown: (stores ?? []).reduce((acc: any[], s: any) => {
+          const existing = acc.find((z) => z.zone === s.zone);
+          if (existing) existing.store_count++;
+          else acc.push({ zone: s.zone, store_count: 1, players: 0 });
+          return acc;
+        }, []),
+        store_ranking: [],
+        stores_offering_count: filteredStoreIds.length,
+      };
+    }
+
+    const { data: results } = await admin
+      .from("tournament_results")
+      .select("player_id, tournament_id")
+      .in("tournament_id", tournamentIds);
+
+    const allPlayers = new Set((results ?? []).map((r: any) => r.player_id));
+
+    const playersByStore = new Map<string, Set<string>>();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get(r.tournament_id);
+      if (!t) continue;
+      const set = playersByStore.get(t.store_id) ?? new Set<string>();
+      set.add(r.player_id);
+      playersByStore.set(t.store_id, set);
+    }
+
+    const storeRanking = Array.from(playersByStore.entries())
+      .map(([storeId, playerSet]) => {
+        const store = storeMap.get(storeId);
+        return {
+          store_id: storeId,
+          store_name: store?.name ?? "—",
+          city: store?.city ?? "—",
+          zone: store?.zone ?? "—",
+          players: playerSet.size,
+        };
+      })
+      .sort((a, b) => b.players - a.players);
+
+    const zoneMap = new Map<string, { store_count: number; players: Set<string> }>();
+    for (const s of stores ?? []) {
+      const z = (s as any).zone ?? "—";
+      const entry = zoneMap.get(z) ?? { store_count: 0, players: new Set<string>() };
+      entry.store_count++;
+      zoneMap.set(z, entry);
+    }
+    for (const r of results ?? []) {
+      const t = tournamentMap.get(r.tournament_id);
+      if (!t) continue;
+      const store = storeMap.get(t.store_id);
+      const z = store?.zone ?? "—";
+      const entry = zoneMap.get(z);
+      if (entry) entry.players.add(r.player_id);
+    }
+    const zoneBreakdown = Array.from(zoneMap.entries()).map(([zone, v]) => ({
+      zone,
+      store_count: v.store_count,
+      players: v.players.size,
+    }));
+
+    return {
+      total_players: allPlayers.size,
+      zone_breakdown: zoneBreakdown,
+      store_ranking: storeRanking,
+      stores_offering_count: filteredStoreIds.length,
+    };
+  });
