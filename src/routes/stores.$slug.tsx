@@ -170,6 +170,35 @@ function StoreProfilePage() {
           )}
         </div>
       </header>
+
+      {schedule.length > 0 && (
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+            <CalendarDays size={18} className="text-primary" />
+            Horario de torneos
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
+              const dayEntries = schedule.filter((s) => s.day_of_week === dow);
+              if (dayEntries.length === 0) return null;
+              return (
+                <div key={dow} className="rounded-md border border-white/10 bg-white/[0.02] p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                    {DAY_NAMES[dow]}
+                  </p>
+                  <div className="space-y-1">
+                    {dayEntries.map((e, idx) => (
+                      <p key={idx} className="text-sm text-gray-300">
+                        {e.game_name} · {e.start_time}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
