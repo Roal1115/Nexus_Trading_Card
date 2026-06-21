@@ -13,19 +13,24 @@ import {
   ArrowLeft,
   Phone,
   MessageCircle,
+  CalendarDays,
 } from "lucide-react";
-import { getStoreProfile } from "@/lib/geekarena-public.functions";
+import { getStoreProfile, getStoreWeeklySchedule } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
   component: StoreProfilePage,
 });
 
+const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
 function StoreProfilePage() {
   const { slug } = Route.useParams();
   const fetchProfile = useServerFn(getStoreProfile);
+  const fetchSchedule = useServerFn(getStoreWeeklySchedule);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<any>(null);
+  const [schedule, setSchedule] = useState<any[]>([]);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -33,6 +38,9 @@ function StoreProfilePage() {
       .then((res: any) => setStore(res.store))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
+    fetchSchedule({ data: { slug } })
+      .then((res: any) => setSchedule(res.schedule ?? []))
+      .catch(() => setSchedule([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
@@ -162,6 +170,35 @@ function StoreProfilePage() {
           )}
         </div>
       </header>
+
+      {schedule.length > 0 && (
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+            <CalendarDays size={18} className="text-primary" />
+            Horario de torneos
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
+              const dayEntries = schedule.filter((s) => s.day_of_week === dow);
+              if (dayEntries.length === 0) return null;
+              return (
+                <div key={dow} className="rounded-md border border-white/10 bg-white/[0.02] p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                    {DAY_NAMES[dow]}
+                  </p>
+                  <div className="space-y-1">
+                    {dayEntries.map((e, idx) => (
+                      <p key={idx} className="text-sm text-gray-300">
+                        {e.game_name} · {e.start_time}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
