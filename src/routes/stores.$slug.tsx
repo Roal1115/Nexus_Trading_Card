@@ -13,8 +13,9 @@ import {
   ArrowLeft,
   Phone,
   MessageCircle,
+  CalendarDays,
 } from "lucide-react";
-import { getStoreProfile } from "@/lib/geekarena-public.functions";
+import { getStoreProfile, getStoreWeeklySchedule } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
