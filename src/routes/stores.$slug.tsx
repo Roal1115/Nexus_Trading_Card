@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Loader2,
   MapPin,
@@ -23,6 +23,16 @@ export const Route = createFileRoute("/stores/$slug")({
 });
 
 const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+function getScheduleHourRange(schedule: Array<{ start_time: string }>): number[] {
+  if (schedule.length === 0) return [];
+  const hours = schedule.map((s) => parseInt(s.start_time.split(":")[0], 10));
+  const min = Math.min(...hours);
+  const max = Math.max(...hours);
+  const range: number[] = [];
+  for (let h = min; h <= max; h++) range.push(h);
+  return range;
+}
 
 function StoreProfilePage() {
   const { slug } = Route.useParams();
