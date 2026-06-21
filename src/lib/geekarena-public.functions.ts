@@ -62,3 +62,32 @@ export const getStoreProfile = createServerFn({ method: "POST" })
 
     return { store: { ...store, games } };
   });
+
+export const getStoreWeeklySchedule = createServerFn({ method: "POST" })
+  .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
+  .handler(async ({ data }) => {
+    const admin = getGeekarenaAdmin();
+    const { data: store } = await admin
+      .from("stores")
+      .select("id")
+      .eq("slug", data.slug)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!store) throw new Error("Tienda no encontrada");
+
+    const { data: schedules, error } = await admin
+      .from("store_schedules")
+      .select("day_of_week, start_time, games(id, name)")
+      .eq("store_id", store.id)
+      .order("day_of_week")
+      .order("start_time");
+    if (error) throw new Error(error.message);
+
+    return {
+      schedule: (schedules ?? []).map((s: any) => ({
+        day_of_week: s.day_of_week,
+        start_time: String(s.start_time).slice(0, 5),
+        game_name: s.games?.name ?? "—",
+      })),
+    };
+  });
