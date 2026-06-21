@@ -42,6 +42,7 @@ function StoreProfilePage() {
   const [store, setStore] = useState<any>(null);
   const [schedule, setSchedule] = useState<any[]>([]);
   const [notFound, setNotFound] = useState(false);
+  const scheduleHours = useMemo(() => getScheduleHourRange(schedule), [schedule]);
 
   useEffect(() => {
     fetchProfile({ data: { slug } })
@@ -187,25 +188,56 @@ function StoreProfilePage() {
             <CalendarDays size={18} className="text-primary" />
             Horario de torneos
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
-              const dayEntries = schedule.filter((s) => s.day_of_week === dow);
-              if (dayEntries.length === 0) return null;
-              return (
-                <div key={dow} className="rounded-md border border-white/10 bg-white/[0.02] p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
-                    {DAY_NAMES[dow]}
-                  </p>
-                  <div className="space-y-1">
-                    {dayEntries.map((e, idx) => (
-                      <p key={idx} className="text-sm text-gray-300">
-                        {e.game_name} · {e.start_time}
-                      </p>
-                    ))}
-                  </div>
+          <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+            <div className="overflow-x-auto">
+              <div style={{ minWidth: "760px", width: "100%" }}>
+                <div
+                  style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
+                  className="border-b border-white/10"
+                >
+                  <div className="border-r border-white/5" />
+                  {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
+                    <div key={dow} className="p-2 text-center border-l border-white/10">
+                      <div className="text-[10px] uppercase text-gray-400">{DAY_NAMES[dow]}</div>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+
+                {scheduleHours.map((hour) => (
+                  <div
+                    key={hour}
+                    style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
+                    className="border-b border-white/5"
+                  >
+                    <div className="p-2 text-[10px] text-gray-500 text-right border-r border-white/5 flex items-start justify-end pt-2">
+                      {hour}:00
+                    </div>
+                    {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
+                      const cellEntries = schedule.filter(
+                        (s) => s.day_of_week === dow && parseInt(s.start_time.split(":")[0], 10) === hour,
+                      );
+                      return (
+                        <div
+                          key={dow}
+                          className="min-h-[50px] p-1 border-l border-white/10"
+                          style={{ minWidth: 0, overflow: "hidden" }}
+                        >
+                          {cellEntries.map((e, idx) => (
+                            <div
+                              key={idx}
+                              className="w-full text-left rounded px-1.5 py-1 mb-0.5 bg-primary/10 border border-primary/30"
+                            >
+                              <div className="text-[10px] text-primary truncate">{e.game_name}</div>
+                              <div className="text-[9px] text-gray-400 truncate">{e.start_time}</div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
