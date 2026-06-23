@@ -176,6 +176,19 @@ function ManagerTournamentDetailPage() {
     }
   };
 
+  const onRepublish = async () => {
+    setActing(true);
+    try {
+      await republishFn({ data: { tournament_id: id } });
+      toast.success("Torneo re-enviado a aprobado. Estará en la próxima publicación.");
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
   const onConfirmReject = async () => {
     if (rejectReason.trim().length < 20) {
       toast.error("El motivo debe tener al menos 20 caracteres");
