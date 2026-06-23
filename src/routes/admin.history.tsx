@@ -213,6 +213,7 @@ function AdminHistoryPage() {
             <option value="DRAFT">DRAFT</option>
             <option value="APPROVED">APPROVED</option>
             <option value="PUBLISHED">PUBLISHED</option>
+            <option value="UNPUBLISHED">UNPUBLISHED</option>
           </select>
           <select
             value={filters.game_id}
