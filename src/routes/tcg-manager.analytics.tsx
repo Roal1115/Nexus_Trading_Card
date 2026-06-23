@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { Loader2, Users, Store, MapPin, TrendingUp, BarChart3 } from "lucide-react";
-import { getManagerGames, getManagerAnalyticsOverview } from "@/lib/geekarena-manager.functions";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Users, Store, MapPin, TrendingUp, TrendingDown, AlertTriangle, Activity } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { getManagerGames, getManagerAnalyticsOverview, getManagerAnalyticsTrend } from "@/lib/geekarena-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager/analytics")({
   head: () => ({ meta: [{ title: "Analytics — TCG Manager" }] }),
@@ -18,6 +19,12 @@ type Overview = {
   zone_breakdown: Array<{ zone: string; store_count: number; players: number }>;
   store_ranking: Array<{ store_id: string; store_name: string; city: string; zone: string; players: number }>;
   stores_offering_count: number;
+};
+
+type TrendData = {
+  monthly_trend: Array<{ month: string; players: number }>;
+  player_classification: Array<{ player_id: string; last_visit: string; total_tournaments: number }>;
+  peak_days: Array<{ date: string; players: number; type: "peak" | "valley" }>;
 };
 
 function ManagerAnalyticsPage() {
