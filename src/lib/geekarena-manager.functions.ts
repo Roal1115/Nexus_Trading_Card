@@ -1193,3 +1193,35 @@ export const getManagerAnalyticsOverview = createServerFn({ method: "POST" })
       stores_offering_count: filteredStoreIds.length,
     };
   });
+
+export const managerRepublishTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("status, game_id")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (!t || (t as any).status !== "UNPUBLISHED") {
+      throw new Error("Solo se pueden re-publicar torneos en estado Despublicado");
+    }
+    await assertManagerOwnsGame(admin, player, (t as any).game_id);
+    const now = new Date();
+    const undoDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const { error } = await admin
+      .from("tournaments")
+      .update({
+        status: "APPROVED",
+        approved_at: now.toISOString(),
+        undo_deadline: undoDeadline.toISOString(),
+        approved_by: player.id,
+        unpublish_reason: null,
+      } as any)
+      .eq("id", data.tournament_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });

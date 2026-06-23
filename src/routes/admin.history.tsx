@@ -2,10 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Info, ExternalLink, Eye } from "lucide-react";
+import { toast } from "sonner";
 import { FileLink } from "@/components/ui/FileLink";
 import {
   getAdminTournamentHistory,
   getAdminFilterOptions,
+  republishTournament,
 } from "@/lib/geekarena-admin.functions";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -61,11 +63,13 @@ const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Borrador",
   APPROVED: "Aprobado",
   PUBLISHED: "Publicado",
+  UNPUBLISHED: "Despublicado",
 };
 const STATUS_COLOR: Record<string, string> = {
   DRAFT: "bg-white/5 text-gray-300 border-white/10",
   APPROVED: "bg-green-500/15 text-green-300 border-green-400/30",
   PUBLISHED: "bg-primary/15 text-primary border-primary/30",
+  UNPUBLISHED: "bg-amber-500/15 text-amber-300 border-amber-400/30",
 };
 const ROLE_LABEL: Record<string, string> = {
   admin: "Admin",
@@ -98,6 +102,21 @@ function AdminHistoryPage() {
 
   const fetchHist = useServerFn(getAdminTournamentHistory);
   const fetchOpts = useServerFn(getAdminFilterOptions);
+  const republishFn = useServerFn(republishTournament);
+  const [republishing, setRepublishing] = useState<string | null>(null);
+
+  const onRepublish = async (tournamentId: string) => {
+    setRepublishing(tournamentId);
+    try {
+      await republishFn({ data: { tournament_id: tournamentId } });
+      toast.success("Torneo re-enviado a Aprobado");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al re-publicar");
+    } finally {
+      setRepublishing(null);
+    }
+  };
 
   const load = async (overrides: Partial<Filters> = {}) => {
     const f = { ...filters, ...overrides };
@@ -140,7 +159,8 @@ function AdminHistoryPage() {
   ].filter(Boolean).length;
 
   const grandTotal =
-    (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) + (stats.PUBLISHED ?? 0);
+    (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) +
+    (stats.PUBLISHED ?? 0) + (stats.UNPUBLISHED ?? 0);
 
   return (
     <div className="space-y-6">
@@ -159,6 +179,7 @@ function AdminHistoryPage() {
           { label: "Borradores", value: stats.DRAFT ?? 0, color: "text-gray-300" },
           { label: "Aprobados", value: stats.APPROVED ?? 0, color: "text-green-400" },
           { label: "Publicados", value: stats.PUBLISHED ?? 0, color: "text-primary" },
+          { label: "Despublicados", value: stats.UNPUBLISHED ?? 0, color: "text-amber-400" },
         ].map((s) => (
           <div key={s.label} className="glass rounded-2xl p-3 sm:p-4">
             <div className="text-xs text-gray-400">{s.label}</div>
@@ -192,6 +213,7 @@ function AdminHistoryPage() {
             <option value="DRAFT">DRAFT</option>
             <option value="APPROVED">APPROVED</option>
             <option value="PUBLISHED">PUBLISHED</option>
+            <option value="UNPUBLISHED">UNPUBLISHED</option>
           </select>
           <select
             value={filters.game_id}
@@ -322,13 +344,24 @@ function AdminHistoryPage() {
                     <FileLink url={r.csv_url} />
                   </td>
                   <td className="px-3 py-2">
-                    <Link
-                      to="/admin/tournaments/$id"
-                      params={{ id: r.id }}
-                      className="inline-flex items-center gap-1 text-primary hover:underline"
-                    >
-                      <Eye size={12} /> Detalle
-                    </Link>
+                    <div className="flex flex-col gap-1">
+                      <Link
+                        to="/admin/tournaments/$id"
+                        params={{ id: r.id }}
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        <Eye size={12} /> Detalle
+                      </Link>
+                      {r.status === "UNPUBLISHED" && (
+                        <button
+                          onClick={() => onRepublish(r.id)}
+                          disabled={republishing === r.id}
+                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
+                        >
+                          {republishing === r.id ? "..." : "↩ Re-publicar"}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -378,9 +411,20 @@ function AdminHistoryPage() {
               {/* Row 4 — File + Action */}
               <div className="flex items-center justify-between pt-1">
                 <FileLink url={r.csv_url} />
-                <button onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })} className="flex items-center gap-1 text-xs text-primary hover:underline">
-                  <Eye size={12} /> Ver detalle
-                </button>
+                <div className="flex items-center gap-3">
+                  {r.status === "UNPUBLISHED" && (
+                    <button
+                      onClick={() => onRepublish(r.id)}
+                      disabled={republishing === r.id}
+                      className="flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
+                    >
+                      {republishing === r.id ? "..." : "↩ Re-publicar"}
+                    </button>
+                  )}
+                  <button onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                    <Eye size={12} /> Ver detalle
+                  </button>
+                </div>
               </div>
 
               {/* Rejection reason if present */}

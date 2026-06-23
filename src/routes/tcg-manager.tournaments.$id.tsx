@@ -23,6 +23,7 @@ import {
   managerApproveTournament,
   managerRejectTournament,
   managerUndoApproval,
+  managerRepublishTournament,
 } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,7 @@ function statusBadge(status: string) {
     DRAFT: { label: "Borrador", cls: "bg-gray-500/20 text-gray-200 border-gray-400/30" },
     APPROVED: { label: "Aprobado", cls: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40" },
     PUBLISHED: { label: "Publicado", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40" },
+    UNPUBLISHED: { label: "Despublicado", cls: "bg-amber-500/20 text-amber-200 border-amber-400/40" },
   };
   const v = map[status] ?? { label: status, cls: "bg-white/10 text-white border-white/20" };
   return (
@@ -94,6 +96,7 @@ function ManagerTournamentDetailPage() {
   const approveFn = useServerFn(managerApproveTournament);
   const rejectFn = useServerFn(managerRejectTournament);
   const undoFn = useServerFn(managerUndoApproval);
+  const republishFn = useServerFn(managerRepublishTournament);
 
   const [data, setData] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -142,6 +145,7 @@ function ManagerTournamentDetailPage() {
   const isDraft = tournament.status === "DRAFT";
   const isApproved = tournament.status === "APPROVED";
   const isPublished = tournament.status === "PUBLISHED";
+  const isUnpublished = tournament.status === "UNPUBLISHED";
   const undoExpired = countdown?.expired ?? true;
 
   const canApprove = isDraft && (criticalCount === 0 || acknowledged);
@@ -164,6 +168,19 @@ function ManagerTournamentDetailPage() {
     try {
       await undoFn({ data: { tournament_id: id } });
       toast.success("Aprobación deshecha");
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const onRepublish = async () => {
+    setActing(true);
+    try {
+      await republishFn({ data: { tournament_id: id } });
+      toast.success("Torneo re-enviado a aprobado. Estará en la próxima publicación.");
       await refresh();
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
@@ -371,6 +388,18 @@ function ManagerTournamentDetailPage() {
             <span className="text-xs text-emerald-300">
               Publicado el {tournament.published_at ? formatDateTime(tournament.published_at) : "—"}
             </span>
+          ) : null}
+
+          {isUnpublished ? (
+            <>
+              <span className="text-xs text-amber-300">
+                Este torneo fue despublicado. Puedes volver a enviarlo a aprobación.
+              </span>
+              <Button onClick={onRepublish} disabled={acting}>
+                {acting ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+                Re-publicar torneo
+              </Button>
+            </>
           ) : null}
         </div>
       </div>
