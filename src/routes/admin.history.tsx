@@ -159,7 +159,8 @@ function AdminHistoryPage() {
   ].filter(Boolean).length;
 
   const grandTotal =
-    (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) + (stats.PUBLISHED ?? 0);
+    (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) +
+    (stats.PUBLISHED ?? 0) + (stats.UNPUBLISHED ?? 0);
 
   return (
     <div className="space-y-6">
