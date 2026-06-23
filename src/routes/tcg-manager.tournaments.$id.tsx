@@ -145,6 +145,7 @@ function ManagerTournamentDetailPage() {
   const isDraft = tournament.status === "DRAFT";
   const isApproved = tournament.status === "APPROVED";
   const isPublished = tournament.status === "PUBLISHED";
+  const isUnpublished = tournament.status === "UNPUBLISHED";
   const undoExpired = countdown?.expired ?? true;
 
   const canApprove = isDraft && (criticalCount === 0 || acknowledged);
