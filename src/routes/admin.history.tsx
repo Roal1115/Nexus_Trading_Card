@@ -102,6 +102,21 @@ function AdminHistoryPage() {
 
   const fetchHist = useServerFn(getAdminTournamentHistory);
   const fetchOpts = useServerFn(getAdminFilterOptions);
+  const republishFn = useServerFn(republishTournament);
+  const [republishing, setRepublishing] = useState<string | null>(null);
+
+  const onRepublish = async (tournamentId: string) => {
+    setRepublishing(tournamentId);
+    try {
+      await republishFn({ data: { tournament_id: tournamentId } });
+      toast.success("Torneo re-enviado a Aprobado");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al re-publicar");
+    } finally {
+      setRepublishing(null);
+    }
+  };
 
   const load = async (overrides: Partial<Filters> = {}) => {
     const f = { ...filters, ...overrides };
