@@ -96,6 +96,7 @@ function ManagerTournamentDetailPage() {
   const approveFn = useServerFn(managerApproveTournament);
   const rejectFn = useServerFn(managerRejectTournament);
   const undoFn = useServerFn(managerUndoApproval);
+  const republishFn = useServerFn(managerRepublishTournament);
 
   const [data, setData] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
