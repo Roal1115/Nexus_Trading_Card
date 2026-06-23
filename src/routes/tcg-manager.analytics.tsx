@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { Loader2, Users, Store, MapPin, TrendingUp, BarChart3 } from "lucide-react";
-import { getManagerGames, getManagerAnalyticsOverview } from "@/lib/geekarena-manager.functions";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Users, Store, MapPin, TrendingUp, TrendingDown, AlertTriangle, Activity } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { getManagerGames, getManagerAnalyticsOverview, getManagerAnalyticsTrend } from "@/lib/geekarena-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager/analytics")({
   head: () => ({ meta: [{ title: "Analytics — TCG Manager" }] }),
@@ -18,6 +19,12 @@ type Overview = {
   zone_breakdown: Array<{ zone: string; store_count: number; players: number }>;
   store_ranking: Array<{ store_id: string; store_name: string; city: string; zone: string; players: number }>;
   stores_offering_count: number;
+};
+
+type TrendData = {
+  monthly_trend: Array<{ month: string; players: number }>;
+  player_classification: Array<{ player_id: string; last_visit: string; total_tournaments: number }>;
+  peak_days: Array<{ date: string; players: number; type: "peak" | "valley" }>;
 };
 
 function ManagerAnalyticsPage() {
@@ -84,26 +91,35 @@ function ManagerAnalyticsPage() {
 
 function GameAnalyticsTab({ gameId }: { gameId: string }) {
   const fetchOverview = useServerFn(getManagerAnalyticsOverview);
+  const fetchTrend = useServerFn(getManagerAnalyticsTrend);
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
   const [zone, setZone] = useState("");
   const [storeId, setStoreId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [atRiskDays, setAtRiskDays] = useState(21);
+  const [inactiveDays, setInactiveDays] = useState(45);
 
   const load = () => {
     setLoading(true);
-    fetchOverview({
-      data: {
-        game_id: gameId,
-        zone: zone || undefined,
-        store_id: storeId || undefined,
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
-      },
-    })
-      .then((res: any) => setOverview(res))
-      .catch(() => setOverview(null))
+    const params = {
+      game_id: gameId,
+      zone: zone || undefined,
+      store_id: storeId || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+    };
+    Promise.all([fetchOverview({ data: params }), fetchTrend({ data: params })])
+      .then(([ov, tr]: any[]) => {
+        setOverview(ov);
+        setTrendData(tr);
+      })
+      .catch(() => {
+        setOverview(null);
+        setTrendData(null);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -111,6 +127,30 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, zone, storeId, dateFrom, dateTo]);
+
+  const categorySummary = useMemo(() => {
+    if (!trendData?.player_classification) return null;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const summary = { recurrente: 0, ocasional: 0, una_vez: 0, en_riesgo: 0, inactivo: 0 };
+    for (const p of trendData.player_classification) {
+      const lastVisit = new Date(p.last_visit + "T12:00:00");
+      const daysSince = Math.floor((today.getTime() - lastVisit.getTime()) / 86_400_000);
+      if (daysSince > inactiveDays) {
+        summary.inactivo++;
+        continue;
+      }
+      if (daysSince > atRiskDays) {
+        summary.en_riesgo++;
+        continue;
+      }
+      if (p.total_tournaments === 1) summary.una_vez++;
+      else if (p.total_tournaments >= 4) summary.recurrente++;
+      else summary.ocasional++;
+    }
+    return summary;
+  }, [trendData, atRiskDays, inactiveDays]);
+
 
   return (
     <div className="space-y-6">
@@ -233,6 +273,112 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
               </div>
             )}
           </div>
+
+          {trendData && trendData.monthly_trend.length > 0 && (
+            <div className="glass space-y-4 rounded-2xl p-6">
+              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+                <TrendingUp size={14} /> Tendencia mensual de jugadores
+              </h3>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trendData.monthly_trend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="month" stroke="#9ca3af" fontSize={11} />
+                    <YAxis stroke="#9ca3af" fontSize={11} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(15,15,20,0.95)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                      labelStyle={{ color: "#fff" }}
+                    />
+                    <Line type="monotone" dataKey="players" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {trendData && trendData.peak_days.length > 0 && (
+            <div className="glass space-y-4 rounded-2xl p-6">
+              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+                <Activity size={14} /> Días pico y valle
+              </h3>
+              <div className="space-y-2">
+                {trendData.peak_days.map((d, i) => (
+                  <div
+                    key={`${d.date}-${d.type}-${i}`}
+                    className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.02] px-4 py-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      {d.type === "peak" ? (
+                        <TrendingUp size={14} className="text-emerald-400" />
+                      ) : (
+                        <TrendingDown size={14} className="text-amber-400" />
+                      )}
+                      <span className="text-sm font-medium text-white">{d.date}</span>
+                    </div>
+                    <span className="text-xs text-gray-400">{d.players} jugadores</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {categorySummary && (
+            <div className="glass space-y-4 rounded-2xl p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+                  <Users size={14} /> Clasificación de jugadores
+                </h3>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                  <label className="flex items-center gap-1.5">
+                    En riesgo si no juega en
+                    <input
+                      type="number"
+                      min={1}
+                      value={atRiskDays}
+                      onChange={(e) => setAtRiskDays(Number(e.target.value))}
+                      className="w-14 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-center text-white"
+                    />
+                    días
+                  </label>
+                  <label className="flex items-center gap-1.5">
+                    Inactivo después de
+                    <input
+                      type="number"
+                      min={1}
+                      value={inactiveDays}
+                      onChange={(e) => setInactiveDays(Number(e.target.value))}
+                      className="w-14 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-center text-white"
+                    />
+                    días
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                {[
+                  { label: "Recurrentes", value: categorySummary.recurrente, color: "text-emerald-400" },
+                  { label: "Ocasionales", value: categorySummary.ocasional, color: "text-blue-400" },
+                  { label: "Una vez", value: categorySummary.una_vez, color: "text-gray-300" },
+                  { label: "En riesgo", value: categorySummary.en_riesgo, color: "text-amber-400" },
+                  { label: "Inactivos", value: categorySummary.inactivo, color: "text-red-400" },
+                ].map((cat) => (
+                  <div key={cat.label} className="rounded-md border border-white/10 bg-white/[0.02] p-4 text-center">
+                    <p className={`text-2xl font-bold ${cat.color}`}>{cat.value}</p>
+                    <p className="mt-1 text-xs text-gray-400">{cat.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                <AlertTriangle size={12} /> Los umbrales ajustan la vista en tiempo real sin modificar la configuración de cada tienda.
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>
