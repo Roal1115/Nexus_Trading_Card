@@ -411,9 +411,20 @@ function AdminHistoryPage() {
               {/* Row 4 — File + Action */}
               <div className="flex items-center justify-between pt-1">
                 <FileLink url={r.csv_url} />
-                <button onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })} className="flex items-center gap-1 text-xs text-primary hover:underline">
-                  <Eye size={12} /> Ver detalle
-                </button>
+                <div className="flex items-center gap-3">
+                  {r.status === "UNPUBLISHED" && (
+                    <button
+                      onClick={() => onRepublish(r.id)}
+                      disabled={republishing === r.id}
+                      className="flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
+                    >
+                      {republishing === r.id ? "..." : "↩ Re-publicar"}
+                    </button>
+                  )}
+                  <button onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                    <Eye size={12} /> Ver detalle
+                  </button>
+                </div>
               </div>
 
               {/* Rejection reason if present */}
