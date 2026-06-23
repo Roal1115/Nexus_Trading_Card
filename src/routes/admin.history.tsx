@@ -179,6 +179,7 @@ function AdminHistoryPage() {
           { label: "Borradores", value: stats.DRAFT ?? 0, color: "text-gray-300" },
           { label: "Aprobados", value: stats.APPROVED ?? 0, color: "text-green-400" },
           { label: "Publicados", value: stats.PUBLISHED ?? 0, color: "text-primary" },
+          { label: "Despublicados", value: stats.UNPUBLISHED ?? 0, color: "text-amber-400" },
         ].map((s) => (
           <div key={s.label} className="glass rounded-2xl p-3 sm:p-4">
             <div className="text-xs text-gray-400">{s.label}</div>
