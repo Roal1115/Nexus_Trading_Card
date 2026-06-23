@@ -91,26 +91,35 @@ function ManagerAnalyticsPage() {
 
 function GameAnalyticsTab({ gameId }: { gameId: string }) {
   const fetchOverview = useServerFn(getManagerAnalyticsOverview);
+  const fetchTrend = useServerFn(getManagerAnalyticsTrend);
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
   const [zone, setZone] = useState("");
   const [storeId, setStoreId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [atRiskDays, setAtRiskDays] = useState(21);
+  const [inactiveDays, setInactiveDays] = useState(45);
 
   const load = () => {
     setLoading(true);
-    fetchOverview({
-      data: {
-        game_id: gameId,
-        zone: zone || undefined,
-        store_id: storeId || undefined,
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
-      },
-    })
-      .then((res: any) => setOverview(res))
-      .catch(() => setOverview(null))
+    const params = {
+      game_id: gameId,
+      zone: zone || undefined,
+      store_id: storeId || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+    };
+    Promise.all([fetchOverview({ data: params }), fetchTrend({ data: params })])
+      .then(([ov, tr]: any[]) => {
+        setOverview(ov);
+        setTrendData(tr);
+      })
+      .catch(() => {
+        setOverview(null);
+        setTrendData(null);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -118,6 +127,30 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, zone, storeId, dateFrom, dateTo]);
+
+  const categorySummary = useMemo(() => {
+    if (!trendData?.player_classification) return null;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const summary = { recurrente: 0, ocasional: 0, una_vez: 0, en_riesgo: 0, inactivo: 0 };
+    for (const p of trendData.player_classification) {
+      const lastVisit = new Date(p.last_visit + "T12:00:00");
+      const daysSince = Math.floor((today.getTime() - lastVisit.getTime()) / 86_400_000);
+      if (daysSince > inactiveDays) {
+        summary.inactivo++;
+        continue;
+      }
+      if (daysSince > atRiskDays) {
+        summary.en_riesgo++;
+        continue;
+      }
+      if (p.total_tournaments === 1) summary.una_vez++;
+      else if (p.total_tournaments >= 4) summary.recurrente++;
+      else summary.ocasional++;
+    }
+    return summary;
+  }, [trendData, atRiskDays, inactiveDays]);
+
 
   return (
     <div className="space-y-6">
