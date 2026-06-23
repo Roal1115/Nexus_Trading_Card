@@ -63,11 +63,13 @@ const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Borrador",
   APPROVED: "Aprobado",
   PUBLISHED: "Publicado",
+  UNPUBLISHED: "Despublicado",
 };
 const STATUS_COLOR: Record<string, string> = {
   DRAFT: "bg-white/5 text-gray-300 border-white/10",
   APPROVED: "bg-green-500/15 text-green-300 border-green-400/30",
   PUBLISHED: "bg-primary/15 text-primary border-primary/30",
+  UNPUBLISHED: "bg-amber-500/15 text-amber-300 border-amber-400/30",
 };
 const ROLE_LABEL: Record<string, string> = {
   admin: "Admin",
