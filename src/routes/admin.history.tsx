@@ -344,13 +344,24 @@ function AdminHistoryPage() {
                     <FileLink url={r.csv_url} />
                   </td>
                   <td className="px-3 py-2">
-                    <Link
-                      to="/admin/tournaments/$id"
-                      params={{ id: r.id }}
-                      className="inline-flex items-center gap-1 text-primary hover:underline"
-                    >
-                      <Eye size={12} /> Detalle
-                    </Link>
+                    <div className="flex flex-col gap-1">
+                      <Link
+                        to="/admin/tournaments/$id"
+                        params={{ id: r.id }}
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        <Eye size={12} /> Detalle
+                      </Link>
+                      {r.status === "UNPUBLISHED" && (
+                        <button
+                          onClick={() => onRepublish(r.id)}
+                          disabled={republishing === r.id}
+                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
+                        >
+                          {republishing === r.id ? "..." : "↩ Re-publicar"}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
