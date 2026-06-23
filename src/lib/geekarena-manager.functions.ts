@@ -1225,3 +1225,110 @@ export const managerRepublishTournament = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { success: true };
   });
+
+export const getManagerAnalyticsTrend = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator(
+    (d: { game_id: string; zone?: string; store_id?: string; date_from?: string; date_to?: string }) =>
+      z
+        .object({
+          game_id: z.string().uuid(),
+          zone: z.string().max(50).optional(),
+          store_id: z.string().uuid().optional(),
+          date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+          date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    await assertManagerOwnsGame(admin, player, data.game_id);
+
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("store_id")
+      .eq("game_id", data.game_id);
+    const storeIdsWithGame = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
+    if (storeIdsWithGame.length === 0) {
+      return { monthly_trend: [], player_classification: [], peak_days: [] };
+    }
+
+    let storeQuery = admin.from("stores").select("id").in("id", storeIdsWithGame).eq("is_active", true);
+    if (data.zone) storeQuery = storeQuery.eq("zone", data.zone);
+    if (data.store_id) storeQuery = storeQuery.eq("id", data.store_id);
+    const { data: stores } = await storeQuery;
+    const filteredStoreIds = (stores ?? []).map((s: any) => s.id);
+    if (filteredStoreIds.length === 0) {
+      return { monthly_trend: [], player_classification: [], peak_days: [] };
+    }
+
+    let tQuery = admin
+      .from("tournaments")
+      .select("id, store_id, tournament_date")
+      .eq("game_id", data.game_id)
+      .eq("status", "PUBLISHED")
+      .in("store_id", filteredStoreIds)
+      .order("tournament_date", { ascending: true });
+    if (data.date_from) tQuery = tQuery.gte("tournament_date", data.date_from);
+    if (data.date_to) tQuery = tQuery.lte("tournament_date", data.date_to);
+    const { data: tournaments } = await tQuery;
+
+    if (!tournaments || tournaments.length === 0) {
+      return { monthly_trend: [], player_classification: [], peak_days: [] };
+    }
+
+    const tournamentIds = tournaments.map((t: any) => t.id);
+    const { data: results } = await admin
+      .from("tournament_results")
+      .select("player_id, tournament_id")
+      .in("tournament_id", tournamentIds);
+
+    const tournamentMap = new Map<string, any>(tournaments.map((t: any) => [t.id, t]));
+
+    const playerDates = new Map<string, string[]>();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get((r as any).tournament_id);
+      if (!t) continue;
+      const arr = playerDates.get((r as any).player_id) ?? [];
+      arr.push(t.tournament_date);
+      playerDates.set((r as any).player_id, arr);
+    }
+    for (const arr of playerDates.values()) arr.sort();
+
+    const monthlyMap = new Map<string, Set<string>>();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get((r as any).tournament_id);
+      if (!t) continue;
+      const monthKey = (t.tournament_date as string).slice(0, 7);
+      const s = monthlyMap.get(monthKey) ?? new Set<string>();
+      s.add((r as any).player_id);
+      monthlyMap.set(monthKey, s);
+    }
+    const monthly_trend = Array.from(monthlyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, players]) => ({ month, players: players.size }));
+
+    const dayMap = new Map<string, Set<string>>();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get((r as any).tournament_id);
+      if (!t) continue;
+      const s = dayMap.get(t.tournament_date) ?? new Set<string>();
+      s.add((r as any).player_id);
+      dayMap.set(t.tournament_date, s);
+    }
+    const dayList = Array.from(dayMap.entries())
+      .map(([date, players]) => ({ date, players: players.size }))
+      .sort((a, b) => b.players - a.players);
+    const peak_days = [
+      ...dayList.slice(0, 3).map((d) => ({ ...d, type: "peak" as const })),
+      ...dayList.slice(-3).reverse().map((d) => ({ ...d, type: "valley" as const })),
+    ];
+
+    const player_classification = Array.from(playerDates.entries()).map(([player_id, dates]) => ({
+      player_id,
+      last_visit: dates[dates.length - 1],
+      total_tournaments: dates.length,
+    }));
+
+    return { monthly_trend, player_classification, peak_days };
+  });
