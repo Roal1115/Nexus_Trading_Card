@@ -389,6 +389,18 @@ function ManagerTournamentDetailPage() {
               Publicado el {tournament.published_at ? formatDateTime(tournament.published_at) : "—"}
             </span>
           ) : null}
+
+          {isUnpublished ? (
+            <>
+              <span className="text-xs text-amber-300">
+                Este torneo fue despublicado. Puedes volver a enviarlo a aprobación.
+              </span>
+              <Button onClick={onRepublish} disabled={acting}>
+                {acting ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+                Re-publicar torneo
+              </Button>
+            </>
+          ) : null}
         </div>
       </div>
 
