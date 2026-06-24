@@ -315,9 +315,9 @@ function LeaderboardTable({
       </header>
 
 
-      <div className="max-h-[720px] overflow-y-auto">
+      <div className="relative max-h-[720px] overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
+          <thead className="bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
             <tr>
               <th className="px-3 py-2 text-left">#</th>
               <th className="px-3 py-2 text-left">Geek Tag</th>
@@ -328,64 +328,76 @@ function LeaderboardTable({
               <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
             </tr>
           </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
-                  Cargando ranking…
-                </td>
-              </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
-                  No hay resultados para estos filtros todavía.
-                </td>
-              </tr>
-            ) : (
-              rows.map((r) => {
-                const rank = r.rank_position;
-                const podium = rank > 0 && rank <= 3;
-                return (
-                  <tr
-                    key={r.player_id}
-                    className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
-                  >
-                    <td className="px-3 py-2.5">
-                      <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
-                        {String(rank).padStart(2, "0")}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        {rank === 1 && <Medal className="text-amber-300" size={14} />}
-                        <Link
-                          to="/players/$playerTag"
-                          params={{ playerTag: r.geek_tag }}
-                          className="font-medium text-white hover:text-primary transition"
-                        >
-                          {r.geek_tag}
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
-                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
-                      {r.points.toLocaleString()}
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
-                      {r.tournaments_played}
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                      {r.tournaments_won}
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                      {omwFor(r)}%
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
         </table>
+
+        {loading ? (
+          <div className="px-3 py-12 text-center text-sm text-gray-500">
+            Cargando ranking…
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="px-3 py-12 text-center text-sm text-gray-500">
+            No hay resultados para estos filtros todavía.
+          </div>
+        ) : (
+          <>
+            <style>{`
+              @keyframes leaderboardScroll {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-50%); }
+              }
+              .lb-track {
+                animation: leaderboardScroll ${Math.max(20, rows.length * 1.8)}s linear infinite;
+                will-change: transform;
+              }
+              .lb-track:hover { animation-play-state: paused; }
+            `}</style>
+            <table className="w-full text-sm">
+              <tbody className="lb-track">
+                {[...rows, ...rows].map((r, idx) => {
+                  const rank = r.rank_position;
+                  const podium = rank > 0 && rank <= 3;
+                  return (
+                    <tr
+                      key={idx}
+                      className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
+                    >
+                      <td className="px-3 py-2.5">
+                        <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                          {String(rank).padStart(2, "0")}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          {rank === 1 && <Medal className="text-amber-300" size={14} />}
+                          <Link
+                            to="/players/$playerTag"
+                            params={{ playerTag: r.geek_tag }}
+                            className="font-medium text-white hover:text-primary transition"
+                          >
+                            {r.geek_tag}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
+                        {r.points.toLocaleString()}
+                      </td>
+                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
+                        {r.tournaments_played}
+                      </td>
+                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                        {r.tournaments_won}
+                      </td>
+                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                        {omwFor(r)}%
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
       </div>
     </section>
   );
