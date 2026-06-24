@@ -289,3 +289,122 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       semester_key: seasonKey,
     };
   });
+// Agregar al final del archivo — un endpoint unificado
+export const getLeaderboardWithOptions = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: { game_id?: string | null; city?: string | null; store_id?: string | null; month?: string | null }) =>
+      z
+        .object({
+          game_id: z.string().uuid().nullable().optional(),
+          city: z.string().max(120).nullable().optional(),
+          store_id: z.string().uuid().nullable().optional(),
+          month: z
+            .string()
+            .regex(/^\d{4}-\d{2}$/)
+            .nullable()
+            .optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const admin = getGeekarenaAdmin();
+
+    // Corre options + leaderboard en paralelo
+    const [optionsResult, leaderboardResult] = await Promise.all([
+      // inline de getLeaderboardOptions
+      (async () => {
+        const [gamesRes, storesRes, monthsRes] = await Promise.all([
+          admin.from("games").select("id, slug, name").eq("is_active", true).order("name"),
+          admin
+            .from("stores")
+            .select("id, name, city")
+            .eq("is_active", true)
+            .order("city", { ascending: true })
+            .order("name", { ascending: true }),
+          admin
+            .from("tournaments")
+            .select("qualifying_month, qualifying_year")
+            .in("status", ["APPROVED", "PUBLISHED"])
+            .order("qualifying_year", { ascending: false })
+            .order("qualifying_month", { ascending: false }),
+        ]);
+        const monthSet = new Set<string>();
+        for (const r of monthsRes.data ?? []) {
+          monthSet.add(`${r.qualifying_year}-${String(r.qualifying_month).padStart(2, "0")}`);
+        }
+        return {
+          games: gamesRes.data ?? [],
+          stores: storesRes.data ?? [],
+          months: Array.from(monthSet).sort().reverse(),
+        };
+      })(),
+      // inline de getLeaderboard handler — llama directamente la misma lógica
+      // pasando data como si fuera el input del handler existente
+      (async () => {
+        // Reutiliza exactamente la misma lógica del handler de getLeaderboard
+        // copiando la llamada directamente al admin client
+        let cityStoreIds: string[] | null = null;
+        if (data.city) {
+          const { data: cityStores } = await admin
+            .from("stores")
+            .select("id")
+            .eq("is_active", true)
+            .eq("city", data.city);
+          cityStoreIds = (cityStores ?? []).map((s) => s.id);
+        }
+
+        let monthValue = data.month;
+        if (!monthValue) {
+          const { data: latest } = await admin
+            .from("tournaments")
+            .select("qualifying_year, qualifying_month")
+            .in("status", ["APPROVED", "PUBLISHED"])
+            .order("qualifying_year", { ascending: false })
+            .order("qualifying_month", { ascending: false })
+            .limit(1);
+          if (latest && latest.length > 0) {
+            monthValue = `${latest[0].qualifying_year}-${String(latest[0].qualifying_month).padStart(2, "0")}`;
+          } else {
+            const now = new Date();
+            monthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+          }
+        }
+
+        const season = await getSeasonForMonth(admin, monthValue);
+        const seasonKey = season?.slug ?? "";
+
+        const [monthlyRaw, semestralRaw] = await Promise.all([
+          querySnapshotsInline(admin, "MONTHLY", monthValue, data, cityStoreIds, true),
+          querySnapshotsInline(admin, "SEMESTRAL", seasonKey, data, cityStoreIds, false),
+        ]);
+
+        const playerIds = Array.from(new Set([...monthlyRaw, ...semestralRaw].map((r) => r.player_id)));
+        const allStoreIds = Array.from(
+          new Set([...monthlyRaw, ...semestralRaw].map((r) => r.store_id).filter((v): v is string => !!v)),
+        );
+
+        const [playersRes, storesRes] = await Promise.all([
+          playerIds.length
+            ? admin.from("players").select("id, geek_tag").in("id", playerIds)
+            : Promise.resolve({ data: [], error: null } as const),
+          allStoreIds.length
+            ? admin.from("stores").select("id, city").in("id", allStoreIds)
+            : Promise.resolve({ data: [], error: null } as const),
+        ]);
+
+        const playerMap = new Map((playersRes.data ?? []).map((p) => [p.id, p]));
+        const storeMap = new Map((storesRes.data ?? []).map((s) => [s.id, s]));
+
+        return {
+          monthly: shapeRows(monthlyRaw, playerMap, storeMap),
+          semestral: shapeRows(semestralRaw, playerMap, storeMap),
+          month_label: monthLabel(monthValue),
+          semester_label: season?.name ?? "Sin temporada activa",
+          month_value: monthValue,
+          semester_key: seasonKey,
+        };
+      })(),
+    ]);
+
+    return { ...optionsResult, ...leaderboardResult };
+  });
