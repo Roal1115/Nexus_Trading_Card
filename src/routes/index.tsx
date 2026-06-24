@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -298,6 +298,57 @@ function LeaderboardTable({
   loading: boolean;
 }) {
   const omwFor = (r: Row) => r.omw_percentage ?? 0;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isPaused = useRef(false);
+  const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (loading || rows.length === 0) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const SPEED = 0.6; // px per frame — ajusta para velocidad
+    let frameId: number;
+
+    const step = () => {
+      if (!isPaused.current && el) {
+        el.scrollTop += SPEED;
+        // cuando llega al final, vuelve al inicio suavemente
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
+          el.scrollTop = 0;
+        }
+      }
+      frameId = requestAnimationFrame(step);
+    };
+
+    frameId = requestAnimationFrame(step);
+
+    const pause = () => {
+      isPaused.current = true;
+      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
+      resumeTimeout.current = setTimeout(() => {
+        isPaused.current = false;
+      }, 3000); // reanuda 3s después de que el usuario deja de interactuar
+    };
+
+    el.addEventListener("mouseenter", pause);
+    el.addEventListener("mouseleave", () => {
+      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
+      resumeTimeout.current = setTimeout(() => {
+        isPaused.current = false;
+      }, 3000);
+    });
+    el.addEventListener("touchstart", pause, { passive: true });
+    el.addEventListener("wheel", pause, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
+      el.removeEventListener("mouseenter", pause);
+      el.removeEventListener("touchstart", pause);
+      el.removeEventListener("wheel", pause);
+    };
+  }, [loading, rows]);
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
@@ -314,10 +365,9 @@ function LeaderboardTable({
         {subtitle && <p className="mt-2 text-xs text-gray-400">{subtitle}</p>}
       </header>
 
-
-      <div className="relative max-h-[720px] overflow-hidden">
+      <div ref={scrollRef} className="max-h-[720px] overflow-y-auto scroll-smooth">
         <table className="w-full text-sm">
-          <thead className="bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
+          <thead className="sticky top-0 z-10 bg-black/80 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
             <tr>
               <th className="px-3 py-2 text-left">#</th>
               <th className="px-3 py-2 text-left">Geek Tag</th>
@@ -328,76 +378,64 @@ function LeaderboardTable({
               <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
             </tr>
           </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
+                  Cargando ranking…
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
+                  No hay resultados para estos filtros todavía.
+                </td>
+              </tr>
+            ) : (
+              rows.map((r) => {
+                const rank = r.rank_position;
+                const podium = rank > 0 && rank <= 3;
+                return (
+                  <tr
+                    key={r.player_id}
+                    className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
+                  >
+                    <td className="px-3 py-2.5">
+                      <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                        {String(rank).padStart(2, "0")}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        {rank === 1 && <Medal className="text-amber-300" size={14} />}
+                        <Link
+                          to="/players/$playerTag"
+                          params={{ playerTag: r.geek_tag }}
+                          className="font-medium text-white transition hover:text-primary"
+                        >
+                          {r.geek_tag}
+                        </Link>
+                      </div>
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
+                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
+                      {r.points.toLocaleString()}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
+                      {r.tournaments_played}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                      {r.tournaments_won}
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
+                      {omwFor(r)}%
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
         </table>
-
-        {loading ? (
-          <div className="px-3 py-12 text-center text-sm text-gray-500">
-            Cargando ranking…
-          </div>
-        ) : rows.length === 0 ? (
-          <div className="px-3 py-12 text-center text-sm text-gray-500">
-            No hay resultados para estos filtros todavía.
-          </div>
-        ) : (
-          <>
-            <style>{`
-              @keyframes leaderboardScroll {
-                0% { transform: translateY(0); }
-                100% { transform: translateY(-50%); }
-              }
-              .lb-track {
-                animation: leaderboardScroll ${Math.max(20, rows.length * 1.8)}s linear infinite;
-                will-change: transform;
-              }
-              .lb-track:hover { animation-play-state: paused; }
-            `}</style>
-            <table className="w-full text-sm">
-              <tbody className="lb-track">
-                {[...rows, ...rows].map((r, idx) => {
-                  const rank = r.rank_position;
-                  const podium = rank > 0 && rank <= 3;
-                  return (
-                    <tr
-                      key={idx}
-                      className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
-                    >
-                      <td className="px-3 py-2.5">
-                        <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
-                          {String(rank).padStart(2, "0")}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          {rank === 1 && <Medal className="text-amber-300" size={14} />}
-                          <Link
-                            to="/players/$playerTag"
-                            params={{ playerTag: r.geek_tag }}
-                            className="font-medium text-white hover:text-primary transition"
-                          >
-                            {r.geek_tag}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
-                      <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
-                        {r.points.toLocaleString()}
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
-                        {r.tournaments_played}
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                        {r.tournaments_won}
-                      </td>
-                      <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                        {omwFor(r)}%
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </>
-        )}
       </div>
     </section>
   );
