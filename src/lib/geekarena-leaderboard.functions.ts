@@ -111,6 +111,9 @@ export const getLeaderboard = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const admin = getGeekarenaAdmin();
+    const cacheKey = JSON.stringify(data);
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
 
     // Resolve city → set of stores (used by both queries when city is set)
     let cityStoreIds: string[] | null = null;
