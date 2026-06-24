@@ -13,6 +13,7 @@ import { Route as TcgManagerRouteImport } from './routes/tcg-manager'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as LoginRouteImport } from './routes/login'
@@ -74,6 +75,11 @@ const SignupRoute = SignupRouteImport.update({
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/stores': typeof StoresRouteWithChildren
@@ -342,6 +349,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/admin/activity': typeof AdminActivityRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/stores': typeof StoresRouteWithChildren
@@ -439,6 +448,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/organizer'
     | '/reset-password'
+    | '/settings'
     | '/setup'
     | '/signup'
     | '/stores'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/settings'
     | '/setup'
     | '/signup'
     | '/admin/activity'
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/organizer'
     | '/reset-password'
+    | '/settings'
     | '/setup'
     | '/signup'
     | '/stores'
@@ -580,6 +592,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
   StoresRoute: typeof StoresRouteWithChildren
@@ -615,6 +628,13 @@ declare module '@tanstack/react-router' {
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1046,6 +1066,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
+  SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
   StoresRoute: StoresRouteWithChildren,
@@ -1055,3 +1076,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

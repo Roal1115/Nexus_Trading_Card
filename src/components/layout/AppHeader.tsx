@@ -3,6 +3,7 @@ import { LogOut, Menu, Shield, Store, Trophy, User, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { geekarena } from "@/integrations/geekarena/client";
+import { Settings } from "lucide-react";
 
 export function AppHeader() {
   const navigate = useNavigate();
@@ -52,6 +53,9 @@ export function AppHeader() {
           {role === "admin" && (
             <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />
           )}
+          {player && (
+            <NavItem to="/settings" icon={<Settings size={14} />} label="Configuración" />
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -85,6 +89,7 @@ export function AppHeader() {
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
+        
       </div>
 
       {menuOpen && (
@@ -118,6 +123,15 @@ export function AppHeader() {
                 Mi Panel
               </Link>
             )}
+
+            <Link
+              to="/settings"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
+            >
+              <Settings size={16} />
+              Configuración
+            </Link>
 
             {(role === "organizer" || role === "admin" || role === "tcg_manager") && (
               <Link
