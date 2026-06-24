@@ -4,6 +4,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getGeekarenaAdmin } from "./geekarena-admin.server";
 
+// ── Caché en memoria ─────────────────────────────────────────────
+const leaderboardCache = new Map<string, { data: any; ts: number }>();
+const CACHE_TTL = 3 * 60 * 1000; // 3 minutos
+
+function getCached(key: string) {
+  const entry = leaderboardCache.get(key);
+  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
+  return null;
+}
+
+function setCache(key: string, data: any) {
+  leaderboardCache.set(key, { data, ts: Date.now() });
+}
+
 export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(async () => {
   const admin = getGeekarenaAdmin();
   const [gamesRes, storesRes, monthsRes] = await Promise.all([
