@@ -1,9 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Users, Store, MapPin, TrendingUp, TrendingDown, AlertTriangle, Activity } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { getManagerGames, getManagerAnalyticsOverview, getManagerAnalyticsTrend } from "@/lib/geekarena-manager.functions";
+import {
+  Loader2,
+  Users,
+  Store,
+  MapPin,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Activity,
+} from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+
+import {
+  getManagerGames,
+  getManagerAnalyticsOverview,
+  getManagerAnalyticsTrend,
+} from "@/lib/geekarena-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager/analytics")({
   head: () => ({ meta: [{ title: "Analytics — TCG Manager" }] }),
@@ -17,13 +42,28 @@ type Game = { id: string; name: string; slug: string };
 type Overview = {
   total_players: number;
   zone_breakdown: Array<{ zone: string; store_count: number; players: number }>;
-  store_ranking: Array<{ store_id: string; store_name: string; city: string; zone: string; players: number }>;
+  store_ranking: Array<{
+    store_id: string;
+    store_name: string;
+    city: string;
+    zone: string;
+    players: number;
+  }>;
   stores_offering_count: number;
 };
 
 type TrendData = {
-  monthly_trend: Array<{ month: string; players: number }>;
-  player_classification: Array<{ player_id: string; last_visit: string; total_tournaments: number }>;
+  monthly_trend: Array<{
+    month: string;
+    players: number;
+    new_players: number;
+    returning_players: number;
+  }>;
+  player_classification: Array<{
+    player_id: string;
+    last_visit: string;
+    total_tournaments: number;
+  }>;
   peak_days: Array<{ date: string; players: number; type: "peak" | "valley" }>;
 };
 
@@ -151,7 +191,6 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
     return summary;
   }, [trendData, atRiskDays, inactiveDays]);
 
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
@@ -208,8 +247,16 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <KpiCard icon={<Users size={16} />} label="Jugadores únicos" value={overview.total_players} />
-            <KpiCard icon={<Store size={16} />} label="Tiendas con torneo" value={overview.stores_offering_count} />
+            <KpiCard
+              icon={<Users size={16} />}
+              label="Jugadores únicos"
+              value={overview.total_players}
+            />
+            <KpiCard
+              icon={<Store size={16} />}
+              label="Tiendas con torneo"
+              value={overview.stores_offering_count}
+            />
             <KpiCard
               icon={<TrendingUp size={16} />}
               label="Mejor tienda"
@@ -218,7 +265,9 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
           </div>
 
           <div className="glass space-y-4 rounded-2xl p-6">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">Desglose por zona</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+              Desglose por zona
+            </h3>
             {overview.zone_breakdown.length === 0 ? (
               <p className="text-sm text-gray-400">Sin datos.</p>
             ) : (
@@ -243,7 +292,9 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
           </div>
 
           <div className="glass space-y-4 rounded-2xl p-6">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">Ranking de tiendas</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+              Ranking de tiendas
+            </h3>
             {overview.store_ranking.length === 0 ? (
               <p className="text-sm text-gray-400">Sin datos.</p>
             ) : (
@@ -280,50 +331,192 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
                 <TrendingUp size={14} /> Tendencia mensual de jugadores
               </h3>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData.monthly_trend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-                    <XAxis dataKey="month" stroke="#9ca3af" fontSize={11} />
-                    <YAxis stroke="#9ca3af" fontSize={11} allowDecimals={false} />
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart
+                    data={trendData.monthly_trend}
+                    margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#E86A22" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#E86A22" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="2 6" stroke="rgba(255,255,255,0.15)" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fill: "#9CA3AF", fontSize: 10 }}
+                      tickFormatter={(v) => {
+                        const [year, month] = v.split("-");
+                        const names = [
+                          "Ene",
+                          "Feb",
+                          "Mar",
+                          "Abr",
+                          "May",
+                          "Jun",
+                          "Jul",
+                          "Ago",
+                          "Sep",
+                          "Oct",
+                          "Nov",
+                          "Dic",
+                        ];
+                        return `${names[parseInt(month, 10) - 1]} ${year}`;
+                      }}
+                    />
+                    <YAxis
+                      tick={{ fill: "#9CA3AF", fontSize: 10 }}
+                      allowDecimals={false}
+                      axisLine={false}
+                      tickLine={false}
+                    />{" "}
                     <Tooltip
                       contentStyle={{
-                        background: "rgba(15,15,20,0.95)",
+                        background: "#0F1117",
                         border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: 8,
-                        fontSize: 12,
                       }}
                       labelStyle={{ color: "#fff" }}
+                      labelFormatter={(v) => {
+                        const [year, month] = v.split("-");
+                        const names = [
+                          "Enero",
+                          "Febrero",
+                          "Marzo",
+                          "Abril",
+                          "Mayo",
+                          "Junio",
+                          "Julio",
+                          "Agosto",
+                          "Septiembre",
+                          "Octubre",
+                          "Noviembre",
+                          "Diciembre",
+                        ];
+                        return `${names[parseInt(month, 10) - 1]} ${year}`;
+                      }}
+                      itemStyle={{ color: "#E86A22" }}
                     />
-                    <Line type="monotone" dataKey="players" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
+                    <Area
+                      type="monotone"
+                      dataKey="players"
+                      stroke="#E86A22"
+                      strokeWidth={2}
+                      fill="url(#trendGradient)"
+                      dot={{ r: 4, fill: "#E86A22", strokeWidth: 0 }}
+                      activeDot={{ r: 6 }}
+                      name="Jugadores únicos"
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
 
-          {trendData && trendData.peak_days.length > 0 && (
-            <div className="glass space-y-4 rounded-2xl p-6">
-              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-                <Activity size={14} /> Días pico y valle
+          {trendData && trendData.monthly_trend.length > 0 && (
+            <div className="glass rounded-2xl p-5">
+              <h3 className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+                <Users size={14} className="text-primary" /> Nuevos vs. recurrentes por mes
               </h3>
-              <div className="space-y-2">
-                {trendData.peak_days.map((d, i) => (
-                  <div
-                    key={`${d.date}-${d.type}-${i}`}
-                    className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.02] px-4 py-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      {d.type === "peak" ? (
-                        <TrendingUp size={14} className="text-emerald-400" />
-                      ) : (
-                        <TrendingDown size={14} className="text-amber-400" />
-                      )}
-                      <span className="text-sm font-medium text-white">{d.date}</span>
-                    </div>
-                    <span className="text-xs text-gray-400">{d.players} jugadores</span>
-                  </div>
-                ))}
-              </div>
+              <p className="mb-4 text-xs text-gray-500">
+                Jugadores que aparecen por primera vez ese mes vs. jugadores que ya habían
+                participado antes.
+              </p>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={trendData.monthly_trend}
+                  margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                  barCategoryGap="60%"
+                  barSize={100}
+                >
+                  <CartesianGrid
+                    strokeDasharray="2 6"
+                    stroke="rgba(255,255,255,0.15)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fill: "#9CA3AF", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => {
+                      const [year, month] = v.split("-");
+                      const names = [
+                        "Ene",
+                        "Feb",
+                        "Mar",
+                        "Abr",
+                        "May",
+                        "Jun",
+                        "Jul",
+                        "Ago",
+                        "Sep",
+                        "Oct",
+                        "Nov",
+                        "Dic",
+                      ];
+                      return `${names[parseInt(month, 10) - 1]} ${year}`;
+                    }}
+                  />
+                  <YAxis tick={{ fill: "#9CA3AF", fontSize: 10 }} allowDecimals={false} />
+                  <Tooltip
+                    cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                    contentStyle={{
+                      background: "#0F1117",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 8,
+                    }}
+                    labelStyle={{ color: "#fff" }}
+                    labelFormatter={(v) => {
+                      const [year, month] = v.split("-");
+                      const names = [
+                        "Enero",
+                        "Febrero",
+                        "Marzo",
+                        "Abril",
+                        "Mayo",
+                        "Junio",
+                        "Julio",
+                        "Agosto",
+                        "Septiembre",
+                        "Octubre",
+                        "Noviembre",
+                        "Diciembre",
+                      ];
+                      return `${names[parseInt(month, 10) - 1]} ${year}`;
+                    }}
+                    formatter={(value, name) => [
+                      value,
+                      name === "new_players" ? "Jugadores nuevos" : "Jugadores recurrentes",
+                    ]}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
+                    formatter={(value, entry) => (
+                      <span style={{ color: entry.color, fontWeight: 600 }}>
+                        {value === "new_players" ? "Nuevos" : "Recurrentes"}
+                      </span>
+                    )}
+                  />
+                  <Bar
+                    dataKey="new_players"
+                    name="new_players"
+                    stackId="a"
+                    fill="#10B981"
+                    fillOpacity={0.85}
+                    radius={[0, 0, 6, 6]}
+                  />
+                  <Bar
+                    dataKey="returning_players"
+                    name="returning_players"
+                    stackId="a"
+                    fill="#E86A22"
+                    fillOpacity={0.9}
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
 
@@ -361,13 +554,24 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {[
-                  { label: "Recurrentes", value: categorySummary.recurrente, color: "text-emerald-400" },
-                  { label: "Ocasionales", value: categorySummary.ocasional, color: "text-blue-400" },
+                  {
+                    label: "Recurrentes",
+                    value: categorySummary.recurrente,
+                    color: "text-emerald-400",
+                  },
+                  {
+                    label: "Ocasionales",
+                    value: categorySummary.ocasional,
+                    color: "text-blue-400",
+                  },
                   { label: "Una vez", value: categorySummary.una_vez, color: "text-gray-300" },
                   { label: "En riesgo", value: categorySummary.en_riesgo, color: "text-amber-400" },
                   { label: "Inactivos", value: categorySummary.inactivo, color: "text-red-400" },
                 ].map((cat) => (
-                  <div key={cat.label} className="rounded-md border border-white/10 bg-white/[0.02] p-4 text-center">
+                  <div
+                    key={cat.label}
+                    className="rounded-md border border-white/10 bg-white/[0.02] p-4 text-center"
+                  >
                     <p className={`text-2xl font-bold ${cat.color}`}>{cat.value}</p>
                     <p className="mt-1 text-xs text-gray-400">{cat.label}</p>
                   </div>
@@ -375,7 +579,8 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
               </div>
 
               <p className="flex items-center gap-1.5 text-xs text-gray-500">
-                <AlertTriangle size={12} /> Los umbrales ajustan la vista en tiempo real sin modificar la configuración de cada tienda.
+                <AlertTriangle size={12} /> Los umbrales ajustan la vista en tiempo real sin
+                modificar la configuración de cada tienda.
               </p>
             </div>
           )}
@@ -385,7 +590,15 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
   );
 }
 
-function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+function KpiCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+}) {
   return (
     <div className="glass space-y-2 rounded-2xl p-5">
       <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400">
