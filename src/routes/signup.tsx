@@ -522,6 +522,7 @@ function Step1(props: {
             {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
+        <PasswordStrength password={password} />
       </Field>
 
       <Field label="Confirmar contraseña" error={step1Errors.confirm}>
