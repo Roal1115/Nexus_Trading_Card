@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, User, Mail, Lock, Plus, Shield, Check } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordStrength } from "@/components/ui/PasswordStrength";
 import {
   getMyProfile,
   updateMyProfile,
