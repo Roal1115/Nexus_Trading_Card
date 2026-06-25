@@ -55,8 +55,8 @@ function ResetPasswordPage() {
     e.preventDefault();
     if (loading) return;
 
-    if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+    if (!passwordIsValid(password)) {
+      toast.error("La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número");
       return;
     }
     if (password !== confirmPassword) {
