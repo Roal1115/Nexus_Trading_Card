@@ -5,6 +5,7 @@ import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena, type Game } from "@/integrations/geekarena/client";
 import { signupPlayer } from "@/lib/geekarena-auth.functions";
+import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Únete al Circuito — Geek Arena" }] }),
