@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Search, X, Plus, Trophy, ChevronDown, Save, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
 import { toast } from "sonner";
 import {
   getDeckIdentifiers,
@@ -85,7 +87,9 @@ function LeaderSelect({
   useEffect(() => {
     if (!open) return;
     const handle = setTimeout(() => {
-      fetchDeckIdentifiers({ data: { game_id: gameId, search: search || undefined, basic_only: true } })
+      fetchDeckIdentifiers({
+        data: { game_id: gameId, search: search || undefined, basic_only: true },
+      })
         .then((rows) => setOptions(rows as DeckIdentifier[]))
         .catch(() => setOptions([]));
     }, 200);
@@ -129,7 +133,10 @@ function LeaderSelect({
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
           <div className="relative p-2">
-            <Search size={13} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search
+              size={13}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+            />
             <input
               autoFocus
               value={search}
@@ -156,7 +163,9 @@ function LeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate text-white">{cleanDisplayName(opt.base_name)}</span>
+                  <span className="flex-1 truncate text-white">
+                    {cleanDisplayName(opt.base_name)}
+                  </span>
                   <ColorDots colors={opt.colors} />
                 </button>
               ))
@@ -174,7 +183,9 @@ function LeaderSelect({
           />
           {artVariants.length > 1 && (
             <div>
-              <p className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">Cambiar arte</p>
+              <p className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">
+                Cambiar arte
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {artVariants.map((v) => (
                   <button
@@ -186,7 +197,11 @@ function LeaderSelect({
                     }`}
                   >
                     {v.card_image && (
-                      <img src={v.card_image} alt={v.card_name} className="h-full w-full object-cover" />
+                      <img
+                        src={v.card_image}
+                        alt={v.card_name}
+                        className="h-full w-full object-cover"
+                      />
                     )}
                   </button>
                 ))}
@@ -216,7 +231,9 @@ function OpponentLeaderSelect({
   useEffect(() => {
     if (!open) return;
     const handle = setTimeout(() => {
-      fetchDeckIdentifiers({ data: { game_id: gameId, search: search || undefined, basic_only: true } })
+      fetchDeckIdentifiers({
+        data: { game_id: gameId, search: search || undefined, basic_only: true },
+      })
         .then((rows) => setOptions(rows as DeckIdentifier[]))
         .catch(() => setOptions([]));
     }, 200);
@@ -246,7 +263,10 @@ function OpponentLeaderSelect({
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
           <div className="relative p-2">
-            <Search size={13} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search
+              size={13}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+            />
             <input
               autoFocus
               value={search}
@@ -273,7 +293,9 @@ function OpponentLeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate text-white">{cleanDisplayName(opt.base_name)}</span>
+                  <span className="flex-1 truncate text-white">
+                    {cleanDisplayName(opt.base_name)}
+                  </span>
                   <ColorDots colors={opt.colors} />
                 </button>
               ))
@@ -353,8 +375,6 @@ function RoundCard({
   saving: boolean;
   deleting: boolean;
 }) {
-  
-
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-4">
       <div className="flex items-center justify-between mb-3">
@@ -421,7 +441,9 @@ function RoundCard({
               />
             </div>
             <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">Tu turno</label>
+              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                Tu turno
+              </label>
               <SimpleSelect
                 value={round.turn_order ?? ""}
                 onChange={(v) => onChange({ turn_order: (v || null) as "first" | "second" | null })}
@@ -564,10 +586,7 @@ export function PerformanceTrackerModal({
     [rounds],
   );
 
-  const occupiedRoundNumbers = useMemo(
-    () => new Set(rounds.map((r) => r.round_number)),
-    [rounds],
-  );
+  const occupiedRoundNumbers = useMemo(() => new Set(rounds.map((r) => r.round_number)), [rounds]);
 
   const availableRoundNumbers = useMemo(() => {
     const out: number[] = [];
@@ -656,7 +675,8 @@ export function PerformanceTrackerModal({
           <div>
             <h2 className="text-xl font-extrabold text-white">Performance Tracker</h2>
             <p className="mt-1 text-xs text-gray-400">
-              Registra el detalle de cada ronda: contra quién jugaste, qué leader usaste, y el resultado.
+              Registra el detalle de cada ronda: contra quién jugaste, qué leader usaste, y el
+              resultado.
             </p>
           </div>
         </div>
@@ -713,8 +733,8 @@ export function PerformanceTrackerModal({
                     </p>
                   </div>
                   <p className="mt-1 text-xs text-gray-400">
-                    Este resultado fue registrado por tu rival en esta ronda. Por ahora no se puede editar
-                    desde aquí.
+                    Este resultado fue registrado por tu rival en esta ronda. Por ahora no se puede
+                    editar desde aquí.
                   </p>
                 </div>
               ) : (
@@ -763,7 +783,8 @@ export function PerformanceTrackerModal({
               ¿Eliminar todo el historial de este torneo?
             </p>
             <p className="mt-2 text-sm text-gray-400">
-              Se borrarán todas las rondas que registraste para este torneo. Esta acción no se puede deshacer.
+              Se borrarán todas las rondas que registraste para este torneo. Esta acción no se puede
+              deshacer.
             </p>
             <div className="mt-5 flex items-center justify-center gap-3">
               <button
@@ -800,17 +821,29 @@ export function PerformanceTrackerModal({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-        onClick={onClose}
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="glass relative w-full max-w-3xl max-h-[90vh] min-h-[500px] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+      <AnimatePresence>
+        <motion.div
+          key="tracker-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={onClose}
         >
-          {content}
-        </div>
-      </div>
+          <motion.div
+            key="tracker-content"
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            onClick={(e) => e.stopPropagation()}
+            className="glass relative w-full max-w-3xl max-h-[90vh] min-h-[500px] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+          >
+            {content}
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
       {clearConfirmModal}
     </>
   );

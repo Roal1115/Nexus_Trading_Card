@@ -3,10 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import {
-  getLeaderboard,
-  getLeaderboardOptions,
-} from "@/lib/geekarena-leaderboard.functions";
+import { motion } from "framer-motion";
+import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
+
+import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
 import {
   getActiveSponsor,
   listActiveSponsors,
@@ -16,15 +16,13 @@ import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Ranking del Circuito Nacional — Geek Arena" },
       {
         name: "description",
-        content:
-          "Rankings competitivos en vivo de los principales TCG en México.",
+        content: "Rankings competitivos en vivo de los principales TCG en México.",
       },
     ],
   }),
@@ -47,8 +45,18 @@ type Row = {
 const ALL = "__all__";
 
 const MONTH_NAMES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 function monthLabel(m: string): string {
@@ -67,13 +75,18 @@ function LeaderboardPage() {
   const [allSponsors, setAllSponsors] = useState<any[]>([]);
 
   useEffect(() => {
-    registerView().then(setSponsor).catch(() => {
-      fetchActiveSponsor().then(setSponsor).catch(() => {});
-    });
-    fetchActiveSponsors().then(setAllSponsors).catch(() => {});
+    registerView()
+      .then(setSponsor)
+      .catch(() => {
+        fetchActiveSponsor()
+          .then(setSponsor)
+          .catch(() => {});
+      });
+    fetchActiveSponsors()
+      .then(setAllSponsors)
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
 
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -177,104 +190,123 @@ function LeaderboardPage() {
         <AdVertical sponsor={sponsor} />
       </aside>
       <main className="min-w-0 pb-20">
-      <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-black/40 to-black/20 p-8 sm:p-12">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Temporada III · Patrocinado por Bandai · Wizards · TPCI
-        </p>
-        <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl">
-          Circuito <span className="text-primary">Nacional</span>
-        </h1>
-        <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-          El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
-        </p>
-      </section>
+        <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-black/40 to-black/20 p-8 sm:p-12">
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+            Temporada III · Patrocinado por Bandai · Wizards · TPCI
+          </p>
+          <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl">
+            Circuito <span className="text-primary">Nacional</span>
+          </h1>
+          <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
+            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al
+            Mundial.
+          </p>
+        </section>
 
-      <AdCarousel sponsors={allSponsors} />
+        <AdCarousel sponsors={allSponsors} />
 
-
-      <div className="sticky top-16 z-30 -mx-4 mb-6 border-b border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <FilterSelect
-              label="TCG"
-              value={tcg}
-              onChange={setTcg}
-              options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
-            />
-            <FilterSelect
-              label="Ciudad"
-              value={city}
-              onChange={(v) => setCity(v)}
-              options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
-            />
-            <FilterSelect
-              label="Tienda"
-              value={storeId}
-              onChange={setStoreId}
-              options={[
-                { value: ALL, label: "Todas las tiendas" },
-                ...visibleStores.map((s) => ({
-                  value: s.id,
-                  label: `${s.name}${s.city ? ` — ${s.city}` : ""}`,
-                })),
-              ]}
-            />
-            <FilterSelect
-              label="Mes"
-              value={month}
-              onChange={setMonth}
-              options={[
-                { value: ALL, label: "Más reciente" },
-                ...months.map((m) => ({ value: m, label: monthLabel(m) })),
-              ]}
-            />
+        <div
+          className="sticky top-16 z-30 mb-6 rounded-xl px-4 py-3"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 32px rgba(0,0,0,0.3)",
+          }}
+        >
+          {" "}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterSelect
+                label="TCG"
+                value={tcg}
+                onChange={setTcg}
+                options={[
+                  { value: ALL, label: "Todos" },
+                  ...games.map((g) => ({ value: g.id, label: g.name })),
+                ]}
+              />
+              <FilterSelect
+                label="Ciudad"
+                value={city}
+                onChange={(v) => setCity(v)}
+                options={[
+                  { value: ALL, label: "Todas" },
+                  ...cities.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+              <FilterSelect
+                label="Tienda"
+                value={storeId}
+                onChange={setStoreId}
+                options={[
+                  { value: ALL, label: "Todas las tiendas" },
+                  ...visibleStores.map((s) => ({
+                    value: s.id,
+                    label: `${s.name}${s.city ? ` — ${s.city}` : ""}`,
+                  })),
+                ]}
+              />
+              <FilterSelect
+                label="Mes"
+                value={month}
+                onChange={setMonth}
+                options={[
+                  { value: ALL, label: "Más reciente" },
+                  ...months.map((m) => ({ value: m, label: monthLabel(m) })),
+                ]}
+              />
+            </div>
+            <div className="relative w-full">
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar Geek Tag…"
+                className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
           </div>
-          <div className="relative w-full">
-            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar Geek Tag…"
-              className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
+        </div>
+
+        {selectedStore && (
+          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary-foreground">
+            Mostrando resultados de:{" "}
+            <strong className="text-white">
+              {selectedStore.name}
+              {selectedStore.city ? ` — ${selectedStore.city}` : ""}
+            </strong>
           </div>
-        </div>
-      </div>
+        )}
 
-      {selectedStore && (
-        <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary-foreground">
-          Mostrando resultados de:{" "}
-          <strong className="text-white">
-            {selectedStore.name}
-            {selectedStore.city ? ` — ${selectedStore.city}` : ""}
-          </strong>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <LeaderboardTable
+            title="Ranking Mensual"
+            badge={monthLbl.toUpperCase()}
+            subtitle={
+              selectedStore
+                ? `Mostrando: ${selectedStore.name}${selectedStore.city ? ` — ${selectedStore.city}` : ""}`
+                : null
+            }
+            rows={filteredMonthly}
+            loading={loading}
+          />
+          <div className="xl:hidden lg:hidden">
+            <AdHorizontal sponsor={sponsor} />
+          </div>
+          <LeaderboardTable
+            title="General Semestral"
+            badge={semesterLbl}
+            subtitle="Ranking general · no filtrado por tienda"
+            rows={filteredSemestral}
+            loading={loading}
+          />
         </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <LeaderboardTable
-          title="Ranking Mensual"
-          badge={monthLbl.toUpperCase()}
-          subtitle={
-            selectedStore
-              ? `Mostrando: ${selectedStore.name}${selectedStore.city ? ` — ${selectedStore.city}` : ""}`
-              : null
-          }
-          rows={filteredMonthly}
-          loading={loading}
-        />
-        <div className="xl:hidden lg:hidden">
-          <AdHorizontal sponsor={sponsor} />
-        </div>
-        <LeaderboardTable
-          title="General Semestral"
-          badge={semesterLbl}
-          subtitle="Ranking general · no filtrado por tienda"
-          rows={filteredSemestral}
-          loading={loading}
-        />
-      </div>
       </main>
       <aside className="hidden xl:block">
         <AdVertical sponsor={sponsor} />
@@ -283,6 +315,19 @@ function LeaderboardPage() {
   );
 }
 
+const tableVariants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.04,
+    },
+  },
+};
+
+const rowVariants = {
+  hidden: { opacity: 0, x: -8 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.2 } },
+};
 
 function LeaderboardTable({
   title,
@@ -299,56 +344,107 @@ function LeaderboardTable({
 }) {
   const omwFor = (r: Row) => r.omw_percentage ?? 0;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isPaused = useRef(false);
-  const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stateRef = useRef({
+    paused: false,
+    running: false,
+    frameId: 0,
+    startTimer: null as ReturnType<typeof setTimeout> | null,
+    resumeTimer: null as ReturnType<typeof setTimeout> | null,
+  });
 
   useEffect(() => {
     if (loading || rows.length === 0) return;
+
+    const s = stateRef.current;
+
+    // Limpiar cualquier estado previo
+    if (s.startTimer) clearTimeout(s.startTimer);
+    if (s.frameId) cancelAnimationFrame(s.frameId);
+    if (s.resumeTimer) clearTimeout(s.resumeTimer);
+    s.running = false;
+    s.paused = false;
+    s.frameId = 0;
+    s.startTimer = null;
+    s.resumeTimer = null;
+
     const el = scrollRef.current;
     if (!el) return;
 
-    const SPEED = 0.6; // px per frame — ajusta para velocidad
-    let frameId: number;
+    el.scrollTop = 0;
 
-    const step = () => {
-      if (!isPaused.current && el) {
-        el.scrollTop += SPEED;
-        // cuando llega al final, vuelve al inicio suavemente
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
-          el.scrollTop = 0;
+    const SPEED = 0.1;
+    const IDLE_BEFORE_START = 7000;
+    const IDLE_AFTER_INTERACTION = 5000;
+
+    let accumulated = 0;
+    let resetting = false;
+
+    const tick = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+
+      if (!s.paused && !resetting) {
+        accumulated += 0.3;
+        if (accumulated >= 1) {
+          el.scrollTop += Math.floor(accumulated);
+          accumulated -= Math.floor(accumulated);
+        }
+
+        // Cuando llega al final, hacer reset suave con fade
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+          resetting = true;
+          el.style.transition = "opacity 300ms ease";
+          el.style.opacity = "0";
+          setTimeout(() => {
+            el.scrollTop = 0;
+            el.style.opacity = "1";
+            setTimeout(() => {
+              el.style.transition = "";
+              resetting = false;
+            }, 300);
+          }, 300);
         }
       }
-      frameId = requestAnimationFrame(step);
+
+      s.frameId = requestAnimationFrame(tick);
     };
 
-    frameId = requestAnimationFrame(step);
+    s.startTimer = setTimeout(() => {
+      s.running = true;
+      s.startTimer = null;
+      s.frameId = requestAnimationFrame(tick);
+    }, IDLE_BEFORE_START);
 
-    const pause = () => {
-      isPaused.current = true;
-      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
-      resumeTimeout.current = setTimeout(() => {
-        isPaused.current = false;
-      }, 3000); // reanuda 3s después de que el usuario deja de interactuar
+    const onInteract = () => {
+      if (!s.running) return;
+      s.paused = true;
+      if (s.resumeTimer) clearTimeout(s.resumeTimer);
+      s.resumeTimer = setTimeout(() => {
+        s.paused = false;
+        s.resumeTimer = null;
+      }, IDLE_AFTER_INTERACTION);
     };
 
-    el.addEventListener("mouseenter", pause);
-    el.addEventListener("mouseleave", () => {
-      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
-      resumeTimeout.current = setTimeout(() => {
-        isPaused.current = false;
-      }, 3000);
-    });
-    el.addEventListener("touchstart", pause, { passive: true });
-    el.addEventListener("wheel", pause, { passive: true });
+    el.addEventListener("mouseenter", onInteract);
+    el.addEventListener("mouseleave", onInteract);
+    el.addEventListener("touchstart", onInteract, { passive: true });
+    el.addEventListener("wheel", onInteract, { passive: true });
 
     return () => {
-      cancelAnimationFrame(frameId);
-      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
-      el.removeEventListener("mouseenter", pause);
-      el.removeEventListener("touchstart", pause);
-      el.removeEventListener("wheel", pause);
+      if (s.startTimer) clearTimeout(s.startTimer);
+      if (s.frameId) cancelAnimationFrame(s.frameId);
+      if (s.resumeTimer) clearTimeout(s.resumeTimer);
+      s.running = false;
+      s.paused = false;
+      s.frameId = 0;
+      s.startTimer = null;
+
+      el.removeEventListener("mouseenter", onInteract);
+      el.removeEventListener("mouseleave", onInteract);
+      el.removeEventListener("touchstart", onInteract);
+      el.removeEventListener("wheel", onInteract);
     };
-  }, [loading, rows]);
+  }, [loading, rows.length]);
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
@@ -365,7 +461,7 @@ function LeaderboardTable({
         {subtitle && <p className="mt-2 text-xs text-gray-400">{subtitle}</p>}
       </header>
 
-      <div ref={scrollRef} className="max-h-[720px] overflow-y-auto scroll-smooth">
+      <div ref={scrollRef} className="max-h-[720px] overflow-y-auto">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-black/80 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
             <tr>
@@ -378,13 +474,18 @@ function LeaderboardTable({
               <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
             </tr>
           </thead>
-          <tbody>
+          <motion.tbody
+            key={`${rows.length}-${rows[0]?.player_id ?? "empty"}`}
+            variants={tableVariants}
+            initial="hidden"
+            animate="show"
+          >
             {loading ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
-                  Cargando ranking…
-                </td>
-              </tr>
+              <>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <LeaderboardRowSkeleton key={i} />
+                ))}
+              </>
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
@@ -396,12 +497,15 @@ function LeaderboardTable({
                 const rank = r.rank_position;
                 const podium = rank > 0 && rank <= 3;
                 return (
-                  <tr
+                  <motion.tr
                     key={r.player_id}
+                    variants={rowVariants}
                     className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
                   >
                     <td className="px-3 py-2.5">
-                      <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                      <span
+                        className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
+                      >
                         {String(rank).padStart(2, "0")}
                       </span>
                     </td>
@@ -417,7 +521,9 @@ function LeaderboardTable({
                         </Link>
                       </div>
                     </td>
-                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
+                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">
+                      {r.city}
+                    </td>
                     <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
                       {r.points.toLocaleString()}
                     </td>
@@ -430,11 +536,11 @@ function LeaderboardTable({
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
                       {omwFor(r)}%
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })
             )}
-          </tbody>
+          </motion.tbody>
         </table>
       </div>
     </section>

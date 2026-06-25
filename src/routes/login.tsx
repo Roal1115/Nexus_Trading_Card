@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveEmailByGeekTag } from "@/lib/geekarena-auth-helpers.functions";
 import { geekarena } from "@/integrations/geekarena/client";
+import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — Geek Arena" }] }),
@@ -16,14 +17,16 @@ function translateAuthError(msg: string): string {
   const m = msg.toLowerCase();
   if (m.includes("invalid login credentials") || m.includes("invalid_credentials"))
     return "Contraseña incorrecta. Intenta de nuevo";
-  if (m.includes("user not found") || m.includes("no user")) return "No encontramos una cuenta con ese correo";
+  if (m.includes("user not found") || m.includes("no user"))
+    return "No encontramos una cuenta con ese correo";
   if (m.includes("email not confirmed")) return "Debes verificar tu correo antes de entrar";
   if (m.includes("invalid email")) return "Ingresa un correo electrónico válido";
   if (m.includes("already registered") || m.includes("user already"))
     return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Demasiados intentos. Espera un momento e intenta de nuevo";
-  if (m.includes("network") || m.includes("fetch")) return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
+  if (m.includes("network") || m.includes("fetch"))
+    return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
   return "Ocurrió un error. Verifica tu conexión e intenta de nuevo";
 }
 
@@ -130,7 +133,9 @@ function LoginPage() {
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
       <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Geek Arena</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+            Geek Arena
+          </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
             {forgotMode ? "Recupera tu acceso" : "Bienvenido de vuelta"}
           </h1>
@@ -197,14 +202,14 @@ function LoginPage() {
               </Field>
             )}
 
-            <button
+            <motion.button
               type="submit"
               disabled={loading || cooldown}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {forgotMode ? "Enviar enlace" : "Entrar a la Arena"}
-            </button>
+            </motion.button>
 
             <div className="flex items-center justify-between text-xs">
               <button
@@ -255,7 +260,9 @@ function LoginPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">{label}</label>
+      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+        {label}
+      </label>
       {children}
     </div>
   );

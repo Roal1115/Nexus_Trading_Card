@@ -1,7 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch } from "lucide-react";
+import { motion } from "framer-motion";
+import { StoreCardSkeleton } from "@/components/ui/skeleton-loader";
+import {
+  Loader2,
+  MapPin,
+  Navigation,
+  Clock,
+  Instagram,
+  Globe,
+  Twitter,
+  Twitch,
+} from "lucide-react";
 import { getPublicStoresList } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/")({
@@ -81,6 +92,16 @@ function StoreCardItem({ store }: { store: StoreCard }) {
   );
 }
 
+const cardVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
+};
+
+const gridVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
 function TiendasPage() {
   const fetchStores = useServerFn(getPublicStoresList);
   const [loading, setLoading] = useState(true);
@@ -96,8 +117,25 @@ function TiendasPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6">
+        <header className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+            Geek Arena
+          </p>
+          <h1 className="text-4xl font-bold text-white">Tiendas del Circuito</h1>
+        </header>
+        <div className="space-y-8">
+          {[1, 2].map((zone) => (
+            <div key={zone} className="space-y-4">
+              <div className="h-6 w-40 rounded-md bg-white/[0.06] animate-pulse" />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <StoreCardSkeleton key={i} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -107,9 +145,7 @@ function TiendasPage() {
       <header className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Geek Arena</p>
         <h1 className="text-4xl font-bold text-white">Tiendas del Circuito</h1>
-        <p className="max-w-2xl text-sm text-gray-400">
-          Encuentra dónde jugar en cada región.
-        </p>
+        <p className="max-w-2xl text-sm text-gray-400">Encuentra dónde jugar en cada región.</p>
       </header>
 
       {ZONES.map((zone) => {
@@ -118,11 +154,18 @@ function TiendasPage() {
         return (
           <section key={zone} className="space-y-4">
             <h2 className="text-xl font-bold uppercase tracking-wider text-white">{zone}</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              variants={gridVariants}
+              initial="hidden"
+              animate="show"
+            >
               {zoneStores.map((s) => (
-                <StoreCardItem key={s.id} store={s} />
+                <motion.div key={s.id} variants={cardVariants}>
+                  <StoreCardItem store={s} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </section>
         );
       })}

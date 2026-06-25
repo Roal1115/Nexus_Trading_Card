@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+
 import {
   Loader2,
   Users,
@@ -108,18 +110,23 @@ function ManagerAnalyticsPage() {
         <p className="text-xs text-gray-500">Salud nacional de tu TCG por zona y tienda.</p>
       </div>
 
-      <div className="flex gap-0 border-b border-white/10">
+      <div className="relative flex gap-0 border-b border-white/10">
         {games.map((g) => (
           <button
             key={g.id}
             onClick={() => setActiveGameId(g.id)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
-              activeGameId === g.id
-                ? "border-primary text-white"
-                : "border-transparent text-gray-400 hover:text-white"
+            className={`relative px-4 py-2.5 text-sm font-medium transition ${
+              activeGameId === g.id ? "text-white" : "text-gray-400 hover:text-white"
             }`}
           >
             {g.name}
+            {activeGameId === g.id && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
           </button>
         ))}
       </div>

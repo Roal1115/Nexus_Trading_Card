@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { X, Send } from "lucide-react";
+import { X, Send, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { createAppeal } from "@/lib/geekarena-appeals.functions";
 import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
+import { motion } from "framer-motion";
 
 type DeckIdentifier = {
   id: string;
@@ -15,6 +16,55 @@ type DeckIdentifier = {
   set_code?: string | null;
   card_set_id?: string | null;
 };
+
+function SimpleSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+      >
+        <span className="truncate">
+          {selected ? selected.label : <span className="text-gray-500">{placeholder}</span>}
+        </span>
+        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+          <div className="max-h-60 overflow-y-auto">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AppealForm({
   roundId,
@@ -42,7 +92,9 @@ export function AppealForm({
   const [wonDieRoll, setWonDieRoll] = useState<boolean | null>(currentWonDieRoll);
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(currentTurnOrder);
   const [playerLeader, setPlayerLeader] = useState<DeckIdentifier | null>(currentPlayerLeader);
-  const [opponentLeader, setOpponentLeader] = useState<DeckIdentifier | null>(currentOpponentLeader);
+  const [opponentLeader, setOpponentLeader] = useState<DeckIdentifier | null>(
+    currentOpponentLeader,
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -69,11 +121,19 @@ export function AppealForm({
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
       onClick={onClose}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 16, scale: 0.98 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
         onClick={(e) => e.stopPropagation()}
         className="glass relative w-full max-w-md rounded-2xl border border-amber-500/30 bg-black/90 p-6"
       >
@@ -105,7 +165,11 @@ export function AppealForm({
               <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
                 Leader del oponente
               </label>
-              <LeaderQuickPicker gameId={gameId} value={opponentLeader} onChange={setOpponentLeader} />
+              <LeaderQuickPicker
+                gameId={gameId}
+                value={opponentLeader}
+                onChange={setOpponentLeader}
+              />
             </div>
           </div>
 
@@ -114,29 +178,29 @@ export function AppealForm({
               <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
                 ¿Quién ganó el dado?
               </label>
-              <select
+              <SimpleSelect
                 value={wonDieRoll === null ? "" : wonDieRoll ? "me" : "opponent"}
-                onChange={(e) => setWonDieRoll(e.target.value === "" ? null : e.target.value === "me")}
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-              >
-                <option value="">—</option>
-                <option value="me">Yo</option>
-                <option value="opponent">Oponente</option>
-              </select>
+                onChange={(v) => setWonDieRoll(v === "" ? null : v === "me")}
+                placeholder="—"
+                options={[
+                  { value: "me", label: "Yo" },
+                  { value: "opponent", label: "Oponente" },
+                ]}
+              />
             </div>
             <div>
               <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
                 Tu turno
               </label>
-              <select
+              <SimpleSelect
                 value={turnOrder ?? ""}
-                onChange={(e) => setTurnOrder((e.target.value || null) as "first" | "second" | null)}
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-              >
-                <option value="">—</option>
-                <option value="first">Primero</option>
-                <option value="second">Segundo</option>
-              </select>
+                onChange={(v) => setTurnOrder((v || null) as "first" | "second" | null)}
+                placeholder="—"
+                options={[
+                  { value: "first", label: "Primero" },
+                  { value: "second", label: "Segundo" },
+                ]}
+              />
             </div>
           </div>
 
@@ -144,15 +208,15 @@ export function AppealForm({
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               ¿Quién ganó el match?
             </label>
-            <select
+            <SimpleSelect
               value={wonMatch === null ? "" : wonMatch ? "me" : "opponent"}
-              onChange={(e) => setWonMatch(e.target.value === "" ? null : e.target.value === "me")}
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-            >
-              <option value="">—</option>
-              <option value="me">Yo</option>
-              <option value="opponent">Oponente</option>
-            </select>
+              onChange={(v) => setWonMatch(v === "" ? null : v === "me")}
+              placeholder="—"
+              options={[
+                { value: "me", label: "Yo" },
+                { value: "opponent", label: "Oponente" },
+              ]}
+            />
           </div>
         </div>
 
@@ -174,8 +238,8 @@ export function AppealForm({
             {submitting ? "Enviando…" : "Enviar apelación"}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -189,13 +253,14 @@ function LeaderQuickPicker({
   onChange: (d: DeckIdentifier | null) => void;
 }) {
   const fetchDeckIdentifiers = useServerFn(getDeckIdentifiers);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(value?.base_name ?? "");
   const [options, setOptions] = useState<DeckIdentifier[]>([]);
   const [open, setOpen] = useState(false);
 
   const handleSearch = (v: string) => {
     setSearch(v);
     setOpen(true);
+    if (value) onChange(null); // limpiar selección al editar
     fetchDeckIdentifiers({ data: { game_id: gameId, search: v, basic_only: true } })
       .then((rows) => setOptions(rows as DeckIdentifier[]))
       .catch(() => setOptions([]));
@@ -205,24 +270,33 @@ function LeaderQuickPicker({
     <div className="relative">
       <input
         type="text"
-        value={value ? value.base_name : search}
-        onFocus={() => setOpen(true)}
+        value={search}
+        onFocus={() => {
+          setOpen(true);
+          if (!options.length) {
+            fetchDeckIdentifiers({
+              data: { game_id: gameId, search: search || undefined, basic_only: true },
+            })
+              .then((rows) => setOptions(rows as DeckIdentifier[]))
+              .catch(() => setOptions([]));
+          }
+        }}
         onChange={(e) => handleSearch(e.target.value)}
         placeholder="Buscar leader…"
         className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
       />
       {open && options.length > 0 && (
-        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-white/10 bg-[#1a1d29] shadow-lg">
+        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
           {options.map((opt) => (
             <button
               key={opt.id}
               type="button"
               onClick={() => {
                 onChange(opt);
+                setSearch(opt.base_name);
                 setOpen(false);
-                setSearch("");
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white bg-transparent hover:bg-white/10"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
             >
               {opt.card_image ? (
                 <img src={opt.card_image} alt="" className="h-8 w-8 rounded object-cover" />
@@ -231,9 +305,7 @@ function LeaderQuickPicker({
               )}
               <div className="min-w-0">
                 <p className="truncate text-sm">{opt.base_name}</p>
-                {opt.card_set_id && (
-                  <p className="text-[10px] text-gray-400">{opt.card_set_id}</p>
-                )}
+                {opt.card_set_id && <p className="text-[10px] text-gray-400">{opt.card_set_id}</p>}
               </div>
             </button>
           ))}
