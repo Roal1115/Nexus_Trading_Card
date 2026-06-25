@@ -145,7 +145,7 @@ function ResetPasswordPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 placeholder="••••••••"
                 className="input-base"
               />
