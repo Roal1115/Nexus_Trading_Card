@@ -123,7 +123,7 @@ function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   placeholder="••••••••"
                   className="input-base pr-10"
                 />
