@@ -13,7 +13,7 @@ export const Route = createFileRoute("/signup")({
 });
 
 const TAG_RE = /^[A-Za-z0-9_]{3,30}$/;
-const PASS_RE = /^(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
 const MIN_FORM_MS = 8000;
 
 type TagStatus = "idle" | "checking" | "available" | "taken" | "invalid";
