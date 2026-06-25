@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena } from "@/integrations/geekarena/client";
+import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Restablecer contraseña — Geek Arena" }] }),
@@ -54,8 +55,8 @@ function ResetPasswordPage() {
     e.preventDefault();
     if (loading) return;
 
-    if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+    if (!passwordIsValid(password)) {
+      toast.error("La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número");
       return;
     }
     if (password !== confirmPassword) {
@@ -122,7 +123,7 @@ function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   placeholder="••••••••"
                   className="input-base pr-10"
                 />
@@ -135,6 +136,7 @@ function ResetPasswordPage() {
                   {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
+              <PasswordStrength password={password} />
             </Field>
 
             <Field label="Confirmar contraseña">
@@ -143,7 +145,7 @@ function ResetPasswordPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 placeholder="••••••••"
                 className="input-base"
               />

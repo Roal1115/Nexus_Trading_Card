@@ -5,6 +5,7 @@ import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena, type Game } from "@/integrations/geekarena/client";
 import { signupPlayer } from "@/lib/geekarena-auth.functions";
+import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Únete al Circuito — Geek Arena" }] }),
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/signup")({
 });
 
 const TAG_RE = /^[A-Za-z0-9_]{3,30}$/;
-const PASS_RE = /^(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
 const MIN_FORM_MS = 8000;
 
 type TagStatus = "idle" | "checking" | "available" | "taken" | "invalid";
@@ -164,9 +165,9 @@ function SignupPage() {
       e.email = "Ingresa un correo electrónico válido";
     if (tag && !TAG_RE.test(tag))
       e.tag = "3 a 30 caracteres. Solo letras, números y guiones bajos";
-    if (password && !PASS_RE.test(password))
+    if (password && !passwordIsValid(password))
       e.password =
-        "La contraseña debe tener mínimo 8 caracteres, un número y un carácter especial";
+        "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número";
     if (confirm && confirm !== password)
       e.confirm = "Las contraseñas no coinciden";
     return e;
@@ -176,6 +177,7 @@ function SignupPage() {
     email &&
     tag &&
     password &&
+    passwordIsValid(password) &&
     confirm &&
     Object.keys(step1Errors).length === 0 &&
     tagStatus === "available";
@@ -520,6 +522,7 @@ function Step1(props: {
             {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
+        <PasswordStrength password={password} />
       </Field>
 
       <Field label="Confirmar contraseña" error={step1Errors.confirm}>
