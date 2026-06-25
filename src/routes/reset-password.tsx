@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { geekarena } from "@/integrations/geekarena/client";
+import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Restablecer contraseña — Geek Arena" }] }),
