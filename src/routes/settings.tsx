@@ -263,32 +263,7 @@ function SettingsPage() {
           </div>
         </div>
 
-        {newPassword.length > 0 && (
-          <div className="space-y-1.5 rounded-md border border-white/10 bg-white/[0.02] p-3">
-            <p className="mb-2 text-[10px] uppercase tracking-wider text-gray-500">Requisitos</p>
-            {[
-              { label: "Mínimo 8 caracteres", ok: newPassword.length >= 8 },
-              { label: "Al menos una mayúscula", ok: /[A-Z]/.test(newPassword) },
-              { label: "Al menos una minúscula", ok: /[a-z]/.test(newPassword) },
-              { label: "Al menos un número", ok: /[0-9]/.test(newPassword) },
-              {
-                label: "Al menos un carácter especial (!@#$%^&*)",
-                ok: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword),
-              },
-            ].map((req) => (
-              <div key={req.label} className="flex items-center gap-2">
-                <span
-                  className={`text-xs font-bold ${req.ok ? "text-emerald-400" : "text-gray-600"}`}
-                >
-                  {req.ok ? "✓" : "○"}
-                </span>
-                <span className={`text-xs ${req.ok ? "text-emerald-400" : "text-gray-500"}`}>
-                  {req.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        <PasswordStrength password={newPassword} />
 
         <button
           onClick={onUpdatePassword}
