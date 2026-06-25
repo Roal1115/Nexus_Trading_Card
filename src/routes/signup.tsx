@@ -165,9 +165,9 @@ function SignupPage() {
       e.email = "Ingresa un correo electrónico válido";
     if (tag && !TAG_RE.test(tag))
       e.tag = "3 a 30 caracteres. Solo letras, números y guiones bajos";
-    if (password && !PASS_RE.test(password))
+    if (password && !passwordIsValid(password))
       e.password =
-        "La contraseña debe tener mínimo 8 caracteres, un número y un carácter especial";
+        "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número";
     if (confirm && confirm !== password)
       e.confirm = "Las contraseñas no coinciden";
     return e;
@@ -177,6 +177,7 @@ function SignupPage() {
     email &&
     tag &&
     password &&
+    passwordIsValid(password) &&
     confirm &&
     Object.keys(step1Errors).length === 0 &&
     tagStatus === "available";
