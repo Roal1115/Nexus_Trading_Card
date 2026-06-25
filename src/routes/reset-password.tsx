@@ -136,6 +136,7 @@ function ResetPasswordPage() {
                   {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
+              <PasswordStrength password={password} />
             </Field>
 
             <Field label="Confirmar contraseña">
