@@ -328,8 +328,8 @@ function LeaderboardTable({
   });
 
   // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
-  const gridCols = "grid-cols-[40px_1fr_80px_70px_60px_68px_60px]";
-  const gridColsMobile = "grid-cols-[40px_1fr_70px]";
+  const gridCols = "grid-cols-[36px_minmax(120px,1fr)_72px_72px_56px_64px_56px]";
+  const gridColsMobile = "grid-cols-[36px_1fr_68px]";
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
