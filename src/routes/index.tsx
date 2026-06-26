@@ -327,6 +327,10 @@ function LeaderboardTable({
     overscan: 10,
   });
 
+  // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
+  const gridCols = "grid-cols-[40px_1fr_80px_70px_60px_68px_60px]";
+  const gridColsMobile = "grid-cols-[40px_1fr_70px]";
+
   return (
     <section className="glass overflow-hidden rounded-2xl">
       <header className="border-b border-white/10 px-5 py-4">
@@ -342,95 +346,116 @@ function LeaderboardTable({
         {subtitle && <p className="mt-2 text-xs text-gray-400">{subtitle}</p>}
       </header>
 
-      <div ref={scrollRef} className="max-h-[720px] overflow-y-auto">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-black/80 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
-            <tr>
-              <th className="px-3 py-2 text-left">#</th>
-              <th className="px-3 py-2 text-left">Geek Tag</th>
-              <th className="hidden px-3 py-2 text-left sm:table-cell">Ciudad</th>
-              <th className="px-3 py-2 text-right">Pts</th>
-              <th className="hidden px-3 py-2 text-right sm:table-cell">Torneos</th>
-              <th className="hidden px-3 py-2 text-right md:table-cell">Victorias</th>
-              <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
-            </tr>
-          </thead>
-          {loading ? (
-            <tbody>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <LeaderboardRowSkeleton key={i} />
-              ))}
-            </tbody>
-          ) : rows.length === 0 ? (
-            <tbody>
-              <tr>
-                <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
-                  No hay resultados para estos filtros todavía.
-                </td>
-              </tr>
-            </tbody>
-          ) : (
-            <tbody
-              style={{
-                height: `${virtualizer.getTotalSize()}px`,
-                width: "100%",
-                position: "relative",
-              }}
-            >
-              {virtualizer.getVirtualItems().map((virtualRow) => {
-                const r = rows[virtualRow.index];
-                const rank = r.rank_position;
-                const podium = rank > 0 && rank <= 3;
-                return (
-                  <tr
-                    key={r.player_id}
-                    data-index={virtualRow.index}
-                    ref={virtualizer.measureElement}
-                    className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                  >
-                    <td className="px-3 py-2.5">
-                      <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
-                        {String(rank).padStart(2, "0")}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        {rank === 1 && <Medal className="text-amber-300" size={14} />}
-                        <Link
-                          to="/players/$playerTag"
-                          params={{ playerTag: r.geek_tag }}
-                          className="font-medium text-white transition hover:text-primary"
-                        >
-                          {r.geek_tag}
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
-                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
+      {/* Header fijo */}
+      <div
+        className={`hidden sm:grid ${gridCols} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-500`}
+      >
+        <div>#</div>
+        <div>Geek Tag</div>
+        <div>Ciudad</div>
+        <div className="text-right">Pts</div>
+        <div className="text-right">Torneos</div>
+        <div className="text-right">Victorias</div>
+        <div className="text-right">OMW%</div>
+      </div>
+      <div
+        className={`grid sm:hidden ${gridColsMobile} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-500`}
+      >
+        <div>#</div>
+        <div>Geek Tag</div>
+        <div className="text-right">Pts</div>
+      </div>
+
+      {/* Contenedor virtualizado */}
+      <div ref={scrollRef} className="max-h-[640px] overflow-y-auto">
+        {loading ? (
+          <div>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+              >
+                <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
+                <div className="h-3 w-32 rounded bg-white/[0.06] animate-pulse" />
+                <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
+                <div className="h-3 w-12 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse ml-auto" />
+              </div>
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="px-3 py-12 text-center text-sm text-gray-500">
+            No hay resultados para estos filtros todavía.
+          </div>
+        ) : (
+          <div style={{ height: `${virtualizer.getTotalSize()}px` }} className="relative w-full">
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const r = rows[virtualRow.index];
+              const rank = r.rank_position;
+              const podium = rank > 0 && rank <= 3;
+              return (
+                <div
+                  key={r.player_id}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
+                >
+                  {/* Desktop */}
+                  <div className={`hidden sm:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
+                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                      {String(rank).padStart(2, "0")}
+                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
+                      <Link
+                        to="/players/$playerTag"
+                        params={{ playerTag: r.geek_tag }}
+                        className="font-medium text-white transition hover:text-primary truncate"
+                      >
+                        {r.geek_tag}
+                      </Link>
+                    </div>
+                    <span className="text-xs text-gray-400 truncate">{r.city}</span>
+                    <span className="text-right font-mono font-semibold text-white text-sm">
                       {r.points.toLocaleString()}
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 sm:table-cell">
-                      {r.tournaments_played}
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                      {r.tournaments_won}
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
-                      {omwFor(r)}%
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          )}
-        </table>
+                    </span>
+                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_played}</span>
+                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_won}</span>
+                    <span className="text-right font-mono text-xs text-gray-400">{omwFor(r)}%</span>
+                  </div>
+                  {/* Mobile */}
+                  <div className={`grid sm:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}>
+                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                      {String(rank).padStart(2, "0")}
+                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
+                      <Link
+                        to="/players/$playerTag"
+                        params={{ playerTag: r.geek_tag }}
+                        className="font-medium text-white transition hover:text-primary truncate"
+                      >
+                        {r.geek_tag}
+                      </Link>
+                    </div>
+                    <span className="text-right font-mono font-semibold text-white text-sm">
+                      {r.points.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
