@@ -7,11 +7,7 @@ import { motion } from "framer-motion";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
-import {
-  getActiveSponsor,
-  listActiveSponsors,
-  registerAdView,
-} from "@/lib/geekarena-ads.functions";
+import { getActiveSponsor, listActiveSponsors, registerAdView } from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
@@ -199,8 +195,7 @@ function LeaderboardPage() {
             Circuito <span className="text-primary">Nacional</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al
-            Mundial.
+            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
           </p>
         </section>
 
@@ -223,19 +218,13 @@ function LeaderboardPage() {
                 label="TCG"
                 value={tcg}
                 onChange={setTcg}
-                options={[
-                  { value: ALL, label: "Todos" },
-                  ...games.map((g) => ({ value: g.id, label: g.name })),
-                ]}
+                options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
               />
               <FilterSelect
                 label="Ciudad"
                 value={city}
                 onChange={(v) => setCity(v)}
-                options={[
-                  { value: ALL, label: "Todas" },
-                  ...cities.map((c) => ({ value: c, label: c })),
-                ]}
+                options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
               />
               <FilterSelect
                 label="Tienda"
@@ -372,7 +361,7 @@ function LeaderboardTable({
 
     el.scrollTop = 0;
 
-    const SPEED = 0.1;
+    const SPEED = 0.05;
     const IDLE_BEFORE_START = 7000;
     const IDLE_AFTER_INTERACTION = 5000;
 
@@ -503,9 +492,7 @@ function LeaderboardTable({
                     className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
                   >
                     <td className="px-3 py-2.5">
-                      <span
-                        className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
-                      >
+                      <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
                         {String(rank).padStart(2, "0")}
                       </span>
                     </td>
@@ -521,9 +508,7 @@ function LeaderboardTable({
                         </Link>
                       </div>
                     </td>
-                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">
-                      {r.city}
-                    </td>
+                    <td className="hidden px-3 py-2.5 text-xs text-gray-400 sm:table-cell">{r.city}</td>
                     <td className="px-3 py-2.5 text-right font-mono font-semibold text-white">
                       {r.points.toLocaleString()}
                     </td>
