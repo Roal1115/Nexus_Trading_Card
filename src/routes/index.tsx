@@ -410,7 +410,7 @@ function LeaderboardTable({
                   className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
                 >
                   {/* Desktop */}
-                  <div className={`hidden sm:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
+                  <div className={`hidden md:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
                     <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
                       {String(rank).padStart(2, "0")}
                     </span>
@@ -433,7 +433,7 @@ function LeaderboardTable({
                     <span className="text-right font-mono text-xs text-gray-400">{omwFor(r)}%</span>
                   </div>
                   {/* Mobile */}
-                  <div className={`grid sm:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}>
+                  <div className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}>
                     <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
                       {String(rank).padStart(2, "0")}
                     </span>
