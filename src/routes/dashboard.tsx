@@ -17,7 +17,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getMyDashboard, getTournamentDetail, toggleProfilePrivacy } from "@/lib/geekarena-player.functions";
+import {
+  getMyDashboard,
+  getTournamentDetail,
+  toggleProfilePrivacy,
+} from "@/lib/geekarena-player.functions";
 import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
@@ -176,7 +180,9 @@ function DashboardPage() {
           <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
           <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Tu Geek Tag</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                Tu Geek Tag
+              </p>
               <h1 className="mt-2 break-all text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
               <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
             </div>
@@ -187,7 +193,11 @@ function DashboardPage() {
                   <Crown size={10} /> Global
                 </div>
                 <div className="font-mono text-4xl font-bold text-white">
-                  {loading ? "…" : activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : "—"}
+                  {loading
+                    ? "…"
+                    : activeTcg?.rank_position > 0
+                      ? `#${activeTcg.rank_position}`
+                      : "—"}
                 </div>
                 <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
               </div>
@@ -197,7 +207,11 @@ function DashboardPage() {
                   <Crown size={10} /> Mensual
                 </div>
                 <div className="font-mono text-4xl font-bold text-white">
-                  {loading ? "…" : activeTcg?.monthly_rank_position > 0 ? `#${activeTcg.monthly_rank_position}` : "—"}
+                  {loading
+                    ? "…"
+                    : activeTcg?.monthly_rank_position > 0
+                      ? `#${activeTcg.monthly_rank_position}`
+                      : "—"}
                 </div>
                 <p className="text-[10px] text-gray-500 mt-0.5">{data?.monthLabel ?? "Este mes"}</p>
               </div>
@@ -426,7 +440,9 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                 ))}
               </div>
             ) : events.length === 0 ? (
-              <div className="px-4 py-12 text-center text-gray-500">Aún no has participado en ningún torneo.</div>
+              <div className="px-4 py-12 text-center text-gray-500">
+                Aún no has participado en ningún torneo.
+              </div>
             ) : (
               <div className="divide-y divide-white/5">
                 {paginatedEvents.map((t) => (
@@ -486,7 +502,10 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                 ))}
                 {hasMore && (
                   <div className="px-4 py-4 text-center">
-                    <button onClick={() => setPage((p) => p + 1)} className="text-xs text-primary hover:underline">
+                    <button
+                      onClick={() => setPage((p) => p + 1)}
+                      className="text-xs text-primary hover:underline"
+                    >
                       Ver más torneos
                     </button>
                   </div>
@@ -518,7 +537,9 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
               >
                 <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Detalle del Torneo</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                      Detalle del Torneo
+                    </p>
                     <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
                       {loadingDetail ? "Cargando…" : (tournamentDetail?.game?.name ?? "—")}
                     </h2>
@@ -531,42 +552,139 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     <X size={18} />
                   </button>
                 </div>
-
+                // DESPUÉS
                 {loadingDetail ? (
-                  <div className="py-16 text-center text-sm text-gray-500">Cargando detalles…</div>
+                  <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                    {/* Columna principal */}
+                    <div className="space-y-6 lg:col-span-2">
+                      {/* Metadata grid */}
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="space-y-2">
+                            <SkeletonLine width="w-16" height="h-2" />
+                            <SkeletonLine width="w-24" height="h-4" />
+                            <SkeletonLine width="w-16" height="h-3" />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Tabla de resultados */}
+                      <div className="space-y-3">
+                        <SkeletonLine width="w-40" height="h-4" />
+                        <div className="overflow-hidden rounded-xl border border-white/10">
+                          <div className="bg-black/40 px-3 py-2">
+                            <div className="grid grid-cols-5 gap-3">
+                              {["w-4", "w-24", "w-12", "w-12", "w-16"].map((w, i) => (
+                                <SkeletonLine key={i} width={w} height="h-2" />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="divide-y divide-white/5">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="px-3 py-2.5 grid grid-cols-5 gap-3 items-center"
+                              >
+                                <SkeletonLine width="w-6" height="h-3" />
+                                <SkeletonLine width="w-28" height="h-3" />
+                                <SkeletonLine width="w-10" height="h-3" />
+                                <SkeletonLine width="w-10" height="h-3" />
+                                <div className="flex justify-end">
+                                  <SkeletonLine width="w-14" height="h-3" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Columna Performance Tracker */}
+                    <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+                      <SkeletonLine width="w-40" height="h-4" className="mb-4" />
+                      {/* Summary card skeleton */}
+                      <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                        <SkeletonLine width="w-32" height="h-4" />
+                        <SkeletonLine width="w-20" height="h-3" />
+                        <div className="flex items-center gap-3 mt-3">
+                          <SkeletonBlock className="h-14 w-10 rounded-md flex-shrink-0" />
+                          <div className="space-y-2">
+                            <SkeletonLine width="w-16" height="h-2" />
+                            <SkeletonLine width="w-24" height="h-4" />
+                          </div>
+                        </div>
+                        <div className="text-center space-y-1 mt-3">
+                          <SkeletonLine width="w-16" height="h-2" className="mx-auto" />
+                          <SkeletonLine width="w-24" height="h-8" className="mx-auto" />
+                        </div>
+                      </div>
+                      {/* Rondas skeleton */}
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="mb-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <SkeletonBlock className="h-6 w-6 rounded-md" />
+                            <SkeletonLine width="w-28" height="h-3" />
+                          </div>
+                          <SkeletonLine width="w-14" height="h-5" className="rounded-md" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : tournamentDetail ? (
                   <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
                       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                         <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">Tienda</p>
-                          <p className="mt-1 text-sm font-semibold text-white">{tournamentDetail.store.name}</p>
+                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                            Tienda
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {tournamentDetail.store.name}
+                          </p>
                           <p className="text-xs text-gray-500">
                             {tournamentDetail.store.city}, {tournamentDetail.store.state}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">Fecha</p>
+                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                            Fecha
+                          </p>
                           <p className="mt-1 text-sm font-semibold text-white">
-                            {new Date(tournamentDetail.date + "T12:00:00").toLocaleDateString("es-MX", {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })}
+                            {new Date(tournamentDetail.date + "T12:00:00").toLocaleDateString(
+                              "es-MX",
+                              {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              },
+                            )}
                           </p>
                           <p className="text-xs text-gray-500">
                             S{tournamentDetail.semester} {tournamentDetail.year}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">Editorial</p>
-                          <p className="mt-1 text-sm font-semibold text-white">{tournamentDetail.game.publisher}</p>
+                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                            Editorial
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {tournamentDetail.game.publisher}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">Participantes</p>
-                          <p className="mt-1 text-sm font-semibold text-white">{tournamentDetail.total_participants}</p>
+                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                            Participantes
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {tournamentDetail.total_participants}
+                          </p>
                           {tournamentDetail.my_rank && (
-                            <p className="text-xs text-primary">Tu posición: #{tournamentDetail.my_rank}</p>
+                            <p className="text-xs text-primary">
+                              Tu posición: #{tournamentDetail.my_rank}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -619,10 +737,14 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                     )}
                                   </td>
                                   <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
-                                    {r.wins != null && r.losses != null ? `${r.wins} / ${r.losses}` : "—"}
+                                    {r.wins != null && r.losses != null
+                                      ? `${r.wins} / ${r.losses}`
+                                      : "—"}
                                   </td>
                                   <td className="px-3 py-2 text-right font-mono-stat text-xs text-gray-400">
-                                    {r.omw_percentage != null ? `${Number(r.omw_percentage).toFixed(1)}%` : "—"}
+                                    {r.omw_percentage != null
+                                      ? `${Number(r.omw_percentage).toFixed(1)}%`
+                                      : "—"}
                                   </td>
                                   <td className="px-3 py-2 text-right font-mono-stat font-semibold text-white">
                                     {r.points_earned}
@@ -645,7 +767,9 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     </div>
                   </div>
                 ) : (
-                  <div className="py-16 text-center text-sm text-gray-500">No se pudo cargar el torneo.</div>
+                  <div className="py-16 text-center text-sm text-gray-500">
+                    No se pudo cargar el torneo.
+                  </div>
                 )}
               </motion.div>
             </motion.div>
@@ -722,7 +846,15 @@ function TooltipInfo({ text }: { text: string }) {
   );
 }
 
-function TcgRankCard({ tcg, semesterLabel, monthLabel }: { tcg: any; semesterLabel: string; monthLabel: string }) {
+function TcgRankCard({
+  tcg,
+  semesterLabel,
+  monthLabel,
+}: {
+  tcg: any;
+  semesterLabel: string;
+  monthLabel: string;
+}) {
   const [tab, setTab] = useState<"global" | "monthly">("global");
   const rankValue =
     tab === "global"
@@ -760,14 +892,18 @@ function TcgRankCard({ tcg, semesterLabel, monthLabel }: { tcg: any; semesterLab
             <Crown size={10} /> {tab === "global" ? "Rank Global" : "Rank Mes"}
           </div>
           <p className="mt-1 font-mono-stat text-3xl font-bold text-white">{rankValue}</p>
-          <p className="text-[10px] text-gray-500">{tab === "global" ? semesterLabel : monthLabel}</p>
+          <p className="text-[10px] text-gray-500">
+            {tab === "global" ? semesterLabel : monthLabel}
+          </p>
         </div>
 
         <div>
           <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
             <Target size={10} className="text-primary" /> Puntos
           </div>
-          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">{Number(points ?? 0).toFixed(0)}</p>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">
+            {Number(points ?? 0).toFixed(0)}
+          </p>
           <p className="text-[10px] text-gray-500">Arena pts</p>
         </div>
 
@@ -777,13 +913,17 @@ function TcgRankCard({ tcg, semesterLabel, monthLabel }: { tcg: any; semesterLab
               <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
                 <Swords size={10} className="text-primary" /> Jugados
               </div>
-              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">{tcg.tournaments_played}</p>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_played}
+              </p>
             </div>
             <div>
               <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
                 <Award size={10} className="text-primary" /> Ganados
               </div>
-              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">{tcg.tournaments_won}</p>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-white">
+                {tcg.tournaments_won}
+              </p>
             </div>
           </>
         )}

@@ -5,6 +5,11 @@ import { Loader2, User, Mail, Lock, Plus, Shield, Check } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 import {
+  SkeletonLine,
+  SkeletonBlock,
+  SettingsSectionSkeleton,
+} from "@/components/ui/skeleton-loader";
+import {
   getMyProfile,
   updateMyProfile,
   addMyTcgId,
@@ -143,12 +148,79 @@ function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-10 sm:px-6">
+        <header className="space-y-2">
+          <div className="h-2 w-20 rounded bg-white/[0.06] animate-pulse" />
+          <div className="h-7 w-40 rounded bg-white/[0.06] animate-pulse" />
+        </header>
+
+        {/* Perfil skeleton */}
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <SkeletonLine width="w-40" height="h-4" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <SkeletonLine width="w-16" height="h-2" />
+              <SkeletonBlock className="h-9 w-full rounded-md" />
+              <SkeletonLine width="w-32" height="h-2" />
+            </div>
+            <div className="space-y-2">
+              <SkeletonLine width="w-24" height="h-2" />
+              <SkeletonBlock className="h-9 w-full rounded-md" />
+              <SkeletonLine width="w-28" height="h-2" />
+            </div>
+          </div>
+          <SkeletonLine width="w-32" height="h-8" className="rounded-lg" />
+        </div>
+
+        {/* Email skeleton */}
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <SkeletonLine width="w-32" height="h-4" />
+          <SkeletonLine width="w-full" height="h-3" />
+          <SkeletonLine width="w-48" height="h-3" />
+          <div className="flex gap-2">
+            <SkeletonBlock className="h-9 flex-1 rounded-md" />
+            <SkeletonLine width="w-24" height="h-9" className="rounded-lg" />
+          </div>
+        </div>
+
+        {/* Password skeleton */}
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <SkeletonLine width="w-40" height="h-4" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <SkeletonLine width="w-28" height="h-2" />
+              <SkeletonBlock className="h-9 w-full rounded-md" />
+            </div>
+            <div className="space-y-2">
+              <SkeletonLine width="w-32" height="h-2" />
+              <SkeletonBlock className="h-9 w-full rounded-md" />
+            </div>
+          </div>
+          <SkeletonLine width="w-36" height="h-8" className="rounded-lg" />
+        </div>
+
+        {/* TCG IDs skeleton */}
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <SkeletonLine width="w-32" height="h-4" />
+          <SkeletonLine width="w-full" height="h-3" />
+          <div className="space-y-2">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.02] px-3 py-2.5"
+              >
+                <div className="space-y-1.5">
+                  <SkeletonLine width="w-20" height="h-2" />
+                  <SkeletonLine width="w-32" height="h-4" />
+                </div>
+                <SkeletonLine width="w-20" height="h-5" className="rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
-
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-10 sm:px-6">
       <header>
