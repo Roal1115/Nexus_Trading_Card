@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
@@ -304,20 +304,6 @@ function LeaderboardPage() {
   );
 }
 
-const tableVariants = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.04,
-    },
-  },
-};
-
-const rowVariants = {
-  hidden: { opacity: 0, x: -8 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.2 } },
-};
-
 function LeaderboardTable({
   title,
   badge,
@@ -333,107 +319,13 @@ function LeaderboardTable({
 }) {
   const omwFor = (r: Row) => r.omw_percentage ?? 0;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const stateRef = useRef({
-    paused: false,
-    running: false,
-    frameId: 0,
-    startTimer: null as ReturnType<typeof setTimeout> | null,
-    resumeTimer: null as ReturnType<typeof setTimeout> | null,
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 44,
+    overscan: 10,
   });
-
-  useEffect(() => {
-    if (loading || rows.length === 0) return;
-
-    const s = stateRef.current;
-
-    // Limpiar cualquier estado previo
-    if (s.startTimer) clearTimeout(s.startTimer);
-    if (s.frameId) cancelAnimationFrame(s.frameId);
-    if (s.resumeTimer) clearTimeout(s.resumeTimer);
-    s.running = false;
-    s.paused = false;
-    s.frameId = 0;
-    s.startTimer = null;
-    s.resumeTimer = null;
-
-    const el = scrollRef.current;
-    if (!el) return;
-
-    el.scrollTop = 0;
-
-    const SPEED = 0.05;
-    const IDLE_BEFORE_START = 7000;
-    const IDLE_AFTER_INTERACTION = 5000;
-
-    let accumulated = 0;
-    let resetting = false;
-
-    const tick = () => {
-      const el = scrollRef.current;
-      if (!el) return;
-
-      if (!s.paused && !resetting) {
-        accumulated += 0.3;
-        if (accumulated >= 1) {
-          el.scrollTop += Math.floor(accumulated);
-          accumulated -= Math.floor(accumulated);
-        }
-
-        // Cuando llega al final, hacer reset suave con fade
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
-          resetting = true;
-          el.style.transition = "opacity 300ms ease";
-          el.style.opacity = "0";
-          setTimeout(() => {
-            el.scrollTop = 0;
-            el.style.opacity = "1";
-            setTimeout(() => {
-              el.style.transition = "";
-              resetting = false;
-            }, 300);
-          }, 300);
-        }
-      }
-
-      s.frameId = requestAnimationFrame(tick);
-    };
-
-    s.startTimer = setTimeout(() => {
-      s.running = true;
-      s.startTimer = null;
-      s.frameId = requestAnimationFrame(tick);
-    }, IDLE_BEFORE_START);
-
-    const onInteract = () => {
-      if (!s.running) return;
-      s.paused = true;
-      if (s.resumeTimer) clearTimeout(s.resumeTimer);
-      s.resumeTimer = setTimeout(() => {
-        s.paused = false;
-        s.resumeTimer = null;
-      }, IDLE_AFTER_INTERACTION);
-    };
-
-    el.addEventListener("mouseenter", onInteract);
-    el.addEventListener("mouseleave", onInteract);
-    el.addEventListener("touchstart", onInteract, { passive: true });
-    el.addEventListener("wheel", onInteract, { passive: true });
-
-    return () => {
-      if (s.startTimer) clearTimeout(s.startTimer);
-      if (s.frameId) cancelAnimationFrame(s.frameId);
-      if (s.resumeTimer) clearTimeout(s.resumeTimer);
-      s.running = false;
-      s.paused = false;
-      s.frameId = 0;
-      s.startTimer = null;
-
-      el.removeEventListener("mouseenter", onInteract);
-      el.removeEventListener("mouseleave", onInteract);
-      el.removeEventListener("touchstart", onInteract);
-      el.removeEventListener("wheel", onInteract);
-    };
-  }, [loading, rows.length]);
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
@@ -463,33 +355,45 @@ function LeaderboardTable({
               <th className="hidden px-3 py-2 text-right md:table-cell">OMW%</th>
             </tr>
           </thead>
-          <motion.tbody
-            key={`${rows.length}-${rows[0]?.player_id ?? "empty"}`}
-            variants={tableVariants}
-            initial="hidden"
-            animate="show"
-          >
-            {loading ? (
-              <>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <LeaderboardRowSkeleton key={i} />
-                ))}
-              </>
-            ) : rows.length === 0 ? (
+          {loading ? (
+            <tbody>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <LeaderboardRowSkeleton key={i} />
+              ))}
+            </tbody>
+          ) : rows.length === 0 ? (
+            <tbody>
               <tr>
                 <td colSpan={7} className="px-3 py-12 text-center text-sm text-gray-500">
                   No hay resultados para estos filtros todavía.
                 </td>
               </tr>
-            ) : (
-              rows.map((r) => {
+            </tbody>
+          ) : (
+            <tbody
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                width: "100%",
+                position: "relative",
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const r = rows[virtualRow.index];
                 const rank = r.rank_position;
                 const podium = rank > 0 && rank <= 3;
                 return (
-                  <motion.tr
+                  <tr
                     key={r.player_id}
-                    variants={rowVariants}
+                    data-index={virtualRow.index}
+                    ref={virtualizer.measureElement}
                     className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
                   >
                     <td className="px-3 py-2.5">
                       <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
@@ -521,11 +425,11 @@ function LeaderboardTable({
                     <td className="hidden px-3 py-2.5 text-right font-mono text-xs text-gray-400 md:table-cell">
                       {omwFor(r)}%
                     </td>
-                  </motion.tr>
+                  </tr>
                 );
-              })
-            )}
-          </motion.tbody>
+              })}
+            </tbody>
+          )}
         </table>
       </div>
     </section>
