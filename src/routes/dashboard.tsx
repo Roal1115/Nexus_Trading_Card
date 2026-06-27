@@ -230,7 +230,31 @@ function DashboardPage() {
               </div>
             </div>
           </div>
+          <div className="relative mt-6 flex flex-wrap items-center gap-3">
+            <Link
+              to="/players/$playerTag"
+              params={{ playerTag: tag }}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Ver mi perfil público →
+            </Link>
+            <button
+              onClick={handleShareProfile}
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+            >
+              {copiedProfile ? (
+                <>
+                  <Check size={12} /> ¡Link copiado!
+                </>
+              ) : (
+                <>
+                  <Share2 size={12} /> Compartir mi perfil
+                </>
+              )}
+            </button>
+          </div>
         </section>
+
 
         {/* Toggle de privacidad */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
