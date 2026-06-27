@@ -210,9 +210,30 @@ function PublicProfilePage() {
                   })}
                 </p>
               )}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `https://mxntcg.lovable.app/players/${profile.geek_tag}`,
+                  );
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+              >
+                {copied ? (
+                  <>
+                    <Check size={12} /> ¡Link copiado!
+                  </>
+                ) : (
+                  <>
+                    <Share2 size={12} /> Compartir perfil
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </section>
+
 
         {/* Rankings */}
         {profile.rankings.length > 0 && (
