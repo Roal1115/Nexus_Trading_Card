@@ -166,6 +166,12 @@ function DashboardPage() {
   }
 
   const tag = gaPlayer.geek_tag;
+  const handleShareProfile = () => {
+    navigator.clipboard.writeText(`https://mxntcg.lovable.app/players/${tag}`);
+    setCopiedProfile(true);
+    setTimeout(() => setCopiedProfile(false), 2000);
+  };
+
   const tcgStats = data?.tcgStats ?? [];
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
 
