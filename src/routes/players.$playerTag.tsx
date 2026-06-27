@@ -46,6 +46,8 @@ function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [sponsor, setSponsor] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
+
 
   const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const [page, setPage] = useState(1);
