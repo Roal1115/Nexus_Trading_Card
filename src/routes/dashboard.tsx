@@ -745,7 +745,18 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                               {tournamentDetail.rankings.map((r) => (
                                 <tr
                                   key={r.player_id}
-                                  className={`border-t border-white/5 ${r.is_me ? "bg-primary/15" : ""}`}
+                                  onClick={() => {
+                                    if (!r.is_me) {
+                                      closeModal();
+                                      navigate({
+                                        to: "/players/$playerTag",
+                                        params: { playerTag: r.geek_tag },
+                                      });
+                                    }
+                                  }}
+                                  className={`border-t border-white/5 transition ${
+                                    r.is_me ? "bg-primary/15" : "cursor-pointer hover:bg-white/5"
+                                  }`}
                                 >
                                   <td className="px-3 py-2">
                                     <span
@@ -763,16 +774,12 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                         </span>
                                       </span>
                                     ) : (
-                                      <Link
-                                        to="/players/$playerTag"
-                                        params={{ playerTag: r.geek_tag }}
-                                        onClick={closeModal}
-                                        className="font-semibold text-white hover:text-primary transition hover:underline underline-offset-2"
-                                      >
+                                      <span className="font-semibold text-white">
                                         {r.geek_tag}
-                                      </Link>
+                                      </span>
                                     )}
                                   </td>
+
                                   <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
                                     {r.wins != null && r.losses != null
                                       ? `${r.wins} / ${r.losses}`
