@@ -312,6 +312,9 @@ function LeaderboardPage() {
             }
             rows={filteredMonthly}
             loading={loading}
+            myGeekTag={myGeekTag}
+            search={search}
+            onClearSearch={() => setSearch("")}
           />
           <div className="xl:hidden lg:hidden">
             <AdHorizontal sponsor={sponsor} />
@@ -322,8 +325,12 @@ function LeaderboardPage() {
             subtitle="Ranking general · no filtrado por tienda"
             rows={filteredSemestral}
             loading={loading}
+            myGeekTag={myGeekTag}
+            search={search}
+            onClearSearch={() => setSearch("")}
           />
         </div>
+
       </main>
       <aside className="hidden xl:block">
         <AdVertical sponsor={sponsor} />
