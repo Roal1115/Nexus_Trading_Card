@@ -70,6 +70,8 @@ function DashboardPage() {
 
   const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
   const [isPublic, setIsPublic] = useState(true);
+  const [copiedProfile, setCopiedProfile] = useState(false);
+
 
   useEffect(() => {
     registerView()
