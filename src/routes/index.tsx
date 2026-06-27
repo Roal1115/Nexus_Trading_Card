@@ -1,17 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { HelpCircle, Medal, Search, Trophy } from "lucide-react";
+import { ChevronDown, HelpCircle, Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
-import { getActiveSponsor, listActiveSponsors, registerAdView } from "@/lib/geekarena-ads.functions";
+import {
+  getActiveSponsor,
+  listActiveSponsors,
+  registerAdView,
+} from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
+import ReactDOM from "react-dom";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -208,7 +213,8 @@ function LeaderboardPage() {
             Circuito <span className="text-primary">Nacional</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al
+            Mundial.
           </p>
         </section>
 
@@ -231,14 +237,20 @@ function LeaderboardPage() {
                 label="TCG"
                 value={tcg}
                 onChange={handleTcgChange}
-                options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
+                options={[
+                  { value: ALL, label: "Todos" },
+                  ...games.map((g) => ({ value: g.id, label: g.name })),
+                ]}
               />
 
               <FilterSelect
                 label="Ciudad"
                 value={city}
                 onChange={(v) => setCity(v)}
-                options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
+                options={[
+                  { value: ALL, label: "Todas" },
+                  ...cities.map((c) => ({ value: c, label: c })),
+                ]}
               />
               <FilterSelect
                 label="Tienda"
@@ -354,7 +366,7 @@ function LeaderboardTable({
   });
 
   // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
-  const gridCols = "grid-cols-[32px_minmax(100px,1fr)_60px_60px_40px_40px_60px]";
+  const gridCols = "grid-cols-[32px_1fr_64px_56px_36px_36px_52px]";
   const gridColsMobile = "grid-cols-[36px_1fr_68px]";
 
   return (
@@ -374,26 +386,23 @@ function LeaderboardTable({
 
       {/* Header fijo */}
       <div
-        className={`hidden sm:grid ${gridCols} bg-black/80 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500`}
+        className={`hidden sm:grid ${gridCols} gap-3.5 bg-black/80 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500`}
       >
         <div>#</div>
-        <div>Geek Tag</div>
+        <div>Tag</div>
         <div>Ciudad</div>
         <div className="text-right">Pts</div>
-        <div className="text-right">Trn</div>
-        <div className="text-right">W</div>
-        <div className="flex items-center justify-end gap-0.5">
-          <span>OMW</span>
-          <span className="group/omw relative cursor-help">
-            <HelpCircle size={9} className="text-gray-600 group-hover/omw:text-gray-400" />
-            <span className="pointer-events-none absolute bottom-full right-0 mb-2 hidden w-52 rounded-lg border border-primary/30 bg-[#0f1117] p-3 text-left text-[11px] leading-5 text-gray-300 shadow-xl group-hover/omw:block z-50">
-              <strong className="text-white">Opponent Match Win %</strong>
-              <br />
-              Porcentaje de victorias de tus oponentes. Desempata jugadores con los mismos puntos.
-            </span>
-          </span>
+        <div className="text-right" title="Torneos jugados">
+          Trn
+        </div>
+        <div className="text-right" title="Victorias">
+          W
+        </div>
+        <div className="text-right" title="Opponent Match Win %">
+          OMW%
         </div>
       </div>
+
       <div
         className={`grid sm:hidden ${gridColsMobile} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-500`}
       >
@@ -408,7 +417,9 @@ function LeaderboardTable({
           <div>
             {Array.from({ length: 8 }).map((_, i) => (
               <Fragment key={i}>
-                <div className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}>
+                <div
+                  className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+                >
                   <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
                   <div className="h-3 w-32 rounded bg-white/[0.06] animate-pulse" />
                   <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
@@ -433,9 +444,13 @@ function LeaderboardTable({
               <Search size={16} className="text-gray-500" />
             </div>
             <p className="text-sm text-gray-400">
-              {search ? `No encontramos "${search}" en este ranking` : "Sin resultados para estos filtros"}
+              {search
+                ? `No encontramos "${search}" en este ranking`
+                : "Sin resultados para estos filtros"}
             </p>
-            <p className="mt-1 text-xs text-gray-500">Prueba cambiando el TCG, ciudad o mes seleccionado</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Prueba cambiando el TCG, ciudad o mes seleccionado
+            </p>
             {search && onClearSearch && (
               <button
                 onClick={onClearSearch}
@@ -476,12 +491,16 @@ function LeaderboardTable({
                 >
                   {/* Desktop */}
                   <div className={`hidden md:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
-                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                    <span
+                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
+                    >
                       {String(rank).padStart(2, "0")}
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <span className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}>
+                      <span
+                        className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}
+                      >
                         {r.geek_tag}
                       </span>
                       {isMe && (
@@ -494,18 +513,28 @@ function LeaderboardTable({
                     <span className="text-right font-mono font-semibold text-white text-sm">
                       {r.points.toLocaleString()}
                     </span>
-                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_played}</span>
-                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_won}</span>
+                    <span className="text-right font-mono text-xs text-gray-400">
+                      {r.tournaments_played}
+                    </span>
+                    <span className="text-right font-mono text-xs text-gray-400">
+                      {r.tournaments_won}
+                    </span>
                     <span className="text-right font-mono text-xs text-gray-400">{omwFor(r)}%</span>
                   </div>
                   {/* Mobile */}
-                  <div className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}>
-                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                  <div
+                    className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}
+                  >
+                    <span
+                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
+                    >
                       {String(rank).padStart(2, "0")}
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <span className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}>
+                      <span
+                        className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}
+                      >
                         {r.geek_tag}
                       </span>
                       {isMe && (
@@ -539,20 +568,81 @@ function FilterSelect({
   onChange: (v: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: Math.max(rect.width, 160),
+      });
+    }
+    setOpen((o) => !o);
+  };
+
   return (
-    <label className="group inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition focus-within:border-primary">
-      <span className="uppercase tracking-wider text-gray-500">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-white outline-none"
+    <div ref={ref} className="relative">
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={handleOpen}
+        className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20"
       >
-        {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-black">
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="uppercase tracking-wider text-gray-500">{label}</span>
+        <span className="text-white">{selected?.label ?? "—"}</span>
+        <ChevronDown size={12} className="text-gray-500 flex-shrink-0" />
+      </button>
+
+      {open &&
+        typeof document !== "undefined" &&
+        ReactDOM.createPortal(
+          <div
+            style={{
+              position: "absolute",
+              top: pos.top,
+              left: pos.left,
+              minWidth: pos.width,
+              zIndex: 99999,
+            }}
+            className="rounded-md border border-white/10 bg-[#0f1117] shadow-xl"
+          >
+            <div className="max-h-60 overflow-y-auto">
+              {options.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center px-3 py-2 text-left text-xs transition hover:bg-white/10 ${
+                    o.value === value ? "text-primary font-semibold" : "text-white"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { Loader2, User, Mail, Lock, Plus, Shield, Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 import {
@@ -16,11 +16,109 @@ import {
   updateMyEmail,
   updateMyPassword,
 } from "@/lib/geekarena-settings.functions";
+import ReactDOM from "react-dom";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Configuración — Geek Arena" }] }),
   component: SettingsPage,
 });
+
+function SettingsSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const dropdownHeight = Math.min(options.length * 42, 240); // max-h-60 = 240px
+      const goUp = spaceBelow < dropdownHeight + 8;
+
+      setPos({
+        top: goUp
+          ? rect.top - dropdownHeight - 4 // abre hacia arriba
+          : rect.bottom + 4, // abre hacia abajo
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+    setOpen((o) => !o);
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={handleOpen}
+        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white transition hover:border-white/20"
+      >
+        <span className={selected ? "text-white" : "text-gray-500"}>
+          {selected?.label ?? placeholder}
+        </span>
+        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
+      </button>
+
+      {open &&
+        typeof document !== "undefined" &&
+        ReactDOM.createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 99999,
+            }}
+            className="rounded-md border border-white/10 bg-[#0f1117] shadow-xl"
+          >
+            <div className="max-h-60 overflow-y-auto">
+              {options.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition hover:bg-white/10 ${
+                    o.value === value ? "text-primary font-semibold" : "text-white"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
 
 type TcgId = {
   id: string;
@@ -389,18 +487,12 @@ function SettingsPage() {
             <div className="space-y-3 rounded-md border border-white/10 bg-white/[0.02] p-4">
               <p className="text-xs font-semibold text-gray-300">Agregar nuevo ID de TCG</p>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <select
+                <SettingsSelect
                   value={selectedGameId}
-                  onChange={(e) => setSelectedGameId(e.target.value)}
-                  className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
-                >
-                  <option value="">Selecciona el TCG</option>
-                  {availableGames.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedGameId}
+                  placeholder="Selecciona el TCG"
+                  options={availableGames.map((g) => ({ value: g.id, label: g.name }))}
+                />
                 <input
                   value={newTcgUserId}
                   onChange={(e) => setNewTcgUserId(e.target.value)}
