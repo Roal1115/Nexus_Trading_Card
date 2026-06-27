@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 import {
   Loader2,
   MapPin,
@@ -57,8 +58,66 @@ function StoreProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
+        {/* Back link skeleton */}
+        <SkeletonLine width="w-36" height="h-3" />
+
+        {/* Header card skeleton */}
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <SkeletonLine width="w-24" height="h-3" />
+          <SkeletonLine width="w-2/3" height="h-8" />
+          <SkeletonLine width="w-1/2" height="h-3" />
+          <SkeletonLine width="w-full" height="h-3" />
+          <SkeletonLine width="w-4/5" height="h-3" />
+
+          {/* TCG badges */}
+          <div className="flex gap-2 pt-1">
+            <SkeletonLine width="w-20" height="h-6" className="rounded-md" />
+            <SkeletonLine width="w-24" height="h-6" className="rounded-md" />
+            <SkeletonLine width="w-16" height="h-6" className="rounded-md" />
+          </div>
+
+          {/* Hours + phone row */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <SkeletonBlock className="h-10 rounded-md" />
+            <SkeletonBlock className="h-10 rounded-md" />
+          </div>
+
+          {/* Action buttons row */}
+          <div className="flex items-center gap-3 pt-2">
+            <SkeletonLine width="w-28" height="h-8" className="rounded-md" />
+            <SkeletonBlock className="w-5 h-5 rounded-sm" />
+            <SkeletonBlock className="w-5 h-5 rounded-sm" />
+            <SkeletonBlock className="w-5 h-5 rounded-sm" />
+          </div>
+        </div>
+
+        {/* Schedule skeleton */}
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <SkeletonLine width="w-48" height="h-5" />
+          <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden p-3 space-y-2">
+            {/* Header row de días */}
+            <div className="grid gap-2" style={{ gridTemplateColumns: "56px repeat(7, 1fr)" }}>
+              <div />
+              {Array.from({ length: 7 }).map((_, i) => (
+                <SkeletonLine key={i} width="w-full" height="h-4" className="rounded-sm" />
+              ))}
+            </div>
+            {/* Hour rows */}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="grid gap-2 items-start"
+                style={{ gridTemplateColumns: "56px repeat(7, 1fr)" }}
+              >
+                <SkeletonLine width="w-8" height="h-3" className="mt-1 ml-auto" />
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <SkeletonBlock key={j} className="h-12 rounded-md" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -84,10 +143,13 @@ function StoreProfilePage() {
       </Link>
 
       <header className="glass space-y-4 rounded-2xl p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">{store.zone ?? "—"}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+          {store.zone ?? "—"}
+        </p>
         <h1 className="text-3xl font-bold text-white">{store.name}</h1>
         <p className="flex items-center gap-1.5 text-sm text-gray-400">
-          <MapPin size={14} /> {[store.address, store.city, store.state].filter(Boolean).join(", ") || "—"}
+          <MapPin size={14} />{" "}
+          {[store.address, store.city, store.state].filter(Boolean).join(", ") || "—"}
         </p>
 
         {store.description && <p className="text-sm text-gray-300">{store.description}</p>}
@@ -155,7 +217,12 @@ function StoreProfilePage() {
             </a>
           )}
           {store.website && (
-            <a href={store.website} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
+            <a
+              href={store.website}
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-400 hover:text-primary"
+            >
               <Globe size={18} />
             </a>
           )}
@@ -214,7 +281,9 @@ function StoreProfilePage() {
                     </div>
                     {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
                       const cellEntries = schedule.filter(
-                        (s) => s.day_of_week === dow && parseInt(s.start_time.split(":")[0], 10) === hour,
+                        (s) =>
+                          s.day_of_week === dow &&
+                          parseInt(s.start_time.split(":")[0], 10) === hour,
                       );
                       return (
                         <div
@@ -228,7 +297,9 @@ function StoreProfilePage() {
                               className="w-full text-left rounded px-1.5 py-1 mb-0.5 bg-primary/10 border border-primary/30"
                             >
                               <div className="text-[10px] text-primary truncate">{e.game_name}</div>
-                              <div className="text-[9px] text-gray-400 truncate">{e.start_time}</div>
+                              <div className="text-[9px] text-gray-400 truncate">
+                                {e.start_time}
+                              </div>
                             </div>
                           ))}
                         </div>

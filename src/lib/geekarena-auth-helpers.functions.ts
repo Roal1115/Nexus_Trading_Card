@@ -11,7 +11,7 @@ export const resolveEmailByGeekTag = createServerFn({ method: "POST" })
     const { data: player } = await admin
       .from("players")
       .select("email")
-      .eq("geek_tag", data.geek_tag)
+      .ilike("geek_tag", data.geek_tag)
       .maybeSingle();
 
     return { email: (player as any)?.email ?? null };

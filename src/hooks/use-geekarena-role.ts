@@ -12,10 +12,28 @@ type PlayerRow = {
   home_store_id: string | null;
 };
 
+function getInitialSession() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem("geekarena.auth");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Supabase guarda la sesión bajo la key directamente
+    return parsed?.access_token ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useGeekarenaRole() {
   const [session, setSession] = useState<Session | null>(null);
   const [player, setPlayer] = useState<PlayerRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    // Si ya hay sesión en localStorage, no mostramos loading inicial
+    if (typeof window === "undefined") return true;
+    const raw = window.localStorage.getItem("geekarena.auth");
+    return !raw; // false si ya hay sesión guardada → no hay flash
+  });
 
   // 🛡️ EL GUARDIÁN: Recuerda qué usuario está activo sin provocar re-renders
   const currentUserRef = useRef<string | null>(null);

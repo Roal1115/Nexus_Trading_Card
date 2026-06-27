@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
-import { getActiveSponsor, listActiveSponsors, registerAdView } from "@/lib/geekarena-ads.functions";
+import {
+  getActiveSponsor,
+  listActiveSponsors,
+  registerAdView,
+} from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
@@ -195,14 +199,15 @@ function LeaderboardPage() {
             Circuito <span className="text-primary">Nacional</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al
+            Mundial.
           </p>
         </section>
 
         <AdCarousel sponsors={allSponsors} />
 
         <div
-          className="sticky top-16 z-30 mb-6 rounded-xl px-4 py-3"
+          className="sm sm:top-16 z-30 mb-6 rounded-xl px-4 py-3"
           style={{
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.07)",
@@ -218,13 +223,19 @@ function LeaderboardPage() {
                 label="TCG"
                 value={tcg}
                 onChange={setTcg}
-                options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
+                options={[
+                  { value: ALL, label: "Todos" },
+                  ...games.map((g) => ({ value: g.id, label: g.name })),
+                ]}
               />
               <FilterSelect
                 label="Ciudad"
                 value={city}
                 onChange={(v) => setCity(v)}
-                options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
+                options={[
+                  { value: ALL, label: "Todas" },
+                  ...cities.map((c) => ({ value: c, label: c })),
+                ]}
               />
               <FilterSelect
                 label="Tienda"
@@ -371,18 +382,26 @@ function LeaderboardTable({
         {loading ? (
           <div>
             {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
-              >
-                <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
-                <div className="h-3 w-32 rounded bg-white/[0.06] animate-pulse" />
-                <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
-                <div className="h-3 w-12 rounded bg-white/[0.06] animate-pulse ml-auto" />
-                <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
-                <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
-                <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse ml-auto" />
-              </div>
+              <Fragment key={i}>
+                <div
+                  className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+                >
+                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
+                  <div className="h-3 w-32 rounded bg-white/[0.06] animate-pulse" />
+                  <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
+                  <div className="h-3 w-12 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                  <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                </div>
+                <div
+                  className={`grid sm:hidden ${gridColsMobile} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+                >
+                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
+                  <div className="h-3 w-28 rounded bg-white/[0.06] animate-pulse" />
+                  <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                </div>
+              </Fragment>
             ))}
           </div>
         ) : rows.length === 0 ? (
@@ -411,7 +430,9 @@ function LeaderboardTable({
                 >
                   {/* Desktop */}
                   <div className={`hidden md:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
-                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                    <span
+                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
+                    >
                       {String(rank).padStart(2, "0")}
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
@@ -428,13 +449,21 @@ function LeaderboardTable({
                     <span className="text-right font-mono font-semibold text-white text-sm">
                       {r.points.toLocaleString()}
                     </span>
-                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_played}</span>
-                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_won}</span>
+                    <span className="text-right font-mono text-xs text-gray-400">
+                      {r.tournaments_played}
+                    </span>
+                    <span className="text-right font-mono text-xs text-gray-400">
+                      {r.tournaments_won}
+                    </span>
                     <span className="text-right font-mono text-xs text-gray-400">{omwFor(r)}%</span>
                   </div>
                   {/* Mobile */}
-                  <div className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}>
-                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
+                  <div
+                    className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}
+                  >
+                    <span
+                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
+                    >
                       {String(rank).padStart(2, "0")}
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
