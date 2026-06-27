@@ -238,12 +238,13 @@ function LeaderboardPage() {
               <FilterSelect
                 label="TCG"
                 value={tcg}
-                onChange={setTcg}
+                onChange={handleTcgChange}
                 options={[
                   { value: ALL, label: "Todos" },
                   ...games.map((g) => ({ value: g.id, label: g.name })),
                 ]}
               />
+
               <FilterSelect
                 label="Ciudad"
                 value={city}
