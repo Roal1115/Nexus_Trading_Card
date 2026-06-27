@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Medal, Search, Trophy } from "lucide-react";
+import { HelpCircle, Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
 import {
@@ -70,6 +72,9 @@ function LeaderboardPage() {
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const fetchActiveSponsors = useServerFn(listActiveSponsors);
   const registerView = useServerFn(registerAdView);
+  const { player: viewer } = useGeekarenaRole();
+  const myGeekTag = viewer?.geek_tag ?? null;
+
 
   const [sponsor, setSponsor] = useState<any>(null);
   const [allSponsors, setAllSponsors] = useState<any[]>([]);
@@ -92,11 +97,22 @@ function LeaderboardPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [months, setMonths] = useState<string[]>([]);
 
-  const [tcg, setTcg] = useState<string>(ALL);
+  const [tcg, setTcg] = useState<string>(() => {
+    if (typeof window === "undefined") return ALL;
+    return window.localStorage.getItem("ga_filter_tcg") ?? ALL;
+  });
+  const handleTcgChange = (v: string) => {
+    setTcg(v);
+    if (typeof window !== "undefined") {
+      if (v === ALL) window.localStorage.removeItem("ga_filter_tcg");
+      else window.localStorage.setItem("ga_filter_tcg", v);
+    }
+  };
   const [city, setCity] = useState<string>(ALL);
   const [storeId, setStoreId] = useState<string>(ALL);
   const [month, setMonth] = useState<string>(ALL);
   const [search, setSearch] = useState("");
+
 
   const [monthly, setMonthly] = useState<Row[]>([]);
   const [semestral, setSemestral] = useState<Row[]>([]);
@@ -222,12 +238,13 @@ function LeaderboardPage() {
               <FilterSelect
                 label="TCG"
                 value={tcg}
-                onChange={setTcg}
+                onChange={handleTcgChange}
                 options={[
                   { value: ALL, label: "Todos" },
                   ...games.map((g) => ({ value: g.id, label: g.name })),
                 ]}
               />
+
               <FilterSelect
                 label="Ciudad"
                 value={city}
@@ -295,6 +312,9 @@ function LeaderboardPage() {
             }
             rows={filteredMonthly}
             loading={loading}
+            myGeekTag={myGeekTag}
+            search={search}
+            onClearSearch={() => setSearch("")}
           />
           <div className="xl:hidden lg:hidden">
             <AdHorizontal sponsor={sponsor} />
@@ -305,8 +325,12 @@ function LeaderboardPage() {
             subtitle="Ranking general · no filtrado por tienda"
             rows={filteredSemestral}
             loading={loading}
+            myGeekTag={myGeekTag}
+            search={search}
+            onClearSearch={() => setSearch("")}
           />
         </div>
+
       </main>
       <aside className="hidden xl:block">
         <AdVertical sponsor={sponsor} />
@@ -321,12 +345,18 @@ function LeaderboardTable({
   subtitle,
   rows,
   loading,
+  myGeekTag,
+  search,
+  onClearSearch,
 }: {
   title: string;
   badge: string;
   subtitle?: string | null;
   rows: Row[];
   loading: boolean;
+  myGeekTag?: string | null;
+  search?: string;
+  onClearSearch?: () => void;
 }) {
   const omwFor = (r: Row) => r.omw_percentage ?? 0;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -367,7 +397,13 @@ function LeaderboardTable({
         <div className="text-right">Pts</div>
         <div className="text-right">Torneos</div>
         <div className="text-right">Victorias</div>
-        <div className="text-right">OMW%</div>
+        <div
+          className="flex items-center justify-end gap-1"
+          title="Opponent Match Win % — Porcentaje de victorias de tus oponentes. Desempata jugadores con los mismos puntos."
+        >
+          <span>OMW%</span>
+          <HelpCircle size={11} className="text-gray-500" />
+        </div>
       </div>
       <div
         className={`grid sm:hidden ${gridColsMobile} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-500`}
@@ -405,8 +441,26 @@ function LeaderboardTable({
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <div className="px-3 py-12 text-center text-sm text-gray-500">
-            No hay resultados para estos filtros todavía.
+          <div className="px-3 py-12 text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5">
+              <Search size={16} className="text-gray-500" />
+            </div>
+            <p className="text-sm text-gray-400">
+              {search
+                ? `No encontramos "${search}" en este ranking`
+                : "Sin resultados para estos filtros"}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Prueba cambiando el TCG, ciudad o mes seleccionado
+            </p>
+            {search && onClearSearch && (
+              <button
+                onClick={onClearSearch}
+                className="mt-4 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20"
+              >
+                Limpiar búsqueda
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ height: `${virtualizer.getTotalSize()}px` }} className="relative w-full">
@@ -414,11 +468,14 @@ function LeaderboardTable({
               const r = rows[virtualRow.index];
               const rank = r.rank_position;
               const podium = rank > 0 && rank <= 3;
+              const isMe = !!myGeekTag && r.geek_tag === myGeekTag;
               return (
-                <div
+                <Link
                   key={r.player_id}
+                  to="/players/$playerTag"
+                  params={{ playerTag: r.geek_tag }}
                   data-index={virtualRow.index}
-                  ref={virtualizer.measureElement}
+                  ref={virtualizer.measureElement as any}
                   style={{
                     position: "absolute",
                     top: 0,
@@ -426,7 +483,13 @@ function LeaderboardTable({
                     width: "100%",
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className={`border-b border-white/5 transition ${podium ? "bg-primary/5" : "hover:bg-white/5"}`}
+                  className={`block border-b border-white/5 transition ${
+                    isMe
+                      ? "bg-primary/15 hover:bg-primary/20"
+                      : podium
+                        ? "bg-primary/5 hover:bg-primary/10"
+                        : "hover:bg-white/5"
+                  }`}
                 >
                   {/* Desktop */}
                   <div className={`hidden md:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
@@ -437,13 +500,16 @@ function LeaderboardTable({
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <Link
-                        to="/players/$playerTag"
-                        params={{ playerTag: r.geek_tag }}
-                        className="font-medium text-white transition hover:text-primary truncate"
+                      <span
+                        className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}
                       >
                         {r.geek_tag}
-                      </Link>
+                      </span>
+                      {isMe && (
+                        <span className="flex-shrink-0 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                          Tú
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs text-gray-400 truncate">{r.city}</span>
                     <span className="text-right font-mono font-semibold text-white text-sm">
@@ -468,22 +534,26 @@ function LeaderboardTable({
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <Link
-                        to="/players/$playerTag"
-                        params={{ playerTag: r.geek_tag }}
-                        className="font-medium text-white transition hover:text-primary truncate"
+                      <span
+                        className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}
                       >
                         {r.geek_tag}
-                      </Link>
+                      </span>
+                      {isMe && (
+                        <span className="flex-shrink-0 rounded bg-primary/30 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
+                          Tú
+                        </span>
+                      )}
                     </div>
                     <span className="text-right font-mono font-semibold text-white text-sm">
                       {r.points.toLocaleString()}
                     </span>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
+
         )}
       </div>
     </section>

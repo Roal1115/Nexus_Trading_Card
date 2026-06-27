@@ -1,20 +1,23 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Award,
   BarChart3,
+  Check,
   ChevronRight,
   Crown,
   Globe,
   HelpCircle,
   Lock,
+  Share2,
   Swords,
   Target,
   TrendingUp,
   X,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
@@ -44,8 +47,10 @@ type TournamentDetail = Awaited<ReturnType<typeof getTournamentDetail>>;
 
 function DashboardPage() {
   const { player: gaPlayer } = useGeekarenaRole();
+  const navigate = useNavigate();
   const fetchDashboard = useServerFn(getMyDashboard);
   const fetchTournamentDetail = useServerFn(getTournamentDetail);
+
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -65,6 +70,8 @@ function DashboardPage() {
 
   const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
   const [isPublic, setIsPublic] = useState(true);
+  const [copiedProfile, setCopiedProfile] = useState(false);
+
 
   useEffect(() => {
     registerView()
@@ -159,6 +166,12 @@ function DashboardPage() {
   }
 
   const tag = gaPlayer.geek_tag;
+  const handleShareProfile = () => {
+    navigator.clipboard.writeText(`https://mxntcg.lovable.app/players/${tag}`);
+    setCopiedProfile(true);
+    setTimeout(() => setCopiedProfile(false), 2000);
+  };
+
   const tcgStats = data?.tcgStats ?? [];
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
 
@@ -217,7 +230,31 @@ function DashboardPage() {
               </div>
             </div>
           </div>
+          <div className="relative mt-6 flex flex-wrap items-center gap-3">
+            <Link
+              to="/players/$playerTag"
+              params={{ playerTag: tag }}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Ver mi perfil público →
+            </Link>
+            <button
+              onClick={handleShareProfile}
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+            >
+              {copiedProfile ? (
+                <>
+                  <Check size={12} /> ¡Link copiado!
+                </>
+              ) : (
+                <>
+                  <Share2 size={12} /> Compartir mi perfil
+                </>
+              )}
+            </button>
+          </div>
         </section>
+
 
         {/* Toggle de privacidad */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
@@ -708,7 +745,18 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                               {tournamentDetail.rankings.map((r) => (
                                 <tr
                                   key={r.player_id}
-                                  className={`border-t border-white/5 ${r.is_me ? "bg-primary/15" : ""}`}
+                                  onClick={() => {
+                                    if (!r.is_me) {
+                                      closeModal();
+                                      navigate({
+                                        to: "/players/$playerTag",
+                                        params: { playerTag: r.geek_tag },
+                                      });
+                                    }
+                                  }}
+                                  className={`border-t border-white/5 transition ${
+                                    r.is_me ? "bg-primary/15" : "cursor-pointer hover:bg-white/5"
+                                  }`}
                                 >
                                   <td className="px-3 py-2">
                                     <span
@@ -726,16 +774,12 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                         </span>
                                       </span>
                                     ) : (
-                                      <Link
-                                        to="/players/$playerTag"
-                                        params={{ playerTag: r.geek_tag }}
-                                        onClick={closeModal}
-                                        className="font-semibold text-white hover:text-primary transition hover:underline underline-offset-2"
-                                      >
+                                      <span className="font-semibold text-white">
                                         {r.geek_tag}
-                                      </Link>
+                                      </span>
                                     )}
                                   </td>
+
                                   <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
                                     {r.wins != null && r.losses != null
                                       ? `${r.wins} / ${r.losses}`

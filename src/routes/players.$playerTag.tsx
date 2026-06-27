@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Crown, Lock, Target, TrendingUp } from "lucide-react";
+import { Check, Crown, Lock, Share2, Target, TrendingUp } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getPublicProfile } from "@/lib/geekarena-player.functions";
 import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
@@ -46,6 +46,8 @@ function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [sponsor, setSponsor] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
+
 
   const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -208,9 +210,30 @@ function PublicProfilePage() {
                   })}
                 </p>
               )}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `https://mxntcg.lovable.app/players/${profile.geek_tag}`,
+                  );
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+              >
+                {copied ? (
+                  <>
+                    <Check size={12} /> ¡Link copiado!
+                  </>
+                ) : (
+                  <>
+                    <Share2 size={12} /> Compartir perfil
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </section>
+
 
         {/* Rankings */}
         {profile.rankings.length > 0 && (
