@@ -1,20 +1,23 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Award,
   BarChart3,
+  Check,
   ChevronRight,
   Crown,
   Globe,
   HelpCircle,
   Lock,
+  Share2,
   Swords,
   Target,
   TrendingUp,
   X,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
