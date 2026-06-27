@@ -97,11 +97,22 @@ function LeaderboardPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [months, setMonths] = useState<string[]>([]);
 
-  const [tcg, setTcg] = useState<string>(ALL);
+  const [tcg, setTcg] = useState<string>(() => {
+    if (typeof window === "undefined") return ALL;
+    return window.localStorage.getItem("ga_filter_tcg") ?? ALL;
+  });
+  const handleTcgChange = (v: string) => {
+    setTcg(v);
+    if (typeof window !== "undefined") {
+      if (v === ALL) window.localStorage.removeItem("ga_filter_tcg");
+      else window.localStorage.setItem("ga_filter_tcg", v);
+    }
+  };
   const [city, setCity] = useState<string>(ALL);
   const [storeId, setStoreId] = useState<string>(ALL);
   const [month, setMonth] = useState<string>(ALL);
   const [search, setSearch] = useState("");
+
 
   const [monthly, setMonthly] = useState<Row[]>([]);
   const [semestral, setSemestral] = useState<Row[]>([]);
