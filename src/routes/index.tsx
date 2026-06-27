@@ -374,7 +374,7 @@ function LeaderboardTable({
 
       {/* Header fijo */}
       <div
-        className={`hidden sm:grid ${gridCols} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-500`}
+        className={`hidden sm:grid ${gridCols} bg-black/80 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500`}
       >
         <div>#</div>
         <div>Geek Tag</div>
@@ -382,10 +382,10 @@ function LeaderboardTable({
         <div className="text-right">Pts</div>
         <div className="text-right">Trn</div>
         <div className="text-right">W</div>
-        <div className="flex items-center justify-end gap-1">
-          OMW%
+        <div className="flex items-center justify-end gap-0.5">
+          <span>OMW</span>
           <span className="group/omw relative cursor-help">
-            <HelpCircle size={10} className="text-gray-600 group-hover/omw:text-gray-400" />
+            <HelpCircle size={9} className="text-gray-600 group-hover/omw:text-gray-400" />
             <span className="pointer-events-none absolute bottom-full right-0 mb-2 hidden w-52 rounded-lg border border-primary/30 bg-[#0f1117] p-3 text-left text-[11px] leading-5 text-gray-300 shadow-xl group-hover/omw:block z-50">
               <strong className="text-white">Opponent Match Win %</strong>
               <br />
