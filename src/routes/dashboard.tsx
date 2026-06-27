@@ -47,8 +47,10 @@ type TournamentDetail = Awaited<ReturnType<typeof getTournamentDetail>>;
 
 function DashboardPage() {
   const { player: gaPlayer } = useGeekarenaRole();
+  const navigate = useNavigate();
   const fetchDashboard = useServerFn(getMyDashboard);
   const fetchTournamentDetail = useServerFn(getTournamentDetail);
+
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
   const [data, setData] = useState<DashboardData | null>(null);
