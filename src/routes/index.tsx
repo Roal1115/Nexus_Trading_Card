@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Medal, Search, Trophy } from "lucide-react";
+import { HelpCircle, Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
 import {
