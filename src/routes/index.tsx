@@ -72,6 +72,9 @@ function LeaderboardPage() {
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const fetchActiveSponsors = useServerFn(listActiveSponsors);
   const registerView = useServerFn(registerAdView);
+  const { player: viewer } = useGeekarenaRole();
+  const myGeekTag = viewer?.geek_tag ?? null;
+
 
   const [sponsor, setSponsor] = useState<any>(null);
   const [allSponsors, setAllSponsors] = useState<any[]>([]);
