@@ -7,13 +7,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 
-
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
-import {
-  getActiveSponsor,
-  listActiveSponsors,
-  registerAdView,
-} from "@/lib/geekarena-ads.functions";
+import { getActiveSponsor, listActiveSponsors, registerAdView } from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
@@ -75,7 +70,6 @@ function LeaderboardPage() {
   const { player: viewer } = useGeekarenaRole();
   const myGeekTag = viewer?.geek_tag ?? null;
 
-
   const [sponsor, setSponsor] = useState<any>(null);
   const [allSponsors, setAllSponsors] = useState<any[]>([]);
 
@@ -112,7 +106,6 @@ function LeaderboardPage() {
   const [storeId, setStoreId] = useState<string>(ALL);
   const [month, setMonth] = useState<string>(ALL);
   const [search, setSearch] = useState("");
-
 
   const [monthly, setMonthly] = useState<Row[]>([]);
   const [semestral, setSemestral] = useState<Row[]>([]);
@@ -215,8 +208,7 @@ function LeaderboardPage() {
             Circuito <span className="text-primary">Nacional</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al
-            Mundial.
+            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
           </p>
         </section>
 
@@ -239,20 +231,14 @@ function LeaderboardPage() {
                 label="TCG"
                 value={tcg}
                 onChange={handleTcgChange}
-                options={[
-                  { value: ALL, label: "Todos" },
-                  ...games.map((g) => ({ value: g.id, label: g.name })),
-                ]}
+                options={[{ value: ALL, label: "Todos" }, ...games.map((g) => ({ value: g.id, label: g.name }))]}
               />
 
               <FilterSelect
                 label="Ciudad"
                 value={city}
                 onChange={(v) => setCity(v)}
-                options={[
-                  { value: ALL, label: "Todas" },
-                  ...cities.map((c) => ({ value: c, label: c })),
-                ]}
+                options={[{ value: ALL, label: "Todas" }, ...cities.map((c) => ({ value: c, label: c }))]}
               />
               <FilterSelect
                 label="Tienda"
@@ -330,7 +316,6 @@ function LeaderboardPage() {
             onClearSearch={() => setSearch("")}
           />
         </div>
-
       </main>
       <aside className="hidden xl:block">
         <AdVertical sponsor={sponsor} />
@@ -395,14 +380,18 @@ function LeaderboardTable({
         <div>Geek Tag</div>
         <div>Ciudad</div>
         <div className="text-right">Pts</div>
-        <div className="text-right">Torneos</div>
-        <div className="text-right">Victorias</div>
-        <div
-          className="flex items-center justify-end gap-1"
-          title="Opponent Match Win % — Porcentaje de victorias de tus oponentes. Desempata jugadores con los mismos puntos."
-        >
-          <span>OMW%</span>
-          <HelpCircle size={11} className="text-gray-500" />
+        <div className="text-right">Trn</div>
+        <div className="text-right">W</div>
+        <div className="flex items-center justify-end gap-1">
+          OMW%
+          <span className="group/omw relative cursor-help">
+            <HelpCircle size={10} className="text-gray-600 group-hover/omw:text-gray-400" />
+            <span className="pointer-events-none absolute bottom-full right-0 mb-2 hidden w-52 rounded-lg border border-primary/30 bg-[#0f1117] p-3 text-left text-[11px] leading-5 text-gray-300 shadow-xl group-hover/omw:block z-50">
+              <strong className="text-white">Opponent Match Win %</strong>
+              <br />
+              Porcentaje de victorias de tus oponentes. Desempata jugadores con los mismos puntos.
+            </span>
+          </span>
         </div>
       </div>
       <div
@@ -419,9 +408,7 @@ function LeaderboardTable({
           <div>
             {Array.from({ length: 8 }).map((_, i) => (
               <Fragment key={i}>
-                <div
-                  className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
-                >
+                <div className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}>
                   <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
                   <div className="h-3 w-32 rounded bg-white/[0.06] animate-pulse" />
                   <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
@@ -446,13 +433,9 @@ function LeaderboardTable({
               <Search size={16} className="text-gray-500" />
             </div>
             <p className="text-sm text-gray-400">
-              {search
-                ? `No encontramos "${search}" en este ranking`
-                : "Sin resultados para estos filtros"}
+              {search ? `No encontramos "${search}" en este ranking` : "Sin resultados para estos filtros"}
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Prueba cambiando el TCG, ciudad o mes seleccionado
-            </p>
+            <p className="mt-1 text-xs text-gray-500">Prueba cambiando el TCG, ciudad o mes seleccionado</p>
             {search && onClearSearch && (
               <button
                 onClick={onClearSearch}
@@ -493,16 +476,12 @@ function LeaderboardTable({
                 >
                   {/* Desktop */}
                   <div className={`hidden md:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
-                    <span
-                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
-                    >
+                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
                       {String(rank).padStart(2, "0")}
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <span
-                        className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}
-                      >
+                      <span className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}>
                         {r.geek_tag}
                       </span>
                       {isMe && (
@@ -515,28 +494,18 @@ function LeaderboardTable({
                     <span className="text-right font-mono font-semibold text-white text-sm">
                       {r.points.toLocaleString()}
                     </span>
-                    <span className="text-right font-mono text-xs text-gray-400">
-                      {r.tournaments_played}
-                    </span>
-                    <span className="text-right font-mono text-xs text-gray-400">
-                      {r.tournaments_won}
-                    </span>
+                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_played}</span>
+                    <span className="text-right font-mono text-xs text-gray-400">{r.tournaments_won}</span>
                     <span className="text-right font-mono text-xs text-gray-400">{omwFor(r)}%</span>
                   </div>
                   {/* Mobile */}
-                  <div
-                    className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}
-                  >
-                    <span
-                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
-                    >
+                  <div className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}>
+                    <span className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}>
                       {String(rank).padStart(2, "0")}
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <span
-                        className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}
-                      >
+                      <span className={`font-medium truncate ${isMe ? "text-primary" : "text-white"}`}>
                         {r.geek_tag}
                       </span>
                       {isMe && (
@@ -553,7 +522,6 @@ function LeaderboardTable({
               );
             })}
           </div>
-
         )}
       </div>
     </section>
