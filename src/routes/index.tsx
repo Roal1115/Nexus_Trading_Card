@@ -221,7 +221,7 @@ function LeaderboardPage() {
         <AdCarousel sponsors={allSponsors} />
 
         <div
-          className="sm sm:top-16 z-30 mb-6 rounded-xl px-4 py-3"
+          className="sm:sticky sm:top-16 z-30 mb-6 rounded-xl px-4 py-3"
           style={{
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.07)",
