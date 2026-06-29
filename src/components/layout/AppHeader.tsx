@@ -98,7 +98,9 @@ export function AppHeader() {
             <Link
               to="/"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
+              activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
+              inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+              activeOptions={{ exact: true }}
             >
               <Trophy size={16} />
               Ranking
@@ -107,7 +109,8 @@ export function AppHeader() {
             <Link
               to="/stores"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
+              activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
+              inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
             >
               <Store size={16} />
               Tiendas
@@ -117,7 +120,9 @@ export function AppHeader() {
               <Link
                 to="/dashboard"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
+                activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
+                inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+                activeOptions={{ exact: true }}
               >
                 <User size={16} />
                 Mi Panel
@@ -127,7 +132,9 @@ export function AppHeader() {
             <Link
               to="/settings"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
+              activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
+              inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+              activeOptions={{ exact: true }}
             >
               <Settings size={16} />
               Configuración
@@ -137,7 +144,8 @@ export function AppHeader() {
               <Link
                 to={role === "admin" ? "/admin" : role === "tcg_manager" ? "/tcg-manager" : "/organizer"}
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition"
+                activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
+                inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
               >
                 <Shield size={16} />
                 Moderación
