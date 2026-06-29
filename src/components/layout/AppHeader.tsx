@@ -30,7 +30,17 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl relative">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight">
+        <button
+          className="sm:hidden text-gray-400 hover:text-white transition"
+          onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label="Abrir menú"
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+        <Link
+          to="/"
+          className="flex items-center gap-2 font-display text-xl font-bold tracking-tight"
+        >
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/20 text-primary">
             <Trophy size={16} />
           </span>
@@ -53,16 +63,16 @@ export function AppHeader() {
           {role === "admin" && (
             <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />
           )}
-          {player && (
-            <NavItem to="/settings" icon={<Settings size={14} />} label="Configuración" />
-          )}
+          {player && <NavItem to="/settings" icon={<Settings size={14} />} label="Configuración" />}
         </nav>
 
         <div className="flex items-center gap-3">
           {player ? (
             <>
               <div className="hidden text-right sm:block">
-                <div className="text-xs text-muted-foreground uppercase tracking-wider">Geek Tag</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Geek Tag
+                </div>
                 <div className="font-mono-stat text-sm text-primary">{geekTag}</div>
               </div>
               <button
@@ -80,16 +90,7 @@ export function AppHeader() {
               Iniciar Sesión
             </Link>
           )}
-
-          <button
-            className="sm:hidden text-gray-400 hover:text-white transition"
-            onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label="Abrir menú"
-          >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
-        
       </div>
 
       {menuOpen && (
@@ -98,8 +99,14 @@ export function AppHeader() {
             <Link
               to="/"
               onClick={() => setMenuOpen(false)}
-              activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
-              inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+              activeProps={{
+                className:
+                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+              }}
+              inactiveProps={{
+                className:
+                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+              }}
               activeOptions={{ exact: true }}
             >
               <Trophy size={16} />
@@ -109,8 +116,14 @@ export function AppHeader() {
             <Link
               to="/stores"
               onClick={() => setMenuOpen(false)}
-              activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
-              inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+              activeProps={{
+                className:
+                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+              }}
+              inactiveProps={{
+                className:
+                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+              }}
             >
               <Store size={16} />
               Tiendas
@@ -120,8 +133,14 @@ export function AppHeader() {
               <Link
                 to="/dashboard"
                 onClick={() => setMenuOpen(false)}
-                activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
-                inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+                activeProps={{
+                  className:
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+                }}
+                inactiveProps={{
+                  className:
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+                }}
                 activeOptions={{ exact: true }}
               >
                 <User size={16} />
@@ -132,8 +151,14 @@ export function AppHeader() {
             <Link
               to="/settings"
               onClick={() => setMenuOpen(false)}
-              activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
-              inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+              activeProps={{
+                className:
+                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+              }}
+              inactiveProps={{
+                className:
+                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+              }}
               activeOptions={{ exact: true }}
             >
               <Settings size={16} />
@@ -142,10 +167,22 @@ export function AppHeader() {
 
             {(role === "organizer" || role === "admin" || role === "tcg_manager") && (
               <Link
-                to={role === "admin" ? "/admin" : role === "tcg_manager" ? "/tcg-manager" : "/organizer"}
+                to={
+                  role === "admin"
+                    ? "/admin"
+                    : role === "tcg_manager"
+                      ? "/tcg-manager"
+                      : "/organizer"
+                }
                 onClick={() => setMenuOpen(false)}
-                activeProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition" }}
-                inactiveProps={{ className: "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" }}
+                activeProps={{
+                  className:
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+                }}
+                inactiveProps={{
+                  className:
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+                }}
               >
                 <Shield size={16} />
                 Moderación

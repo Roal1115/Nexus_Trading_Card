@@ -42,6 +42,7 @@ type Row = {
   tournaments_played: number;
   omw_percentage: number;
   rank_position: number;
+  rank_delta: number | null;
 };
 
 const ALL = "__all__";
@@ -336,6 +337,19 @@ function LeaderboardPage() {
   );
 }
 
+function RankDelta({ delta }: { delta: number | null }) {
+  if (delta === null) {
+    return <span className="text-[8px] font-semibold text-gray-600 leading-none">NEW</span>;
+  }
+  if (delta === 0) {
+    return <span className="text-[8px] font-semibold text-gray-600 leading-none">—</span>;
+  }
+  if (delta > 0) {
+    return <span className="text-[8px] font-bold text-emerald-400 leading-none">▲{delta}</span>;
+  }
+  return <span className="text-[8px] font-bold text-red-400 leading-none">▼{Math.abs(delta)}</span>;
+}
+
 function LeaderboardTable({
   title,
   badge,
@@ -390,8 +404,8 @@ function LeaderboardTable({
   };
 
   // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
-  const gridCols = "grid-cols-[32px_1fr_64px_56px_36px_36px_52px]";
-  const gridColsMobile = "grid-cols-[36px_1fr_68px]";
+  const gridCols = "grid-cols-[40px_1fr_64px_56px_36px_36px_52px]";
+  const gridColsMobile = "grid-cols-[40px_1fr_68px]";
 
   return (
     <section className="glass overflow-hidden rounded-2xl">
@@ -525,11 +539,14 @@ function LeaderboardTable({
                 >
                   {/* Desktop */}
                   <div className={`hidden md:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
-                    <span
-                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
-                    >
-                      {String(rank).padStart(2, "0")}
-                    </span>
+                    <div className="flex flex-col items-start leading-none">
+                      <span
+                        className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
+                      >
+                        {String(rank).padStart(2, "0")}
+                      </span>
+                      <RankDelta delta={r.rank_delta} />
+                    </div>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
                       <span
@@ -559,11 +576,14 @@ function LeaderboardTable({
                   <div
                     className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}
                   >
-                    <span
-                      className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
-                    >
-                      {String(rank).padStart(2, "0")}
-                    </span>
+                    <div className="flex flex-col items-start leading-none">
+                      <span
+                        className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-gray-400"}`}
+                      >
+                        {String(rank).padStart(2, "0")}
+                      </span>
+                      <RankDelta delta={r.rank_delta} />
+                    </div>
                     <div className="flex items-center gap-2 min-w-0">
                       {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
                       <span

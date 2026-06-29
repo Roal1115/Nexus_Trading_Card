@@ -89,9 +89,20 @@ function monthLabel(monthValue: string): string {
   return `${MONTH_NAMES[m - 1]} ${y}`;
 }
 
+function prevMonthValue(monthValue: string): string {
+  const [year, month] = monthValue.split("-").map(Number);
+  if (month === 1) return `${year - 1}-12`;
+  return `${year}-${String(month - 1).padStart(2, "0")}`;
+}
+
 export const getLeaderboard = createServerFn({ method: "POST" })
   .inputValidator(
-    (d: { game_id?: string | null; city?: string | null; store_id?: string | null; month?: string | null }) =>
+    (d: {
+      game_id?: string | null;
+      city?: string | null;
+      store_id?: string | null;
+      month?: string | null;
+    }) =>
       z
         .object({
           game_id: z.string().uuid().nullable().optional(),
@@ -112,6 +123,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
 
     const admin = getGeekarenaAdmin();
 
+    // 1. Resolver cityStoreIds
     let cityStoreIds: string[] | null = null;
     if (data.city) {
       const { data: cityStores, error } = await admin
@@ -123,6 +135,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       cityStoreIds = (cityStores ?? []).map((s) => s.id);
     }
 
+    // 2. Resolver monthValue PRIMERO
     let monthValue = data.month;
     if (!monthValue) {
       const { data: latest } = await admin
@@ -139,9 +152,13 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         monthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       }
     }
+
+    // 3. Calcular prevMonth y season (monthValue ya está resuelto)
+    const prevMonth = prevMonthValue(monthValue);
     const season = await getSeasonForMonth(admin, monthValue);
     const seasonKey = season?.slug ?? "";
 
+    // 4. Definir queries
     async function querySnapshots(
       timeframeType: "MONTHLY" | "SEMESTRAL",
       timeframeValue: string,
@@ -150,7 +167,9 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       if (!timeframeValue) return [];
       let q = admin
         .from("leaderboard_snapshots")
-        .select("player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position, omw_percentage")
+        .select(
+          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position, omw_percentage",
+        )
         .eq("timeframe_type", timeframeType)
         .eq("timeframe_value", timeframeValue);
       if (data.game_id) q = q.eq("game_id", data.game_id);
@@ -164,20 +183,63 @@ export const getLeaderboard = createServerFn({ method: "POST" })
 
       const { data: rows, error } = await q;
       if (error) {
-        console.error(`[leaderboard] querySnapshots(${timeframeType}, ${timeframeValue}) failed:`, error.message);
+        console.error(
+          `[leaderboard] querySnapshots(${timeframeType}, ${timeframeValue}) failed:`,
+          error.message,
+        );
         return [];
       }
       return rows ?? [];
     }
 
-    const [monthlyRaw, semestralRaw] = await Promise.all([
+    async function queryPrevSnapshots() {
+      let q = admin
+        .from("leaderboard_snapshots")
+        .select("player_id, game_id, store_id, rank_position")
+        .eq("timeframe_type", "MONTHLY")
+        .eq("timeframe_value", prevMonth);
+
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+
+      if (data.store_id) {
+        q = q.eq("store_id", data.store_id);
+      } else if (cityStoreIds) {
+        if (cityStoreIds.length === 0) return [];
+        q = q.in("store_id", cityStoreIds);
+      }
+
+      const { data: rows, error } = await q;
+      if (error) {
+        console.error(`[leaderboard] queryPrevSnapshots failed:`, error.message);
+        return [];
+      }
+      return rows ?? [];
+    }
+
+    // 5. Queries paralelas
+    const [monthlyRaw, semestralRaw, prevMonthlyRaw] = await Promise.all([
       querySnapshots("MONTHLY", monthValue, { applyStoreId: true }),
       querySnapshots("SEMESTRAL", seasonKey, { applyStoreId: false }),
+      queryPrevSnapshots(),
     ]);
 
+    // 6. Construir maps
     const playerIds = Array.from(new Set([...monthlyRaw, ...semestralRaw].map((r) => r.player_id)));
+
+    const prevRankMap = new Map<string, number>();
+    for (const r of prevMonthlyRaw) {
+      if (r.rank_position != null) {
+        const existing = prevRankMap.get(r.player_id);
+        if (existing == null || r.rank_position < existing) {
+          prevRankMap.set(r.player_id, r.rank_position);
+        }
+      }
+    }
+
     const allStoreIds = Array.from(
-      new Set([...monthlyRaw, ...semestralRaw].map((r) => r.store_id).filter((v): v is string => !!v)),
+      new Set(
+        [...monthlyRaw, ...semestralRaw].map((r) => r.store_id).filter((v): v is string => !!v),
+      ),
     );
 
     const [playersRes, storesRes] = await Promise.all([
@@ -194,6 +256,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
     const playerMap = new Map((playersRes.data ?? []).map((p) => [p.id, p]));
     const storeMap = new Map((storesRes.data ?? []).map((s) => [s.id, s]));
 
+    // 7. Definir shape() — tiene acceso a playerMap, storeMap, prevRankMap
     type Row = {
       player_id: string;
       geek_tag: string;
@@ -203,6 +266,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
       tournaments_played: number;
       omw_percentage: number;
       rank_position: number;
+      rank_delta: number | null;
     };
 
     function shape(
@@ -250,11 +314,13 @@ export const getLeaderboard = createServerFn({ method: "POST" })
           a.omw_count += 1;
         }
         if (r.rank_position != null) {
-          a.best_rank = a.best_rank == null ? r.rank_position : Math.min(a.best_rank, r.rank_position);
+          a.best_rank =
+            a.best_rank == null ? r.rank_position : Math.min(a.best_rank, r.rank_position);
         }
         const city = r.store_id ? storeMap.get(r.store_id)?.city : null;
         if (city) a.cities.add(city);
       }
+
       const sorted = Array.from(agg.entries())
         .map(([pid, a]) => ({
           player_id: pid,
@@ -273,18 +339,29 @@ export const getLeaderboard = createServerFn({ method: "POST" })
           return y.points - x.points;
         });
 
-      return sorted.map((r, i) => ({
-        player_id: r.player_id,
-        geek_tag: r.geek_tag,
-        city: r.city,
-        points: r.points,
-        tournaments_won: r.tournaments_won,
-        tournaments_played: r.tournaments_played,
-        omw_percentage: r.omw_percentage,
-        rank_position: r.best_rank ?? i + 1,
-      }));
+      return sorted.map((r, i) => {
+        const currentRank = r.best_rank ?? i + 1;
+        const prevRank = prevRankMap.get(r.player_id) ?? null;
+        // positivo = subió (era 5, ahora es 2 → delta +3)
+        // negativo = bajó (era 2, ahora es 5 → delta -3)
+        // null = jugador nuevo este mes
+        const rank_delta = prevRank != null ? prevRank - currentRank : null;
+
+        return {
+          player_id: r.player_id,
+          geek_tag: r.geek_tag,
+          city: r.city,
+          points: r.points,
+          tournaments_won: r.tournaments_won,
+          tournaments_played: r.tournaments_played,
+          omw_percentage: r.omw_percentage,
+          rank_position: currentRank,
+          rank_delta,
+        };
+      });
     }
 
+    // 8. Ejecutar y cachear
     const result = {
       monthly: shape(monthlyRaw),
       semestral: shape(semestralRaw),
