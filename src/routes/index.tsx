@@ -365,6 +365,13 @@ function LeaderboardTable({
     overscan: 10,
   });
 
+  const myRowIndex = myGeekTag ? rows.findIndex((r) => r.geek_tag === myGeekTag) : -1;
+  const scrollToMe = () => {
+    if (myRowIndex >= 0) {
+      virtualizer.scrollToIndex(myRowIndex, { align: "center" });
+    }
+  };
+
   // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
   const gridCols = "grid-cols-[32px_1fr_64px_56px_36px_36px_52px]";
   const gridColsMobile = "grid-cols-[36px_1fr_68px]";
