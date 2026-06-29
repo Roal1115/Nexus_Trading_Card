@@ -372,14 +372,24 @@ function LeaderboardTable({
   return (
     <section className="glass overflow-hidden rounded-2xl">
       <header className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="text-primary" size={18} />
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Trophy className="text-primary" size={18} />
+              <h2 className="text-lg font-semibold text-white">{title}</h2>
+            </div>
+            <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              {badge || "—"}
+            </span>
+            {myRowIndex >= 0 && (
+              <button
+                onClick={scrollToMe}
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 transition hover:border-primary/30 hover:text-primary"
+              >
+                → Mi posición
+              </button>
+            )}
           </div>
-          <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-            {badge || "—"}
-          </span>
         </div>
         {subtitle && <p className="mt-2 text-xs text-gray-400">{subtitle}</p>}
       </header>
