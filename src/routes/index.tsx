@@ -221,7 +221,7 @@ function LeaderboardPage() {
         <AdCarousel sponsors={allSponsors} />
 
         <div
-          className="sm sm:top-16 z-30 mb-6 rounded-xl px-4 py-3"
+          className="sm:sticky sm:top-16 z-30 mb-6 rounded-xl px-4 py-3"
           style={{
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.07)",
@@ -365,6 +365,13 @@ function LeaderboardTable({
     overscan: 10,
   });
 
+  const myRowIndex = myGeekTag ? rows.findIndex((r) => r.geek_tag === myGeekTag) : -1;
+  const scrollToMe = () => {
+    if (myRowIndex >= 0) {
+      virtualizer.scrollToIndex(myRowIndex, { align: "center" });
+    }
+  };
+
   // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
   const gridCols = "grid-cols-[32px_1fr_64px_56px_36px_36px_52px]";
   const gridColsMobile = "grid-cols-[36px_1fr_68px]";
@@ -372,14 +379,24 @@ function LeaderboardTable({
   return (
     <section className="glass overflow-hidden rounded-2xl">
       <header className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="text-primary" size={18} />
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Trophy className="text-primary" size={18} />
+              <h2 className="text-lg font-semibold text-white">{title}</h2>
+            </div>
+            <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              {badge || "—"}
+            </span>
+            {myRowIndex >= 0 && (
+              <button
+                onClick={scrollToMe}
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 transition hover:border-primary/30 hover:text-primary"
+              >
+                → Mi posición
+              </button>
+            )}
           </div>
-          <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-            {badge || "—"}
-          </span>
         </div>
         {subtitle && <p className="mt-2 text-xs text-gray-400">{subtitle}</p>}
       </header>
@@ -588,9 +605,12 @@ function FilterSelect({
   const handleOpen = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
+      const dropdownHeight = Math.min(options.length * 36, 240);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const goUp = spaceBelow < dropdownHeight + 8;
       setPos({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: goUp ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
+        left: rect.left,
         width: Math.max(rect.width, 160),
       });
     }
@@ -615,7 +635,7 @@ function FilterSelect({
         ReactDOM.createPortal(
           <div
             style={{
-              position: "absolute",
+              position: "fixed",
               top: pos.top,
               left: pos.left,
               minWidth: pos.width,
