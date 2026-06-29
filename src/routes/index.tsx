@@ -605,9 +605,12 @@ function FilterSelect({
   const handleOpen = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
+      const dropdownHeight = Math.min(options.length * 36, 240);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const goUp = spaceBelow < dropdownHeight + 8;
       setPos({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: goUp ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
+        left: rect.left,
         width: Math.max(rect.width, 160),
       });
     }
