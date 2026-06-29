@@ -72,6 +72,8 @@ function DashboardPage() {
   const [isPublic, setIsPublic] = useState(true);
   const [copiedProfile, setCopiedProfile] = useState(false);
 
+  const [statsTcg, setStatsTcg] = useState<string | null>(null);
+
   useEffect(() => {
     registerView()
       .then(setSponsor)
@@ -195,6 +197,15 @@ function DashboardPage() {
   };
 
   const tcgStats = data?.tcgStats ?? [];
+
+  const top3DecksByGame = (data as any)?.top3DecksByGame ?? {};
+  const globalRecord = (data as any)?.globalRecord ?? { wins: 0, losses: 0, total: 0 };
+
+  // Inicializar statsTcg al primer TCG disponible
+  const statsGameIds = Object.keys(top3DecksByGame);
+  const activeStatsTcg = statsTcg ?? statsGameIds[0] ?? null;
+  const top3Decks = activeStatsTcg ? (top3DecksByGame[activeStatsTcg] ?? []) : [];
+
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
 
   const storeCity = data?.storeCity ?? null;
@@ -204,6 +215,24 @@ function DashboardPage() {
   const paginatedEvents = filteredEvents.slice(0, page * PAGE_SIZE);
   const hasMore = filteredEvents.length > page * PAGE_SIZE;
 
+  // Calcular placement delta torneo vs torneo anterior
+  // events está ordenado por fecha DESC — index 0 es el más reciente
+  const getPlacementDelta = (index: number): number | null => {
+    // El más reciente (index 0) no tiene anterior
+    const current = filteredEvents[index];
+    const previous = filteredEvents[index + 1];
+    if (!previous) return null;
+    // Delta positivo = mejoró (bajó de número de posición)
+    return previous.placement - current.placement;
+  };
+
+  function PlacementDelta({ delta }: { delta: number | null }) {
+    if (delta === null) return null; // primer torneo, sin tag
+    if (delta === 0) return <span className="text-[8px] text-gray-600">—</span>;
+    if (delta > 0) return <span className="text-[8px] font-bold text-emerald-400">▲{delta}</span>;
+    return <span className="text-[8px] font-bold text-red-400">▼{Math.abs(delta)}</span>;
+  }
+
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
       <aside className="hidden xl:block">
@@ -211,9 +240,12 @@ function DashboardPage() {
       </aside>
       <main className="min-w-0 pb-20">
         {/* Hero */}
-        <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40 p-8 sm:p-12">
+        {/* Hero */}
+        <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40">
           <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
-          <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-end sm:justify-between">
+
+          {/* Fila superior — Geek Tag + Ranks */}
+          <div className="relative flex flex-col items-start gap-6 p-8 sm:flex-row sm:items-end sm:justify-between sm:p-12">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                 Tu Geek Tag
@@ -222,7 +254,6 @@ function DashboardPage() {
               <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
             </div>
             <div className="flex gap-3 flex-wrap">
-              {/* Rank Global */}
               <div className="rounded-xl border border-primary/30 bg-black/40 px-5 py-4 text-center min-w-[120px]">
                 <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary mb-1">
                   <Crown size={10} /> Global
@@ -236,7 +267,6 @@ function DashboardPage() {
                 </div>
                 <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
               </div>
-              {/* Rank Mensual */}
               <div className="rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-center min-w-[120px]">
                 <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
                   <Crown size={10} /> Mensual
@@ -252,7 +282,69 @@ function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="relative mt-6 flex flex-wrap items-center gap-3">
+
+          {/* Franja inferior — Stats */}
+          {!loading && globalRecord.total > 0 && (
+            <div className="relative border-t border-white/10 px-8 py-4 sm:px-12">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Izquierda — Tabs TCG + W-L */}
+                <div className="flex flex-wrap items-center gap-4">
+                  {statsGameIds.length > 1 && (
+                    <div className="flex gap-1">
+                      {statsGameIds.map((gid) => {
+                        const tcgName = tcgStats.find((t) => t.game_id === gid)?.game_name ?? gid;
+                        return (
+                          <button
+                            key={gid}
+                            onClick={() => setStatsTcg(gid)}
+                            className={`rounded px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
+                              activeStatsTcg === gid
+                                ? "bg-primary/20 text-primary"
+                                : "text-gray-500 hover:text-gray-300"
+                            }`}
+                          >
+                            {tcgName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-mono text-2xl font-bold text-emerald-400">
+                      {globalRecord.wins}W
+                    </span>
+                    <span className="font-mono text-lg text-gray-600">·</span>
+                    <span className="font-mono text-2xl font-bold text-red-400">
+                      {globalRecord.losses}L
+                    </span>
+                    <span className="ml-1 text-[10px] text-gray-600">
+                      {globalRecord.total} partidas
+                    </span>
+                  </div>
+                </div>
+
+                {/* Derecha — CTA Ver mis stats */}
+                <Link
+                  to="/my-stats"
+                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(232,106,34,0.4)]"
+                >
+                  {/* Shimmer animado en hover */}
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                  <BarChart3
+                    size={15}
+                    className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  />
+                  <span className="relative">Ver mis stats</span>
+                  <span className="relative text-[10px] font-normal opacity-60 group-hover:opacity-100 transition-opacity">
+                    →
+                  </span>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Links — Ver perfil + Compartir */}
+          <div className="relative flex flex-wrap items-center gap-3 border-t border-white/5 px-8 py-3 sm:px-12">
             <Link
               to="/players/$playerTag"
               params={{ playerTag: tag }}
@@ -445,13 +537,16 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                           {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span
-                            className={`font-mono-stat text-sm font-semibold ${
-                              t.placement <= 3 ? "text-primary" : "text-white"
-                            }`}
-                          >
-                            #{t.placement}
-                          </span>
+                          <div className="flex flex-col items-end leading-none">
+                            <span
+                              className={`font-mono-stat text-sm font-semibold ${
+                                t.placement <= 3 ? "text-primary" : "text-white"
+                              }`}
+                            >
+                              #{t.placement}
+                            </span>
+                            <PlacementDelta delta={getPlacementDelta(paginatedEvents.indexOf(t))} />
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
                           +{Number(t.pointsEarned).toFixed(2)}
@@ -551,11 +646,14 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                           >
                             <BarChart3 size={16} />
                           </button>
-                          <span
-                            className={`font-mono-stat text-sm font-semibold ${t.placement <= 3 ? "text-primary" : "text-white"}`}
-                          >
-                            #{t.placement}
-                          </span>
+                          <div className="flex flex-col items-end leading-none">
+                            <span
+                              className={`font-mono-stat text-sm font-semibold ${t.placement <= 3 ? "text-primary" : "text-white"}`}
+                            >
+                              #{t.placement}
+                            </span>
+                            <PlacementDelta delta={getPlacementDelta(paginatedEvents.indexOf(t))} />
+                          </div>
                         </div>
                         <p className="text-xs font-mono-stat font-semibold text-white">
                           +{Number(t.pointsEarned).toFixed(2)}

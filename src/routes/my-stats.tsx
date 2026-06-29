@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ShieldQuestion, AlertTriangle, BarChart3 } from "lucide-react";
+import { ArrowLeft, ShieldQuestion, AlertTriangle, BarChart3, HelpCircle } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getMyStats, getMyStatsGames } from "@/lib/geekarena-player.functions";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
@@ -26,12 +26,48 @@ type RoundHistory = {
   status: string;
 };
 
+const STAT_TOOLTIPS: Record<string, string> = {
+  "Wtd Win Rate":
+    "Win Rate ponderado: calculado solo con rondas confirmadas por ambos jugadores. Es el número más confiable.",
+  "Raw Win Rate":
+    "Win Rate crudo: incluye todas las rondas, confirmadas y pendientes. Puede variar cuando se confirmen datos.",
+  "Play Rate":
+    "Porcentaje de rondas del meta total que jugaste con este leader. Indica qué tan frecuentemente lo usas vs el resto de jugadores.",
+  "Total Games": "Total de rondas registradas con este leader (excluye byes).",
+  "1st Winrate":
+    "Win Rate cuando tú juegas primero (tu turno 1). En One Piece, jugar primero o segundo impacta significativamente la estrategia.",
+  "2nd Winrate": "Win Rate cuando juegas segundo (oponente tiene turno 1).",
+};
+
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  const [show, setShow] = useState(false);
+  const tooltip = STAT_TOOLTIPS[label];
+
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <p className="text-[10px] uppercase tracking-widest text-gray-500">{label}</p>
+    <div className="relative flex flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+      <div className="flex items-center gap-1">
+        <p className="text-[10px] uppercase tracking-widest text-gray-500">{label}</p>
+        {tooltip && (
+          <button
+            type="button"
+            className="text-gray-700 hover:text-gray-400 transition flex-shrink-0"
+            onMouseEnter={() => setShow(true)}
+            onMouseLeave={() => setShow(false)}
+          >
+            <HelpCircle size={10} />
+          </button>
+        )}
+      </div>
       <p className="font-mono text-2xl font-bold text-white">{value}</p>
       {sub && <p className="text-[10px] text-gray-600">{sub}</p>}
+
+      {/* Tooltip */}
+      {show && tooltip && (
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-56 rounded-xl border border-primary/30 bg-[#0f1117] p-3 text-xs text-gray-300 leading-relaxed shadow-2xl">
+          {tooltip}
+          <div className="absolute -bottom-1.5 left-4 h-3 w-3 rotate-45 border-b border-r border-primary/30 bg-[#0f1117]" />
+        </div>
+      )}
     </div>
   );
 }
@@ -500,7 +536,7 @@ function StatsPage() {
                         Aún no tienes matchups registrados con este leader.
                       </p>
                     ) : (
-                      <div className="space-y-2">
+                      <div key={selectedLeaderIdx} className="space-y-2">
                         {selectedLeader.matchups.map((m) => (
                           <MatchupRow key={m.opponent_leader_id} matchup={m} />
                         ))}

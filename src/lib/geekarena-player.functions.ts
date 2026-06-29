@@ -185,7 +185,84 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       };
     });
 
+    // Top 3 decks por TCG desde tournament_round_results
+    const allTcgGameIds = tcgStats.map((t) => t.game_id);
+
+    // Traer rondas del player con player_leader_id por TCG
+    const { data: deckRounds } = allTcgGameIds.length
+      ? await admin
+          .from("tournament_round_results")
+          .select("player_leader_id, tournament_id, tournaments!inner(game_id)")
+          .eq("player_id", player.id)
+          .eq("is_bye", false)
+          .not("player_leader_id", "is", null)
+          .in("tournaments.game_id", allTcgGameIds)
+      : { data: [] as any[] };
+
+    // Agrupar por game_id → contar usos de cada leader
+    const leaderUsageByGame = new Map<string, Map<string, number>>();
+    for (const r of (deckRounds ?? []) as any[]) {
+      const gameId = r.tournaments?.game_id;
+      const leaderId = r.player_leader_id;
+      if (!gameId || !leaderId) continue;
+      if (!leaderUsageByGame.has(gameId)) leaderUsageByGame.set(gameId, new Map());
+      const gameMap = leaderUsageByGame.get(gameId)!;
+      gameMap.set(leaderId, (gameMap.get(leaderId) ?? 0) + 1);
+    }
+
+    // Top 3 leader IDs por game
+    const top3LeaderIdsByGame = new Map<string, string[]>();
+    for (const [gameId, usageMap] of leaderUsageByGame.entries()) {
+      const sorted = Array.from(usageMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([id]) => id);
+      top3LeaderIdsByGame.set(gameId, sorted);
+    }
+
+    // Fetchear info de esos leaders
+    const allTopLeaderIds = Array.from(new Set(Array.from(top3LeaderIdsByGame.values()).flat()));
+    const { data: topLeaderRows } = allTopLeaderIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, canonical_leader_id")
+          .in("id", allTopLeaderIds)
+      : { data: [] as any[] };
+
+    // Resolver canónicos
+    const topLeaderMap = new Map((topLeaderRows ?? []).map((l: any) => [l.id, l]));
+    const resolveTopLeader = (id: string) => {
+      const l = topLeaderMap.get(id);
+      if (l?.canonical_leader_id) return topLeaderMap.get(l.canonical_leader_id) ?? l;
+      return l;
+    };
+
+    // Construir top3Decks por game_id
+    const top3DecksByGame: Record<
+      string,
+      Array<{ id: string; name: string; image: string | null; count: number }>
+    > = {};
+    for (const [gameId, leaderIds] of top3LeaderIdsByGame.entries()) {
+      const usage = leaderUsageByGame.get(gameId)!;
+      top3DecksByGame[gameId] = leaderIds.map((id) => {
+        const resolved = resolveTopLeader(id);
+        return {
+          id: resolved?.id ?? id,
+          name: resolved?.base_name ?? "—",
+          image: resolved?.card_image ?? null,
+          count: usage.get(id) ?? 0,
+        };
+      });
+    }
+
+    // Stats globales W-L-D del player
+    const totalWins = events.reduce((acc, e) => acc + (e.wins ?? 0), 0);
+    const totalLosses = events.reduce((acc, e) => acc + (e.losses ?? 0), 0);
+    const totalGames = totalWins + totalLosses;
+
     return {
+      top3DecksByGame,
+      globalRecord: { wins: totalWins, losses: totalLosses, total: totalGames },
       storeCity: (storeRes.data as { city: string | null } | null)?.city ?? null,
       storeName: (storeRes.data as { name: string | null } | null)?.name ?? null,
       tcgStats,
