@@ -207,7 +207,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-radial-crimson">
+      <div className="min-h-dvh bg-radial-crimson">
         {!isPanel && <AppHeader />}
         <AnimatePresence mode="wait">
           <motion.div

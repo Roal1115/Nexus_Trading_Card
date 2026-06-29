@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, Menu, Shield, Store, Trophy, User, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { geekarena } from "@/integrations/geekarena/client";
 import { Settings } from "lucide-react";
@@ -31,9 +32,10 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl relative">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <button
-          className="sm:hidden text-gray-400 hover:text-white transition"
+          className="sm:hidden text-gray-400 hover:text-white transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label="Abrir menú"
+          aria-expanded={menuOpen}
         >
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -77,7 +79,7 @@ export function AppHeader() {
               </div>
               <button
                 onClick={handleLogout}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
                 <LogOut size={12} /> Cerrar Sesión
               </button>
@@ -93,8 +95,15 @@ export function AppHeader() {
         </div>
       </div>
 
-      {menuOpen && (
-        <div className="sm:hidden absolute top-16 left-0 right-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl">
+      <AnimatePresence>
+        {menuOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="sm:hidden absolute top-16 left-0 right-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl"
+        >
           <nav className="flex flex-col px-4 py-3 gap-1">
             <Link
               to="/"
@@ -202,7 +211,7 @@ export function AppHeader() {
                     setMenuOpen(false);
                     handleLogout();
                   }}
-                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-white/5 transition w-full text-left"
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-white/5 transition w-full text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                 >
                   <LogOut size={16} />
                   Cerrar Sesión
@@ -218,8 +227,9 @@ export function AppHeader() {
               </Link>
             )}
           </nav>
-        </div>
-      )}
+        </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
@@ -231,7 +241,7 @@ function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label
       activeProps={{ className: "text-primary bg-primary/10" }}
       inactiveProps={{ className: "text-gray-400 hover:text-white" }}
       activeOptions={{ exact: true }}
-      className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium uppercase tracking-wider transition"
+      className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium uppercase tracking-wider transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
     >
       {icon} {label}
     </Link>

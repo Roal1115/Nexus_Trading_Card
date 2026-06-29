@@ -141,6 +141,10 @@
 }
 
 @layer base {
+  html {
+    background-color: oklch(0.04 0 0);
+  }
+
   * {
     border-color: var(--color-border);
   }
@@ -164,7 +168,6 @@
 @layer utilities {
   .bg-radial-crimson {
     background: var(--gradient-radial);
-    background-attachment: fixed;
   }
   .font-mono-stat {
     font-family: var(--font-mono);

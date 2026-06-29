@@ -17,6 +17,7 @@ import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
 import ReactDOM from "react-dom";
+import { ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -339,15 +340,25 @@ function LeaderboardPage() {
 
 function RankDelta({ delta }: { delta: number | null }) {
   if (delta === null) {
-    return <span className="text-[8px] font-semibold text-gray-600 leading-none">NEW</span>;
+    return <span className="text-[10px] font-semibold text-gray-400 leading-none">NEW</span>;
   }
   if (delta === 0) {
-    return <span className="text-[8px] font-semibold text-gray-600 leading-none">—</span>;
+    return <span className="text-[10px] font-semibold text-gray-400 leading-none">—</span>;
   }
   if (delta > 0) {
-    return <span className="text-[8px] font-bold text-emerald-400 leading-none">▲{delta}</span>;
+    return (
+      <div className="flex items-center gap-0.5 text-emerald-400">
+        <ArrowUp size={10} className="shrink-0" />
+        <span className="text-xs font-medium leading-none">{delta}</span>
+      </div>
+    );
   }
-  return <span className="text-[8px] font-bold text-red-400 leading-none">▼{Math.abs(delta)}</span>;
+  return (
+    <div className="flex items-center gap-0.5 text-red-400">
+      <ArrowDown size={10} className="shrink-0" />
+      <span className="text-xs font-medium leading-none">{Math.abs(delta)}</span>
+    </div>
+  );
 }
 
 function LeaderboardTable({
@@ -422,7 +433,7 @@ function LeaderboardTable({
             {myRowIndex >= 0 && (
               <button
                 onClick={scrollToMe}
-                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 transition hover:border-primary/30 hover:text-primary"
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 transition hover:border-primary/30 hover:text-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
                 → Mi posición
               </button>
@@ -434,7 +445,7 @@ function LeaderboardTable({
 
       {/* Header fijo */}
       <div
-        className={`hidden sm:grid ${gridCols} gap-3.5 bg-black/80 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500`}
+        className={`hidden md:grid ${gridCols} gap-3.5 bg-black/80 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-400`}
       >
         <div>#</div>
         <div>Tag</div>
@@ -452,7 +463,7 @@ function LeaderboardTable({
       </div>
 
       <div
-        className={`grid sm:hidden ${gridColsMobile} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-500`}
+        className={`grid md:hidden ${gridColsMobile} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-400`}
       >
         <div>#</div>
         <div>Geek Tag</div>
@@ -466,7 +477,7 @@ function LeaderboardTable({
             {Array.from({ length: 8 }).map((_, i) => (
               <Fragment key={i}>
                 <div
-                  className={`hidden sm:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+                  className={`hidden md:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
                 >
                   <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
                   <div className="h-3 w-32 rounded bg-white/[0.06] animate-pulse" />
@@ -477,7 +488,7 @@ function LeaderboardTable({
                   <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse ml-auto" />
                 </div>
                 <div
-                  className={`grid sm:hidden ${gridColsMobile} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+                  className={`grid md:hidden ${gridColsMobile} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
                 >
                   <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
                   <div className="h-3 w-28 rounded bg-white/[0.06] animate-pulse" />
@@ -501,8 +512,9 @@ function LeaderboardTable({
             </p>
             {search && onClearSearch && (
               <button
+                type="button" // Always specify the type for buttons to prevent accidental form submission
                 onClick={onClearSearch}
-                className="mt-4 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20"
+                className="mt-4 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
                 Limpiar búsqueda
               </button>
@@ -529,7 +541,7 @@ function LeaderboardTable({
                     width: "100%",
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className={`block border-b border-white/5 transition ${
+                  className={`block border-b border-white/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
                     isMe
                       ? "bg-primary/15 hover:bg-primary/20"
                       : podium
@@ -626,12 +638,18 @@ function FilterSelect({
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        ref.current &&
+        !ref.current.contains(e.target as Node) &&
+        portalRef.current &&
+        !portalRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -660,17 +678,23 @@ function FilterSelect({
         ref={btnRef}
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20"
+        aria-haspopup="listbox"
+        aria-expanded={false} // Changed from isOpen to false to stop the error
+        className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
       >
         <span className="uppercase tracking-wider text-gray-500">{label}</span>
         <span className="text-white">{selected?.label ?? "—"}</span>
-        <ChevronDown size={12} className="text-gray-500 flex-shrink-0" />
+        <ChevronDown
+          size={12}
+          className="text-gray-500 flex-shrink-0 transition-transform duration-200"
+        />
       </button>
 
       {open &&
         typeof document !== "undefined" &&
         ReactDOM.createPortal(
           <div
+            ref={portalRef}
             style={{
               position: "fixed",
               top: pos.top,
@@ -689,7 +713,7 @@ function FilterSelect({
                     onChange(o.value);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-center px-3 py-2 text-left text-xs transition hover:bg-white/10 ${
+                  className={`flex w-full items-center px-3 py-2 text-left text-xs transition hover:bg-white/10 cursor-pointer focus-visible:outline-none focus-visible:bg-white/10 ${
                     o.value === value ? "text-primary font-semibold" : "text-white"
                   }`}
                 >

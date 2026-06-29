@@ -12,7 +12,7 @@ export function AdCarousel({ sponsors }: { sponsors: any[] }) {
 
   return (
     <div className="my-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-      <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-500">
+      <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-400">
         Patrocinado por
       </p>
       <div className="relative overflow-hidden">
