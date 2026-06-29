@@ -59,7 +59,11 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       const existing = monthlyMap.get(m.game_id);
       const rank = m.rank_position ?? 0;
       const pts = m.total_points ?? 0;
-      if (!existing || (rank > 0 && (existing.rank === 0 || rank < existing.rank)) || pts > existing.points) {
+      if (
+        !existing ||
+        (rank > 0 && (existing.rank === 0 || rank < existing.rank)) ||
+        pts > existing.points
+      ) {
         monthlyMap.set(m.game_id, { rank, points: pts });
       }
     }
@@ -117,10 +121,16 @@ export const getMyDashboard = createServerFn({ method: "POST" })
           .eq("rank", 1)
       : { data: [] as Array<{ tournament_id: string; match_points: number | null }> };
 
-    const maxPointsMap = new Map((maxPoints ?? []).map((m: any) => [m.tournament_id, m.match_points ?? 0]));
+    const maxPointsMap = new Map(
+      (maxPoints ?? []).map((m: any) => [m.tournament_id, m.match_points ?? 0]),
+    );
 
-    const storeIds = Array.from(new Set((results ?? []).map((r: any) => r.tournaments?.store_id).filter(Boolean)));
-    const allGameIds = Array.from(new Set((results ?? []).map((r: any) => r.tournaments?.game_id).filter(Boolean)));
+    const storeIds = Array.from(
+      new Set((results ?? []).map((r: any) => r.tournaments?.store_id).filter(Boolean)),
+    );
+    const allGameIds = Array.from(
+      new Set((results ?? []).map((r: any) => r.tournaments?.game_id).filter(Boolean)),
+    );
 
     const [storesData, gamesData] = await Promise.all([
       storeIds.length
@@ -192,13 +202,17 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
 export const getTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
     const { data: tournament } = await admin
       .from("tournaments")
-      .select("id, tournament_date, qualifying_month, qualifying_year, qualifying_semester, game_id, store_id, status")
+      .select(
+        "id, tournament_date, qualifying_month, qualifying_year, qualifying_semester, game_id, store_id, status",
+      )
       .eq("id", data.tournament_id)
       .in("status", ["APPROVED", "PUBLISHED"])
       .single();
@@ -206,7 +220,11 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
     if (!tournament) throw new Error("Torneo no encontrado");
 
     const [{ data: store }, { data: game }, { data: results }] = await Promise.all([
-      admin.from("stores").select("name, city, state, country").eq("id", tournament.store_id).single(),
+      admin
+        .from("stores")
+        .select("name, city, state, country")
+        .eq("id", tournament.store_id)
+        .single(),
       admin.from("games").select("name, publisher").eq("id", tournament.game_id).single(),
       admin
         .from("tournament_results")
@@ -292,7 +310,9 @@ export const getPublicProfile = createServerFn({ method: "POST" })
 
     const { data: target } = await admin
       .from("players")
-      .select("id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public" as any)
+      .select(
+        "id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public" as any,
+      )
       .eq("geek_tag", data.player_tag)
       .maybeSingle();
 
@@ -342,7 +362,6 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         .limit(100),
     ]);
 
-    // Dedupe snapshots by game_id, keep highest points
     const snapMap = new Map<string, any>();
     for (const s of (snapshotsRes.data ?? []) as any[]) {
       const ex = snapMap.get(s.game_id);
@@ -354,9 +373,14 @@ export const getPublicProfile = createServerFn({ method: "POST" })
 
     const results = (resultsRes.data ?? []) as any[];
 
-    const tStoreIds = Array.from(new Set(results.map((r: any) => r.tournaments?.store_id).filter(Boolean)));
+    const tStoreIds = Array.from(
+      new Set(results.map((r: any) => r.tournaments?.store_id).filter(Boolean)),
+    );
     const gameIds = Array.from(
-      new Set([...snaps.map((s) => s.game_id), ...results.map((r: any) => r.tournaments?.game_id).filter(Boolean)]),
+      new Set([
+        ...snaps.map((s) => s.game_id),
+        ...results.map((r: any) => r.tournaments?.game_id).filter(Boolean),
+      ]),
     );
     const tournamentIds = results.map((r: any) => r.tournament_id);
 
@@ -430,4 +454,317 @@ export const getPublicProfile = createServerFn({ method: "POST" })
       })),
       tournaments,
     };
+  });
+
+export const getMyStats = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    // 1. IDs de torneos del TCG seleccionado
+    const { data: tcgTournaments } = await admin
+      .from("tournaments")
+      .select("id")
+      .eq("game_id", data.game_id);
+    const tcgTournamentIds = (tcgTournaments ?? []).map((t: any) => t.id);
+
+    if (tcgTournamentIds.length === 0) {
+      const { data: game } = await admin
+        .from("games")
+        .select("name, slug")
+        .eq("id", data.game_id)
+        .single();
+      return {
+        game_id: data.game_id,
+        game_name: (game as any)?.name ?? "TCG",
+        game_slug: (game as any)?.slug ?? "",
+        total_rounds_in_meta: 0,
+        leaders: [],
+      };
+    }
+
+    // 2. Rondas del player — incluye opponent_player_id
+    const { data: rounds, error } = await admin
+      .from("tournament_round_results")
+      .select(
+        "id, round_number, is_bye, player_leader_id, opponent_leader_id, opponent_player_id, won_match, turn_order, won_die_roll, is_auto_populated, status, tournament_id, notes",
+      )
+      .eq("player_id", player.id)
+      .eq("is_bye", false)
+      .not("won_match", "is", null)
+      .in("tournament_id", tcgTournamentIds);
+
+    if (error) throw new Error(error.message);
+    const allRounds = rounds ?? [];
+
+    // 3. Total de rondas en el meta para Play Rate
+    const { count: totalMetaRounds } = await admin
+      .from("tournament_round_results")
+      .select("id", { count: "exact", head: true })
+      .eq("is_bye", false)
+      .not("won_match", "is", null)
+      .in("tournament_id", tcgTournamentIds);
+
+    // 4. Enriquecer con datos de torneo+tienda y oponentes
+    const tournamentIdsInRounds = Array.from(new Set(allRounds.map((r: any) => r.tournament_id)));
+    const opponentPlayerIds = Array.from(
+      new Set(
+        allRounds.map((r: any) => r.opponent_player_id).filter((id: any): id is string => !!id),
+      ),
+    );
+
+    const [tournamentsEnrich, opponentsEnrich] = await Promise.all([
+      tournamentIdsInRounds.length
+        ? admin
+            .from("tournaments")
+            .select("id, tournament_date, store_id, stores!inner(name)")
+            .in("id", tournamentIdsInRounds)
+        : Promise.resolve({ data: [] as any[] }),
+      opponentPlayerIds.length
+        ? admin.from("players").select("id, geek_tag").in("id", opponentPlayerIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const tournamentMetaMap = new Map(
+      ((tournamentsEnrich.data ?? []) as any[]).map((t: any) => [
+        t.id,
+        {
+          date: t.tournament_date as string,
+          store_name: (t.stores as any)?.name ?? "—",
+        },
+      ]),
+    );
+
+    const opponentTagMap = new Map(
+      ((opponentsEnrich.data ?? []) as any[]).map((p: any) => [p.id, p.geek_tag as string]),
+    );
+
+    // 5. Fetchear leaders con canonical_leader_id
+    const rawLeaderIds = Array.from(
+      new Set(
+        [
+          ...allRounds.map((r: any) => r.player_leader_id),
+          ...allRounds.map((r: any) => r.opponent_leader_id),
+        ].filter((id): id is string => !!id),
+      ),
+    );
+
+    const { data: rawLeaders } = rawLeaderIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .in("id", rawLeaderIds)
+      : { data: [] as any[] };
+
+    // 6. Mapa variante → canónico
+    const variantToCanonical = new Map<string, string>();
+    for (const l of rawLeaders ?? []) {
+      if (l.canonical_leader_id) {
+        variantToCanonical.set(l.id, l.canonical_leader_id);
+      }
+    }
+
+    // 7. Fetchear canónicos faltantes
+    const existingIds = new Set((rawLeaders ?? []).map((l: any) => l.id));
+    const missingCanonicalIds = Array.from(new Set(Array.from(variantToCanonical.values()))).filter(
+      (id) => !existingIds.has(id),
+    );
+
+    const { data: canonicalLeaders } = missingCanonicalIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .in("id", missingCanonicalIds)
+      : { data: [] as any[] };
+
+    // 8. Mapa final de leaders
+    const leaderMap = new Map(
+      [...(rawLeaders ?? []), ...(canonicalLeaders ?? [])].map((l: any) => [l.id, l]),
+    );
+
+    const resolveId = (id: string): string => variantToCanonical.get(id) ?? id;
+
+    // 9. Agrupar rondas por leader canónico del player
+    const byLeader = new Map<string, any[]>();
+    for (const r of allRounds) {
+      if (!r.player_leader_id) continue;
+      const canonicalId = resolveId(r.player_leader_id);
+      if (!byLeader.has(canonicalId)) byLeader.set(canonicalId, []);
+      byLeader.get(canonicalId)!.push(r);
+    }
+
+    // 10. Calcular stats por leader
+    const leaderStats = Array.from(byLeader.entries())
+      .map(([leaderId, lRounds]) => {
+        const leader = leaderMap.get(leaderId);
+
+        const total = lRounds.length;
+        const wins = lRounds.filter((r: any) => r.won_match === true).length;
+        const confirmedRounds = lRounds.filter((r: any) => r.status === "confirmed");
+        const confirmedWins = confirmedRounds.filter((r: any) => r.won_match === true).length;
+        const hasUncertain = lRounds.some((r: any) => r.status !== "confirmed");
+
+        const firstRounds = lRounds.filter((r: any) => r.turn_order === "first");
+        const secondRounds = lRounds.filter((r: any) => r.turn_order === "second");
+        const firstWins = firstRounds.filter((r: any) => r.won_match === true).length;
+        const secondWins = secondRounds.filter((r: any) => r.won_match === true).length;
+
+        // Matchup breakdown agrupado por opponent leader canónico
+        const byOpponent = new Map<string, any[]>();
+        for (const r of lRounds) {
+          if (!r.opponent_leader_id) continue;
+          const canonicalOppLeaderId = resolveId(r.opponent_leader_id);
+          if (!byOpponent.has(canonicalOppLeaderId)) byOpponent.set(canonicalOppLeaderId, []);
+          byOpponent.get(canonicalOppLeaderId)!.push(r);
+        }
+
+        const matchups = Array.from(byOpponent.entries())
+          .map(([oppLeaderId, oppRounds]) => {
+            const oppLeader = leaderMap.get(oppLeaderId);
+            const oppTotal = oppRounds.length;
+            const oppWins = oppRounds.filter((r: any) => r.won_match === true).length;
+            const oppFirst = oppRounds.filter((r: any) => r.turn_order === "first");
+            const oppSecond = oppRounds.filter((r: any) => r.turn_order === "second");
+            const oppHasUncertain = oppRounds.some((r: any) => r.status !== "confirmed");
+
+            // Historial de rondas individuales enriquecido
+            const roundHistory = oppRounds
+              .map((r: any) => {
+                const meta = tournamentMetaMap.get(r.tournament_id);
+                const oppTag = r.opponent_player_id
+                  ? (opponentTagMap.get(r.opponent_player_id) ?? "Sin registrar")
+                  : "Sin registrar";
+                return {
+                  round_number: r.round_number as number,
+                  tournament_date: meta?.date ?? null,
+                  store_name: meta?.store_name ?? "—",
+                  opponent_tag: oppTag,
+                  won_match: r.won_match as boolean,
+                  turn_order: r.turn_order as "first" | "second" | null,
+                  won_die_roll: r.won_die_roll as boolean | null,
+                  notes: r.notes as string | null,
+                  status: r.status as string,
+                };
+              })
+              .sort((a: any, b: any) => {
+                if (!a.tournament_date) return 1;
+                if (!b.tournament_date) return -1;
+                return b.tournament_date.localeCompare(a.tournament_date);
+              });
+
+            return {
+              opponent_leader_id: oppLeaderId,
+              opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
+              opponent_leader_image: oppLeader?.card_image ?? null,
+              total: oppTotal,
+              wins: oppWins,
+              overall_win_rate: oppTotal > 0 ? Math.round((oppWins / oppTotal) * 100) : 0,
+              first_total: oppFirst.length,
+              first_wins: oppFirst.filter((r: any) => r.won_match === true).length,
+              first_win_rate:
+                oppFirst.length > 0
+                  ? Math.round(
+                      (oppFirst.filter((r: any) => r.won_match === true).length / oppFirst.length) *
+                        100,
+                    )
+                  : null,
+              second_total: oppSecond.length,
+              second_wins: oppSecond.filter((r: any) => r.won_match === true).length,
+              second_win_rate:
+                oppSecond.length > 0
+                  ? Math.round(
+                      (oppSecond.filter((r: any) => r.won_match === true).length /
+                        oppSecond.length) *
+                        100,
+                    )
+                  : null,
+              has_uncertain_data: oppHasUncertain,
+              round_history: roundHistory,
+            };
+          })
+          .sort((a, b) => b.total - a.total);
+
+        return {
+          leader_id: leaderId,
+          leader_name: leader?.base_name ?? "Desconocido",
+          leader_image: leader?.card_image ?? null,
+          total_games: total,
+          wins,
+          losses: total - wins,
+          raw_win_rate: total > 0 ? Math.round((wins / total) * 100 * 10) / 10 : 0,
+          wtd_win_rate:
+            confirmedRounds.length > 0
+              ? Math.round((confirmedWins / confirmedRounds.length) * 100 * 10) / 10
+              : 0,
+          play_rate:
+            (totalMetaRounds ?? 0) > 0
+              ? Math.round((total / (totalMetaRounds ?? 1)) * 100 * 100) / 100
+              : 0,
+          first_games: firstRounds.length,
+          first_win_rate:
+            firstRounds.length > 0
+              ? Math.round((firstWins / firstRounds.length) * 100 * 10) / 10
+              : null,
+          second_games: secondRounds.length,
+          second_win_rate:
+            secondRounds.length > 0
+              ? Math.round((secondWins / secondRounds.length) * 100 * 10) / 10
+              : null,
+          has_uncertain_data: hasUncertain,
+          matchups,
+        };
+      })
+      .sort((a, b) => b.total_games - a.total_games);
+
+    // 11. Nombre del juego
+    const { data: game } = await admin
+      .from("games")
+      .select("name, slug")
+      .eq("id", data.game_id)
+      .single();
+
+    return {
+      game_id: data.game_id,
+      game_name: (game as any)?.name ?? "TCG",
+      game_slug: (game as any)?.slug ?? "",
+      total_rounds_in_meta: totalMetaRounds ?? 0,
+      leaders: leaderStats,
+    };
+  });
+
+export const getMyStatsGames = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    const { data: tournamentIds } = await admin
+      .from("tournament_round_results")
+      .select("tournament_id")
+      .eq("player_id", player.id)
+      .eq("is_bye", false)
+      .not("won_match", "is", null);
+
+    const uniqueTournamentIds = Array.from(
+      new Set((tournamentIds ?? []).map((r: any) => r.tournament_id)),
+    );
+
+    if (uniqueTournamentIds.length === 0) return { games: [] };
+
+    const { data: tournaments } = await admin
+      .from("tournaments")
+      .select("game_id")
+      .in("id", uniqueTournamentIds);
+
+    const uniqueGameIds = Array.from(new Set((tournaments ?? []).map((t: any) => t.game_id)));
+
+    if (uniqueGameIds.length === 0) return { games: [] };
+
+    const { data: games } = await admin
+      .from("games")
+      .select("id, name, slug")
+      .in("id", uniqueGameIds)
+      .order("name");
+
+    return { games: games ?? [] };
   });

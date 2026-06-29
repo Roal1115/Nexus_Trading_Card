@@ -318,6 +318,12 @@ Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma se
 Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
 Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
             />
+            <Link
+              to="/my-stats"
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-400 transition hover:border-primary/40 hover:text-primary"
+            >
+              <BarChart3 size={12} /> Ver mis stats
+            </Link>
           </div>
           {loading ? (
             <div className="flex flex-wrap gap-4">
