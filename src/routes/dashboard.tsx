@@ -284,10 +284,15 @@ function DashboardPage() {
           </div>
 
           {/* Franja inferior — Stats */}
-          {!loading && globalRecord.total > 0 && (
-            <div className="relative border-t border-white/10 px-8 py-4 sm:px-12">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                {/* Izquierda — Tabs TCG + W-L */}
+          <div className="relative border-t border-white/10 px-8 py-4 sm:px-12">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              {/* Izquierda — Tabs TCG + W-L */}
+              {loading ? (
+                <div className="flex items-center gap-4">
+                  <div className="h-6 w-16 rounded bg-white/[0.06] animate-pulse" />
+                  <div className="h-8 w-32 rounded bg-white/[0.06] animate-pulse" />
+                </div>
+              ) : globalRecord.total > 0 ? (
                 <div className="flex flex-wrap items-center gap-4">
                   {statsGameIds.length > 1 && (
                     <div className="flex gap-1">
@@ -322,13 +327,18 @@ function DashboardPage() {
                     </span>
                   </div>
                 </div>
+              ) : (
+                <div className="text-xs text-gray-600">Sin partidas registradas aún.</div>
+              )}
 
-                {/* Derecha — CTA Ver mis stats */}
+              {/* Derecha — CTA Ver mis stats */}
+              {loading ? (
+                <div className="h-10 w-36 rounded-xl bg-white/[0.06] animate-pulse" />
+              ) : (
                 <Link
                   to="/my-stats"
                   className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(232,106,34,0.4)]"
                 >
-                  {/* Shimmer animado en hover */}
                   <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
                   <BarChart3
                     size={15}
@@ -339,9 +349,9 @@ function DashboardPage() {
                     →
                   </span>
                 </Link>
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Links — Ver perfil + Compartir */}
           <div className="relative flex flex-wrap items-center gap-3 border-t border-white/5 px-8 py-3 sm:px-12">
@@ -398,9 +408,10 @@ function DashboardPage() {
         {/* Mis Rankings */}
         <section className="mt-6">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Mis Rankings</h2>
-            <TooltipInfo
-              text={`¿Cómo se calculan tus puntos?
+            <h2 className="text-lg font-semibold text-white">
+              Mis Rankings
+              <TooltipInfo
+                text={`¿Cómo se calculan tus puntos?
 
 Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
 (tus match points ÷ match points del 1er lugar) × 100
@@ -409,13 +420,8 @@ Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma se
 
 Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
 Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
-            />
-            <Link
-              to="/my-stats"
-              className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-400 transition hover:border-primary/40 hover:text-primary"
-            >
-              <BarChart3 size={12} /> Ver mis stats
-            </Link>
+              />
+            </h2>
           </div>
           {loading ? (
             <div className="flex flex-wrap gap-4">
@@ -559,9 +565,14 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                 setTrackerTournament({ id: t.id, game_id: t.game_id });
                               }}
                               title="Performance Tracker"
-                              className="rounded-md p-1.5 text-gray-500 hover:bg-primary/15 hover:text-primary transition"
+                              className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_16px_rgba(232,106,34,0.35)]"
                             >
-                              <BarChart3 size={16} />
+                              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                              <BarChart3
+                                size={13}
+                                className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                              />
+                              <span className="relative hidden sm:inline">Tracker</span>
                             </button>
                             <ChevronRight size={14} />
                           </div>
@@ -642,9 +653,14 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                               setTrackerTournament({ id: t.id, game_id: t.game_id });
                             }}
                             title="Performance Tracker"
-                            className="rounded-md p-1.5 text-gray-500 hover:bg-primary/15 hover:text-primary transition"
+                            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_16px_rgba(232,106,34,0.35)]"
                           >
-                            <BarChart3 size={16} />
+                            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                            <BarChart3
+                              size={13}
+                              className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                            />
+                            <span className="relative hidden sm:inline">Tracker</span>
                           </button>
                           <div className="flex flex-col items-end leading-none">
                             <span

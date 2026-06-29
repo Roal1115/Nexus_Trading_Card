@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, ShieldQuestion, Swords, TrendingDown, Scale } from "lucide-react";
 import { getTournamentRoundsForPlayer } from "@/lib/geekarena-tournament-tracker.functions";
 import { AppealForm } from "@/components/tournament-tracker/AppealForm";
 import { AnimatePresence } from "framer-motion";
+import { confirmRoundResult } from "@/lib/geekarena-tournament-tracker.functions";
+// En lucide-react agrega:
+import {
+  ChevronDown,
+  ShieldQuestion,
+  Swords,
+  TrendingDown,
+  Scale,
+  CheckCircle2,
+} from "lucide-react";
+
 function SummaryCard({
   summary,
   leader,
@@ -114,15 +124,33 @@ function RoundAccordionItem({
   opponentTag,
   gameId,
   onAppealSubmitted,
+  onConfirmed,
 }: {
   round: RoundWithLeaders;
   opponentTag: string;
   gameId: string;
   onAppealSubmitted: () => void;
+  onConfirmed: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [showAppealForm, setShowAppealForm] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const confirmRound = useServerFn(confirmRoundResult);
   const underAppeal = round.status === "under_appeal";
+  const isConfirmed = round.status === "confirmed";
+
+  const handleConfirm = async () => {
+    if (!round.id) return;
+    setConfirming(true);
+    try {
+      await confirmRound({ data: { round_id: round.id } });
+      onConfirmed();
+    } catch {
+      // silencioso — el reload en onConfirmed actualiza el estado
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   const resultBg = underAppeal
     ? "bg-gradient-to-r from-amber-500/15 via-transparent to-transparent border-amber-500/30"
@@ -207,7 +235,7 @@ function RoundAccordionItem({
       </button>
 
       {/* Appeal visible cuando está colapsado — FUERA del button */}
-      {!open && !round.is_bye && round.is_auto_populated && !underAppeal && (
+      {!open && !round.is_bye && round.is_auto_populated && !underAppeal && !isConfirmed && (
         <div className="px-3 pb-2.5">
           <button
             type="button"
@@ -283,15 +311,29 @@ function RoundAccordionItem({
             </div>
           )}
           {round.notes && <p className="mt-2 text-xs text-gray-400 italic">{round.notes}</p>}
-          {round.is_auto_populated && !underAppeal && (
-            <button
-              type="button"
-              onClick={() => setShowAppealForm(true)}
-              className="mt-2 flex items-center gap-1 text-xs text-amber-400 hover:underline"
-            >
-              <Scale size={12} />
-              ¿No estás de acuerdo con el resultado? Apela aquí
-            </button>
+          {round.is_auto_populated && !underAppeal && !isConfirmed && (
+            <div className="mt-3 flex flex-col gap-2">
+              {/* Aceptar resultado */}
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={confirming}
+                className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-400 transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white disabled:opacity-50"
+              >
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                <CheckCircle2 size={13} className="flex-shrink-0" />
+                {confirming ? "Confirmando…" : "Aceptar Resultados"}
+              </button>
+              {/* Apelar */}
+              <button
+                type="button"
+                onClick={() => setShowAppealForm(true)}
+                className="flex items-center justify-center gap-1 text-xs text-amber-400 hover:underline"
+              >
+                <Scale size={12} />
+                ¿No estás de acuerdo? Apela aquí
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -383,6 +425,7 @@ export function RoundsAccordionReadOnly({
             opponentTag={r.opponent_player_id ? (opponentMap[r.opponent_player_id] ?? "—") : "—"}
             gameId={gameId}
             onAppealSubmitted={reload}
+            onConfirmed={reload} // ← agrega esto
           />
         ))}
       </div>

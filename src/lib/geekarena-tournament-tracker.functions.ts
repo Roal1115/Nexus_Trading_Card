@@ -7,23 +7,24 @@ const EXCLUDED_EVENT_LEADER_IDS = ["P-900", "P-800", "P-700"];
 function groupOrder(cardSetId: string): number {
   if (cardSetId.startsWith("OP")) return 0;
   if (cardSetId.startsWith("ST")) return 1;
-  return 2; // P, EB, PRB, etc.
+  return 2;
 }
 
 // ============================================================
-// getDeckIdentifiers — búsqueda de leaders para el dropdown
+// getDeckIdentifiers
 // ============================================================
 export const getDeckIdentifiers = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: { game_id: string; search?: string; basic_only?: boolean; card_set_id?: string }) =>
-    z
-      .object({
-        game_id: z.string().uuid(),
-        search: z.string().max(100).optional(),
-        basic_only: z.boolean().optional(),
-        card_set_id: z.string().max(20).optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: { game_id: string; search?: string; basic_only?: boolean; card_set_id?: string }) =>
+      z
+        .object({
+          game_id: z.string().uuid(),
+          search: z.string().max(100).optional(),
+          basic_only: z.boolean().optional(),
+          card_set_id: z.string().max(20).optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
@@ -35,7 +36,6 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
       .not("card_set_id", "in", `(${EXCLUDED_EVENT_LEADER_IDS.join(",")})`);
 
     if (data.card_set_id) {
-      // Búsqueda exacta de variantes de UNA carta específica (mismo card_set_id)
       q = q.eq("card_set_id", data.card_set_id);
     } else if (data.search && data.search.trim().length > 0) {
       q = q.ilike("base_name", `%${data.search.trim()}%`);
@@ -45,13 +45,11 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
     const { data: rows, error } = await q.limit(limit);
     if (error) throw new Error(error.message);
 
-    // basic_only no aplica cuando se busca por card_set_id exacto (queremos TODAS sus variantes)
     const basicOnly = data.card_set_id ? false : (data.basic_only ?? true);
     const filtered = basicOnly
       ? (rows ?? []).filter((r: any) => r.card_image_id === r.card_set_id)
       : (rows ?? []);
 
-    // Orden: grupo (OP < ST < P) → dentro de cada grupo, card_set_id descendente (más reciente arriba)
     return filtered.sort((a: any, b: any) => {
       const groupDiff = groupOrder(a.card_set_id) - groupOrder(b.card_set_id);
       if (groupDiff !== 0) return groupDiff;
@@ -60,7 +58,7 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
   });
 
 // ============================================================
-// getTournamentRoundsForPlayer — rondas guardadas + oponentes disponibles
+// getTournamentRoundsForPlayer
 // ============================================================
 export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
@@ -121,7 +119,9 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
     const { data: leaderRows } = leaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, card_name, base_name, colors, card_image, card_image_id, set_code, card_set_id")
+          .select(
+            "id, card_name, base_name, colors, card_image, card_image_id, set_code, card_set_id",
+          )
           .in("id", leaderIds)
       : { data: [] as any[] };
 
@@ -129,14 +129,35 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
 
     const roundsWithLeaders = (myRounds ?? []).map((r: any) => ({
       ...r,
-      player_leader: r.player_leader_id ? leaderMap.get(r.player_leader_id) ?? null : null,
-      opponent_leader: r.opponent_leader_id ? leaderMap.get(r.opponent_leader_id) ?? null : null,
+      player_leader: r.player_leader_id ? (leaderMap.get(r.player_leader_id) ?? null) : null,
+      opponent_leader: r.opponent_leader_id ? (leaderMap.get(r.opponent_leader_id) ?? null) : null,
     }));
 
-    const myLeaderId = roundsWithLeaders.find(
-      (r: any) => !r.is_auto_populated && r.player_leader_id,
-    )?.player_leader_id;
-    const myTournamentLeader = myLeaderId ? leaderMap.get(myLeaderId) ?? null : null;
+    // Leader del player: primero busca en rondas propias (no auto-populadas),
+    // si no hay, usa el leader de rondas auto-populadas como fallback
+    const myLeaderId =
+      roundsWithLeaders.find((r: any) => !r.is_auto_populated && r.player_leader_id)
+        ?.player_leader_id ??
+      roundsWithLeaders.find((r: any) => r.is_auto_populated && r.player_leader_id)
+        ?.player_leader_id ??
+      null;
+
+    // Si el leader ya está en leaderMap úsalo directamente, sino fetchearlo
+    let myTournamentLeader: { id: string; base_name: string; card_image: string | null } | null =
+      null;
+    if (myLeaderId) {
+      const fromMap = leaderMap.get(myLeaderId);
+      if (fromMap) {
+        myTournamentLeader = fromMap;
+      } else {
+        const { data: fetchedLeader } = await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image")
+          .eq("id", myLeaderId)
+          .maybeSingle();
+        myTournamentLeader = fetchedLeader ?? null;
+      }
+    }
 
     const rankMap = new Map((results ?? []).map((r: any) => [r.player_id, r.rank]));
 
@@ -145,7 +166,8 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
     const losses = completedRounds.filter((r: any) => r.won_match === false).length;
     const byeWins = roundsWithLeaders.filter((r: any) => r.is_bye && r.won_match === true).length;
     const totalWins = wins + byeWins;
-    const totalPlayed = completedRounds.length + roundsWithLeaders.filter((r: any) => r.is_bye).length;
+    const totalPlayed =
+      completedRounds.length + roundsWithLeaders.filter((r: any) => r.is_bye).length;
     const winRate = totalPlayed > 0 ? Math.round((totalWins / totalPlayed) * 100) : null;
 
     let toughestOpponent: { player_id: string; rank: number } | null = null;
@@ -158,7 +180,7 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
       }
     }
     const toughestOpponentTag = toughestOpponent
-      ? (opponents ?? []).find((o: any) => o.id === toughestOpponent!.player_id)?.geek_tag ?? null
+      ? ((opponents ?? []).find((o: any) => o.id === toughestOpponent!.player_id)?.geek_tag ?? null)
       : null;
 
     const summary = {
@@ -218,38 +240,39 @@ async function validateMaxWins(
 }
 
 // ============================================================
-// saveRoundResult — guarda una ronda + auto-pobla la fila espejo del oponente
+// saveRoundResult
 // ============================================================
 const turnOrderSchema = z.enum(["first", "second"]).nullable().optional();
 
 export const saveRoundResult = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
-  .inputValidator((d: {
-    tournament_id: string;
-    round_number: number;
-    is_bye: boolean;
-    opponent_player_id?: string | null;
-    player_leader_id?: string | null;
-    opponent_leader_id?: string | null;
-    won_die_roll?: boolean | null;
-    turn_order?: "first" | "second" | null;
-    won_match?: boolean | null;
-    notes?: string | null;
-  }) =>
-    z
-      .object({
-        tournament_id: z.string().uuid(),
-        round_number: z.number().int().min(1).max(10),
-        is_bye: z.boolean(),
-        opponent_player_id: z.string().uuid().nullable().optional(),
-        player_leader_id: z.string().uuid().nullable().optional(),
-        opponent_leader_id: z.string().uuid().nullable().optional(),
-        won_die_roll: z.boolean().nullable().optional(),
-        turn_order: turnOrderSchema,
-        won_match: z.boolean().nullable().optional(),
-        notes: z.string().max(1000).nullable().optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: {
+      tournament_id: string;
+      round_number: number;
+      is_bye: boolean;
+      opponent_player_id?: string | null;
+      player_leader_id?: string | null;
+      opponent_leader_id?: string | null;
+      won_die_roll?: boolean | null;
+      turn_order?: "first" | "second" | null;
+      won_match?: boolean | null;
+      notes?: string | null;
+    }) =>
+      z
+        .object({
+          tournament_id: z.string().uuid(),
+          round_number: z.number().int().min(1).max(10),
+          is_bye: z.boolean(),
+          opponent_player_id: z.string().uuid().nullable().optional(),
+          player_leader_id: z.string().uuid().nullable().optional(),
+          opponent_leader_id: z.string().uuid().nullable().optional(),
+          won_die_roll: z.boolean().nullable().optional(),
+          turn_order: turnOrderSchema,
+          won_match: z.boolean().nullable().optional(),
+          notes: z.string().max(1000).nullable().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -260,7 +283,13 @@ export const saveRoundResult = createServerFn({ method: "POST" })
 
     const wonMatch = data.is_bye ? true : (data.won_match ?? null);
 
-    await validateMaxWins(admin, data.tournament_id, player.id, data.round_number, wonMatch === true);
+    await validateMaxWins(
+      admin,
+      data.tournament_id,
+      player.id,
+      data.round_number,
+      wonMatch === true,
+    );
 
     const myRow = {
       tournament_id: data.tournament_id,
@@ -347,7 +376,7 @@ export const saveRoundResult = createServerFn({ method: "POST" })
   });
 
 // ============================================================
-// clearTournamentRounds — borra todas las rondas del jugador actual para un torneo
+// clearTournamentRounds
 // ============================================================
 export const clearTournamentRounds = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
@@ -368,7 +397,7 @@ export const clearTournamentRounds = createServerFn({ method: "POST" })
   });
 
 // ============================================================
-// deleteRoundResult — borra una ronda específica del jugador actual
+// deleteRoundResult
 // ============================================================
 export const deleteRoundResult = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaUser])
@@ -389,6 +418,37 @@ export const deleteRoundResult = createServerFn({ method: "POST" })
       .eq("tournament_id", data.tournament_id)
       .eq("player_id", player.id)
       .eq("round_number", data.round_number);
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+// ============================================================
+// confirmRoundResult
+// ============================================================
+export const confirmRoundResult = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { round_id: string }) => z.object({ round_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { data: round, error: fetchError } = await admin
+      .from("tournament_round_results")
+      .select("id, player_id, is_auto_populated, status")
+      .eq("id", data.round_id)
+      .eq("player_id", player.id)
+      .maybeSingle();
+
+    if (fetchError) throw new Error(fetchError.message);
+    if (!round) throw new Error("Ronda no encontrada o no autorizado");
+    if (!round.is_auto_populated) throw new Error("Solo se pueden confirmar rondas auto-populadas");
+    if (round.status === "confirmed") throw new Error("La ronda ya está confirmada");
+
+    const { error } = await admin
+      .from("tournament_round_results")
+      .update({ status: "confirmed" })
+      .eq("id", data.round_id)
+      .eq("player_id", player.id);
 
     if (error) throw new Error(error.message);
     return { success: true };
