@@ -72,7 +72,6 @@ function DashboardPage() {
   const [isPublic, setIsPublic] = useState(true);
   const [copiedProfile, setCopiedProfile] = useState(false);
 
-
   useEffect(() => {
     registerView()
       .then(setSponsor)
@@ -166,10 +165,33 @@ function DashboardPage() {
   }
 
   const tag = gaPlayer.geek_tag;
-  const handleShareProfile = () => {
-    navigator.clipboard.writeText(`https://mxntcg.lovable.app/players/${tag}`);
-    setCopiedProfile(true);
-    setTimeout(() => setCopiedProfile(false), 2000);
+  const handleShareProfile = async () => {
+    const url = `https://mxntcg.lovable.app/players/${tag}`;
+    const shareData = {
+      title: `${tag} — Geek Arena`,
+      text: `Mira mi ranking competitivo en Geek Arena 🏆`,
+      url,
+    };
+
+    // Web Share API disponible en mobile (Android/iOS) y algunos desktop
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err: any) {
+        // Usuario canceló — no es un error real
+        if (err?.name !== "AbortError") {
+          // Fallback a clipboard si falla
+          navigator.clipboard.writeText(url);
+          setCopiedProfile(true);
+          setTimeout(() => setCopiedProfile(false), 2000);
+        }
+      }
+    } else {
+      // Fallback para desktop donde Web Share API no está disponible
+      navigator.clipboard.writeText(url);
+      setCopiedProfile(true);
+      setTimeout(() => setCopiedProfile(false), 2000);
+    }
   };
 
   const tcgStats = data?.tcgStats ?? [];
@@ -254,7 +276,6 @@ function DashboardPage() {
             </button>
           </div>
         </section>
-
 
         {/* Toggle de privacidad */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
@@ -590,231 +611,234 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                   </button>
                 </div>
                 <div className="overflow-y-auto flex-1 px-6 pb-6 sm:px-8 sm:pb-8">
-                {loadingDetail ? (
-                  <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-                    {/* Columna principal */}
-                    <div className="space-y-6 lg:col-span-2">
-                      {/* Metadata grid */}
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                          <div key={i} className="space-y-2">
-                            <SkeletonLine width="w-16" height="h-2" />
-                            <SkeletonLine width="w-24" height="h-4" />
-                            <SkeletonLine width="w-16" height="h-3" />
-                          </div>
-                        ))}
-                      </div>
+                  {loadingDetail ? (
+                    <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                      {/* Columna principal */}
+                      <div className="space-y-6 lg:col-span-2">
+                        {/* Metadata grid */}
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="space-y-2">
+                              <SkeletonLine width="w-16" height="h-2" />
+                              <SkeletonLine width="w-24" height="h-4" />
+                              <SkeletonLine width="w-16" height="h-3" />
+                            </div>
+                          ))}
+                        </div>
 
-                      {/* Tabla de resultados */}
-                      <div className="space-y-3">
-                        <SkeletonLine width="w-40" height="h-4" />
-                        <div className="overflow-hidden rounded-xl border border-white/10">
-                          <div className="bg-black/40 px-3 py-2">
-                            <div className="grid grid-cols-5 gap-3">
-                              {["w-4", "w-24", "w-12", "w-12", "w-16"].map((w, i) => (
-                                <SkeletonLine key={i} width={w} height="h-2" />
+                        {/* Tabla de resultados */}
+                        <div className="space-y-3">
+                          <SkeletonLine width="w-40" height="h-4" />
+                          <div className="overflow-hidden rounded-xl border border-white/10">
+                            <div className="bg-black/40 px-3 py-2">
+                              <div className="grid grid-cols-5 gap-3">
+                                {["w-4", "w-24", "w-12", "w-12", "w-16"].map((w, i) => (
+                                  <SkeletonLine key={i} width={w} height="h-2" />
+                                ))}
+                              </div>
+                            </div>
+                            <div className="divide-y divide-white/5">
+                              {Array.from({ length: 8 }).map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="px-3 py-2.5 grid grid-cols-5 gap-3 items-center"
+                                >
+                                  <SkeletonLine width="w-6" height="h-3" />
+                                  <SkeletonLine width="w-28" height="h-3" />
+                                  <SkeletonLine width="w-10" height="h-3" />
+                                  <SkeletonLine width="w-10" height="h-3" />
+                                  <div className="flex justify-end">
+                                    <SkeletonLine width="w-14" height="h-3" />
+                                  </div>
+                                </div>
                               ))}
                             </div>
                           </div>
-                          <div className="divide-y divide-white/5">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                              <div
-                                key={i}
-                                className="px-3 py-2.5 grid grid-cols-5 gap-3 items-center"
-                              >
-                                <SkeletonLine width="w-6" height="h-3" />
-                                <SkeletonLine width="w-28" height="h-3" />
-                                <SkeletonLine width="w-10" height="h-3" />
-                                <SkeletonLine width="w-10" height="h-3" />
-                                <div className="flex justify-end">
-                                  <SkeletonLine width="w-14" height="h-3" />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Columna Performance Tracker */}
-                    <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
-                      <SkeletonLine width="w-40" height="h-4" className="mb-4" />
-                      {/* Summary card skeleton */}
-                      <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
-                        <SkeletonLine width="w-32" height="h-4" />
-                        <SkeletonLine width="w-20" height="h-3" />
-                        <div className="flex items-center gap-3 mt-3">
-                          <SkeletonBlock className="h-14 w-10 rounded-md flex-shrink-0" />
-                          <div className="space-y-2">
-                            <SkeletonLine width="w-16" height="h-2" />
-                            <SkeletonLine width="w-24" height="h-4" />
+                      {/* Columna Performance Tracker */}
+                      <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+                        <SkeletonLine width="w-40" height="h-4" className="mb-4" />
+                        {/* Summary card skeleton */}
+                        <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                          <SkeletonLine width="w-32" height="h-4" />
+                          <SkeletonLine width="w-20" height="h-3" />
+                          <div className="flex items-center gap-3 mt-3">
+                            <SkeletonBlock className="h-14 w-10 rounded-md flex-shrink-0" />
+                            <div className="space-y-2">
+                              <SkeletonLine width="w-16" height="h-2" />
+                              <SkeletonLine width="w-24" height="h-4" />
+                            </div>
+                          </div>
+                          <div className="text-center space-y-1 mt-3">
+                            <SkeletonLine width="w-16" height="h-2" className="mx-auto" />
+                            <SkeletonLine width="w-24" height="h-8" className="mx-auto" />
                           </div>
                         </div>
-                        <div className="text-center space-y-1 mt-3">
-                          <SkeletonLine width="w-16" height="h-2" className="mx-auto" />
-                          <SkeletonLine width="w-24" height="h-8" className="mx-auto" />
-                        </div>
+                        {/* Rondas skeleton */}
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="mb-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-3">
+                              <SkeletonBlock className="h-6 w-6 rounded-md" />
+                              <SkeletonLine width="w-28" height="h-3" />
+                            </div>
+                            <SkeletonLine width="w-14" height="h-5" className="rounded-md" />
+                          </div>
+                        ))}
                       </div>
-                      {/* Rondas skeleton */}
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="mb-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <SkeletonBlock className="h-6 w-6 rounded-md" />
-                            <SkeletonLine width="w-28" height="h-3" />
-                          </div>
-                          <SkeletonLine width="w-14" height="h-5" className="rounded-md" />
-                        </div>
-                      ))}
                     </div>
-                  </div>
-                ) : tournamentDetail ? (
-                  <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-                    <div className="space-y-6 lg:col-span-2">
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                            Tienda
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-white">
-                            {tournamentDetail.store.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {tournamentDetail.store.city}, {tournamentDetail.store.state}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                            Fecha
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-white">
-                            {new Date(tournamentDetail.date + "T12:00:00").toLocaleDateString(
-                              "es-MX",
-                              {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              },
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            S{tournamentDetail.semester} {tournamentDetail.year}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                            Editorial
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-white">
-                            {tournamentDetail.game.publisher}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                            Participantes
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-white">
-                            {tournamentDetail.total_participants}
-                          </p>
-                          {tournamentDetail.my_rank && (
-                            <p className="text-xs text-primary">
-                              Tu posición: #{tournamentDetail.my_rank}
+                  ) : tournamentDetail ? (
+                    <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                      <div className="space-y-6 lg:col-span-2">
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                              Tienda
                             </p>
-                          )}
+                            <p className="mt-1 text-sm font-semibold text-white">
+                              {tournamentDetail.store.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {tournamentDetail.store.city}, {tournamentDetail.store.state}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                              Fecha
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-white">
+                              {new Date(tournamentDetail.date + "T12:00:00").toLocaleDateString(
+                                "es-MX",
+                                {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                },
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              S{tournamentDetail.semester} {tournamentDetail.year}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                              Editorial
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-white">
+                              {tournamentDetail.game.publisher}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                              Participantes
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-white">
+                              {tournamentDetail.total_participants}
+                            </p>
+                            {tournamentDetail.my_rank && (
+                              <p className="text-xs text-primary">
+                                Tu posición: #{tournamentDetail.my_rank}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <div>
-                        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">
-                          Resultados del torneo
-                        </h3>
-                        <div className="overflow-x-auto rounded-xl border border-white/10">
-                          <table className="w-full text-sm">
-                            <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
-                              <tr>
-                                <th className="px-3 py-2 text-left">#</th>
-                                <th className="px-3 py-2 text-left">Geek Tag</th>
-                                <th className="px-3 py-2 text-center whitespace-nowrap">V / D</th>
-                                <th className="px-3 py-2 text-right">OMW%</th>
-                                <th className="px-3 py-2 text-right">Pts Arena</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {tournamentDetail.rankings.map((r) => (
-                                <tr
-                                  key={r.player_id}
-                                  onClick={() => {
-                                    if (!r.is_me) {
-                                      closeModal();
-                                      navigate({
-                                        to: "/players/$playerTag",
-                                        params: { playerTag: r.geek_tag },
-                                      });
-                                    }
-                                  }}
-                                  className={`border-t border-white/5 transition ${
-                                    r.is_me ? "bg-primary/15" : "cursor-pointer hover:bg-white/5"
-                                  }`}
-                                >
-                                  <td className="px-3 py-2">
-                                    <span
-                                      className={`font-mono-stat text-sm font-semibold ${r.rank <= 3 ? "text-primary" : "text-white"}`}
-                                    >
-                                      {String(r.rank).padStart(2, "0")}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2 text-white">
-                                    {r.is_me ? (
-                                      <span className="font-semibold text-primary">
-                                        {r.geek_tag}
-                                        <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
-                                          Tú
-                                        </span>
-                                      </span>
-                                    ) : (
-                                      <span className="font-semibold text-white">
-                                        {r.geek_tag}
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
-                                    {r.wins != null && r.losses != null
-                                      ? `${r.wins} / ${r.losses}`
-                                      : "—"}
-                                  </td>
-                                  <td className="px-3 py-2 text-right font-mono-stat text-xs text-gray-400">
-                                    {r.omw_percentage != null
-                                      ? `${Number(r.omw_percentage).toFixed(1)}%`
-                                      : "—"}
-                                  </td>
-                                  <td className="px-3 py-2 text-right font-mono-stat font-semibold text-white">
-                                    {r.points_earned}
-                                  </td>
+                        <div>
+                          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">
+                            Resultados del torneo
+                          </h3>
+                          <div className="overflow-x-auto rounded-xl border border-white/10">
+                            <table className="w-full text-sm">
+                              <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                                <tr>
+                                  <th className="px-3 py-2 text-left">#</th>
+                                  <th className="px-3 py-2 text-left">Geek Tag</th>
+                                  <th className="px-3 py-2 text-center whitespace-nowrap">V / D</th>
+                                  <th className="px-3 py-2 text-right">OMW%</th>
+                                  <th className="px-3 py-2 text-right">Pts Arena</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {tournamentDetail.rankings.map((r) => (
+                                  <tr
+                                    key={r.player_id}
+                                    onClick={() => {
+                                      if (!r.is_me) {
+                                        closeModal();
+                                        navigate({
+                                          to: "/players/$playerTag",
+                                          params: { playerTag: r.geek_tag },
+                                        });
+                                      }
+                                    }}
+                                    className={`border-t border-white/5 transition ${
+                                      r.is_me ? "bg-primary/15" : "cursor-pointer hover:bg-white/5"
+                                    }`}
+                                  >
+                                    <td className="px-3 py-2">
+                                      <span
+                                        className={`font-mono-stat text-sm font-semibold ${r.rank <= 3 ? "text-primary" : "text-white"}`}
+                                      >
+                                        {String(r.rank).padStart(2, "0")}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2 text-white">
+                                      {r.is_me ? (
+                                        <span className="font-semibold text-primary">
+                                          {r.geek_tag}
+                                          <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
+                                            Tú
+                                          </span>
+                                        </span>
+                                      ) : (
+                                        <span className="font-semibold text-white">
+                                          {r.geek_tag}
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
+                                      {r.wins != null && r.losses != null
+                                        ? `${r.wins} / ${r.losses}`
+                                        : "—"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-mono-stat text-xs text-gray-400">
+                                      {r.omw_percentage != null
+                                        ? `${Number(r.omw_percentage).toFixed(1)}%`
+                                        : "—"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-mono-stat font-semibold text-white">
+                                      {r.points_earned}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
+                      <div
+                        className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:overflow-y-auto lg:sticky lg:top-0"
+                        style={{ maxHeight: "calc(90vh - 80px)" }}
+                      >
+                        <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
+                          Performance Tracker
+                        </h3>
+                        <RoundsAccordionReadOnly
+                          tournamentId={tournamentDetail.tournament_id}
+                          gameId={tournamentDetail.game_id}
+                        />
+                      </div>
                     </div>
-                    <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:overflow-y-auto lg:sticky lg:top-0" style={{ maxHeight: "calc(90vh - 80px)" }}>
-                      <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
-                        Performance Tracker
-                      </h3>
-                      <RoundsAccordionReadOnly
-                        tournamentId={tournamentDetail.tournament_id}
-                        gameId={tournamentDetail.game_id}
-                      />
+                  ) : (
+                    <div className="py-16 text-center text-sm text-gray-500">
+                      No se pudo cargar el torneo.
                     </div>
-                  </div>
-                ) : (
-                  <div className="py-16 text-center text-sm text-gray-500">
-                    No se pudo cargar el torneo.
-                  </div>
-                )}
+                  )}
                 </div>
               </motion.div>
             </motion.div>
