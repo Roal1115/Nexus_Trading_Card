@@ -346,8 +346,22 @@ function PublicProfilePage() {
               <tbody>
                 {paginatedTournaments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
-                      Sin torneos registrados.
+                    <td colSpan={6} className="px-4 py-16 text-center">
+                      <div className="mx-auto max-w-xs">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                          <Trophy size={24} className="text-primary" />
+                        </div>
+                        <p className="text-sm font-semibold text-white">Aún sin torneos registrados</p>
+                        <p className="mt-2 text-xs text-gray-500">
+                          Participa en un torneo en tu tienda local para aparecer en el circuito.
+                        </p>
+                        <Link
+                          to="/stores"
+                          className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
+                        >
+                          Encontrar una tienda →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ) : (
