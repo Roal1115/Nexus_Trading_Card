@@ -570,9 +570,9 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                 exit={{ opacity: 0, y: 16, scale: 0.98 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 onClick={(e) => e.stopPropagation()}
-                className="glass relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/80 p-6 sm:p-8"
+                className="glass relative w-full max-w-6xl max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
               >
-                <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+                <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                       Detalle del Torneo
@@ -589,7 +589,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     <X size={18} />
                   </button>
                 </div>
-                // DESPUÉS
+                <div className="overflow-y-auto flex-1 px-6 pb-6 sm:px-8 sm:pb-8">
                 {loadingDetail ? (
                   <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                     {/* Columna principal */}
@@ -800,7 +800,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                         </div>
                       </div>
                     </div>
-                    <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:overflow-y-auto" style={{ maxHeight: "calc(90vh - 120px)" }}>
+                    <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:overflow-y-auto lg:sticky lg:top-0" style={{ maxHeight: "calc(90vh - 80px)" }}>
                       <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
                         Performance Tracker
                       </h3>
@@ -815,6 +815,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     No se pudo cargar el torneo.
                   </div>
                 )}
+                </div>
               </motion.div>
             </motion.div>
           )}
