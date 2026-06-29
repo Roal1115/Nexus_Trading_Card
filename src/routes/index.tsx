@@ -367,9 +367,26 @@ function LeaderboardTable({
 
   const myRowIndex = myGeekTag ? rows.findIndex((r) => r.geek_tag === myGeekTag) : -1;
   const scrollToMe = () => {
-    if (myRowIndex >= 0) {
-      virtualizer.scrollToIndex(myRowIndex, { align: "center" });
-    }
+    if (myRowIndex < 0 || !scrollRef.current) return;
+
+    // Calcular posición estimada de la fila
+    const estimatedTop = myRowIndex * 44; // estimateSize es 44px
+    const containerHeight = scrollRef.current.clientHeight;
+    const targetScroll = estimatedTop - containerHeight / 2 + 22;
+
+    scrollRef.current.scrollTo({
+      top: Math.max(0, targetScroll),
+      behavior: "smooth",
+    });
+
+    // Flash highlight después del scroll
+    setTimeout(() => {
+      const el = scrollRef.current?.querySelector(`[data-index="${myRowIndex}"]`);
+      if (el) {
+        el.classList.add("ring-2", "ring-primary", "ring-inset");
+        setTimeout(() => el.classList.remove("ring-2", "ring-primary", "ring-inset"), 1200);
+      }
+    }, 500);
   };
 
   // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
