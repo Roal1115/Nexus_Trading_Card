@@ -635,7 +635,7 @@ function FilterSelect({
         ReactDOM.createPortal(
           <div
             style={{
-              position: "absolute",
+              position: "fixed",
               top: pos.top,
               left: pos.left,
               minWidth: pos.width,
