@@ -10,6 +10,7 @@ import {
   Crown,
   Globe,
   HelpCircle,
+  Layers,
   Lock,
   Share2,
   Swords,
@@ -446,6 +447,38 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
             </div>
           )}
         </section>
+
+        {gaPlayer && (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Mis Sesiones</h2>
+              <Link
+                to="/sessions"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Ver todas →
+              </Link>
+            </div>
+            <Link
+              to="/sessions"
+              className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:scale-105">
+                <Layers size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Performance Tracker</p>
+                <p className="text-xs text-gray-400">
+                  Registra tus partidas durante torneos y prácticas
+                </p>
+              </div>
+              <ChevronRight
+                size={18}
+                className="ml-auto text-gray-500 transition group-hover:text-primary"
+              />
+            </Link>
+          </section>
+        )}
 
         {/* Recent */}
         <section className="glass mt-6 overflow-hidden rounded-2xl">

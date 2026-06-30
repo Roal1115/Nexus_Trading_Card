@@ -14,6 +14,7 @@ import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as MyStatsRouteImport } from './routes/my-stats'
@@ -35,6 +36,7 @@ import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.cal
 import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
 import { Route as TcgManagerAnalyticsRouteImport } from './routes/tcg-manager.analytics'
 import { Route as StoresSlugRouteImport } from './routes/stores.$slug'
+import { Route as SessionsSessionIdRouteImport } from './routes/sessions.$sessionId'
 import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
 import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
@@ -81,6 +83,11 @@ const SetupRoute = SetupRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionsRoute = SessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -188,6 +195,11 @@ const StoresSlugRoute = StoresSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => StoresRoute,
+} as any)
+const SessionsSessionIdRoute = SessionsSessionIdRouteImport.update({
+  id: '/$sessionId',
+  path: '/$sessionId',
+  getParentRoute: () => SessionsRoute,
 } as any)
 const PlayersPlayerTagRoute = PlayersPlayerTagRouteImport.update({
   id: '/players/$playerTag',
@@ -309,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
@@ -332,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/stores/$slug': typeof StoresSlugRoute
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
@@ -357,6 +371,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/my-stats': typeof MyStatsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
@@ -378,6 +393,7 @@ export interface FileRoutesByTo {
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/stores/$slug': typeof StoresSlugRoute
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
@@ -406,6 +422,7 @@ export interface FileRoutesById {
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
@@ -429,6 +446,7 @@ export interface FileRoutesById {
   '/organizer/store': typeof OrganizerStoreRoute
   '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/stores/$slug': typeof StoresSlugRoute
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
@@ -458,6 +476,7 @@ export interface FileRouteTypes {
     | '/my-stats'
     | '/organizer'
     | '/reset-password'
+    | '/sessions'
     | '/settings'
     | '/setup'
     | '/signup'
@@ -481,6 +500,7 @@ export interface FileRouteTypes {
     | '/organizer/store'
     | '/organizer/tournaments'
     | '/players/$playerTag'
+    | '/sessions/$sessionId'
     | '/stores/$slug'
     | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
@@ -506,6 +526,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/my-stats'
     | '/reset-password'
+    | '/sessions'
     | '/settings'
     | '/setup'
     | '/signup'
@@ -527,6 +548,7 @@ export interface FileRouteTypes {
     | '/organizer/store'
     | '/organizer/tournaments'
     | '/players/$playerTag'
+    | '/sessions/$sessionId'
     | '/stores/$slug'
     | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
@@ -554,6 +576,7 @@ export interface FileRouteTypes {
     | '/my-stats'
     | '/organizer'
     | '/reset-password'
+    | '/sessions'
     | '/settings'
     | '/setup'
     | '/signup'
@@ -577,6 +600,7 @@ export interface FileRouteTypes {
     | '/organizer/store'
     | '/organizer/tournaments'
     | '/players/$playerTag'
+    | '/sessions/$sessionId'
     | '/stores/$slug'
     | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
@@ -605,6 +629,7 @@ export interface RootRouteChildren {
   MyStatsRoute: typeof MyStatsRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SessionsRoute: typeof SessionsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
@@ -648,6 +673,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sessions': {
+      id: '/sessions'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof SessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -796,6 +828,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/stores/$slug'
       preLoaderRoute: typeof StoresSlugRouteImport
       parentRoute: typeof StoresRoute
+    }
+    '/sessions/$sessionId': {
+      id: '/sessions/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/sessions/$sessionId'
+      preLoaderRoute: typeof SessionsSessionIdRouteImport
+      parentRoute: typeof SessionsRoute
     }
     '/players/$playerTag': {
       id: '/players/$playerTag'
@@ -1035,6 +1074,18 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
   OrganizerRouteChildren,
 )
 
+interface SessionsRouteChildren {
+  SessionsSessionIdRoute: typeof SessionsSessionIdRoute
+}
+
+const SessionsRouteChildren: SessionsRouteChildren = {
+  SessionsSessionIdRoute: SessionsSessionIdRoute,
+}
+
+const SessionsRouteWithChildren = SessionsRoute._addFileChildren(
+  SessionsRouteChildren,
+)
+
 interface StoresRouteChildren {
   StoresSlugRoute: typeof StoresSlugRoute
   StoresIndexRoute: typeof StoresIndexRoute
@@ -1087,6 +1138,7 @@ const rootRouteChildren: RootRouteChildren = {
   MyStatsRoute: MyStatsRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
+  SessionsRoute: SessionsRouteWithChildren,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
@@ -1097,13 +1149,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
