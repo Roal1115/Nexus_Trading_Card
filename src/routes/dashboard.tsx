@@ -10,6 +10,7 @@ import {
   Crown,
   Globe,
   HelpCircle,
+  Layers,
   Lock,
   Share2,
   Swords,

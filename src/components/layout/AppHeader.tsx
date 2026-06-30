@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Menu, Shield, Store, Trophy, User, X } from "lucide-react";
+import { Layers, LogOut, Menu, Shield, Store, Trophy, User, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
