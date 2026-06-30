@@ -56,6 +56,9 @@ export function AppHeader() {
           {role === "player" && (
             <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
+          {player && (
+            <NavItem to="/sessions" icon={<Layers size={14} />} label="Sesiones" />
+          )}
           {role === "organizer" && (
             <NavItem to="/organizer" icon={<Shield size={14} />} label="Moderación" />
           )}
@@ -154,6 +157,25 @@ export function AppHeader() {
                 >
                   <User size={16} />
                   Mi Panel
+                </Link>
+              )}
+
+              {player && (
+                <Link
+                  to="/sessions"
+                  onClick={() => setMenuOpen(false)}
+                  activeProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+                  }}
+                  inactiveProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+                  }}
+                  activeOptions={{ exact: true }}
+                >
+                  <Layers size={16} />
+                  Sesiones
                 </Link>
               )}
 
