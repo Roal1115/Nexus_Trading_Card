@@ -97,50 +97,16 @@ export function AppHeader() {
 
       <AnimatePresence>
         {menuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
-          className="sm:hidden absolute top-16 left-0 right-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl"
-        >
-          <nav className="flex flex-col px-4 py-3 gap-1">
-            <Link
-              to="/"
-              onClick={() => setMenuOpen(false)}
-              activeProps={{
-                className:
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-              }}
-              inactiveProps={{
-                className:
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-              }}
-              activeOptions={{ exact: true }}
-            >
-              <Trophy size={16} />
-              Ranking
-            </Link>
-
-            <Link
-              to="/stores"
-              onClick={() => setMenuOpen(false)}
-              activeProps={{
-                className:
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-              }}
-              inactiveProps={{
-                className:
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-              }}
-            >
-              <Store size={16} />
-              Tiendas
-            </Link>
-
-            {role === "player" && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="sm:hidden absolute top-16 left-0 right-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl"
+          >
+            <nav className="flex flex-col px-4 py-3 gap-1">
               <Link
-                to="/dashboard"
+                to="/"
                 onClick={() => setMenuOpen(false)}
                 activeProps={{
                   className:
@@ -152,37 +118,12 @@ export function AppHeader() {
                 }}
                 activeOptions={{ exact: true }}
               >
-                <User size={16} />
-                Mi Panel
+                <Trophy size={16} />
+                Ranking
               </Link>
-            )}
 
-            <Link
-              to="/settings"
-              onClick={() => setMenuOpen(false)}
-              activeProps={{
-                className:
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-              }}
-              inactiveProps={{
-                className:
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-              }}
-              activeOptions={{ exact: true }}
-            >
-              <Settings size={16} />
-              Configuración
-            </Link>
-
-            {(role === "organizer" || role === "admin" || role === "tcg_manager") && (
               <Link
-                to={
-                  role === "admin"
-                    ? "/admin"
-                    : role === "tcg_manager"
-                      ? "/tcg-manager"
-                      : "/organizer"
-                }
+                to="/stores"
                 onClick={() => setMenuOpen(false)}
                 activeProps={{
                   className:
@@ -193,41 +134,102 @@ export function AppHeader() {
                     "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
                 }}
               >
-                <Shield size={16} />
-                Moderación
+                <Store size={16} />
+                Tiendas
               </Link>
-            )}
 
-            <div className="border-t border-white/10 my-1" />
-
-            {player ? (
-              <>
-                <div className="px-3 py-2">
-                  <p className="text-xs uppercase tracking-widest text-gray-500">Geek Tag</p>
-                  <p className="text-sm font-bold text-primary mt-0.5">{geekTag}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    handleLogout();
+              {role === "player" && (
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  activeProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
                   }}
-                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-white/5 transition w-full text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                  inactiveProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+                  }}
+                  activeOptions={{ exact: true }}
                 >
-                  <LogOut size={16} />
-                  Cerrar Sesión
-                </button>
-              </>
-            ) : (
-              <Link
-                to="/login"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary hover:bg-white/5 transition"
-              >
-                Iniciar Sesión
-              </Link>
-            )}
-          </nav>
-        </motion.div>
+                  <User size={16} />
+                  Mi Panel
+                </Link>
+              )}
+
+              {player && (
+                <Link
+                  to="/settings"
+                  onClick={() => setMenuOpen(false)}
+                  activeProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+                  }}
+                  inactiveProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+                  }}
+                  activeOptions={{ exact: true }}
+                >
+                  <Settings size={16} />
+                  Configuración
+                </Link>
+              )}
+
+              {(role === "organizer" || role === "admin" || role === "tcg_manager") && (
+                <Link
+                  to={
+                    role === "admin"
+                      ? "/admin"
+                      : role === "tcg_manager"
+                        ? "/tcg-manager"
+                        : "/organizer"
+                  }
+                  onClick={() => setMenuOpen(false)}
+                  activeProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+                  }}
+                  inactiveProps={{
+                    className:
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+                  }}
+                >
+                  <Shield size={16} />
+                  Moderación
+                </Link>
+              )}
+
+              <div className="border-t border-white/10 my-1" />
+
+              {player ? (
+                <>
+                  <div className="px-3 py-2">
+                    <p className="text-xs uppercase tracking-widest text-gray-500">Geek Tag</p>
+                    <p className="text-sm font-bold text-primary mt-0.5">{geekTag}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-white/5 transition w-full text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                  >
+                    <LogOut size={16} />
+                    Cerrar Sesión
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary hover:bg-white/5 transition"
+                >
+                  Iniciar Sesión
+                </Link>
+              )}
+            </nav>
+          </motion.div>
         )}
       </AnimatePresence>
     </header>
