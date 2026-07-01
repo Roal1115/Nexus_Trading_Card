@@ -172,7 +172,9 @@ function SessionsPage() {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [, setShowCreateSheet] = useState(false);
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     if (roleLoading) return;
