@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   Layers,
@@ -11,13 +12,20 @@ import {
   AlertTriangle,
   Trash2,
   ChevronRight,
+  X,
+  Search,
+  Loader2,
 } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   getStandaloneSessions,
   deleteStandaloneSession,
+  createStandaloneSession,
+  searchStores,
 } from "@/lib/geekarena-standalone.functions";
+import { getMyStatsGames } from "@/lib/geekarena-player.functions";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+
 
 export const Route = createFileRoute("/sessions")({
   head: () => ({ meta: [{ title: "Mis Sesiones — Geek Arena" }] }),
