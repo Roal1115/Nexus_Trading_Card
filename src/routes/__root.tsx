@@ -9,7 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-
+import { GeekarenaAuthProvider } from "../context/geekarena-auth.context";
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Toaster } from "sonner";
@@ -206,31 +206,34 @@ function RootComponent() {
     pathname.startsWith("/tcg-manager");
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-dvh bg-radial-crimson">
-        {!isPanel && <AppHeader />}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeInOut" }}
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "#1e2130",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#ffffff",
-            },
-          }}
-        />
-      </div>
-    </QueryClientProvider>
+    <GeekarenaAuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <div className="min-h-dvh bg-radial-crimson">
+          {!isPanel && <AppHeader />}
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: "#1e2130",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#ffffff",
+              },
+            }}
+          />
+        </div>
+      </QueryClientProvider>
+    </GeekarenaAuthProvider>
+
   );
 }

@@ -77,15 +77,17 @@ function StoreCardItem({ store }: { store: StoreCard }) {
           {store.twitch && <Twitch size={14} />}
         </div>
         {store.google_maps_url && (
-          <a
-            href={store.google_maps_url}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.open(store.google_maps_url!, "_blank", "noopener,noreferrer");
+            }}
+            className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 cursor-pointer"
           >
             <Navigation size={12} /> Cómo llegar
-          </a>
+          </button>
         )}
       </div>
     </Link>
