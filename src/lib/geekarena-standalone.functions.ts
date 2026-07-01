@@ -400,6 +400,48 @@ export const deleteStandaloneSession = createServerFn({ method: "POST" })
   });
 
 // ============================================================
+// updateStandaloneSessionDetails — actualiza nombre y/o fecha de una sesión
+// ============================================================
+export const updateStandaloneSessionDetails = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator(
+    (d: { session_id: string; name?: string; session_date?: string | null }) =>
+      z
+        .object({
+          session_id: z.string().uuid(),
+          name: z.string().trim().min(1).max(100).optional(),
+          session_date: z.string().nullable().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { data: session } = await admin
+      .from("standalone_sessions")
+      .select("id")
+      .eq("id", data.session_id)
+      .eq("player_id", player.id)
+      .maybeSingle();
+
+    if (!session) throw new Error("Sesión no encontrada o no autorizado");
+
+    const patch: Record<string, unknown> = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.session_date !== undefined) patch.session_date = data.session_date;
+    if (Object.keys(patch).length === 0) return { success: true };
+
+    const { error } = await admin
+      .from("standalone_sessions")
+      .update(patch)
+      .eq("id", data.session_id)
+      .eq("player_id", player.id);
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+// ============================================================
 // undoSessionLink — revierte el vínculo de una sesión matched
 // ============================================================
 export const undoSessionLink = createServerFn({ method: "POST" })

@@ -25,6 +25,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
+import { Route as SessionsIndexRouteImport } from './routes/sessions.index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
@@ -139,6 +140,11 @@ const StoresIndexRoute = StoresIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => StoresRoute,
+} as any)
+const SessionsIndexRoute = SessionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SessionsRoute,
 } as any)
 const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
   id: '/',
@@ -357,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/sessions/': typeof SessionsIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
@@ -371,7 +378,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/my-stats': typeof MyStatsRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
@@ -405,6 +411,7 @@ export interface FileRoutesByTo {
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
+  '/sessions': typeof SessionsIndexRoute
   '/stores': typeof StoresIndexRoute
   '/tcg-manager': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
@@ -458,6 +465,7 @@ export interface FileRoutesById {
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/sessions/': typeof SessionsIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
@@ -512,6 +520,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
+    | '/sessions/'
     | '/stores/'
     | '/tcg-manager/'
     | '/admin/players/$id'
@@ -526,7 +535,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/my-stats'
     | '/reset-password'
-    | '/sessions'
     | '/settings'
     | '/setup'
     | '/signup'
@@ -560,6 +568,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/upload'
     | '/admin'
     | '/organizer'
+    | '/sessions'
     | '/stores'
     | '/tcg-manager'
     | '/admin/players/$id'
@@ -612,6 +621,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/upload'
     | '/admin/'
     | '/organizer/'
+    | '/sessions/'
     | '/stores/'
     | '/tcg-manager/'
     | '/admin/players/$id'
@@ -751,6 +761,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/stores/'
       preLoaderRoute: typeof StoresIndexRouteImport
       parentRoute: typeof StoresRoute
+    }
+    '/sessions/': {
+      id: '/sessions/'
+      path: '/'
+      fullPath: '/sessions/'
+      preLoaderRoute: typeof SessionsIndexRouteImport
+      parentRoute: typeof SessionsRoute
     }
     '/organizer/': {
       id: '/organizer/'
@@ -1076,10 +1093,12 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
 
 interface SessionsRouteChildren {
   SessionsSessionIdRoute: typeof SessionsSessionIdRoute
+  SessionsIndexRoute: typeof SessionsIndexRoute
 }
 
 const SessionsRouteChildren: SessionsRouteChildren = {
   SessionsSessionIdRoute: SessionsSessionIdRoute,
+  SessionsIndexRoute: SessionsIndexRoute,
 }
 
 const SessionsRouteWithChildren = SessionsRoute._addFileChildren(
@@ -1149,3 +1168,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
