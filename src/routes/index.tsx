@@ -295,8 +295,8 @@ function LeaderboardPage() {
         </div>
 
         {selectedStore && (
-          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary-foreground">
-            Mostrando resultados de:{" "}
+          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-gray-300"> 
+          Mostrando resultados de:{" "}
             <strong className="text-white">
               {selectedStore.name}
               {selectedStore.city ? ` — ${selectedStore.city}` : ""}

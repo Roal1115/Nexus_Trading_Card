@@ -1,123 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
-import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
-import {
-  Loader2,
-  MapPin,
-  Navigation,
-  Clock,
-  Instagram,
-  Globe,
-  Twitter,
-  Twitch,
-  ArrowLeft,
-  Phone,
-  MessageCircle,
-  CalendarDays,
-} from "lucide-react";
-import { getStoreProfile, getStoreWeeklySchedule } from "@/lib/geekarena-public.functions";
+import { useEffect, useState } from "react";
+import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone } from "lucide-react";
+import { getStoreProfile } from "@/lib/geekarena-public.functions";
 
 export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
   component: StoreProfilePage,
 });
 
-const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-
-function getScheduleHourRange(schedule: Array<{ start_time: string }>): number[] {
-  if (schedule.length === 0) return [];
-  const hours = schedule.map((s) => parseInt(s.start_time.split(":")[0], 10));
-  const min = Math.min(...hours);
-  const max = Math.max(...hours);
-  const range: number[] = [];
-  for (let h = min; h <= max; h++) range.push(h);
-  return range;
-}
-
 function StoreProfilePage() {
   const { slug } = Route.useParams();
   const fetchProfile = useServerFn(getStoreProfile);
-  const fetchSchedule = useServerFn(getStoreWeeklySchedule);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<any>(null);
-  const [schedule, setSchedule] = useState<any[]>([]);
   const [notFound, setNotFound] = useState(false);
-  const scheduleHours = useMemo(() => getScheduleHourRange(schedule), [schedule]);
 
   useEffect(() => {
     fetchProfile({ data: { slug } })
       .then((res: any) => setStore(res.store))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-    fetchSchedule({ data: { slug } })
-      .then((res: any) => setSchedule(res.schedule ?? []))
-      .catch(() => setSchedule([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
-        {/* Back link skeleton */}
-        <SkeletonLine width="w-36" height="h-3" />
-
-        {/* Header card skeleton */}
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-24" height="h-3" />
-          <SkeletonLine width="w-2/3" height="h-8" />
-          <SkeletonLine width="w-1/2" height="h-3" />
-          <SkeletonLine width="w-full" height="h-3" />
-          <SkeletonLine width="w-4/5" height="h-3" />
-
-          {/* TCG badges */}
-          <div className="flex gap-2 pt-1">
-            <SkeletonLine width="w-20" height="h-6" className="rounded-md" />
-            <SkeletonLine width="w-24" height="h-6" className="rounded-md" />
-            <SkeletonLine width="w-16" height="h-6" className="rounded-md" />
-          </div>
-
-          {/* Hours + phone row */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <SkeletonBlock className="h-10 rounded-md" />
-            <SkeletonBlock className="h-10 rounded-md" />
-          </div>
-
-          {/* Action buttons row */}
-          <div className="flex items-center gap-3 pt-2">
-            <SkeletonLine width="w-28" height="h-8" className="rounded-md" />
-            <SkeletonBlock className="w-5 h-5 rounded-sm" />
-            <SkeletonBlock className="w-5 h-5 rounded-sm" />
-            <SkeletonBlock className="w-5 h-5 rounded-sm" />
-          </div>
-        </div>
-
-        {/* Schedule skeleton */}
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-48" height="h-5" />
-          <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden p-3 space-y-2">
-            {/* Header row de días */}
-            <div className="grid gap-2" style={{ gridTemplateColumns: "56px repeat(7, 1fr)" }}>
-              <div />
-              {Array.from({ length: 7 }).map((_, i) => (
-                <SkeletonLine key={i} width="w-full" height="h-4" className="rounded-sm" />
-              ))}
-            </div>
-            {/* Hour rows */}
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="grid gap-2 items-start"
-                style={{ gridTemplateColumns: "56px repeat(7, 1fr)" }}
-              >
-                <SkeletonLine width="w-8" height="h-3" className="mt-1 ml-auto" />
-                {Array.from({ length: 7 }).map((_, j) => (
-                  <SkeletonBlock key={j} className="h-12 rounded-md" />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="animate-spin text-primary" />
       </div>
     );
   }
@@ -135,21 +45,15 @@ function StoreProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
-      <Link
-        to="/stores"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary"
-      >
+      <Link to="/stores" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary">
         <ArrowLeft size={12} /> Volver al directorio
       </Link>
 
       <header className="glass space-y-4 rounded-2xl p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          {store.zone ?? "—"}
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">{store.zone ?? "—"}</p>
         <h1 className="text-3xl font-bold text-white">{store.name}</h1>
         <p className="flex items-center gap-1.5 text-sm text-gray-400">
-          <MapPin size={14} />{" "}
-          {[store.address, store.city, store.state].filter(Boolean).join(", ") || "—"}
+          <MapPin size={14} /> {[store.address, store.city, store.state].filter(Boolean).join(", ") || "—"}
         </p>
 
         {store.description && <p className="text-sm text-gray-300">{store.description}</p>}
@@ -176,21 +80,10 @@ function StoreProfilePage() {
             </div>
           )}
           {store.phone && (
-            <div className="flex gap-2 rounded-md border border-white/10 bg-white/[0.02] p-3">
-              <a
-                href={`tel:${store.phone.replace(/\s+/g, "")}`}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white/5 px-2 py-1.5 text-xs font-semibold text-gray-300 hover:bg-white/10"
-              >
-                <Phone size={12} /> Llamar
-              </a>
-              <a
-                href={`https://wa.me/${store.phone.replace(/[^\d]/g, "")}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-emerald-500/15 px-2 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/25"
-              >
-                <MessageCircle size={12} /> WhatsApp
-              </a>
+            <div className="rounded-md border border-white/10 bg-white/[0.02] p-3">
+              <p className="flex items-center gap-1.5 text-xs text-gray-400">
+                <Phone size={12} /> {store.phone}
+              </p>
             </div>
           )}
         </div>
@@ -207,111 +100,27 @@ function StoreProfilePage() {
             </a>
           )}
           {store.instagram && (
-            <a
-              href={`https://instagram.com/${store.instagram.replace("@", "")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-gray-400 hover:text-primary"
-            >
+            <a href={`https://instagram.com/${store.instagram.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
               <Instagram size={18} />
             </a>
           )}
           {store.website && (
-            <a
-              href={store.website}
-              target="_blank"
-              rel="noreferrer"
-              className="text-gray-400 hover:text-primary"
-            >
+            <a href={store.website} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
               <Globe size={18} />
             </a>
           )}
           {store.twitter && (
-            <a
-              href={`https://x.com/${store.twitter.replace("@", "")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-gray-400 hover:text-primary"
-            >
+            <a href={`https://x.com/${store.twitter.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
               <Twitter size={18} />
             </a>
           )}
           {store.twitch && (
-            <a
-              href={`https://twitch.tv/${store.twitch.replace("@", "")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-gray-400 hover:text-primary"
-            >
+            <a href={`https://twitch.tv/${store.twitch.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
               <Twitch size={18} />
             </a>
           )}
         </div>
       </header>
-
-      {schedule.length > 0 && (
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-            <CalendarDays size={18} className="text-primary" />
-            Horario de torneos
-          </h2>
-          <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
-            <div className="overflow-x-auto">
-              <div style={{ minWidth: "760px", width: "100%" }}>
-                <div
-                  style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
-                  className="border-b border-white/10"
-                >
-                  <div className="border-r border-white/5" />
-                  {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
-                    <div key={dow} className="p-2 text-center border-l border-white/10">
-                      <div className="text-[10px] uppercase text-gray-400">{DAY_NAMES[dow]}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {scheduleHours.map((hour) => (
-                  <div
-                    key={hour}
-                    style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
-                    className="border-b border-white/5"
-                  >
-                    <div className="p-2 text-[10px] text-gray-500 text-right border-r border-white/5 flex items-start justify-end pt-2">
-                      {hour}:00
-                    </div>
-                    {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
-                      const cellEntries = schedule.filter(
-                        (s) =>
-                          s.day_of_week === dow &&
-                          parseInt(s.start_time.split(":")[0], 10) === hour,
-                      );
-                      return (
-                        <div
-                          key={dow}
-                          className="min-h-[50px] p-1 border-l border-white/10"
-                          style={{ minWidth: 0, overflow: "hidden" }}
-                        >
-                          {cellEntries.map((e, idx) => (
-                            <div
-                              key={idx}
-                              className="w-full text-left rounded px-1.5 py-1 mb-0.5 bg-primary/10 border border-primary/30"
-                            >
-                              <div className="text-[10px] text-primary truncate">{e.game_name}</div>
-                              <div className="text-[9px] text-gray-400 truncate">
-                                {e.start_time}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

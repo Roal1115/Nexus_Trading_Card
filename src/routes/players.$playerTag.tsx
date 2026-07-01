@@ -501,7 +501,7 @@ function PublicProfilePage() {
           )}
         </section>
 
-        {/* CTA */}
+        {/* CTA
         {!profile.is_owner && (
           <section className="glass mt-6 rounded-2xl border border-primary/20 p-6 text-center">
             <h3 className="text-lg font-bold text-white">¿Quieres ver tu propio ranking?</h3>
@@ -524,7 +524,7 @@ function PublicProfilePage() {
               </Link>
             </div>
           </section>
-        )}
+        )} */}
       </main>
 
       <aside className="hidden xl:block">
