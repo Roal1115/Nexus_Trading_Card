@@ -3,6 +3,27 @@ import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
 
 // ============================================================
+// searchStores — busca tiendas activas por nombre para autocompletar
+// ============================================================
+export const searchStores = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { search: string }) =>
+    z.object({ search: z.string() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { data: stores } = await admin
+      .from("stores")
+      .select("id, name, city, zone")
+      .ilike("name", `%${data.search}%`)
+      .eq("is_active", true)
+      .order("name")
+      .limit(10);
+    return { stores: (stores ?? []) as { id: string; name: string; city: string | null; zone: string | null }[] };
+  });
+
+
+// ============================================================
 // createStandaloneSession
 // ============================================================
 export const createStandaloneSession = createServerFn({ method: "POST" })
