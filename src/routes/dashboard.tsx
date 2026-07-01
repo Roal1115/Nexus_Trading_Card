@@ -240,7 +240,31 @@ function DashboardPage() {
         <AdVertical sponsor={sponsor} />
       </aside>
       <main className="min-w-0 pb-20">
-        {/* Hero */}
+        {/* Toggle de privacidad */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <span className="uppercase tracking-widest">Visibilidad del perfil:</span>
+            <span
+              className={`inline-flex items-center gap-1 font-semibold ${isPublic ? "text-emerald-400" : "text-gray-300"}`}
+            >
+              {isPublic ? (
+                <>
+                  <Globe size={12} /> Público
+                </>
+              ) : (
+                <>
+                  <Lock size={12} /> Privado
+                </>
+              )}
+            </span>
+          </div>
+          <button
+            onClick={handleTogglePrivacy}
+            className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition"
+          >
+            {isPublic ? "Hacer privado" : "Hacer público"}
+          </button>
+        </div>
         {/* Hero */}
         <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40">
           <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
@@ -380,31 +404,34 @@ function DashboardPage() {
           </div>
         </section>
 
-        {/* Toggle de privacidad */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span className="uppercase tracking-widest">Visibilidad del perfil:</span>
-            <span
-              className={`inline-flex items-center gap-1 font-semibold ${isPublic ? "text-emerald-400" : "text-gray-300"}`}
+        {gaPlayer && (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Mis Sesiones</h2>
+              <Link to="/sessions" className="text-xs font-medium text-primary hover:underline">
+                Ver todas →
+              </Link>
+            </div>
+            <Link
+              to="/sessions"
+              className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
             >
-              {isPublic ? (
-                <>
-                  <Globe size={12} /> Público
-                </>
-              ) : (
-                <>
-                  <Lock size={12} /> Privado
-                </>
-              )}
-            </span>
-          </div>
-          <button
-            onClick={handleTogglePrivacy}
-            className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition"
-          >
-            {isPublic ? "Hacer privado" : "Hacer público"}
-          </button>
-        </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:scale-105">
+                <Layers size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Performance Tracker</p>
+                <p className="text-xs text-gray-400">
+                  Registra tus partidas durante torneos y prácticas
+                </p>
+              </div>
+              <ChevronRight
+                size={18}
+                className="ml-auto text-gray-500 transition group-hover:text-primary"
+              />
+            </Link>
+          </section>
+        )}
 
         {/* Mis Rankings */}
         <section className="mt-6">
@@ -447,38 +474,6 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
             </div>
           )}
         </section>
-
-        {gaPlayer && (
-          <section className="mt-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Mis Sesiones</h2>
-              <Link
-                to="/sessions"
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Ver todas →
-              </Link>
-            </div>
-            <Link
-              to="/sessions"
-              className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:scale-105">
-                <Layers size={24} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">Performance Tracker</p>
-                <p className="text-xs text-gray-400">
-                  Registra tus partidas durante torneos y prácticas
-                </p>
-              </div>
-              <ChevronRight
-                size={18}
-                className="ml-auto text-gray-500 transition group-hover:text-primary"
-              />
-            </Link>
-          </section>
-        )}
 
         {/* Recent */}
         <section className="glass mt-6 overflow-hidden rounded-2xl">

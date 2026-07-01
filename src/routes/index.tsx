@@ -98,10 +98,13 @@ function LeaderboardPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [months, setMonths] = useState<string[]>([]);
 
-  const [tcg, setTcg] = useState<string>(() => {
-    if (typeof window === "undefined") return ALL;
-    return window.localStorage.getItem("ga_filter_tcg") ?? ALL;
-  });
+  const [tcg, setTcg] = useState<string>(ALL);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("ga_filter_tcg");
+    if (saved && saved !== ALL) setTcg(saved);
+  }, []);
+
   const handleTcgChange = (v: string) => {
     setTcg(v);
     if (typeof window !== "undefined") {
@@ -234,7 +237,7 @@ function LeaderboardPage() {
         >
           {" "}
           <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer ... min-w-[180px]">
               <FilterSelect
                 label="TCG"
                 value={tcg}

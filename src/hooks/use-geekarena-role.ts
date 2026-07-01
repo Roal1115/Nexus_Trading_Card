@@ -23,7 +23,7 @@ export function useGeekarenaRole() {
   useEffect(() => {
     mountedRef.current = true;
 
-    const loadPlayer = async (s: Session | null) => {
+    const loadPlayer = async (s: Session | null, forceLoading = false) => {
       if (!s?.user?.email) {
         if (mountedRef.current) {
           setPlayer(null);
@@ -32,6 +32,10 @@ export function useGeekarenaRole() {
           hasInitializedRef.current = true;
         }
         return;
+      }
+
+      if (!hasInitializedRef.current || forceLoading) {
+        setLoading(true);
       }
 
       const { data } = await geekarena
@@ -61,9 +65,12 @@ export function useGeekarenaRole() {
     const { data: sub } = geekarena.auth.onAuthStateChange((event, s) => {
       if (!mountedRef.current) return;
 
-      // Solo actuar en eventos relevantes
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
-        loadPlayer(s);
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        // Cambio real de usuario — sí mostramos loading
+        loadPlayer(s, true);
+      } else if (event === "TOKEN_REFRESHED") {
+        // Solo refrescamos silenciosamente sin loading
+        loadPlayer(s, false);
       }
     });
 

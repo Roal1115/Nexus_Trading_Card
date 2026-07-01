@@ -143,6 +143,7 @@
 @layer base {
   html {
     background-color: oklch(0.04 0 0);
+    overflow-y: scroll;
   }
 
   * {
