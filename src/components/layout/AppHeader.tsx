@@ -52,10 +52,10 @@ export function AppHeader() {
 
         <nav className="hidden items-center gap-1 text-sm sm:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
-          <NavItem to="/stores" icon={<Store size={14} />} label="Tiendas" />
           {role === "player" && (
             <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
+          <NavItem to="/stores" icon={<Store size={14} />} label="Tiendas" />
           {player && (
             <NavItem to="/sessions" icon={<Layers size={14} />} label="Sesiones" />
           )}
@@ -125,22 +125,6 @@ export function AppHeader() {
                 Ranking
               </Link>
 
-              <Link
-                to="/stores"
-                onClick={() => setMenuOpen(false)}
-                activeProps={{
-                  className:
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-                }}
-                inactiveProps={{
-                  className:
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-                }}
-              >
-                <Store size={16} />
-                Tiendas
-              </Link>
-
               {role === "player" && (
                 <Link
                   to="/dashboard"
@@ -159,6 +143,22 @@ export function AppHeader() {
                   Mi Panel
                 </Link>
               )}
+
+              <Link
+                to="/stores"
+                onClick={() => setMenuOpen(false)}
+                activeProps={{
+                  className:
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
+                }}
+                inactiveProps={{
+                  className:
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
+                }}
+              >
+                <Store size={16} />
+                Tiendas
+              </Link>
 
               {player && (
                 <Link
@@ -245,7 +245,7 @@ export function AppHeader() {
                 <Link
                   to="/login"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary hover:bg-white/5 transition"
+                  className="flex items-center gap-3 px-3 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium text-primary hover:bg-white/5 transition whitespace-nowrap"
                 >
                   Iniciar Sesión
                 </Link>

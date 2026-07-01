@@ -226,7 +226,7 @@ function LeaderboardPage() {
         <AdCarousel sponsors={allSponsors} />
 
         <div
-          className="sm:sticky sm:top-16 z-30 mb-6 rounded-xl px-4 py-3"
+          className="z-30 mb-6 rounded-xl px-4 py-3"
           style={{
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.07)",
@@ -237,7 +237,7 @@ function LeaderboardPage() {
         >
           {" "}
           <div className="flex flex-col gap-2">
-            <div className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer ... min-w-[180px]">
+            <div className="flex flex-wrap w-full items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer ... min-w-[180px]">
               <FilterSelect
                 label="TCG"
                 value={tcg}
@@ -422,7 +422,7 @@ function LeaderboardTable({
   const gridColsMobile = "grid-cols-[40px_1fr_68px]";
 
   return (
-    <section className="glass overflow-hidden rounded-2xl">
+    <section className="glass overflow-hidden rounded-2xl h-full flex flex-col">
       <header className="border-b border-white/10 px-5 py-4">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
