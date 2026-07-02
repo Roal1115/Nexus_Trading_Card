@@ -370,7 +370,7 @@ function StandaloneRoundCard({
   round: RoundState;
   gameId: string;
   onChange: (patch: Partial<RoundState>) => void;
-  onSave: () => void;
+  onSave: () => Promise<boolean>;
   onDelete: () => void;
   saving: boolean;
   deleting: boolean;
@@ -629,7 +629,10 @@ function StandaloneRoundCard({
           {/* Save button — full width, no delete here */}
           <button
             type="button"
-            onClick={onSave}
+            onClick={async () => {
+              const ok = await onSave();
+              if (ok) setOpen(false);
+            }}
             disabled={saving}
             className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50 transition hover:brightness-110"
           >
@@ -723,7 +726,7 @@ function StandaloneRoundTracker({
     setRounds((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
   };
 
-  const handleSave = async (idx: number) => {
+  const handleSave = async (idx: number): Promise<boolean> => {
     const r = rounds[idx];
     setSavingIdx(idx);
     try {
@@ -742,8 +745,10 @@ function StandaloneRoundTracker({
         },
       });
       toast.success(`Ronda ${r.round_number} guardada`);
+      return true;
     } catch (e: any) {
       toast.error(e?.message ?? "Error al guardar");
+      return false;
     } finally {
       setSavingIdx(null);
     }
