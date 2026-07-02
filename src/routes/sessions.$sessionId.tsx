@@ -412,195 +412,204 @@ function RoundSummary({ round }: { round: RoundState }) {
 function StandaloneRoundCard({
   round,
   gameId,
-  sessionType,
   onChange,
   onSave,
   onDelete,
   saving,
   deleting,
-  defaultExpanded,
 }: {
   round: RoundState;
   gameId: string;
-  sessionType: "competitive" | "casual";
   onChange: (patch: Partial<RoundState>) => void;
   onSave: () => void;
   onDelete: () => void;
   saving: boolean;
   deleting: boolean;
-  defaultExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [open, setOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  const resultColor = round.won_match === true
+    ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
+    : round.won_match === false
+    ? "bg-red-500/10 border-l-2 border-l-red-500"
+    : "bg-white/[0.02]";
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5">
+    <div className={`rounded-xl border border-white/10 overflow-hidden ${resultColor}`}>
+      {/* Row — collapsed view */}
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+        onClick={() => setOpen((o) => !o)}
+        className="grid w-full grid-cols-[40px_1fr_52px_52px_52px] items-center gap-2 px-3 py-3 text-left"
       >
-        <RoundSummary round={round} />
-        <ChevronDown
-          size={16}
-          className={`flex-shrink-0 text-gray-500 transition-transform ${
-            expanded ? "rotate-180" : ""
-          }`}
-        />
+        {/* Round number */}
+        <span className={`font-mono text-sm font-bold ${
+          round.won_match === true ? "text-emerald-400"
+          : round.won_match === false ? "text-red-400"
+          : "text-gray-400"
+        }`}>
+          R{round.round_number}
+        </span>
+
+        {/* Opponent deck */}
+        <div className="flex items-center gap-2 min-w-0">
+          {round.opponent_leader?.card_image ? (
+            <img
+              src={round.opponent_leader.card_image}
+              alt={round.opponent_leader.base_name}
+              className="h-9 w-6 flex-shrink-0 rounded-md border border-white/10 object-cover"
+            />
+          ) : (
+            <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
+              <span className="text-[8px] text-gray-600">?</span>
+            </div>
+          )}
+          <span className="truncate text-xs text-gray-300">
+            {round.opponent_leader ? cleanName(round.opponent_leader.base_name) : "—"}
+          </span>
+        </div>
+
+        {/* Dice */}
+        <span className="text-center text-[11px] text-gray-400">
+          {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Opp"}
+        </span>
+
+        {/* Order */}
+        <span className="text-center text-[11px] text-gray-400">
+          {round.turn_order === "first" ? "1st" : round.turn_order === "second" ? "2nd" : "—"}
+        </span>
+
+        {/* Result */}
+        <span className={`text-center text-xs font-bold ${
+          round.won_match === true ? "text-emerald-400"
+          : round.won_match === false ? "text-red-400"
+          : "text-gray-500"
+        }`}>
+          {round.won_match === true ? "W" : round.won_match === false ? "L" : "—"}
+        </span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            key="content"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4">
-              {sessionType === "competitive" && (
-              <label className="mb-3 flex items-center gap-2 text-xs text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={round.is_bye}
-                  onChange={(e) =>
-                    onChange({
-                      is_bye: e.target.checked,
-                      won_match: e.target.checked ? true : null,
-                      opponent_leader: null,
-                      opponent_leader_id: null,
-                      won_die_roll: null,
-                      turn_order: null,
-                    })
-                  }
+      {/* Expanded form */}
+      {open && (
+        <div className="border-t border-white/10 px-3 pb-4 pt-3 space-y-3">
+          {!round.is_bye && (
+            <>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                  Leader del oponente
+                </label>
+                <LeaderSelect
+                  gameId={gameId}
+                  value={round.opponent_leader}
+                  onChange={(d) => onChange({ opponent_leader: d, opponent_leader_id: d?.id ?? null })}
+                  placeholder="Selecciona leader oponente…"
                 />
-                Bye
-              </label>
-              )}
+              </div>
 
-      {!round.is_bye && (
-        <>
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Tu leader
-              </label>
-              <LeaderSelect
-                gameId={gameId}
-                value={round.player_leader}
-                onChange={(d) => onChange({ player_leader: d, player_leader_id: d?.id ?? null })}
-                placeholder="Selecciona tu leader…"
-              />
-            </div>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                  Tu leader
+                </label>
+                <LeaderSelect
+                  gameId={gameId}
+                  value={round.player_leader}
+                  onChange={(d) => onChange({ player_leader: d, player_leader_id: d?.id ?? null })}
+                  placeholder="Selecciona tu leader…"
+                />
+              </div>
 
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Leader del oponente
-              </label>
-              <LeaderSelect
-                gameId={gameId}
-                value={round.opponent_leader}
-                onChange={(d) =>
-                  onChange({ opponent_leader: d, opponent_leader_id: d?.id ?? null })
-                }
-                placeholder="Selecciona leader oponente…"
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                    ¿Quién ganó el dado?
+                  </label>
+                  <SimpleSelect
+                    value={round.won_die_roll === null ? "" : round.won_die_roll ? "me" : "opp"}
+                    onChange={(v) => onChange({ won_die_roll: v === "" ? null : v === "me" })}
+                    placeholder="—"
+                    options={[{ value: "me", label: "Yo" }, { value: "opp", label: "Oponente" }]}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                    Tu turno
+                  </label>
+                  <SimpleSelect
+                    value={round.turn_order ?? ""}
+                    onChange={(v) => onChange({ turn_order: (v || null) as "first" | "second" | null })}
+                    placeholder="—"
+                    options={[{ value: "first", label: "Primero" }, { value: "second", label: "Segundo" }]}
+                  />
+                </div>
+              </div>
 
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                ¿Quién ganó el dado?
-              </label>
-              <SimpleSelect
-                value={
-                  round.won_die_roll === null ? "" : round.won_die_roll ? "me" : "opp"
-                }
-                onChange={(v) =>
-                  onChange({ won_die_roll: v === "" ? null : v === "me" })
-                }
-                placeholder="—"
-                options={[
-                  { value: "me", label: "Yo" },
-                  { value: "opp", label: "Oponente" },
-                ]}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Tu turno
-              </label>
-              <SimpleSelect
-                value={round.turn_order ?? ""}
-                onChange={(v) =>
-                  onChange({
-                    turn_order: (v || null) as "first" | "second" | null,
-                  })
-                }
-                placeholder="—"
-                options={[
-                  { value: "first", label: "Primero" },
-                  { value: "second", label: "Segundo" },
-                ]}
-              />
-            </div>
-          </div>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                  Resultado
+                </label>
+                <SimpleSelect
+                  value={round.won_match === null ? "" : round.won_match ? "me" : "opp"}
+                  onChange={(v) => onChange({ won_match: v === "" ? null : v === "me" })}
+                  placeholder="—"
+                  options={[{ value: "me", label: "Victoria" }, { value: "opp", label: "Derrota" }]}
+                />
+              </div>
+            </>
+          )}
 
-          <div className="mb-3">
+          <div>
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              ¿Quién ganó el match?
+              Notas (opcional)
             </label>
-            <SimpleSelect
-              value={round.won_match === null ? "" : round.won_match ? "me" : "opp"}
-              onChange={(v) =>
-                onChange({ won_match: v === "" ? null : v === "me" })
-              }
-              placeholder="—"
-              options={[
-                { value: "me", label: "Yo" },
-                { value: "opp", label: "Oponente" },
-              ]}
+            <textarea
+              value={round.notes ?? ""}
+              onChange={(e) => onChange({ notes: e.target.value || null })}
+              rows={2}
+              className="w-full resize-none rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>
-        </>
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="flex-1 rounded-md bg-primary py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50"
+            >
+              {saving ? "Guardando…" : "Guardar"}
+            </button>
+            {deleteConfirm ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-gray-300">¿Eliminar?</span>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  disabled={deleting}
+                  className="rounded-md bg-red-500/20 px-2 py-1.5 text-[11px] font-semibold text-red-300 disabled:opacity-50"
+                >
+                  {deleting ? "…" : "Sí"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  className="rounded-md border border-white/10 px-2 py-1.5 text-[11px] text-gray-300"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(true)}
+                className="rounded-md border border-red-500/30 bg-red-500/10 p-2 text-red-400 transition hover:bg-red-500/20"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+        </div>
       )}
-
-      <div className="mb-3">
-        <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-          Notas (opcional)
-        </label>
-        <textarea
-          value={round.notes ?? ""}
-          onChange={(e) => onChange({ notes: e.target.value || null })}
-          rows={2}
-          className="w-full resize-none rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground disabled:opacity-50"
-        >
-          <Save size={13} /> {saving ? "Guardando…" : "Guardar Ronda"}
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={deleting}
-          className="flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
-        >
-          <Trash2 size={13} /> {deleting ? "Eliminando…" : ""}
-        </button>
-      </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
