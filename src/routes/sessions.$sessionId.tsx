@@ -185,7 +185,7 @@ function LeaderSelect({
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+        <div className="absolute z-40 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
           <div className="relative p-2">
             <Search
               size={13}
@@ -465,7 +465,7 @@ function StandaloneRoundCard({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
               onClick={(e) => e.stopPropagation()}
-              className={`absolute inset-0 z-20 flex items-center justify-between gap-3 rounded-t-xl bg-red-950/95 px-4 backdrop-blur-sm ${
+              className={`absolute inset-0 z-40 flex items-center justify-between gap-3 rounded-t-xl bg-red-950/95 px-4 backdrop-blur-sm ${
                 open ? "" : "rounded-b-xl"
               }`}
             >
@@ -851,17 +851,16 @@ function StandaloneRoundTracker({
         </div>
       )}
 
-      {/* Sticky bottom add button — mobile */}
+      {/* Floating add button — mobile */}
       {!isLocked && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-black/80 p-3 backdrop-blur-md sm:hidden">
-          <button
-            type="button"
-            onClick={addRound}
-            className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-          >
-            + Agregar Ronda
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={addRound}
+          aria-label="Agregar Ronda"
+          className="fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 transition hover:brightness-110 active:scale-95 sm:hidden"
+        >
+          <Plus size={24} />
+        </button>
       )}
 
       {/* Desktop add button */}

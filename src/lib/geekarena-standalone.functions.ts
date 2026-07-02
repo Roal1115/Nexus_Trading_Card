@@ -92,7 +92,7 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
     const { data: sessions, error } = await admin
       .from("standalone_sessions")
       .select(
-        "id, session_type, name, status, game_id, session_date, session_time, store_id, tournament_id, created_at, updated_at",
+        "id, session_type, name, status, game_id, session_date, session_time, store_id, tournament_id, player_leader_id, created_at, updated_at",
       )
       .eq("player_id", player.id)
       .order("created_at", { ascending: false });
@@ -100,14 +100,18 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const sessionList = sessions ?? [];
 
-    // Enriquecer con nombre del juego, tienda y torneo vinculado
+    // Enriquecer con nombre del juego, tienda, torneo vinculado, leader y récord
     const gameIds = Array.from(new Set(sessionList.map((s: any) => s.game_id)));
     const storeIds = Array.from(new Set(sessionList.map((s: any) => s.store_id).filter(Boolean)));
     const tournamentIds = Array.from(
       new Set(sessionList.map((s: any) => s.tournament_id).filter(Boolean)),
     );
+    const sessionIds = sessionList.map((s: any) => s.id);
+    const leaderIds = Array.from(
+      new Set(sessionList.map((s: any) => s.player_leader_id).filter(Boolean)),
+    );
 
-    const [gamesRes, storesRes, tournamentsRes] = await Promise.all([
+    const [gamesRes, storesRes, tournamentsRes, roundsRes, leadersRes] = await Promise.all([
       gameIds.length
         ? admin.from("games").select("id, name").in("id", gameIds)
         : Promise.resolve({ data: [] as any[] }),
@@ -120,6 +124,15 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
             .select("id, tournament_date, stores!inner(name, city)")
             .in("id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
+      sessionIds.length
+        ? admin.from("standalone_round_results").select("session_id, won_match").in("session_id", sessionIds)
+        : Promise.resolve({ data: [] as any[] }),
+      leaderIds.length
+        ? admin
+            .from("deck_identifiers")
+            .select("id, base_name, card_image, card_set_id")
+            .in("id", leaderIds)
+        : Promise.resolve({ data: [] as any[] }),
     ]);
 
     const gameMap = new Map(((gamesRes.data ?? []) as any[]).map((g: any) => [g.id, g.name]));
@@ -127,11 +140,22 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
     const tournamentMap = new Map(
       ((tournamentsRes.data ?? []) as any[]).map((t: any) => [t.id, t]),
     );
+    const leaderMap = new Map(((leadersRes.data ?? []) as any[]).map((l: any) => [l.id, l]));
+
+    const recordMap = new Map<string, { wins: number; losses: number }>();
+    for (const r of (roundsRes.data ?? []) as any[]) {
+      const rec = recordMap.get(r.session_id) ?? { wins: 0, losses: 0 };
+      if (r.won_match === true) rec.wins++;
+      else if (r.won_match === false) rec.losses++;
+      recordMap.set(r.session_id, rec);
+    }
 
     return {
       sessions: sessionList.map((s: any) => {
         const store = s.store_id ? storeMap.get(s.store_id) : null;
         const tournament = s.tournament_id ? tournamentMap.get(s.tournament_id) : null;
+        const record = recordMap.get(s.id) ?? { wins: 0, losses: 0 };
+        const totalDecided = record.wins + record.losses;
         return {
           id: s.id as string,
           session_type: s.session_type as "competitive" | "casual",
@@ -146,6 +170,10 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
           tournament_id: s.tournament_id as string | null,
           tournament_date: (tournament as any)?.tournament_date ?? null,
           tournament_store_name: (tournament as any)?.stores?.name ?? null,
+          leader: s.player_leader_id ? (leaderMap.get(s.player_leader_id) ?? null) : null,
+          wins: record.wins,
+          losses: record.losses,
+          win_rate: totalDecided > 0 ? Math.round((record.wins / totalDecided) * 100) : null,
           created_at: s.created_at as string,
           updated_at: s.updated_at as string,
         };

@@ -87,6 +87,19 @@ function StatusBadge({ status }: { status: SessionRow["status"] }) {
   );
 }
 
+function getRecordTint(winRate: number | null, wins: number) {
+  if (winRate === null) return { border: "border-white/10", bg: "", ring: "" };
+  if (winRate === 100 && wins > 0) {
+    return {
+      border: "border-yellow-400/50",
+      bg: "bg-yellow-500/5",
+      ring: "ring-2 ring-yellow-400/50 shadow-[0_0_16px_-2px_rgba(250,204,21,0.45)]",
+    };
+  }
+  if (winRate < 50) return { border: "border-red-500/20", bg: "bg-red-500/5", ring: "" };
+  return { border: "border-emerald-500/20", bg: "bg-emerald-500/5", ring: "" };
+}
+
 function SessionCard({
   session,
   onDelete,
@@ -104,13 +117,21 @@ function SessionCard({
     navigate({ to: "/sessions/$sessionId", params: { sessionId: session.id } });
   };
 
+  const tint = getRecordTint(session.win_rate, session.wins);
+
   return (
     <div
       onClick={goToDetail}
-      className="glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-white/10 p-4 transition hover:border-primary/40 hover:bg-white/[0.04]"
+      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
     >
       <div className="flex-shrink-0">
-        {session.session_type === "competitive" ? (
+        {session.leader?.card_image ? (
+          <img
+            src={session.leader.card_image}
+            alt={session.leader.base_name}
+            className="h-10 w-7 rounded-md border border-white/10 object-cover"
+          />
+        ) : session.session_type === "competitive" ? (
           <Trophy size={16} className="text-primary" />
         ) : (
           <Swords size={16} className="text-gray-500" />
@@ -120,9 +141,30 @@ function SessionCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <StatusBadge status={session.status} />
+          {session.win_rate !== null && (
+            <span
+              className={`text-[10px] font-bold ${
+                session.win_rate === 100
+                  ? "text-yellow-400"
+                  : session.win_rate >= 50
+                  ? "text-emerald-400"
+                  : "text-red-400"
+              }`}
+            >
+              {session.win_rate}% WR
+            </span>
+          )}
           <span className="truncate text-sm font-semibold text-white">{session.name}</span>
         </div>
-        <div className="mt-0.5 text-[11px] text-gray-500">{session.game_name}</div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+          <span>{session.game_name}</span>
+          {session.leader && (
+            <>
+              <span className="text-gray-700">·</span>
+              <span className="truncate text-gray-400">{cleanName(session.leader.base_name)}</span>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="hidden sm:block text-right min-w-0">
