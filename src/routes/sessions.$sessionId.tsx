@@ -412,195 +412,204 @@ function RoundSummary({ round }: { round: RoundState }) {
 function StandaloneRoundCard({
   round,
   gameId,
-  sessionType,
   onChange,
   onSave,
   onDelete,
   saving,
   deleting,
-  defaultExpanded,
 }: {
   round: RoundState;
   gameId: string;
-  sessionType: "competitive" | "casual";
   onChange: (patch: Partial<RoundState>) => void;
   onSave: () => void;
   onDelete: () => void;
   saving: boolean;
   deleting: boolean;
-  defaultExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [open, setOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  const resultColor = round.won_match === true
+    ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
+    : round.won_match === false
+    ? "bg-red-500/10 border-l-2 border-l-red-500"
+    : "bg-white/[0.02]";
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5">
+    <div className={`rounded-xl border border-white/10 overflow-hidden ${resultColor}`}>
+      {/* Row — collapsed view */}
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+        onClick={() => setOpen((o) => !o)}
+        className="grid w-full grid-cols-[40px_1fr_52px_52px_52px] items-center gap-2 px-3 py-3 text-left"
       >
-        <RoundSummary round={round} />
-        <ChevronDown
-          size={16}
-          className={`flex-shrink-0 text-gray-500 transition-transform ${
-            expanded ? "rotate-180" : ""
-          }`}
-        />
+        {/* Round number */}
+        <span className={`font-mono text-sm font-bold ${
+          round.won_match === true ? "text-emerald-400"
+          : round.won_match === false ? "text-red-400"
+          : "text-gray-400"
+        }`}>
+          R{round.round_number}
+        </span>
+
+        {/* Opponent deck */}
+        <div className="flex items-center gap-2 min-w-0">
+          {round.opponent_leader?.card_image ? (
+            <img
+              src={round.opponent_leader.card_image}
+              alt={round.opponent_leader.base_name}
+              className="h-9 w-6 flex-shrink-0 rounded-md border border-white/10 object-cover"
+            />
+          ) : (
+            <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
+              <span className="text-[8px] text-gray-600">?</span>
+            </div>
+          )}
+          <span className="truncate text-xs text-gray-300">
+            {round.opponent_leader ? cleanName(round.opponent_leader.base_name) : "—"}
+          </span>
+        </div>
+
+        {/* Dice */}
+        <span className="text-center text-[11px] text-gray-400">
+          {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Opp"}
+        </span>
+
+        {/* Order */}
+        <span className="text-center text-[11px] text-gray-400">
+          {round.turn_order === "first" ? "1st" : round.turn_order === "second" ? "2nd" : "—"}
+        </span>
+
+        {/* Result */}
+        <span className={`text-center text-xs font-bold ${
+          round.won_match === true ? "text-emerald-400"
+          : round.won_match === false ? "text-red-400"
+          : "text-gray-500"
+        }`}>
+          {round.won_match === true ? "W" : round.won_match === false ? "L" : "—"}
+        </span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            key="content"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4">
-              {sessionType === "competitive" && (
-              <label className="mb-3 flex items-center gap-2 text-xs text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={round.is_bye}
-                  onChange={(e) =>
-                    onChange({
-                      is_bye: e.target.checked,
-                      won_match: e.target.checked ? true : null,
-                      opponent_leader: null,
-                      opponent_leader_id: null,
-                      won_die_roll: null,
-                      turn_order: null,
-                    })
-                  }
+      {/* Expanded form */}
+      {open && (
+        <div className="border-t border-white/10 px-3 pb-4 pt-3 space-y-3">
+          {!round.is_bye && (
+            <>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                  Leader del oponente
+                </label>
+                <LeaderSelect
+                  gameId={gameId}
+                  value={round.opponent_leader}
+                  onChange={(d) => onChange({ opponent_leader: d, opponent_leader_id: d?.id ?? null })}
+                  placeholder="Selecciona leader oponente…"
                 />
-                Bye
-              </label>
-              )}
+              </div>
 
-      {!round.is_bye && (
-        <>
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Tu leader
-              </label>
-              <LeaderSelect
-                gameId={gameId}
-                value={round.player_leader}
-                onChange={(d) => onChange({ player_leader: d, player_leader_id: d?.id ?? null })}
-                placeholder="Selecciona tu leader…"
-              />
-            </div>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                  Tu leader
+                </label>
+                <LeaderSelect
+                  gameId={gameId}
+                  value={round.player_leader}
+                  onChange={(d) => onChange({ player_leader: d, player_leader_id: d?.id ?? null })}
+                  placeholder="Selecciona tu leader…"
+                />
+              </div>
 
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Leader del oponente
-              </label>
-              <LeaderSelect
-                gameId={gameId}
-                value={round.opponent_leader}
-                onChange={(d) =>
-                  onChange({ opponent_leader: d, opponent_leader_id: d?.id ?? null })
-                }
-                placeholder="Selecciona leader oponente…"
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                    ¿Quién ganó el dado?
+                  </label>
+                  <SimpleSelect
+                    value={round.won_die_roll === null ? "" : round.won_die_roll ? "me" : "opp"}
+                    onChange={(v) => onChange({ won_die_roll: v === "" ? null : v === "me" })}
+                    placeholder="—"
+                    options={[{ value: "me", label: "Yo" }, { value: "opp", label: "Oponente" }]}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                    Tu turno
+                  </label>
+                  <SimpleSelect
+                    value={round.turn_order ?? ""}
+                    onChange={(v) => onChange({ turn_order: (v || null) as "first" | "second" | null })}
+                    placeholder="—"
+                    options={[{ value: "first", label: "Primero" }, { value: "second", label: "Segundo" }]}
+                  />
+                </div>
+              </div>
 
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                ¿Quién ganó el dado?
-              </label>
-              <SimpleSelect
-                value={
-                  round.won_die_roll === null ? "" : round.won_die_roll ? "me" : "opp"
-                }
-                onChange={(v) =>
-                  onChange({ won_die_roll: v === "" ? null : v === "me" })
-                }
-                placeholder="—"
-                options={[
-                  { value: "me", label: "Yo" },
-                  { value: "opp", label: "Oponente" },
-                ]}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Tu turno
-              </label>
-              <SimpleSelect
-                value={round.turn_order ?? ""}
-                onChange={(v) =>
-                  onChange({
-                    turn_order: (v || null) as "first" | "second" | null,
-                  })
-                }
-                placeholder="—"
-                options={[
-                  { value: "first", label: "Primero" },
-                  { value: "second", label: "Segundo" },
-                ]}
-              />
-            </div>
-          </div>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+                  Resultado
+                </label>
+                <SimpleSelect
+                  value={round.won_match === null ? "" : round.won_match ? "me" : "opp"}
+                  onChange={(v) => onChange({ won_match: v === "" ? null : v === "me" })}
+                  placeholder="—"
+                  options={[{ value: "me", label: "Victoria" }, { value: "opp", label: "Derrota" }]}
+                />
+              </div>
+            </>
+          )}
 
-          <div className="mb-3">
+          <div>
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              ¿Quién ganó el match?
+              Notas (opcional)
             </label>
-            <SimpleSelect
-              value={round.won_match === null ? "" : round.won_match ? "me" : "opp"}
-              onChange={(v) =>
-                onChange({ won_match: v === "" ? null : v === "me" })
-              }
-              placeholder="—"
-              options={[
-                { value: "me", label: "Yo" },
-                { value: "opp", label: "Oponente" },
-              ]}
+            <textarea
+              value={round.notes ?? ""}
+              onChange={(e) => onChange({ notes: e.target.value || null })}
+              rows={2}
+              className="w-full resize-none rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>
-        </>
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="flex-1 rounded-md bg-primary py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50"
+            >
+              {saving ? "Guardando…" : "Guardar"}
+            </button>
+            {deleteConfirm ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-gray-300">¿Eliminar?</span>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  disabled={deleting}
+                  className="rounded-md bg-red-500/20 px-2 py-1.5 text-[11px] font-semibold text-red-300 disabled:opacity-50"
+                >
+                  {deleting ? "…" : "Sí"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  className="rounded-md border border-white/10 px-2 py-1.5 text-[11px] text-gray-300"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(true)}
+                className="rounded-md border border-red-500/30 bg-red-500/10 p-2 text-red-400 transition hover:bg-red-500/20"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+        </div>
       )}
-
-      <div className="mb-3">
-        <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-          Notas (opcional)
-        </label>
-        <textarea
-          value={round.notes ?? ""}
-          onChange={(e) => onChange({ notes: e.target.value || null })}
-          rows={2}
-          className="w-full resize-none rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground disabled:opacity-50"
-        >
-          <Save size={13} /> {saving ? "Guardando…" : "Guardar Ronda"}
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={deleting}
-          className="flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
-        >
-          <Trash2 size={13} /> {deleting ? "Eliminando…" : ""}
-        </button>
-      </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -611,15 +620,15 @@ function StandaloneRoundCard({
 function StandaloneRoundTracker({
   sessionId,
   gameId,
-  sessionType,
   initialRounds,
   sessionStatus,
+  session,
 }: {
   sessionId: string;
   gameId: string;
-  sessionType: "competitive" | "casual";
   initialRounds: RoundData[];
   sessionStatus: string;
+  session: any;
 }) {
   const saveRound = useServerFn(saveStandaloneRound);
   const delRound = useServerFn(deleteStandaloneRound);
@@ -633,7 +642,7 @@ function StandaloneRoundTracker({
       player_leader_id: (r.player_leader as any)?.id ?? null,
       opponent_leader: (r.opponent_leader as DeckIdentifier | null) ?? null,
       opponent_leader_id: (r.opponent_leader as any)?.id ?? null,
-      opponent_player_id: r.opponent_tag !== "—" ? null : null,
+      opponent_player_id: null,
       won_die_roll: r.won_die_roll,
       turn_order: r.turn_order,
       won_match: r.won_match,
@@ -646,38 +655,34 @@ function StandaloneRoundTracker({
 
   const isLocked = sessionStatus === "matched";
 
-  const occupiedNumbers = useMemo(
-    () => new Set(rounds.map((r) => r.round_number)),
-    [rounds],
-  );
+  const wins = rounds.filter((r) => r.won_match === true).length;
+  const losses = rounds.filter((r) => r.won_match === false).length;
 
+  // Leader image from first round that has a player_leader
+  const heroLeader = rounds.find((r) => r.player_leader)?.player_leader ?? null;
+
+  const occupiedNumbers = useMemo(() => new Set(rounds.map((r) => r.round_number)), [rounds]);
   const nextRoundNumber = useMemo(() => {
     let n = 1;
     while (occupiedNumbers.has(n)) n++;
     return n;
   }, [occupiedNumbers]);
 
-  const wins = rounds.filter((r) => !r.is_bye && r.won_match === true).length;
-  const losses = rounds.filter((r) => !r.is_bye && r.won_match === false).length;
-
   const addRound = () => {
     setRounds((prev) =>
-      [
-        ...prev,
-        {
-          round_number: nextRoundNumber,
-          is_bye: false,
-          player_leader: null,
-          player_leader_id: null,
-          opponent_leader: null,
-          opponent_leader_id: null,
-          opponent_player_id: null,
-          won_die_roll: null,
-          turn_order: null,
-          won_match: null,
-          notes: null,
-        },
-      ].sort((a, b) => a.round_number - b.round_number),
+      [...prev, {
+        round_number: nextRoundNumber,
+        is_bye: false,
+        player_leader: null,
+        player_leader_id: null,
+        opponent_leader: null,
+        opponent_leader_id: null,
+        opponent_player_id: null,
+        won_die_roll: null,
+        turn_order: null,
+        won_match: null,
+        notes: null,
+      }].sort((a, b) => a.round_number - b.round_number),
     );
   };
 
@@ -715,9 +720,7 @@ function StandaloneRoundTracker({
     const r = rounds[idx];
     setDeletingIdx(idx);
     try {
-      await delRound({
-        data: { session_id: sessionId, round_number: r.round_number },
-      });
+      await delRound({ data: { session_id: sessionId, round_number: r.round_number } });
       setRounds((prev) => prev.filter((_, i) => i !== idx));
       toast.success(`Ronda ${r.round_number} eliminada`);
     } catch (e: any) {
@@ -729,74 +732,104 @@ function StandaloneRoundTracker({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-          Rondas
-        </h3>
-        {rounds.length > 0 && (
-          <span className="font-mono-stat text-xs">
-            <span className="text-emerald-400">{wins}V</span>
-            <span className="text-gray-600"> / </span>
-            <span className="text-red-400">{losses}D</span>
-          </span>
-        )}
+      {/* Hero header — leader image + record */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+        <div className="flex items-end gap-4 p-4">
+          {/* Leader image */}
+          <div className="relative flex-shrink-0">
+            {heroLeader?.card_image ? (
+              <img
+                src={heroLeader.card_image}
+                alt={heroLeader.base_name}
+                className="h-24 w-16 rounded-xl border border-white/20 object-cover shadow-xl"
+              />
+            ) : (
+              <div className="flex h-24 w-16 items-center justify-center rounded-xl border border-white/10 bg-black/40">
+                <ShieldQuestion size={20} className="text-gray-600" />
+              </div>
+            )}
+            {/* W-L overlay */}
+            {(wins > 0 || losses > 0) && (
+              <div className="absolute bottom-1 left-0 right-0 flex justify-center">
+                <span className="rounded-full bg-black/80 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                  <span className="text-emerald-400">{wins}V</span>
+                  <span className="text-gray-500"> · </span>
+                  <span className="text-red-400">{losses}D</span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Session info */}
+          <div className="min-w-0 flex-1 pb-1">
+            <p className="text-lg font-bold text-white truncate">{session?.name ?? "Sesión"}</p>
+            <p className="text-xs text-gray-500">
+              {session?.session_date
+                ? new Date(session.session_date + "T00:00:00").toLocaleDateString("es-MX", {
+                    day: "numeric", month: "short", year: "numeric",
+                  })
+                : "Sin fecha"}
+              {session?.store_name ? ` · ${session.store_name}` : ""}
+            </p>
+          </div>
+        </div>
       </div>
 
+      {/* Table header */}
+      {rounds.length > 0 && (
+        <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
+          <span className="text-[10px] uppercase tracking-widest text-gray-600">Round</span>
+          <span className="text-[10px] uppercase tracking-widest text-gray-600">Deck</span>
+          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">Dado</span>
+          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">Turno</span>
+          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">Res</span>
+        </div>
+      )}
+
+      {/* Round list */}
       {rounds.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/10 py-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Swords size={20} />
-          </div>
-          <p className="text-sm text-gray-300">Sin rondas registradas aún.</p>
-          <p className="mt-1 text-xs text-gray-600">
-            Registra cada partida para trackear tu desempeño.
-          </p>
+          <p className="text-sm text-gray-500">Sin rondas registradas aún.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {rounds.map((r, idx) => (
             <StandaloneRoundCard
               key={r.id ?? `new-${idx}`}
               round={r}
               gameId={gameId}
-              sessionType={sessionType}
               onChange={(patch) => updateRound(idx, patch)}
               onSave={() => handleSave(idx)}
               onDelete={() => handleDelete(idx)}
               saving={savingIdx === idx}
               deleting={deletingIdx === idx}
-              defaultExpanded={!r.id}
             />
           ))}
         </div>
       )}
 
+      {/* Sticky bottom add button — mobile */}
+      {!isLocked && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-black/80 p-3 backdrop-blur-md sm:hidden">
+          <button
+            type="button"
+            onClick={addRound}
+            className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
+          >
+            + Agregar Ronda
+          </button>
+        </div>
+      )}
+
+      {/* Desktop add button */}
       {!isLocked && (
         <button
           type="button"
           onClick={addRound}
-          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-dashed border-white/15 bg-white/[0.02] py-3.5 text-sm font-semibold text-gray-400 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+          className="hidden sm:flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-sm font-medium text-gray-400 transition hover:border-primary hover:text-primary"
         >
-          <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-          <Plus
-            size={16}
-            className="relative flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-          />
-          <span className="relative">Agregar Ronda {nextRoundNumber}</span>
+          <Plus size={15} /> Agregar Ronda
         </button>
-      )}
-
-      {/* Mobile sticky add button */}
-      {!isLocked && (
-        <div className="fixed bottom-4 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">
-          <button
-            type="button"
-            onClick={addRound}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-          >
-            <Plus size={16} /> Ronda {nextRoundNumber}
-          </button>
-        </div>
       )}
     </div>
   );
@@ -1335,9 +1368,9 @@ function SessionDetailPage() {
         <StandaloneRoundTracker
           sessionId={sessionId}
           gameId={session.game_id}
-          sessionType={session.session_type}
           initialRounds={rounds}
           sessionStatus={session.status}
+          session={session}
         />
       ) : null}
 
