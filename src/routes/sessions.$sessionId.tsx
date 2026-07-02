@@ -238,57 +238,6 @@ function LeaderSelect({
   );
 }
 
-// ============================================================
-// SimpleSelect
-// ============================================================
-function SimpleSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: Array<{ value: string; label: string }>;
-  placeholder: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.value === value);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-      >
-        <span className="truncate">
-          {selected ? selected.label : <span className="text-gray-500">{placeholder}</span>}
-        </span>
-        <ChevronDown size={14} className="flex-shrink-0 text-gray-500" />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
-          <div className="max-h-48 overflow-y-auto">
-            {options.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                }}
-                className="flex w-full items-center bg-transparent px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ============================================================
 // StandaloneRoundCard
