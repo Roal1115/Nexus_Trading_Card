@@ -695,7 +695,7 @@ function StandaloneRoundTracker({
           session_id: sessionId,
           round_number: r.round_number,
           is_bye: r.is_bye,
-          player_leader_id: r.player_leader_id,
+          player_leader_id: r.player_leader_id ?? heroLeader?.id ?? null,
           opponent_leader_id: r.opponent_leader_id,
           opponent_player_id: r.opponent_player_id,
           won_die_roll: r.won_die_roll,
