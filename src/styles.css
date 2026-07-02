@@ -149,6 +149,18 @@
   input[type="time"] {
     color-scheme: dark;
   }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="date"],
+  input[type="time"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 
   * {
     border-color: var(--color-border);
@@ -167,6 +179,14 @@
   h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em) !important;
   }
 }
 
