@@ -385,11 +385,19 @@ function StandaloneRoundCard({
     : "bg-white/[0.02]";
 
   return (
-    <div className={`rounded-xl border border-white/10 overflow-hidden ${resultColor}`}>
+    <div
+      className={`rounded-xl border overflow-hidden transition-colors duration-150 ${
+        deleteConfirm ? "border-red-500/40" : "border-white/10"
+      } ${resultColor}`}
+    >
 
       {/* Collapsed row */}
-      <div className="grid grid-cols-[40px_1fr_52px_52px_52px_36px] items-center gap-2 px-3 py-3">
-        
+      <div
+        onClick={() => !deleteConfirm && setOpen((o) => !o)}
+        className={`relative grid grid-cols-[40px_1fr_52px_52px_52px_36px] items-center gap-2 px-3 py-3 cursor-pointer transition-colors duration-150 ${
+          open ? "bg-white/[0.04]" : "hover:bg-white/[0.04] active:bg-white/[0.07]"
+        }`}
+      >
         {/* Round number */}
         <span className={`font-mono text-sm font-bold ${
           round.won_match === true ? "text-emerald-400"
@@ -399,12 +407,8 @@ function StandaloneRoundCard({
           R{round.round_number}
         </span>
 
-        {/* Opponent deck — tappable to expand */}
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-2 min-w-0 text-left"
-        >
+        {/* Opponent deck */}
+        <div className="flex items-center gap-2 min-w-0 text-left">
           {round.opponent_leader?.card_image ? (
             <img
               src={round.opponent_leader.card_image}
@@ -419,7 +423,7 @@ function StandaloneRoundCard({
           <span className="truncate text-xs text-gray-300">
             {round.opponent_leader ? cleanName(round.opponent_leader.base_name) : "—"}
           </span>
-        </button>
+        </div>
 
         {/* Dice */}
         <span className="text-center text-[11px] text-gray-400">
@@ -441,37 +445,65 @@ function StandaloneRoundCard({
         </span>
 
         {/* Delete button — discrete, far from Save */}
-        {deleteConfirm ? (
-          <div className="flex flex-col items-center gap-0.5">
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={deleting}
-              className="text-[10px] font-bold text-red-400 hover:underline disabled:opacity-50"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteConfirm(true);
+          }}
+          className="relative z-10 flex items-center justify-center rounded-md p-1.5 text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
+        >
+          <Trash2 size={13} />
+        </button>
+
+        {/* Delete confirmation — full-row overlay, can't be clipped by the card's overflow-hidden */}
+        <AnimatePresence>
+          {deleteConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`absolute inset-0 z-20 flex items-center justify-between gap-3 rounded-t-xl bg-red-950/95 px-4 backdrop-blur-sm ${
+                open ? "" : "rounded-b-xl"
+              }`}
             >
-              {deleting ? "…" : "Sí"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDeleteConfirm(false)}
-              className="text-[10px] text-gray-500 hover:text-white"
-            >
-              No
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setDeleteConfirm(true)}
-            className="flex items-center justify-center rounded-md p-1.5 text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
-          >
-            <Trash2 size={13} />
-          </button>
-        )}
+              <span className="text-xs font-medium text-red-100">
+                ¿Eliminar Ronda {round.round_number}?
+              </span>
+              <div className="flex flex-shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  disabled={deleting}
+                  className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
+                >
+                  {deleting ? "…" : "Eliminar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/10"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Expanded form */}
-      {open && (
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
         <div className="border-t border-white/10 px-4 pb-5 pt-4 space-y-5">
 
           {/* Opponent leader */}
@@ -605,7 +637,9 @@ function StandaloneRoundCard({
           </button>
 
         </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1170,8 +1204,14 @@ function SessionDetailPage() {
                 <Swords size={20} className="flex-shrink-0 text-gray-400" />
               )}
               <div className="min-w-0">
+                <AnimatePresence mode="wait" initial={false}>
                 {editingDetails ? (
-                  <div
+                  <motion.div
+                    key="edit"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
                     className="flex flex-wrap items-center gap-1.5"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleDetailsSave();
@@ -1217,9 +1257,16 @@ function SessionDetailPage() {
                     >
                       <X size={15} />
                     </button>
-                  </div>
+                  </motion.div>
                 ) : (
-                  <div className="group flex min-w-0 items-center gap-1.5">
+                  <motion.div
+                    key="display"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="group flex min-w-0 items-center gap-1.5"
+                  >
                     <h1 className="truncate text-xl font-bold text-white">{session.name}</h1>
                     <button
                       type="button"
@@ -1233,8 +1280,9 @@ function SessionDetailPage() {
                     >
                       <Pencil size={13} />
                     </button>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
                   <span>{session.game_name}</span>
                   {!editingDetails && session.session_date && (
@@ -1262,32 +1310,46 @@ function SessionDetailPage() {
             <div className="flex items-center gap-2 flex-shrink-0">
               <StatusBadge status={session.status} />
               {session.status !== "matched" && (
-                deleteConfirming ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-gray-300">¿Eliminar?</span>
-                    <button
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-50"
+                <AnimatePresence mode="wait" initial={false}>
+                  {deleteConfirming ? (
+                    <motion.div
+                      key="confirm"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="flex items-center gap-1.5"
                     >
-                      {deleting ? "…" : "Sí"}
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirming(false)}
-                      className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-gray-300 transition hover:border-white/20"
+                      <span className="text-[11px] text-gray-300">¿Eliminar?</span>
+                      <button
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-50"
+                      >
+                        {deleting ? "…" : "Sí"}
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirming(false)}
+                        className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-gray-300 transition hover:border-white/20"
+                      >
+                        No
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.button
+                      key="trigger"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={() => setDeleteConfirming(true)}
+                      className="rounded-md p-1.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
+                      aria-label="Eliminar sesión"
                     >
-                      No
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setDeleteConfirming(true)}
-                    className="rounded-md p-1.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
-                    aria-label="Eliminar sesión"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )
+                      <Trash2 size={14} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               )}
             </div>
           </div>
@@ -1305,31 +1367,45 @@ function SessionDetailPage() {
                   )}
                 </span>
               </div>
-              {undoConfirming ? (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-gray-300">¿Deshacer?</span>
-                  <button
-                    onClick={handleUndo}
-                    disabled={undoing}
-                    className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-50"
+              <AnimatePresence mode="wait" initial={false}>
+                {undoConfirming ? (
+                  <motion.div
+                    key="confirm"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-1.5"
                   >
-                    {undoing ? "…" : "Sí"}
-                  </button>
-                  <button
-                    onClick={() => setUndoConfirming(false)}
-                    className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-gray-300"
+                    <span className="text-[11px] text-gray-300">¿Deshacer?</span>
+                    <button
+                      onClick={handleUndo}
+                      disabled={undoing}
+                      className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-50"
+                    >
+                      {undoing ? "…" : "Sí"}
+                    </button>
+                    <button
+                      onClick={() => setUndoConfirming(false)}
+                      className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-gray-300"
+                    >
+                      No
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="trigger"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => setUndoConfirming(true)}
+                    className="flex items-center gap-1 text-xs text-red-400 transition hover:underline"
                   >
-                    No
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setUndoConfirming(true)}
-                  className="flex items-center gap-1 text-xs text-red-400 transition hover:underline"
-                >
-                  <Link2Off size={12} /> Deshacer vínculo
-                </button>
-              )}
+                    <Link2Off size={12} /> Deshacer vínculo
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
