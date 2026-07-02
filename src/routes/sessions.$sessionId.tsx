@@ -1368,9 +1368,9 @@ function SessionDetailPage() {
         <StandaloneRoundTracker
           sessionId={sessionId}
           gameId={session.game_id}
-          sessionType={session.session_type}
           initialRounds={rounds}
           sessionStatus={session.status}
+          session={session}
         />
       ) : null}
 
