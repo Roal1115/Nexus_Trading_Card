@@ -620,15 +620,15 @@ function StandaloneRoundCard({
 function StandaloneRoundTracker({
   sessionId,
   gameId,
-  sessionType,
   initialRounds,
   sessionStatus,
+  session,
 }: {
   sessionId: string;
   gameId: string;
-  sessionType: "competitive" | "casual";
   initialRounds: RoundData[];
   sessionStatus: string;
+  session: any;
 }) {
   const saveRound = useServerFn(saveStandaloneRound);
   const delRound = useServerFn(deleteStandaloneRound);
@@ -642,7 +642,7 @@ function StandaloneRoundTracker({
       player_leader_id: (r.player_leader as any)?.id ?? null,
       opponent_leader: (r.opponent_leader as DeckIdentifier | null) ?? null,
       opponent_leader_id: (r.opponent_leader as any)?.id ?? null,
-      opponent_player_id: r.opponent_tag !== "—" ? null : null,
+      opponent_player_id: null,
       won_die_roll: r.won_die_roll,
       turn_order: r.turn_order,
       won_match: r.won_match,
@@ -655,38 +655,34 @@ function StandaloneRoundTracker({
 
   const isLocked = sessionStatus === "matched";
 
-  const occupiedNumbers = useMemo(
-    () => new Set(rounds.map((r) => r.round_number)),
-    [rounds],
-  );
+  const wins = rounds.filter((r) => r.won_match === true).length;
+  const losses = rounds.filter((r) => r.won_match === false).length;
 
+  // Leader image from first round that has a player_leader
+  const heroLeader = rounds.find((r) => r.player_leader)?.player_leader ?? null;
+
+  const occupiedNumbers = useMemo(() => new Set(rounds.map((r) => r.round_number)), [rounds]);
   const nextRoundNumber = useMemo(() => {
     let n = 1;
     while (occupiedNumbers.has(n)) n++;
     return n;
   }, [occupiedNumbers]);
 
-  const wins = rounds.filter((r) => !r.is_bye && r.won_match === true).length;
-  const losses = rounds.filter((r) => !r.is_bye && r.won_match === false).length;
-
   const addRound = () => {
     setRounds((prev) =>
-      [
-        ...prev,
-        {
-          round_number: nextRoundNumber,
-          is_bye: false,
-          player_leader: null,
-          player_leader_id: null,
-          opponent_leader: null,
-          opponent_leader_id: null,
-          opponent_player_id: null,
-          won_die_roll: null,
-          turn_order: null,
-          won_match: null,
-          notes: null,
-        },
-      ].sort((a, b) => a.round_number - b.round_number),
+      [...prev, {
+        round_number: nextRoundNumber,
+        is_bye: false,
+        player_leader: null,
+        player_leader_id: null,
+        opponent_leader: null,
+        opponent_leader_id: null,
+        opponent_player_id: null,
+        won_die_roll: null,
+        turn_order: null,
+        won_match: null,
+        notes: null,
+      }].sort((a, b) => a.round_number - b.round_number),
     );
   };
 
@@ -724,9 +720,7 @@ function StandaloneRoundTracker({
     const r = rounds[idx];
     setDeletingIdx(idx);
     try {
-      await delRound({
-        data: { session_id: sessionId, round_number: r.round_number },
-      });
+      await delRound({ data: { session_id: sessionId, round_number: r.round_number } });
       setRounds((prev) => prev.filter((_, i) => i !== idx));
       toast.success(`Ronda ${r.round_number} eliminada`);
     } catch (e: any) {
@@ -738,74 +732,104 @@ function StandaloneRoundTracker({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-          Rondas
-        </h3>
-        {rounds.length > 0 && (
-          <span className="font-mono-stat text-xs">
-            <span className="text-emerald-400">{wins}V</span>
-            <span className="text-gray-600"> / </span>
-            <span className="text-red-400">{losses}D</span>
-          </span>
-        )}
+      {/* Hero header — leader image + record */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+        <div className="flex items-end gap-4 p-4">
+          {/* Leader image */}
+          <div className="relative flex-shrink-0">
+            {heroLeader?.card_image ? (
+              <img
+                src={heroLeader.card_image}
+                alt={heroLeader.base_name}
+                className="h-24 w-16 rounded-xl border border-white/20 object-cover shadow-xl"
+              />
+            ) : (
+              <div className="flex h-24 w-16 items-center justify-center rounded-xl border border-white/10 bg-black/40">
+                <ShieldQuestion size={20} className="text-gray-600" />
+              </div>
+            )}
+            {/* W-L overlay */}
+            {(wins > 0 || losses > 0) && (
+              <div className="absolute bottom-1 left-0 right-0 flex justify-center">
+                <span className="rounded-full bg-black/80 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                  <span className="text-emerald-400">{wins}V</span>
+                  <span className="text-gray-500"> · </span>
+                  <span className="text-red-400">{losses}D</span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Session info */}
+          <div className="min-w-0 flex-1 pb-1">
+            <p className="text-lg font-bold text-white truncate">{session?.name ?? "Sesión"}</p>
+            <p className="text-xs text-gray-500">
+              {session?.session_date
+                ? new Date(session.session_date + "T00:00:00").toLocaleDateString("es-MX", {
+                    day: "numeric", month: "short", year: "numeric",
+                  })
+                : "Sin fecha"}
+              {session?.store_name ? ` · ${session.store_name}` : ""}
+            </p>
+          </div>
+        </div>
       </div>
 
+      {/* Table header */}
+      {rounds.length > 0 && (
+        <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
+          <span className="text-[10px] uppercase tracking-widest text-gray-600">Round</span>
+          <span className="text-[10px] uppercase tracking-widest text-gray-600">Deck</span>
+          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">Dado</span>
+          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">Turno</span>
+          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">Res</span>
+        </div>
+      )}
+
+      {/* Round list */}
       {rounds.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/10 py-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Swords size={20} />
-          </div>
-          <p className="text-sm text-gray-300">Sin rondas registradas aún.</p>
-          <p className="mt-1 text-xs text-gray-600">
-            Registra cada partida para trackear tu desempeño.
-          </p>
+          <p className="text-sm text-gray-500">Sin rondas registradas aún.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {rounds.map((r, idx) => (
             <StandaloneRoundCard
               key={r.id ?? `new-${idx}`}
               round={r}
               gameId={gameId}
-              sessionType={sessionType}
               onChange={(patch) => updateRound(idx, patch)}
               onSave={() => handleSave(idx)}
               onDelete={() => handleDelete(idx)}
               saving={savingIdx === idx}
               deleting={deletingIdx === idx}
-              defaultExpanded={!r.id}
             />
           ))}
         </div>
       )}
 
+      {/* Sticky bottom add button — mobile */}
+      {!isLocked && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-black/80 p-3 backdrop-blur-md sm:hidden">
+          <button
+            type="button"
+            onClick={addRound}
+            className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
+          >
+            + Agregar Ronda
+          </button>
+        </div>
+      )}
+
+      {/* Desktop add button */}
       {!isLocked && (
         <button
           type="button"
           onClick={addRound}
-          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-dashed border-white/15 bg-white/[0.02] py-3.5 text-sm font-semibold text-gray-400 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+          className="hidden sm:flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-sm font-medium text-gray-400 transition hover:border-primary hover:text-primary"
         >
-          <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-          <Plus
-            size={16}
-            className="relative flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-          />
-          <span className="relative">Agregar Ronda {nextRoundNumber}</span>
+          <Plus size={15} /> Agregar Ronda
         </button>
-      )}
-
-      {/* Mobile sticky add button */}
-      {!isLocked && (
-        <div className="fixed bottom-4 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">
-          <button
-            type="button"
-            onClick={addRound}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-          >
-            <Plus size={16} /> Ronda {nextRoundNumber}
-          </button>
-        </div>
       )}
     </div>
   );
