@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   Trash2,
   ChevronRight,
+  ChevronDown,
+  ShieldQuestion,
   X,
   Search,
   Loader2,
@@ -24,7 +26,19 @@ import {
   searchStores,
 } from "@/lib/geekarena-standalone.functions";
 import { getMyStatsGames } from "@/lib/geekarena-player.functions";
+import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+
+type DeckIdentifier = {
+  id: string;
+  base_name: string;
+  card_image: string | null;
+  card_set_id: string | null;
+};
+
+function cleanName(name: string): string {
+  return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
+}
 
 export const Route = createFileRoute("/sessions/")({
   head: () => ({ meta: [{ title: "Mis Sesiones — Geek Arena" }] }),
@@ -86,13 +100,14 @@ function SessionCard({
   const [confirming, setConfirming] = useState(false);
 
   const goToDetail = () => {
+    if (confirming) return;
     navigate({ to: "/sessions/$sessionId", params: { sessionId: session.id } });
   };
 
   return (
     <div
       onClick={goToDetail}
-      className="glass group flex cursor-pointer items-center gap-4 rounded-2xl border border-white/10 p-4 transition hover:border-primary/40 hover:bg-white/[0.04]"
+      className="glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-white/10 p-4 transition hover:border-primary/40 hover:bg-white/[0.04]"
     >
       <div className="flex-shrink-0">
         {session.session_type === "competitive" ? (
@@ -118,47 +133,56 @@ function SessionCard({
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        {confirming ? (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5"
+        {session.status !== "matched" && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirming(true);
+            }}
+            className="rounded-md p-1.5 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition"
+            aria-label="Eliminar sesión"
           >
-            <span className="text-[11px] text-gray-300">¿Confirmar?</span>
-            <button
-              onClick={() => {
-                onDelete(session.id);
-                setConfirming(false);
-              }}
-              disabled={isDeleting}
-              className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/30 transition disabled:opacity-50"
-            >
-              Sí
-            </button>
-            <button
-              onClick={() => setConfirming(false)}
-              className="rounded-md border border-white/10 px-2 py-1 text-[11px] font-semibold text-gray-300 hover:border-white/20 transition"
-            >
-              No
-            </button>
-          </div>
-        ) : (
-          <>
-            {session.status !== "matched" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirming(true);
-                }}
-                className="rounded-md p-1.5 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition"
-                aria-label="Eliminar sesión"
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
-            <ChevronRight size={16} className="text-gray-600 group-hover:text-primary transition" />
-          </>
+            <Trash2 size={14} />
+          </button>
         )}
+        <ChevronRight size={16} className="text-gray-600 group-hover:text-primary transition" />
       </div>
+
+      {/* Delete confirmation — full-row overlay, same format used on the round rows */}
+      <AnimatePresence>
+        {confirming && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute inset-0 z-10 flex items-center justify-between gap-3 rounded-2xl bg-red-950/95 px-4 backdrop-blur-sm"
+          >
+            <span className="truncate text-sm font-medium text-red-100">
+              ¿Eliminar "{session.name}"?
+            </span>
+            <div className="flex flex-shrink-0 items-center gap-2">
+              <button
+                onClick={() => {
+                  onDelete(session.id);
+                  setConfirming(false);
+                }}
+                disabled={isDeleting}
+                className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
+              >
+                {isDeleting ? "…" : "Eliminar"}
+              </button>
+              <button
+                onClick={() => setConfirming(false)}
+                className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -328,6 +352,112 @@ function SessionsPage() {
 }
 
 // ============================================================
+// LeaderSelect — selecciona el leader/deck propio de la sesión
+// ============================================================
+function LeaderSelect({
+  gameId,
+  value,
+  onChange,
+}: {
+  gameId: string | null;
+  value: DeckIdentifier | null;
+  onChange: (d: DeckIdentifier | null) => void;
+}) {
+  const fetchLeaders = useServerFn(getDeckIdentifiers);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [options, setOptions] = useState<DeckIdentifier[]>([]);
+
+  useEffect(() => {
+    if (!open || !gameId) return;
+    const t = setTimeout(() => {
+      fetchLeaders({
+        data: { game_id: gameId, search: search || undefined, basic_only: true },
+      })
+        .then((rows) => setOptions(rows as DeckIdentifier[]))
+        .catch(() => setOptions([]));
+    }, 200);
+    return () => clearTimeout(t);
+  }, [open, search, gameId, fetchLeaders]);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={!gameId}
+        className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white disabled:opacity-50"
+      >
+        <span className="truncate">
+          {value ? (
+            cleanName(value.base_name)
+          ) : (
+            <span className="text-gray-500">Selecciona tu leader…</span>
+          )}
+        </span>
+        <ChevronDown size={14} className="flex-shrink-0 text-gray-500" />
+      </button>
+
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+          <div className="relative p-2">
+            <Search
+              size={13}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+            <input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar leader…"
+              className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            {options.length === 0 ? (
+              <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
+            ) : (
+              options.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                  className="flex w-full items-center gap-2 bg-transparent px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                >
+                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                    {opt.card_set_id}
+                  </span>
+                  <span className="flex-1 truncate">{cleanName(opt.base_name)}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {value?.card_image && (
+        <div className="mt-2">
+          <img
+            src={value.card_image}
+            alt={value.base_name}
+            className="h-20 max-w-full rounded-md border border-white/10 object-contain"
+          />
+        </div>
+      )}
+      {!value && (
+        <div className="mt-2 flex h-20 w-14 items-center justify-center rounded-md border border-white/10 bg-black/30">
+          <ShieldQuestion size={18} className="text-gray-600" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // CreateSessionSheet
 // ============================================================
 type Game = { id: string; name: string; slug: string };
@@ -353,6 +483,7 @@ function CreateSessionSheet({
 
   const [name, setName] = useState("");
   const [gameId, setGameId] = useState<string | null>(null);
+  const [leader, setLeader] = useState<DeckIdentifier | null>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [storeQuery, setStoreQuery] = useState("");
@@ -372,6 +503,7 @@ function CreateSessionSheet({
         setSessionType(null);
         setName("");
         setGameId(null);
+        setLeader(null);
         setDate("");
         setTime("");
         setStoreQuery("");
@@ -449,10 +581,12 @@ function CreateSessionSheet({
         session_date?: string | null;
         session_time?: string | null;
         store_id?: string | null;
+        player_leader_id?: string | null;
       } = {
         session_type: sessionType,
         name: name.trim(),
         game_id: gameId,
+        player_leader_id: leader?.id ?? null,
       };
       if (sessionType === "competitive") {
         payload.session_date = date;
@@ -594,7 +728,10 @@ function CreateSessionSheet({
                             return (
                               <button
                                 key={g.id}
-                                onClick={() => setGameId(g.id)}
+                                onClick={() => {
+                                  setGameId(g.id);
+                                  setLeader(null);
+                                }}
                                 className={
                                   active
                                     ? "rounded-full border border-primary bg-primary/20 px-3 py-1.5 text-xs font-semibold text-primary transition"
@@ -607,6 +744,16 @@ function CreateSessionSheet({
                           })}
                         </div>
                       )}
+                    </div>
+
+                    {/* Leader / deck propio */}
+                    <div>
+                      <label className="text-[11px] uppercase tracking-wider text-gray-500">
+                        Tu leader / deck (opcional)
+                      </label>
+                      <div className="mt-1.5">
+                        <LeaderSelect gameId={gameId} value={leader} onChange={setLeader} />
+                      </div>
                     </div>
 
                     {/* Fecha */}

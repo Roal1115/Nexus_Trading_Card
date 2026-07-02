@@ -688,8 +688,11 @@ function StandaloneRoundTracker({
   const wins = rounds.filter((r) => r.won_match === true).length;
   const losses = rounds.filter((r) => r.won_match === false).length;
 
-  // Leader image from first round that has a player_leader
-  const heroLeader = rounds.find((r) => r.player_leader)?.player_leader ?? null;
+  // Leader chosen at session creation, falling back to the first round that has one
+  const heroLeader: DeckIdentifier | null =
+    (session?.player_leader as DeckIdentifier | null) ??
+    rounds.find((r) => r.player_leader)?.player_leader ??
+    null;
 
   const occupiedNumbers = useMemo(() => new Set(rounds.map((r) => r.round_number)), [rounds]);
   const nextRoundNumber = useMemo(() => {
@@ -823,18 +826,28 @@ function StandaloneRoundTracker({
         </div>
       ) : (
         <div className="space-y-2">
-          {rounds.map((r, idx) => (
-            <StandaloneRoundCard
-              key={r.id ?? `new-${idx}`}
-              round={r}
-              gameId={gameId}
-              onChange={(patch) => updateRound(idx, patch)}
-              onSave={() => handleSave(idx)}
-              onDelete={() => handleDelete(idx)}
-              saving={savingIdx === idx}
-              deleting={deletingIdx === idx}
-            />
-          ))}
+          <AnimatePresence initial={false}>
+            {rounds.map((r, idx) => (
+              <motion.div
+                key={r.id ?? `new-${r.round_number}`}
+                layout
+                initial={{ opacity: 0, y: -12, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+              >
+                <StandaloneRoundCard
+                  round={r}
+                  gameId={gameId}
+                  onChange={(patch) => updateRound(idx, patch)}
+                  onSave={() => handleSave(idx)}
+                  onDelete={() => handleDelete(idx)}
+                  saving={savingIdx === idx}
+                  deleting={deletingIdx === idx}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
@@ -1196,7 +1209,7 @@ function SessionDetailPage() {
       ) : session ? (
         <div className="glass mb-6 rounded-2xl border border-white/10 p-6">
           {/* Top row */}
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="relative flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               {session.session_type === "competitive" ? (
                 <Trophy size={20} className="flex-shrink-0 text-primary" />
@@ -1310,48 +1323,47 @@ function SessionDetailPage() {
             <div className="flex items-center gap-2 flex-shrink-0">
               <StatusBadge status={session.status} />
               {session.status !== "matched" && (
-                <AnimatePresence mode="wait" initial={false}>
-                  {deleteConfirming ? (
-                    <motion.div
-                      key="confirm"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="flex items-center gap-1.5"
-                    >
-                      <span className="text-[11px] text-gray-300">¿Eliminar?</span>
-                      <button
-                        onClick={handleDelete}
-                        disabled={deleting}
-                        className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-50"
-                      >
-                        {deleting ? "…" : "Sí"}
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirming(false)}
-                        className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-gray-300 transition hover:border-white/20"
-                      >
-                        No
-                      </button>
-                    </motion.div>
-                  ) : (
-                    <motion.button
-                      key="trigger"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={() => setDeleteConfirming(true)}
-                      className="rounded-md p-1.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
-                      aria-label="Eliminar sesión"
-                    >
-                      <Trash2 size={14} />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
+                <button
+                  onClick={() => setDeleteConfirming(true)}
+                  className="rounded-md p-1.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
+                  aria-label="Eliminar sesión"
+                >
+                  <Trash2 size={14} />
+                </button>
               )}
             </div>
+
+            {/* Delete confirmation — full-row overlay, same format used on the round rows and session list */}
+            <AnimatePresence>
+              {deleteConfirming && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute inset-0 z-20 flex items-center justify-between gap-3 rounded-xl bg-red-950/95 px-4 backdrop-blur-sm"
+                >
+                  <span className="truncate text-sm font-medium text-red-100">
+                    ¿Eliminar "{session.name}"?
+                  </span>
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
+                    >
+                      {deleting ? "…" : "Eliminar"}
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirming(false)}
+                      className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/10"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Status banners */}

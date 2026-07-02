@@ -36,6 +36,7 @@ export const createStandaloneSession = createServerFn({ method: "POST" })
       session_date?: string | null;
       session_time?: string | null;
       store_id?: string | null;
+      player_leader_id?: string | null;
     }) =>
       z
         .object({
@@ -45,6 +46,7 @@ export const createStandaloneSession = createServerFn({ method: "POST" })
           session_date: z.string().nullable().optional(),
           session_time: z.string().nullable().optional(),
           store_id: z.string().uuid().nullable().optional(),
+          player_leader_id: z.string().uuid().nullable().optional(),
         })
         .refine(
           (d) =>
@@ -69,6 +71,7 @@ export const createStandaloneSession = createServerFn({ method: "POST" })
         session_date: data.session_date ?? null,
         session_time: data.session_time ?? null,
         store_id: data.store_id ?? null,
+        player_leader_id: data.player_leader_id ?? null,
         status: data.session_type === "casual" ? "casual" : "unlinked",
       })
       .select("id, name, session_type, status, created_at")
@@ -164,7 +167,7 @@ export const getStandaloneSessionDetail = createServerFn({ method: "POST" })
     const { data: session, error: sessionError } = await admin
       .from("standalone_sessions")
       .select(
-        "id, session_type, name, status, game_id, session_date, session_time, store_id, tournament_id, created_at",
+        "id, session_type, name, status, game_id, session_date, session_time, store_id, tournament_id, player_leader_id, created_at",
       )
       .eq("id", data.session_id)
       .eq("player_id", player.id)
@@ -187,7 +190,10 @@ export const getStandaloneSessionDetail = createServerFn({ method: "POST" })
     // Enriquecer con leaders y oponentes
     const leaderIds = Array.from(
       new Set(
-        roundList.flatMap((r: any) => [r.player_leader_id, r.opponent_leader_id]).filter(Boolean),
+        roundList
+          .flatMap((r: any) => [r.player_leader_id, r.opponent_leader_id])
+          .concat((session as any).player_leader_id)
+          .filter(Boolean),
       ),
     );
     const opponentIds = Array.from(
@@ -229,6 +235,9 @@ export const getStandaloneSessionDetail = createServerFn({ method: "POST" })
         game_name: (gameRes.data as any)?.name ?? "—",
         store_name: (storeRes.data as any)?.name ?? null,
         store_city: (storeRes.data as any)?.city ?? null,
+        player_leader: (session as any).player_leader_id
+          ? (leaderMap.get((session as any).player_leader_id) ?? null)
+          : null,
       },
       rounds: roundList.map((r: any) => ({
         id: r.id as string,
