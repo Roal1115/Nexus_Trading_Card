@@ -371,7 +371,7 @@ function SessionsPage() {
       </div>
 
       {/* Create button (mobile sticky) */}
-      <div className="fixed bottom-4 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">
+      <div className="fixed bottom-20 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">
         <button
           onClick={() => setShowCreateSheet(true)}
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"

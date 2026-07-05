@@ -90,7 +90,7 @@ export function AppHeader() {
           ) : (
             <Link
               to="/login"
-              className="rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
+              className="hidden sm:flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
             >
               Iniciar Sesión
             </Link>
