@@ -24,7 +24,7 @@ const PLAYER_ITEMS: NavItem[] = [
 ];
 
 function NavTab({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  const textRef = useRef(null);
+  const textRef = useRef<HTMLSpanElement>(null);
   const [lineWidth, setLineWidth] = useState(0);
   const Icon = item.icon;
 
