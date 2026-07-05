@@ -80,7 +80,7 @@ export function PanelSidebar({
       {mobileOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={closeMobile} aria-hidden />}
 
       <aside
-        className={`glass fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col rounded-none border-r border-white/10 p-4 transition-transform duration-200 ease-in-out md:sticky md:top-0 md:z-auto md:translate-x-0 ${
+        className={`glass fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] transition-transform duration-200 ease-in-out sm:pb-4 md:sticky md:top-0 md:z-auto md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
         style={{ height: "100dvh" }}

@@ -758,7 +758,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     <X size={18} />
                   </button>
                 </div>
-                <div className="overflow-y-auto flex-1 px-6 pb-16 sm:pb-8 sm:px-8">
+                <div className="overflow-y-auto flex-1 min-h-0 px-6 pb-16 sm:pb-8 sm:px-8">
                   {loadingDetail ? (
                     <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                       {/* Columna principal */}
@@ -969,10 +969,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                           </div>
                         </div>
                       </div>
-                      <div
-                        className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:overflow-y-auto lg:sticky lg:top-0"
-                        style={{ maxHeight: "calc(90vh - 80px)" }}
-                      >
+                      <div className="min-h-0 min-w-0 max-h-[50vh] overflow-y-auto border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[calc(90vh-80px)] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:sticky lg:top-0">
                         <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
                           Performance Tracker
                         </h3>

@@ -662,7 +662,7 @@ function CreateSessionSheet({
           />
 
           {/* Container: bottom-sheet on mobile, centered modal on desktop */}
-          <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4 pointer-events-none">
+          <div className="fixed inset-0 z-50 flex items-end justify-center pb-[calc(4rem+env(safe-area-inset-bottom))] sm:items-center sm:p-4 pointer-events-none">
             <motion.div
               initial={{ y: "100%", opacity: 1, scale: 1 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
