@@ -1,8 +1,7 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
-  createRootRouteWithContext,
+  createRootRoute,
   useRouter,
   useRouterState,
   HeadContent,
@@ -112,20 +111,20 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "National Geek" },
+      { title: "Geek Arena" },
       { name: "description", content: "yes" },
-      { name: "author", content: "Geek Collector" },
-      { property: "og:title", content: "National Geek" },
+      { name: "author", content: "Geek Arena" },
+      { property: "og:title", content: "Geek Arena" },
       { property: "og:description", content: "yes" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "National Geek" },
+      { name: "twitter:title", content: "Geek Arena" },
       { name: "twitter:description", content: "yes" },
       {
         property: "og:image",
@@ -198,7 +197,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isPanel =
     pathname.startsWith("/admin") ||
@@ -207,33 +205,30 @@ function RootComponent() {
 
   return (
     <GeekarenaAuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <div className="min-h-dvh bg-radial-crimson">
-          {!isPanel && <AppHeader />}
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: "easeInOut" }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: "#1e2130",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "#ffffff",
-              },
-            }}
-          />
-        </div>
-      </QueryClientProvider>
+      <div className="min-h-dvh bg-radial-nexus">
+        {!isPanel && <AppHeader />}
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "#1e2130",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "#ffffff",
+            },
+          }}
+        />
+      </div>
     </GeekarenaAuthProvider>
-
   );
 }

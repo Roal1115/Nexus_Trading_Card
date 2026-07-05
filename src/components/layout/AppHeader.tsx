@@ -46,8 +46,8 @@ export function AppHeader() {
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/20 text-primary">
             <Trophy size={16} />
           </span>
-          <span className="text-white">Geek</span>
-          <span className="text-primary">Collector</span>
+          <span className="text-white">Trading Card</span>
+          <span className="text-primary">Nexus</span>
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm sm:flex">

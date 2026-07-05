@@ -1,19 +1,20 @@
 # Geek Arena
 
-A Cloudflare Worker–hosted React application for managing a Mexican national TCG circuit. The app supports players, organizers, and admins for One Piece, Magic: The Gathering, and Pokémon TCG rankings and tournament workflows.
+A Cloudflare Worker–hosted React application for managing a Mexican national TCG circuit. The app supports players, organizers, TCG managers, and admins for One Piece, Magic: The Gathering, and Pokémon TCG rankings and tournament workflows.
 
 ## Project summary
 
-This repository contains a full-stack app built with TanStack Start and deployed to Cloudflare Workers. It combines a Supabase-backed auth/data integration with a large set of shadcn/Radix UI components and an in-memory mock data store for demo content.
+This repository contains a full-stack app built with TanStack Start and deployed to Cloudflare Workers. It’s backed by Supabase (auth + Postgres) with four roles (player, organizer, TCG manager, admin), a live leaderboard, tournament upload/moderation pipeline, and a standalone round-by-round match tracker ("Sessions").
 
 ## What’s included
 
 - `src/` — application source code
-- `src/routes/` — TanStack Router pages and panel layouts
-- `src/components/` — reusable UI and layout components
-- `src/lib/` — helpers, server functions, mock store, and error handling
-- `src/integrations/` — Supabase / GeekArena integration clients
-- `supabase/` — Lovable Cloud project config and initial migration
+- `src/routes/` — TanStack Router pages and panel layouts (public, `/organizer`, `/tcg-manager`, `/admin`, `/sessions`)
+- `src/components/` — reusable UI, layout, and feature components (ads, tournament-tracker, upload, stores)
+- `src/context/` — `GeekarenaAuthProvider`, the app-wide auth/role context
+- `src/lib/` — server functions (one file per domain), query cache, error handling
+- `src/integrations/geekarena/` — the only Supabase client in the app (the legacy, unused Lovable Cloud scaffold that used to live in `src/integrations/supabase/` was removed)
+- `supabase/` — project config, edge functions, and the initial migration (⚠️ the live schema has drifted well beyond this migration — see `PROJECT_CONTEXT.md`)
 - `wrangler.jsonc` — Cloudflare Workers deployment config
 - `vite.config.ts` — Vite + TanStack + Tailwind + Cloudflare plugin config
 
@@ -23,44 +24,42 @@ This repository contains a full-stack app built with TanStack Start and deployed
 - TypeScript 5.8
 - Vite 7
 - TanStack Start 1.167 + TanStack Router 1.168
-- TanStack React Query 5.83
-- Tailwind CSS 4
-- Radix UI primitives via shadcn-style components
+- Data caching via a custom TTL cache in `src/lib/query-cache.ts` (`@tanstack/react-query` is a dependency but no longer wired into the router/root)
+- Tailwind CSS 4, Radix UI primitives via shadcn-style components, `framer-motion`, `recharts`
+- `react-hook-form` + `zod` for forms
+- `read-excel-file` / `xlsx` for tournament result uploads
 - Cloudflare Workers deployment via `@cloudflare/vite-plugin`
-- Supabase Auth + database
+- Supabase Auth + Postgres
 
 ## Key features
 
-- National leaderboard with monthly and semestral views
-- Player dashboard and profile information
-- Organizer flows for drafting tournaments
-- Admin moderation and publish workflows
-- Role-aware navigation for players, organizers, and admins
-- Responsive, Tailwind-based UI
+- Live national leaderboard (monthly/semestral, per game and store) with sponsor ad placements
+- Player dashboard, public player profiles, and store directory
+- Organizer flow: manage home store, upload tournament results, view calendar and appeals
+- TCG manager flow: approve/reject tournaments for assigned games, manage store network
+- Admin flow: full moderation, seasons, manual publish, players, sponsors/ads, activity log
+- Sessions: standalone round-by-round match tracking, auto-linkable to a published tournament or kept casual
+- Role-aware navigation for players, organizers, TCG managers, and admins
 
 ## Important notes
 
-- The app uses both real Supabase integration and mock in-memory state from `src/lib/mock-store.tsx`.
-- Several data flows are currently mock-driven, especially leaderboard and dashboard content.
-- There is a branding mismatch in the codebase: the app title appears as `Geek Arena`, `GeekCollector`, and `National Geek` in different places.
-- The `supabase/migrations/` SQL migration is incomplete relative to the live app logic; some schema changes referenced in code are not present in the repo.
-- Route guards for `/admin/*` and `/organizer/*` are enforced client-side; server functions perform separate role checks but may still accept email from the request body rather than deriving it from a verified session.
-- `/setup` is a public route that seeds test accounts; it does not require authentication.
+- See `PROJECT_CONTEXT.md` for a full, up-to-date audit — it covers schema drift, the orphaned `sync-deck-identifiers` edge function, and other open issues in detail.
+- The `supabase/migrations/` SQL migration only covers the original 6 tables; the live database has ~15 additional tables (sessions, seasons, sponsors, appeals, deck identifiers, etc.) not represented in the repo. Don’t treat the migration as the source of truth for the schema.
+- `.env` is gitignored and untracked, but the credentials it holds were previously committed to git history — rotate the service role key / JWTs in the Supabase dashboard before making this repo’s history public.
+- `/setup` seeds test accounts; confirm it’s not reachable without auth before relying on it in a shared environment.
 
 ## Routes overview
 
 - `/` — public leaderboard
-- `/login` — sign-in page
-- `/signup` — registration wizard
-- `/check-inbox` — email confirmation instructions
+- `/login`, `/signup`, `/check-inbox`, `/reset-password` — auth flows
 - `/dashboard` — signed-in player dashboard
-- `/organizer` — organizer panel shell
-- `/organizer/tournaments` — organizer tournament list
-- `/organizer/new` — draft tournament creation
-- `/admin` — admin review queue
-- `/admin/approved` — publish approved tournaments
-- `/admin/stores` — store and organizer management
-- `/admin/players` — player/role management
+- `/players/$playerTag` — public player profile
+- `/stores`, `/stores/$slug` — store directory and detail
+- `/my-stats`, `/settings` — player stats and account settings
+- `/sessions`, `/sessions/$sessionId` — standalone session/round tracker
+- `/organizer/*` — store organizer panel (store, tournaments, calendar, appeals)
+- `/tcg-manager/*` — per-game tournament moderation panel
+- `/admin/*` — full admin panel (tournaments, seasons, stores, players, ads, activity)
 - `/setup` — test account seeder
 
 ## Folder structure
@@ -68,20 +67,22 @@ This repository contains a full-stack app built with TanStack Start and deployed
 ```text
 src/
 ├── components/
-│   ├── layout/
-│   │   ├── AppHeader.tsx
-│   │   └── PanelSidebar.tsx
-│   └── ui/                 # shadcn Radix UI primitives
-├── hooks/                  # custom hooks
-├── integrations/           # Supabase and GeekArena client code
-│   ├── geekarena/
-│   └── supabase/
-├── lib/                    # helpers, mock store, server functions
-├── routes/                 # page routes and panel routes
-├── router.tsx              # router setup
-├── server.ts               # Cloudflare Worker entry
-├── start.ts                # TanStack Start setup
-└── styles.css              # global styles
+│   ├── layout/               # AppHeader, PanelSidebar
+│   ├── admin/ ads/ stores/   # feature-specific components
+│   ├── tournament-tracker/   # session/round UI
+│   ├── upload/               # tournament result upload form
+│   └── ui/                   # shadcn Radix UI primitives
+├── context/
+│   └── geekarena-auth.context.tsx  # app-wide auth/role provider
+├── hooks/                    # custom hooks
+├── integrations/
+│   └── geekarena/            # the only Supabase client
+├── lib/                      # one *.functions.ts per domain, query-cache.ts, error handling
+├── routes/                   # public + /organizer + /tcg-manager + /admin + /sessions routes
+├── router.tsx                # router setup
+├── server.ts                 # Cloudflare Worker entry
+├── start.ts                  # TanStack Start setup
+└── styles.css                # global styles
 ```
 
 ## Installation
@@ -157,17 +158,15 @@ wrangler deploy
 Key runtime dependencies include:
 
 - `react`, `react-dom`
-- `@tanstack/react-router`
-- `@tanstack/react-query`
-- `@tanstack/react-start`
+- `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/react-start`, `@tanstack/react-virtual`
 - `@supabase/supabase-js`
 - `@cloudflare/vite-plugin`
-- `@tailwindcss/vite`
-- `tailwindcss`
+- `@tailwindcss/vite`, `tailwindcss`
 - `lucide-react`
-- `react-hook-form`
-- `sonner`
-- `zod`
+- `react-hook-form`, `@hookform/resolvers`, `zod`
+- `framer-motion`, `recharts`, `embla-carousel-react`
+- `read-excel-file`, `xlsx` (tournament result upload parsing)
+- `date-fns`, `sonner`
 
 ## Configuration files
 

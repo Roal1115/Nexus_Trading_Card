@@ -62,31 +62,30 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  /* Geek Collector — e-sports premium */
-  --background: oklch(0.04 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.005 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.005 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.682 0.182 41.5);
-  --primary-foreground: oklch(0.04 0 0);
-  --secondary: oklch(0.25 0.005 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.21 0.005 0);
-  --muted-foreground: oklch(0.72 0.005 0);
-  --accent: oklch(0.682 0.182 41.5);
-  --accent-foreground: oklch(0.04 0 0);
-  --destructive: oklch(0.62 0.22 27);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.682 0.182 41.5);
-  --crimson: oklch(0.32 0.16 25);
-  --gold: oklch(0.82 0.16 85);
-  --silver: oklch(0.78 0.01 0);
-  --gradient-radial: radial-gradient(ellipse at center, #5c1010 0%, #1a0606 45%, #000000 100%);
+  --radius: 18px;
+  --background: #08111f;
+  --foreground: #f5f7fa;
+  --card: #111a2e;
+  --card-foreground: #f5f7fa;
+  --popover: #111a2e;
+  --popover-foreground: #f5f7fa;
+  --primary: #32d9ff;
+  --primary-foreground: #08111f;
+  --secondary: #17233d;
+  --secondary-foreground: #aab6d1;
+  --muted: #17233d;
+  --muted-foreground: #72819d;
+  --accent: #9c5cff;
+  --accent-foreground: #f5f7fa;
+  --destructive: #ff5f6d;
+  --destructive-foreground: #f5f7fa;
+  --border: #2a3a57;
+  --input: #17233d;
+  --ring: #32d9ff;
+  --success: #4ef0a2;
+  --warning: #ffd54a;
+  --danger: #ff5f6d;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -142,7 +141,7 @@
 
 @layer base {
   html {
-    background-color: oklch(0.04 0 0);
+    background-color: #08111f;
     overflow-y: scroll;
   }
   input[type="date"],
@@ -167,8 +166,8 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: #08111f;
+    color: #f5f7fa;
     font-family: var(--font-sans);
     min-height: 100vh;
   }
@@ -191,9 +190,6 @@
 }
 
 @layer utilities {
-  .bg-radial-crimson {
-    background: var(--gradient-radial);
-  }
   .font-mono-stat {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -203,6 +199,70 @@
     backdrop-filter: blur(12px);
     border: 1px solid color-mix(in oklab, white 10%, transparent);
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+  }
+
+  .text-primary {
+    color: #32d9ff;
+  }
+  .text-accent {
+    color: #9c5cff;
+  }
+  .text-success {
+    color: #4ef0a2;
+  }
+  .text-warning {
+    color: #ffd54a;
+  }
+  .text-danger {
+    color: #ff5f6d;
+  }
+  .text-secondary-label {
+    color: #aab6d1;
+  }
+  .text-muted-label {
+    color: #72819d;
+  }
+
+  .bg-surface {
+    background-color: #111a2e;
+  }
+  .bg-surface-2 {
+    background-color: #17233d;
+  }
+
+  .border-panel {
+    border-color: #2a3a57;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 25px rgba(50, 217, 255, 0.15);
+  }
+  .glow-accent {
+    box-shadow: 0 0 40px rgba(156, 92, 255, 0.18);
+  }
+
+  .gradient-hero-title {
+    background: linear-gradient(90deg, #32d9ff 0%, #5f8cff 45%, #9c5cff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-card-glow {
+    background: linear-gradient(135deg, rgba(50, 217, 255, 0.15), rgba(156, 92, 255, 0.15));
+  }
+
+  .gradient-top-player {
+    background: linear-gradient(90deg, rgba(50, 217, 255, 0.22), rgba(156, 92, 255, 0.1));
+  }
+
+  .gradient-button {
+    background: linear-gradient(90deg, #2bcbff, #3b82f6);
+  }
+
+  .bg-radial-nexus {
+    background: radial-gradient(ellipse at 60% 0%, rgba(156, 92, 255, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 10% 80%, rgba(50, 217, 255, 0.12) 0%, transparent 50%), #08111f;
   }
 }
 

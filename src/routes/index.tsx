@@ -68,6 +68,85 @@ function monthLabel(m: string): string {
   return `${MONTH_NAMES[mm - 1]} ${y}`;
 }
 
+function HeroBackground() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <radialGradient id="heroGlow1" cx="70%" cy="10%" r="50%">
+          <stop offset="0%" stopColor="#9C5CFF" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#9C5CFF" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="heroGlow2" cx="20%" cy="80%" r="40%">
+          <stop offset="0%" stopColor="#32D9FF" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#32D9FF" stopOpacity="0" />
+        </radialGradient>
+        <filter id="cardBlur">
+          <feGaussianBlur stdDeviation="0.8" />
+        </filter>
+      </defs>
+
+      {/* Radial glows */}
+      <rect width="100%" height="100%" fill="url(#heroGlow1)" />
+      <rect width="100%" height="100%" fill="url(#heroGlow2)" />
+
+      {/* Constellation lines */}
+      <g stroke="#32D9FF" strokeOpacity="0.12" strokeWidth="0.8">
+        <line x1="10%" y1="20%" x2="30%" y2="45%" />
+        <line x1="30%" y1="45%" x2="55%" y2="30%" />
+        <line x1="55%" y1="30%" x2="75%" y2="55%" />
+        <line x1="75%" y1="55%" x2="90%" y2="35%" />
+        <line x1="20%" y1="70%" x2="40%" y2="55%" />
+        <line x1="40%" y1="55%" x2="60%" y2="75%" />
+        <line x1="60%" y1="75%" x2="80%" y2="60%" />
+        <line x1="15%" y1="40%" x2="25%" y2="65%" />
+        <line x1="65%" y1="15%" x2="80%" y2="35%" />
+      </g>
+
+      {/* Constellation dots */}
+      <g fill="#32D9FF" fillOpacity="0.35">
+        <circle cx="10%" cy="20%" r="1.5" />
+        <circle cx="30%" cy="45%" r="2" />
+        <circle cx="55%" cy="30%" r="1.5" />
+        <circle cx="75%" cy="55%" r="2.5" />
+        <circle cx="90%" cy="35%" r="1.5" />
+        <circle cx="20%" cy="70%" r="1.5" />
+        <circle cx="40%" cy="55%" r="1" />
+        <circle cx="60%" cy="75%" r="2" />
+        <circle cx="80%" cy="60%" r="1.5" />
+        <circle cx="15%" cy="40%" r="1" />
+        <circle cx="25%" cy="65%" r="1.5" />
+        <circle cx="65%" cy="15%" r="2" />
+      </g>
+
+      {/* Floating card silhouettes */}
+      <g filter="url(#cardBlur)" opacity="0.18">
+        <rect x="78%" y="8%" width="8%" height="11%" rx="4" ry="4"
+          fill="none" stroke="#32D9FF" strokeWidth="1.2"
+          transform="rotate(-12, 82, 13)" />
+        <rect x="83%" y="5%" width="8%" height="11%" rx="4" ry="4"
+          fill="none" stroke="#9C5CFF" strokeWidth="1.2"
+          transform="rotate(5, 87, 10)" />
+        <rect x="74%" y="14%" width="8%" height="11%" rx="4" ry="4"
+          fill="none" stroke="#5F8CFF" strokeWidth="1"
+          transform="rotate(-20, 78, 19)" />
+        <line x1="79.5%" y1="10%" x2="84.5%" y2="10%"
+          stroke="#32D9FF" strokeWidth="0.6" strokeOpacity="0.6" />
+        <line x1="79.5%" y1="12%" x2="82%" y2="12%"
+          stroke="#32D9FF" strokeWidth="0.6" strokeOpacity="0.4" />
+      </g>
+
+      {/* Scan line */}
+      <rect x="0" y="45%" width="100%" height="1px"
+        fill="url(#heroGlow1)" opacity="0.08" />
+    </svg>
+  );
+}
+
 function LeaderboardPage() {
   const fetchOptions = useServerFn(getLeaderboardOptions);
   const fetchLeaderboard = useServerFn(getLeaderboard);
@@ -209,12 +288,13 @@ function LeaderboardPage() {
         <AdVertical sponsor={sponsor} />
       </aside>
       <main className="min-w-0 pb-20">
-        <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-black/40 to-black/20 p-8 sm:p-12">
+        <section className="relative my-8 overflow-hidden rounded-2xl border-[#2A3A57] bg-[#111A2E] p-8 sm:p-12">
+          <HeroBackground />
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
             Temporada III · Patrocinado por Bandai · Wizards · TPCI
           </p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl">
+          <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl bg-gradient-to-r from-[#32D9FF] via-[#5F8CFF] to-[#9C5CFF] bg-clip-text text-transparent">
             Circuito <span className="text-primary">Nacional</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
