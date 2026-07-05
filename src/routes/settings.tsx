@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown } from "lucide-react";
+import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { geekarena } from "@/integrations/geekarena/client";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 import {
   SkeletonLine,
@@ -524,6 +525,22 @@ function SettingsPage() {
           ) : null}
         </section>
       )}
+
+      {/* Zona de cuenta */}
+      <section className="mt-8 border-t border-[#2A3A57] pt-6">
+        <p className="mb-3 text-[10px] uppercase tracking-widest text-[#72819D]">Cuenta</p>
+        <button
+          type="button"
+          onClick={async () => {
+            await geekarena.auth.signOut();
+            window.location.href = "/login";
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-500/20 active:scale-95"
+        >
+          <LogOut size={16} />
+          Cerrar sesión
+        </button>
+      </section>
     </div>
   );
 }
