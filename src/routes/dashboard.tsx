@@ -739,7 +739,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                 exit={{ opacity: 0, y: 16, scale: 0.98 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 onClick={(e) => e.stopPropagation()}
-                className="glass relative w-full max-w-6xl max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
+                className="glass relative w-full max-w-6xl max-h-[calc(100vh-4rem)] sm:max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
               >
                 <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
                   <div>
@@ -758,7 +758,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     <X size={18} />
                   </button>
                 </div>
-                <div className="overflow-y-auto flex-1 px-6 pb-6 sm:px-8 sm:pb-8">
+                <div className="overflow-y-auto flex-1 px-6 pb-16 sm:pb-8 sm:px-8">
                   {loadingDetail ? (
                     <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                       {/* Columna principal */}
@@ -949,7 +949,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                       )}
                                     </td>
 
-                                    <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300">
+                                    <td className="px-3 py-2 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
                                       {r.wins != null && r.losses != null
                                         ? `${r.wins} / ${r.losses}`
                                         : "—"}
