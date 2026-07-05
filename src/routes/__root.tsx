@@ -11,6 +11,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { GeekarenaAuthProvider } from "../context/geekarena-auth.context";
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -228,6 +230,8 @@ function RootComponent() {
             },
           }}
         />
+        <BottomNav />
+        <PanelBottomNav />
       </div>
     </GeekarenaAuthProvider>
   );

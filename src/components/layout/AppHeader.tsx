@@ -32,7 +32,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl relative">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <button
-          className="sm:hidden text-gray-400 hover:text-white transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
+          className="sm:hidden hidden text-gray-400 hover:text-white transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label="Abrir menú"
           aria-expanded={menuOpen}
