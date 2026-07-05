@@ -28,5 +28,5 @@ const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
 
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware],
-  functionMiddleware: [attachSupabaseAuth, attachGeekarenaAuth],
+  functionMiddleware: [attachGeekarenaAuth],
 }));
