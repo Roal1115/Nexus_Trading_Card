@@ -120,15 +120,15 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Trading Card Nexus" },
-      { name: "description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG." },
+      { name: "description", content: "App for tracking physical TCG player rankings and tournament results." },
       { name: "author", content: "Geek Arena" },
       { property: "og:title", content: "Trading Card Nexus" },
-      { property: "og:description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG." },
+      { property: "og:description", content: "App for tracking physical TCG player rankings and tournament results." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Trading Card Nexus" },
-      { name: "twitter:description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG." },
+      { name: "twitter:description", content: "App for tracking physical TCG player rankings and tournament results." },
       {
         property: "og:image",
         content:
@@ -139,8 +139,8 @@ export const Route = createRootRoute({
         content:
           "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png",
       },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bfed902d-f455-4f21-a4fc-0317e50882e7/id-preview-81124cee--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1783313259075.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bfed902d-f455-4f21-a4fc-0317e50882e7/id-preview-81124cee--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1783313259075.png" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/38b29f1a-9ac6-4a6d-9d70-ae72b715c814/id-preview-bb7be6fe--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1783313348901.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/38b29f1a-9ac6-4a6d-9d70-ae72b715c814/id-preview-bb7be6fe--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1783313348901.png" },
     ],
     links: [
       {
