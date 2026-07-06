@@ -15,7 +15,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { Toaster } from "sonner";
-import { TCGProvider } from "@/context/tcg.context";
+
 
 function NotFoundComponent() {
   return (
