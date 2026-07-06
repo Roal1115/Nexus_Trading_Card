@@ -113,36 +113,83 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     </div>
   );
 }
+const description =
+  "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite por la cima del leaderboard nacional de One Piece, Pokémon y MTG.";
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TCN" },
-      { name: "description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite p" },
-      { name: "author", content: "Geek Arena" },
-      { property: "og:title", content: "TCN" },
-      { property: "og:description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite p" },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "TCN" },
-      { name: "twitter:description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite p" },
+
+      {
+        title: "Trading Card Nexus | Meta, Torneos y Estadísticas de TCG",
+      },
+
+      {
+        name: "description",
+        content: description,
+      },
+
+      {
+        property: "og:title",
+        content: "Trading Card Nexus",
+      },
+
+      {
+        property: "og:description",
+        content: description,
+      },
+
+      {
+        property: "og:type",
+        content: "website",
+      },
+
+      {
+        property: "og:site_name",
+        content: "Trading Card Nexus",
+      },
+
+      {
+        property: "og:url",
+        content: "https://mxntcg.lovable.app",
+      },
+
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png",
+        content: "https://mxntcg.lovable.app/social/TCNSocial.webp",
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png",
+        content: "https://mxntcg.lovable.app/social/TCNSocial.webp",
       },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783312408771-TCNSocial.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783312408771-TCNSocial.webp" },
+
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+
+      {
+        name: "twitter:title",
+        content: "Trading Card Nexus",
+      },
+
+      {
+        name: "twitter:description",
+        content: description,
+      },
     ],
     links: [
+      {
+        rel: "icon",
+        type: "image/x-icon",
+        href: "/favicon.ico", // o /favicon.ico si lo renombras
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/favicon.ico",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -160,7 +207,7 @@ export const Route = createRootRoute({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
-          name: "Geek Arena",
+          name: "Trading Card Nexus",
           url: "https://mxntcg.lovable.app",
           logo: "https://mxntcg.lovable.app/favicon.ico",
         }),
@@ -170,7 +217,7 @@ export const Route = createRootRoute({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "Geek Arena",
+          name: "Trading Card Nexus",
           url: "https://mxntcg.lovable.app",
           potentialAction: {
             "@type": "SearchAction",
@@ -189,7 +236,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es-MX">
       <head>
         <HeadContent />
       </head>
