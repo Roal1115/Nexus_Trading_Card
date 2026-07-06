@@ -119,15 +119,15 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TCN" },
+      { title: "Trading Card Nexus" },
       { name: "description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite p" },
       { name: "author", content: "Geek Arena" },
-      { property: "og:title", content: "TCN" },
+      { property: "og:title", content: "Trading Card Nexus" },
       { property: "og:description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite p" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "TCN" },
+      { name: "twitter:title", content: "Trading Card Nexus" },
       { name: "twitter:description", content: "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite p" },
       {
         property: "og:image",
@@ -139,8 +139,8 @@ export const Route = createRootRoute({
         content:
           "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png",
       },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783312408771-TCNSocial.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783312408771-TCNSocial.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783313088351-TCNSocial.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783313088351-TCNSocial.webp" },
     ],
     links: [
       {
