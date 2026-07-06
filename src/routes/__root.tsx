@@ -139,8 +139,8 @@ export const Route = createRootRoute({
         content:
           "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png",
       },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783313088351-TCNSocial.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783313088351-TCNSocial.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783313193951-TCNSocial.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/SbU6VnDfrwTBAlo3clSsrAgCWsY2/social-images/social-1783313193951-TCNSocial.webp" },
     ],
     links: [
       {
