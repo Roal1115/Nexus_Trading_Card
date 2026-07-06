@@ -18,11 +18,13 @@ import {
 } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
+import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import {
   getManagerTournamentDetail,
   managerApproveTournament,
   managerRejectTournament,
   managerUndoApproval,
+  managerRepublishTournament,
 } from "@/lib/geekarena-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +65,7 @@ function statusBadge(status: string) {
     DRAFT: { label: "Borrador", cls: "bg-gray-500/20 text-gray-200 border-gray-400/30" },
     APPROVED: { label: "Aprobado", cls: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40" },
     PUBLISHED: { label: "Publicado", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40" },
+    UNPUBLISHED: { label: "Despublicado", cls: "bg-amber-500/20 text-amber-200 border-amber-400/40" },
   };
   const v = map[status] ?? { label: status, cls: "bg-white/10 text-white border-white/20" };
   return (
@@ -94,6 +97,7 @@ function ManagerTournamentDetailPage() {
   const approveFn = useServerFn(managerApproveTournament);
   const rejectFn = useServerFn(managerRejectTournament);
   const undoFn = useServerFn(managerUndoApproval);
+  const republishFn = useServerFn(managerRepublishTournament);
 
   const [data, setData] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -132,8 +136,28 @@ function ManagerTournamentDetailPage() {
 
   if (loading || !data) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="space-y-6 pb-32">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="glass rounded-2xl p-4 space-y-2">
+              <SkeletonLine width="w-20" height="h-3" />
+              <SkeletonLine width="w-32" height="h-5" />
+            </div>
+          ))}
+        </section>
+        <div className="glass rounded-2xl p-5 space-y-3">
+          <SkeletonLine width="w-40" height="h-4" />
+          <SkeletonBlock className="h-10 w-full rounded-xl" />
+        </div>
+        <div className="glass overflow-hidden rounded-2xl">
+          <table className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TournamentRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -142,6 +166,7 @@ function ManagerTournamentDetailPage() {
   const isDraft = tournament.status === "DRAFT";
   const isApproved = tournament.status === "APPROVED";
   const isPublished = tournament.status === "PUBLISHED";
+  const isUnpublished = tournament.status === "UNPUBLISHED";
   const undoExpired = countdown?.expired ?? true;
 
   const canApprove = isDraft && (criticalCount === 0 || acknowledged);
@@ -172,6 +197,19 @@ function ManagerTournamentDetailPage() {
     }
   };
 
+  const onRepublish = async () => {
+    setActing(true);
+    try {
+      await republishFn({ data: { tournament_id: id } });
+      toast.success("Torneo re-enviado a aprobado. Estará en la próxima publicación.");
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
   const onConfirmReject = async () => {
     if (rejectReason.trim().length < 20) {
       toast.error("El motivo debe tener al menos 20 caracteres");
@@ -193,13 +231,15 @@ function ManagerTournamentDetailPage() {
     <div className="space-y-6 pb-32">
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/tcg-manager" className="hover:text-primary">Torneos Pendientes</Link>
+          <Link to="/tcg-manager/tournaments-panel" className="hover:text-primary">
+            Torneos
+          </Link>
           <ChevronRight size={12} />
           <span className="text-white">Detalle del Torneo</span>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/tcg-manager">
+            <Link to="/tcg-manager/tournaments-panel">
               <ArrowLeft size={14} className="mr-1" /> Regresar
             </Link>
           </Button>
@@ -369,6 +409,18 @@ function ManagerTournamentDetailPage() {
             <span className="text-xs text-emerald-300">
               Publicado el {tournament.published_at ? formatDateTime(tournament.published_at) : "—"}
             </span>
+          ) : null}
+
+          {isUnpublished ? (
+            <>
+              <span className="text-xs text-amber-300">
+                Este torneo fue despublicado. Puedes volver a enviarlo a aprobación.
+              </span>
+              <Button onClick={onRepublish} disabled={acting}>
+                {acting ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+                Re-publicar torneo
+              </Button>
+            </>
           ) : null}
         </div>
       </div>

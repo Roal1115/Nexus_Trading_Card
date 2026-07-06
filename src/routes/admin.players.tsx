@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TournamentRowSkeleton, SettingsSectionSkeleton, SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   listPlayers,
@@ -521,9 +522,13 @@ function AdminPlayersPage() {
         {/* Table */}
         <div className="glass overflow-hidden rounded-2xl">
           {loading ? (
-            <div className="flex h-60 items-center justify-center">
-              <Loader2 className="animate-spin text-primary" />
-            </div>
+            <table className="w-full text-sm">
+              <tbody>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <TournamentRowSkeleton key={i} />
+                ))}
+              </tbody>
+            </table>
           ) : players.length === 0 ? (
             <div className="flex h-60 flex-col items-center justify-center gap-2 text-sm text-gray-400">
               <Users className="text-gray-600" />
@@ -950,8 +955,9 @@ function AdminPlayersPage() {
             </DialogHeader>
 
             {detailLoading ? (
-              <div className="flex h-40 items-center justify-center">
-                <Loader2 className="animate-spin text-primary" />
+              <div className="space-y-4">
+                <SettingsSectionSkeleton />
+                <SettingsSectionSkeleton />
               </div>
             ) : detailData ? (
               <div className="space-y-6">
@@ -1152,8 +1158,10 @@ function AdminPlayersPage() {
               </div>
 
               {tcgModalLoading ? (
-                <div className="flex h-40 items-center justify-center">
-                  <Loader2 className="animate-spin text-primary" />
+                <div className="space-y-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <SkeletonBlock key={i} className="h-11 w-full rounded-xl" />
+                  ))}
                 </div>
               ) : (
                 <div className="space-y-2">

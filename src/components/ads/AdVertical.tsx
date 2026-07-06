@@ -1,28 +1,37 @@
+import { useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { registerSponsorView } from "@/lib/geekarena-ads.functions";
+
 export function AdVertical({ sponsor }: { sponsor: any }) {
-  if (!sponsor?.vertical_url) return null;
+  const registerSponsorViewFn = useServerFn(registerSponsorView);
+
+  useEffect(() => {
+    if (!sponsor?.id) return;
+    registerSponsorViewFn({ data: { sponsor_id: sponsor.id } }).catch(() => {});
+  }, [sponsor?.id]);
+
   return (
     <div className="hidden xl:flex flex-col items-center w-[160px] flex-shrink-0">
-      {/* Sticky container that stays visible while scrolling */}
-      <div className="sticky top-8 flex flex-col items-center gap-4">
-        {/* Top ad */}
-        <img
-          src={sponsor.vertical_url}
-          alt={`Patrocinado por ${sponsor.name}`}
-          width={160}
-          height={600}
-          className="rounded-lg object-cover"
-          style={{ width: "160px", height: "600px" }}
-        />
-        {/* Bottom ad — same image repeated for full coverage */}
-        <img
-          src={sponsor.vertical_url}
-          alt={`Patrocinado por ${sponsor.name}`}
-          width={160}
-          height={600}
-          className="rounded-lg object-cover opacity-90"
-          style={{ width: "160px", height: "600px" }}
-        />
-      </div>
+      {sponsor?.vertical_url && (
+        <div className="sticky top-8 flex flex-col items-center gap-4">
+          <img
+            src={sponsor.vertical_url}
+            alt={`Patrocinado por ${sponsor.name}`}
+            width={160}
+            height={600}
+            className="rounded-lg object-cover"
+            style={{ width: "160px", height: "600px" }}
+          />
+          <img
+            src={sponsor.vertical_url}
+            alt={`Patrocinado por ${sponsor.name}`}
+            width={160}
+            height={600}
+            className="rounded-lg object-cover opacity-90"
+            style={{ width: "160px", height: "600px" }}
+          />
+        </div>
+      )}
     </div>
   );
 }

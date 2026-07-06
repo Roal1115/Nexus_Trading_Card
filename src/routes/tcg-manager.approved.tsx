@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Eye, ArrowRight, FileDown, FileX, XCircle } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
+import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   getManagerApprovedTournaments,
@@ -92,8 +93,14 @@ function ManagerApprovedTournaments() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="glass overflow-hidden rounded-2xl">
+        <table className="w-full text-sm">
+          <tbody>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <TournamentRowSkeleton key={i} />
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   }

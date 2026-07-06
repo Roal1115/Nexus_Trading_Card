@@ -7,14 +7,24 @@
 import { createClient } from "@supabase/supabase-js";
 
 const GEEKARENA_URL = "https://tbtyxtigbsljyrwyelqr.supabase.co";
-const GEEKARENA_PUBLISHABLE_KEY =
-  "sb_publishable_Td7bOB5_MLT1Y5MHbO35qw_y-jeLHCw";
+const GEEKARENA_PUBLISHABLE_KEY = "sb_publishable_Td7bOB5_MLT1Y5MHbO35qw_y-jeLHCw";
+
+const isBrowser = typeof window !== "undefined";
 
 export const geekarena = createClient(GEEKARENA_URL, GEEKARENA_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true,
     storageKey: "geekarena.auth",
+    storage: isBrowser
+      ? window.localStorage
+      : {
+          // Stub para SSR — nunca persiste en servidor
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        },
   },
 });
 

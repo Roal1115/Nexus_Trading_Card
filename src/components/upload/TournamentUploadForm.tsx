@@ -545,6 +545,21 @@ export function TournamentUploadForm({
             <div className="space-y-2">
               <Label className="text-xs text-gray-400">Fecha del torneo *</Label>
               {(() => {
+                if (isAdmin) {
+                  return (
+                    <>
+                      <Input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Como administrador, puedes subir torneos de cualquier fecha.
+                      </p>
+                    </>
+                  );
+                }
                 const { min, max } = getWeekDateRange();
                 return (
                   <>

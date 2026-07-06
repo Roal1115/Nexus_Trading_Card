@@ -1,24 +1,23 @@
 # PROJECT_CONTEXT.md
 
-> Snapshot generated **2026-05-26**. Read-only audit. Nothing in the codebase was modified to produce this file.
+> Snapshot generated **2026-07-03**. Read-only audit. Nothing in the codebase was modified to produce this file. Supersedes the 2026-05-26 snapshot, which is ~1,238 commits stale — the app has grown from a 5-page MVP into a 4-role, ~45-route platform.
 
 ---
 
 ## 1. Project Overview
 
-- **Name (display):** Geek Arena (a.k.a. *Geek Collector* in the public header / *National Geek* in the `<head>` title — see ⚠️ below).
-- **Purpose:** Public national ranking circuit for competitive TCG players (One Piece, Magic: The Gathering, Pokémon TCG). Store organizers upload tournament results; admins moderate and publish; leaderboards (monthly / semestral / yearly) are recomputed from published tournaments.
-- **Target audience:** Mexico-based TCG players, store organizers and circuit administrators (UI copy is Spanish-MX; `country` defaults to `'MX'`).
+- **Name (display):** Geek Arena (`<title>`/`og:title`/`twitter:title` in `__root.tsx` now consistently read "Geek Arena" — the "National Geek" branding mismatch from the old snapshot was fixed 2026-07-03).
+- **Purpose:** National ranking circuit for competitive TCG players (One Piece, Magic: The Gathering, Pokémon TCG) in Mexico. Store organizers upload tournament results, TCG managers moderate per-store submissions, admins run the whole circuit (seasons, publishing, ads, players). A separate "Sessions" feature lets players log round-by-round match history outside of official tournaments (casual play or auto-linked to a tournament).
 - **Tech stack (from `package.json`):**
   - React 19, TypeScript 5.8, Vite 7
   - TanStack Start 1.167 + TanStack Router 1.168 (file-based routing, SSR)
-  - TanStack React Query 5.83 (provider mounted; not actively used for fetching — see §7)
-  - Tailwind CSS 4 (via `@tailwindcss/vite`), `tw-animate-css`, shadcn-style Radix UI components
-  - `@supabase/supabase-js` 2.106 — TWO separate projects in use (see §4)
-  - `sonner` toasts, `zod` validation, `lucide-react` icons, `react-hook-form` (installed, only used inside shadcn `form.tsx`)
-- **Deployment target:** Cloudflare Workers via `@cloudflare/vite-plugin` (see `wrangler.jsonc`, `src/server.ts`).
+  - Data caching: a hand-rolled in-memory TTL cache (`src/lib/query-cache.ts`). (`@tanstack/react-query`'s provider was removed 2026-07-03 — it was mounted app-wide with zero `useQuery`/`useMutation` call sites; the package itself is still a dependency but no longer wired into the router/root.)
+  - Tailwind CSS 4, Radix UI primitives via shadcn-style components, `framer-motion`, `recharts`, `embla-carousel-react`
+  - `@supabase/supabase-js` 2.106 — two client setups exist; only one is actually used (see §4)
+  - `read-excel-file` / `xlsx` — new since last snapshot, used for tournament result uploads
+  - `sonner` toasts, `zod` + `react-hook-form` + `@hookform/resolvers` for forms
+- **Deployment target:** Cloudflare Workers via `@cloudflare/vite-plugin` (`wrangler.jsonc`, `src/server.ts`), `compatibility_date: 2025-09-24`, `nodejs_compat` on.
 - **Scripts:** `dev`, `build`, `build:dev`, `preview`, `lint`, `format`.
-- ⚠️ **UNCLEAR — branding mismatch:** `__root.tsx` `<title>` is `"National Geek"`, `AppHeader` shows `"GeekCollector"`, panels/login show `"Geek Arena"`. Three product names coexist in code.
 
 ---
 
@@ -26,441 +25,161 @@
 
 ```
 .
-├── PROJECT_CONTEXT.md                ← this file
-├── README.md                         (TanStack Start boilerplate readme)
-├── package.json, bun.lock, bunfig.toml
-├── components.json                   (shadcn config)
-├── eslint.config.js, .prettierrc, .prettierignore
-├── tsconfig.json, tsconfig.tsbuildinfo
-├── vite.config.ts                    (Vite + TanStack + Tailwind + Cloudflare plugins)
-├── wrangler.jsonc                    (Cloudflare Worker config)
-├── .env                              (only VITE_SUPABASE_* + SUPABASE_URL/PUBLISHABLE_KEY)
-├── .lovable/                         (Lovable internals)
+├── PROJECT_CONTEXT.md
+├── README.md
+├── .env                               (gitignored and untracked as of 2026-07-03; still exists locally with live credentials — see §12)
 ├── supabase/
-│   ├── config.toml                   (project_id only — Lovable Cloud project)
+│   ├── config.toml                    (project_id = tbanxcysqureaafohusj)
+│   ├── functions/
+│   │   └── sync-deck-identifiers/     (edge function — see §8.4; NOT invoked anywhere)
 │   └── migrations/
-│       └── 20260526052128_*.sql      (initial schema — see §5 caveat)
+│       └── 20260526052128_*.sql       (single migration, badly out of date — see §5)
 └── src/
-    ├── server.ts                     (Cloudflare Worker fetch entry, wraps SSR errors)
-    ├── start.ts                      (createStart + errorMiddleware)
-    ├── router.tsx                    (QueryClient + router factory)
-    ├── routeTree.gen.ts              (auto-generated, DO NOT EDIT)
-    ├── styles.css                    (Tailwind v4 + design tokens in oklch)
-    ├── routes/                       (file-based routes — see §3)
-    │   ├── __root.tsx
-    │   ├── index.tsx
-    │   ├── login.tsx
-    │   ├── signup.tsx
-    │   ├── check-inbox.tsx
-    │   ├── dashboard.tsx
-    │   ├── setup.tsx                 (one-off seed for test accounts)
-    │   ├── organizer.tsx, organizer.index.tsx, organizer.tournaments.tsx, organizer.new.tsx
-    │   └── admin.tsx, admin.index.tsx, admin.approved.tsx, admin.stores.tsx,
-    │       admin.publish.tsx, admin.players.tsx, admin.players.$id.tsx
+    ├── server.ts, start.ts, router.tsx, routeTree.gen.ts (auto-gen), styles.css
+    ├── context/
+    │   └── geekarena-auth.context.tsx (central auth provider, replaces the old useGeekarenaRole hook)
+    ├── routes/                        (~45 files — see §3)
     ├── hooks/
-    │   ├── use-geekarena-role.ts     (session + players.role lookup)
-    │   ├── use-geekarena-session.ts  (session only, unused — see §11)
-    │   └── use-mobile.tsx            (viewport breakpoint hook)
     ├── components/
-    │   ├── layout/AppHeader.tsx
-    │   ├── layout/PanelSidebar.tsx
-    │   └── ui/*                      (47 shadcn primitives — see §6)
+    │   ├── layout/          AppHeader.tsx, PanelSidebar.tsx
+    │   ├── admin/            StoreSchedulesDialog.tsx, UnapproveTournamentDialog.tsx
+    │   ├── ads/               AdVertical.tsx, AdHorizontal.tsx, AdCarousel.tsx
+    │   ├── stores/            StoreEditModal.tsx
+    │   ├── tournament-tracker/ PerformanceTrackerModal.tsx, RoundsAccordionReadOnly.tsx, AppealForm.tsx
+    │   ├── upload/            TournamentUploadForm.tsx
+    │   └── ui/                shadcn primitives + custom (skeleton-loader, FileLink, NotificationBadge, PasswordStrength)
     ├── integrations/
-    │   ├── geekarena/client.ts                   (REAL backend — hardcoded URL/key)
-    │   └── supabase/
-    │       ├── client.ts                         (Lovable Cloud browser client — UNUSED at runtime)
-    │       ├── client.server.ts                  (Lovable Cloud admin — UNUSED at runtime)
-    │       ├── auth-middleware.ts                (Lovable Cloud — UNUSED)
-    │       ├── auth-attacher.ts                  (Lovable Cloud — UNUSED)
-    │       └── types.ts                          (generated for Lovable Cloud schema)
+    │   ├── geekarena/client.ts        (REAL backend client — actively used, 11 imports)
+    │   └── (supabase/* scaffold removed 2026-07-03 — see §4)
     └── lib/
-        ├── utils.ts                              (cn helper)
-        ├── error-capture.ts, error-page.ts      (SSR error page)
-        ├── mock-store.tsx                       (🔴 MOCK DATA — see §11)
-        ├── geekarena-admin.server.ts            (service-role client factory)
-        ├── geekarena-admin.functions.ts         (admin server fns)
-        ├── geekarena-organizer.functions.ts    (organizer server fns)
-        └── geekarena-setup.functions.ts        (test-account seeder)
+        ├── query-cache.ts                        (custom TTL Map cache — new)
+        ├── geekarena-admin.functions.ts           (tournament approval, seasons, admin history)
+        ├── geekarena-admin.server.ts
+        ├── geekarena-ads.functions.ts             (sponsors / ad system)
+        ├── geekarena-appeals.functions.ts         (round appeals)
+        ├── geekarena-auth.functions.ts             (signupPlayer)
+        ├── geekarena-auth-helpers.functions.ts    (profile/email/password/tcg-id updates)
+        ├── geekarena-auth.middleware.ts, geekarena-auth.attacher.ts
+        ├── geekarena-leaderboard.functions.ts
+        ├── geekarena-manager.functions.ts         (TCG manager approval flow)
+        ├── geekarena-organizer.functions.ts       (store organizer flow)
+        ├── geekarena-player.functions.ts          (dashboard, deck identifiers, profile)
+        ├── geekarena-public.functions.ts          (public store directory)
+        ├── geekarena-settings.functions.ts
+        ├── geekarena-setup.functions.ts           (seedTestAccounts, searchStores)
+        ├── geekarena-standalone.functions.ts      (Sessions feature — see §8.5)
+        ├── geekarena-tournament-detail.server.ts
+        └── geekarena-tournament-tracker.functions.ts
 ```
-
-Conventions:
-- Routes live in `src/routes/` using the dot-separated flat convention (`admin.players.$id.tsx`).
-- Server functions live in `src/lib/*.functions.ts` with helpers in `*.server.ts`.
-- All shadcn primitives live under `src/components/ui/`. Project-specific layout in `src/components/layout/`.
-- Hooks in `src/hooks/`. Cross-cutting helpers in `src/lib/`.
 
 ---
 
-## 3. Routing & Pages
+## 3. Routing & Roles
 
-| Path | File | Renders | Access | Data source |
-|---|---|---|---|---|
-| `/` | `routes/index.tsx` | National leaderboard hero + two tables (Monthly / Semiannual) | Public | 🔴 MOCK DATA via `useStore()`; only the TCG filter list is real (`games` from GeekArena) |
-| `/login` | `routes/login.tsx` | Email/password login, "forgot password", "resend verification" flows | Public (signed-out) | `geekarena.auth.signInWithPassword`, lookup of `players.role` for redirect |
-| `/signup` | `routes/signup.tsx` | 3-step wizard: identity → games → confirm; geek_tag uniqueness check; honeypot + min-form-time bot protection | Public | `geekarena.from("games")`, `geekarena.auth.signUp` |
-| `/check-inbox` | `routes/check-inbox.tsx` | "Revisa tu correo" screen, resend verification (30s cooldown) | Public (email from `?email=`) | `geekarena.auth.resend` |
-| `/dashboard` | `routes/dashboard.tsx` | Player home: national rank, points, recent tournaments | Any signed-in user (mock-store gate) | 🔴 MOCK DATA via `useStore()` |
-| `/setup` | `routes/setup.tsx` | One-button seeder for `admin@test.com` + `organizer@test.com` (password `test1234`) | ⚠️ UNCLEAR — route is **publicly reachable**; the `seedTestAccounts` server fn has **no auth check** | `geekarena-setup.functions.ts` → service-role admin client |
-| `/organizer` (layout) | `routes/organizer.tsx` | Sidebar shell + `<Outlet/>`; redirects to `/login` unless role is `organizer` or `admin` | organizer / admin | `useGeekarenaRole` |
-| `/organizer` (index) | `routes/organizer.index.tsx` | Mi Tienda — pick/assign `home_store_id`, edit store name/city/state | organizer / admin | `getOrganizerOverview`, `updateHomeStore`, `updateStoreInfo` |
-| `/organizer/tournaments` | `routes/organizer.tournaments.tsx` | List of tournaments for the organizer's `home_store_id`; delete DRAFTs (confirm modal) | organizer / admin | `getMyTournaments`, `deleteDraftTournament` |
-| `/organizer/new` | `routes/organizer.new.tsx` | Create a DRAFT tournament (game + date + optional CSV URL) | organizer / admin | `getOrganizerOverview`, `createTournament` |
-| `/admin` (layout) | `routes/admin.tsx` | Sidebar shell; redirects to `/login` unless role is `admin` | admin | `useGeekarenaRole` |
-| `/admin` (index) | `routes/admin.index.tsx` | Pending tournaments queue (status = `DRAFT`); approve / reject (confirm modal) | admin | `listTournamentsByStatus`, `approveTournament`, `rejectTournament` |
-| `/admin/approved` | `routes/admin.approved.tsx` | Approved tournaments; multi-select + bulk publish (confirm modal) | admin | `listTournamentsByStatus`, `publishTournaments` |
-| `/admin/stores` | `routes/admin.stores.tsx` | Store cards w/ organizers; "Nueva tienda" dialog | admin | `listStoresWithOrganizers`, `createStore` |
-| `/admin/players` | `routes/admin.players.tsx` | Server-side searchable, filtered, paginated player table (25/page); tabs Todos / Organizadores / Administradores; modal-gated role / store / active toggles | admin | `listPlayers`, `setPlayerRole`, `setPlayerActive`, `listStoresWithOrganizers` |
-| `/admin/players/$id` | `routes/admin.players.$id.tsx` | Player profile: store, cumulative stats, tournament history, yearly snapshots | admin | `getPlayerDetail` |
-| `*` (any) | `__root.tsx` `notFoundComponent` | 404 page (English copy ⚠️) | Public | — |
+Four roles now exist: `player | organizer | tcg_manager | admin` (up from three). Three parallel panel layouts, each with its own sidebar and role gate in a client `useEffect`:
 
-**Route guards / redirects**
-- `admin.tsx` and `organizer.tsx` run a client `useEffect` on `useGeekarenaRole()`. If `loading === false` and role is wrong, they `navigate({ to: "/login" })`. Both render a spinner while loading and `return null` after redirect to avoid flashing children.
-- `/login` redirect tree after successful sign-in: `admin → /admin`, `organizer → /organizer`, anyone else → `/dashboard`.
-- `AppHeader` "Mi Panel" link is computed by `homeRouteForRole(effectiveRole)` (`admin → /admin`, `organizer → /organizer`, else `/dashboard`).
-- The root layout (`__root.tsx`) hides `<AppHeader/>` when `pathname` starts with `/admin` or `/organizer` (panels use their own `PanelSidebar`).
-- ⚠️ UNCLEAR: There is **no server-side / route-loader guard** for `/admin/*` or `/organizer/*`. Authorization runs only in the client `useEffect`; the server functions themselves enforce role via `requireAdmin` / `requireOrganizer` checks on `email`, so a determined caller could still hit a server fn with someone else's email — see §11.
+| Panel | Base route | Role gate | Sidebar sections |
+|---|---|---|---|
+| **Admin** | `/admin` | `role === "admin"` only | Administración (Tournaments, Tournament History, Stores & Staff, Players, Seasons, Activity Center), Circuito (Manual Publish, National Calendar, Upload Tournament), Publicidad (Sponsors & Ads) |
+| **TCG Manager** | `/tcg-manager` | `role === "tcg_manager"` or `"admin"` | Moderación (Tournaments, Tournament History, My History), Red (Stores), Circuito (Analytics, Calendar, Upload Tournament) |
+| **Organizer** | `/organizer` | `role === "organizer"` or `"admin"` | Analytics, My Store, My Tournaments, Tournament History, Calendar, Upload Tournament, Appeals |
+
+TCG Manager is a **subset of Admin** scoped to tournament moderation + store network for the games a manager is assigned to (`assignManagerGames`) — it is not a renamed admin panel, both coexist and admins can reach either.
+
+### Public / player routes
+
+| Path | Purpose | Data source |
+|---|---|---|
+| `/` | Live leaderboard, virtual list, search, sponsor ad carousel | `getLeaderboard`, `getLeaderboardOptions`, ad functions — **real data now**, no longer mock |
+| `/dashboard` | Player home: geek tag, global/monthly rank, W-L, points, tournament history, "Mis Sesiones" link | `getMyDashboard`, `getTournamentDetail` |
+| `/players/$playerTag` | Public profile (SEO schema.org), gated by `is_profile_public` | `getPlayerProfile` |
+| `/stores`, `/stores/$slug` | Store directory + detail | `getPublicStoresList`, `getStoreProfile`, `getStoreWeeklySchedule` |
+| `/my-stats`, `/settings` | Player stats and account settings | `geekarena-settings.functions.ts` |
+| `/login`, `/signup`, `/check-inbox`, `/reset-password` | Auth flows | `geekarena-auth.functions.ts` |
+| `/setup` | Test-account seeder | `seedTestAccounts` — ⚠️ still worth confirming this is auth-gated in production |
+
+### Sessions feature (new, `/sessions`)
+
+Standalone round-by-round match tracker, separate from official tournament results:
+
+- **`/sessions`** — list of the player's sessions (`getStandaloneSessions`), status badges: unlinked / matched / casual. Create via 2-step modal (`createStandaloneSession`): **competitive** (date + time + store, auto-links to a published tournament or opens a manual disambiguation picker) or **casual** (date optional, no store/time).
+- **`/sessions/$sessionId`** — round-by-round tracker: opponent leader deck, dice roll, turn order, result, notes. Rounds saved/deleted individually (`saveStandaloneRound`, `deleteStandaloneRound`). Manual tournament linking via `getTournamentCandidates` + `linkSessionManually`; `undoSessionLink` reverts a match.
+- Leader/deck selection is backed by the `deck_identifiers` table via `getDeckIdentifiers` — see §8.4 for why this data may be stale.
 
 ---
 
 ## 4. Authentication & Role System
 
-- **Auth provider:** Supabase Auth on the **GeekArena Supabase project** (`https://tbtyxtigbsljyrwyelqr.supabase.co`), instantiated in `src/integrations/geekarena/client.ts` with the publishable key hardcoded in source and `storageKey: "geekarena.auth"` (localStorage).
-- **Sign-up flow:**
-  1. `/signup` validates geek_tag against `players.geek_tag` via debounced `.ilike` lookup.
-  2. Calls `geekarena.auth.signUp({ email, password, options.data: { geek_tag, game_ids[] } })` with `emailRedirectTo: ${origin}/login`.
-  3. Signs the user out and routes to `/check-inbox?email=...`.
-  4. ⚠️ UNCLEAR / 🚧 INCOMPLETE: A `players` row is **never** inserted at signup. The app reads `players.role` to dispatch the user, so users who only confirmed their email but were not also inserted into `players` get treated as `null` role (i.e. the `/dashboard` fallback). The test-account seeder (`/setup`) is the only path that upserts `players` for known accounts.
-- **Sign-in flow (`/login`):** `signInWithPassword`, then a follow-up `.from("players").select("role")` keyed by `email` to choose the redirect target. Also calls `storeLogin(email, "player", geekTag)` on the in-memory mock store so the `AppHeader` shows the user.
-- **Sign-out:** `geekarena.auth.signOut()` from `PanelSidebar` (panels) or from `useStore().logout()` triggered in `AppHeader` (which only clears the mock store, **does not call Supabase signOut** — ⚠️).
-- **Session management:**
-  - `useGeekarenaSession` (unused) and `useGeekarenaRole` (used everywhere) wrap `geekarena.auth.getSession()` + `onAuthStateChange`.
-  - The Supabase client persists the session in `localStorage` under `geekarena.auth`.
-  - There is **no global `onAuthStateChange` listener** at the root that invalidates React Query / router caches.
-- **Roles:** Stored in `players.role` (`'player' | 'organizer' | 'admin'`).
-  - 🔴 The role column is **not in the initial migration** (`supabase/migrations/20260526052128_*.sql` defines `players` without `role`) and is **not in the generated `src/integrations/supabase/types.ts`** either. Both server fns and the role hook read/write it. It must exist in the live GeekArena project via an out-of-band migration. ⚠️ UNCLEAR: the source-of-truth schema migration for `role` is **not in the repo**.
-  - There is **no `user_roles` table and no `has_role()` SQL function**. Roles are stored on the same row as the profile, contrary to the security guidance in the project rules.
-- **Auth checks on server functions:**
-  - `requireAdmin(email)` and `requireOrganizer(email)` in `geekarena-admin.functions.ts` / `geekarena-organizer.functions.ts` re-fetch `players` by `email` and assert role.
-  - ⚠️ The caller's email is sent in the **request body** rather than derived from a verified session/JWT. No `requireSupabaseAuth` middleware is in use. A request with a known admin's email would be accepted by the server fn. This is a real authorization weakness — flagging only, not fixing.
+- **Auth provider:** `GeekarenaAuthProvider` (`src/context/geekarena-auth.context.tsx`), mounted once in `__root.tsx`. This **replaces** the old per-component `useGeekarenaRole` hook pattern from the previous snapshot — it's now a single context listening to `onAuthStateChange` and exposing `{ session, player, role, loading }` app-wide.
+- **Client:** `src/integrations/geekarena/client.ts`, pointed at `https://tbtyxtigbsljyrwyelqr.supabase.co` with a publishable key, `storageKey: "geekarena.auth"`.
+- **Lovable Cloud scaffold removed (2026-07-03):** `src/integrations/supabase/{client,client.server,auth-middleware,auth-attacher,types}.ts` was deleted. It was fully dead except `auth-attacher.ts`'s `attachSupabaseAuth`, which was wired into `src/start.ts`'s global `functionMiddleware` — on every server-function call it fetched a session from the (unused) Lovable client and attached a bearer header that nothing ever verified (`requireSupabaseAuth` in `auth-middleware.ts` was defined but never registered anywhere). That middleware entry was removed from `start.ts` along with the folder. All real traffic goes through `geekarena/client.ts`; no behavior change from this removal. If the Lovable platform re-generates this folder on a future sync, it can be deleted again the same way.
+- **Redirect on login:** `admin → /admin`, `tcg_manager → /tcg-manager`, `organizer → /organizer`, else `/dashboard`, via `homeRouteForRole()`.
 
 ---
 
-## 5. Database Schema (as currently implemented)
+## 5. Database Schema — ⚠️ CRITICAL DRIFT
 
-> Source of truth used below: the live database introspection. The repo migration (`supabase/migrations/20260526052128_*.sql`) defines the **initial** schema; subsequent schema changes (notably `players.role` and a `tournament_results.draws` column that the legacy upload UI assumed) are **not present in the repo**.
+The single migration file (`20260526052128_*.sql`) only defines the original 6 tables (`stores`, `games`, `players`, `tournaments`, `tournament_results`, `leaderboard_snapshots`) with enums `tournament_status (DRAFT/APPROVED/PUBLISHED)` and `timeframe_type (MONTHLY/SEMESTRAL)`.
 
-### Enums
-- `public.tournament_status`: `'DRAFT' | 'APPROVED' | 'PUBLISHED'`
-  - 🔴 `rejectTournament` server fn writes `status = 'REJECTED'` which is **not** a valid enum value → calling it will throw a Postgres error. The `/organizer/tournaments` UI also displays `PENDING_REVIEW` and `REJECTED` labels that no code path can ever produce. (See §11.)
-- `public.timeframe_type`: `'MONTHLY' | 'SEMESTRAL'`
-  - 🔴 The publish server fn writes `'MONTH' | 'SEMESTER' | 'YEAR'` strings instead. None of these match the enum, so `recomputeSnapshot` insertions of `leaderboard_snapshots` will fail on the live DB. (See §11.)
+The application code now reads/writes **at least 15 additional tables that do not exist anywhere in the repo's migration history**:
 
-### Tables
+`admin_audit_log`, `deck_identifiers`, `deck_identifiers_sync_log`, `manager_games`, `player_games`, `player_tcg_ids`, `round_appeals`, `seasons`, `session_link_events`, `sponsors`, `standalone_round_results`, `standalone_sessions`, `store_analytics_settings`, `store_schedules`, `tournament_round_results`, `ad_metrics`
 
-**`stores`**
-- `id uuid PK default gen_random_uuid()`
-- `slug varchar(80) UNIQUE NOT NULL`
-- `name varchar(150) NOT NULL`
-- `city varchar(100)`, `state varchar(100)`
-- `country char(2) DEFAULT 'MX'`
-- `is_active boolean DEFAULT true`
-- `created_at timestamptz DEFAULT now()`
+Plus columns missing from the migrated `players`/`tournaments` tables but used in code: `players.auth_user_id`, `players.display_name`, `players.role`, `players.is_profile_public`; `tournaments.rejection_reason`, `tournaments.approved_by`.
 
-**`games`**
-- `id uuid PK`
-- `slug varchar(60) UNIQUE NOT NULL`
-- `name varchar(100) NOT NULL`
-- `publisher varchar(100)`, `logo_url text`
-- `is_active boolean DEFAULT true`
+**Implication:** `supabase/migrations/` cannot be used to stand up a working copy of the live database. All of this schema exists only in the live Supabase project (`tbanxcysqureaafohusj` per `supabase/config.toml`, or the hardcoded `tbtyxtigbsljyrwyelqr` project in `geekarena/client.ts` — confirm these are the same project before relying on either). If you need the real schema, pull it from the live DB (`supabase db pull`) rather than trusting this repo.
 
-**`players`**
-- `id uuid PK`
-- `geek_tag varchar(30) UNIQUE NOT NULL`
-- `display_name varchar(80)`
-- `email varchar(255) UNIQUE`
-- `avatar_url text`
-- `home_store_id uuid → stores(id) ON DELETE SET NULL`
-- `is_active boolean DEFAULT true`
-- `created_at timestamptz DEFAULT now()`
-- ⚠️ `role` — used everywhere in code, **not in introspection, not in repo migration**. Assume `text` / `varchar`. Required values: `'player' | 'organizer' | 'admin'`.
-
-**`tournaments`**
-- `id uuid PK`
-- `store_id uuid NOT NULL → stores(id)`
-- `game_id uuid NOT NULL → games(id)`
-- `tournament_date date NOT NULL`
-- `qualifying_month smallint NOT NULL` (1..12 CHECK)
-- `qualifying_semester smallint NOT NULL` (1 or 2 CHECK)
-- `qualifying_year smallint NOT NULL`
-- `status tournament_status DEFAULT 'DRAFT'`
-- `csv_url text`
-- `approved_at timestamptz`, `undo_deadline timestamptz`, `published_at timestamptz`
-- `created_at timestamptz DEFAULT now()`
-- 🚧 INCOMPLETE: `undo_deadline` is in the schema but **never written or read** anywhere in code.
-
-**`tournament_results`**
-- `id uuid PK`
-- `tournament_id uuid NOT NULL → tournaments(id) ON DELETE CASCADE`
-- `player_id uuid NOT NULL → players(id)`
-- `rank smallint NOT NULL`
-- `wins smallint DEFAULT 0`, `losses smallint DEFAULT 0`
-- `points_earned smallint DEFAULT 0` (0..100 CHECK)
-- `UNIQUE (tournament_id, player_id)`
-- 🚧 INCOMPLETE: no row is ever inserted from the app. There is **no CSV parser** anywhere in the codebase; `createTournament` only stores a `csv_url`.
-
-**`leaderboard_snapshots`**
-- `id uuid PK`
-- `player_id uuid NOT NULL → players(id) ON DELETE CASCADE`
-- `game_id uuid NOT NULL → games(id) ON DELETE CASCADE`
-- `store_id uuid → stores(id)` (nullable; "global" snapshots leave it null)
-- `timeframe_type timeframe_type NOT NULL` — enum `MONTHLY` / `SEMESTRAL` only
-- `timeframe_value varchar(10) NOT NULL`
-- `total_points int DEFAULT 0`
-- `tournaments_played smallint DEFAULT 0`
-- `tournaments_won smallint DEFAULT 0`
-- `rank_position int`
-- `last_updated_at timestamptz DEFAULT now()`
-- `UNIQUE (player_id, game_id, store_id, timeframe_type, timeframe_value)`
-
-### Indexes
-- `idx_tournaments_status (status)`
-- `idx_tournaments_year_month (qualifying_year, qualifying_month)`
-- `idx_tournaments_year_sem (qualifying_year, qualifying_semester)`
-- `idx_lb_query (game_id, store_id, timeframe_type, timeframe_value, total_points DESC)`
-
-### RLS, policies, triggers, functions
-
-- Every table has `ENABLE ROW LEVEL SECURITY` in the migration, but **no `CREATE POLICY` statements exist** — neither in the repo nor exposed in introspection.
-- 🔴 Combined with the missing `GRANT` statements (the migration also omits `GRANT … TO authenticated/anon`), only the server fns running with the **service-role key** can read/write. The browser client (`geekarena`) is used to:
-  - Read `games` on `/` and `/signup` (this works only because RLS is enabled with no policies → public reads will return zero rows unless `anon`/`authenticated` were granted out-of-band).
-  - Probe `players.geek_tag` for uniqueness during signup.
-  - Read `players.role` after login. ⚠️ UNCLEAR whether these reads succeed in production depends on policies that are not in the repo.
-- **No triggers**, **no functions** in the database (per introspection).
-- **No `cron`/`pg_cron`** jobs (per introspection).
-- **No storage buckets** in the project.
+**Fixed since last snapshot:** the `rejectTournament` invalid-enum bug is gone — rejection now writes `status = 'DRAFT'` plus a `rejection_reason` text column instead of the non-existent `'REJECTED'` enum value.
 
 ---
 
-## 6. Component Inventory
+## 6. Caching
 
-### Project-specific layout components
-
-| Component | File | Purpose | Props |
-|---|---|---|---|
-| `AppHeader` | `components/layout/AppHeader.tsx` | Top nav shown on public pages and dashboard. Logo, role-aware nav (`Ranking`, `Mi Panel`, `Subir Resultados`, `Moderación`), session pill, login/logout button. | none |
-| `PanelSidebar` | `components/layout/PanelSidebar.tsx` | Left sidebar for `/admin` and `/organizer`. Items, active-state highlight, logout button (calls `geekarena.auth.signOut`). | `title`, `subtitle`, `items: SidebarItem[]`, `userLabel` |
-| `NavItem` (local) | inside `AppHeader.tsx` | Single nav link with active/inactive styling. | `to`, `icon`, `label` |
-| `Field`, `Stepper`, `Step1`, `Step2`, `Step3`, `TagBadge` (local) | inside `routes/signup.tsx` | 3-step wizard sub-components. | various |
-| `FieldLabel` (local) | (was inside the removed `routes/upload.tsx`) — no longer present | — | — |
-| `LeaderboardTable`, `Select`, `TicketBadge` (local) | inside `routes/index.tsx` | Public ranking presentation pieces. | various |
-| `RowActions` (local) | inside `routes/admin.players.tsx` | Per-row dropdown of admin actions on a player. | `p`, `onChangeRole`, `onAssignStore`, `onToggleActive` |
-
-### Shared UI primitives (`src/components/ui/`) — shadcn
-
-47 files: `accordion, alert-dialog, alert, aspect-ratio, avatar, badge, breadcrumb, button, calendar, card, carousel, chart, checkbox, collapsible, command, context-menu, dialog, drawer, dropdown-menu, form, hover-card, input-otp, input, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, select, separator, sheet, sidebar, skeleton, slider, sonner, switch, table, tabs, textarea, toggle-group, toggle, tooltip`.
-
-Primitives actively imported by routes:
-- `button`, `input`, `label`, `select`, `dialog`, `alert-dialog`, `badge`, `checkbox`, `dropdown-menu`, `tooltip` (used across `/admin/*` and `/organizer/*`).
-- `sonner` is mounted implicitly via `toast` imports (Note: a `<Toaster/>` provider is **not** rendered anywhere — toasts may not appear. ⚠️ UNCLEAR / 🚧).
-
-Many shadcn primitives (`carousel`, `chart`, `command`, `drawer`, `pagination`, `resizable`, `sidebar`, `menubar`, `navigation-menu`, `input-otp`, etc.) are present but **not imported** anywhere in the application code.
+`src/lib/query-cache.ts` — a small hand-rolled in-memory `Map`-based TTL cache (`getCached(key, ttlMs=30000)`, `setCached`, `invalidateCache`). This is new since the last snapshot (which had no caching at all) and is now the **only** caching mechanism in the app — the unused `@tanstack/react-query` `QueryClientProvider` was removed from `router.tsx`/`__root.tsx` on 2026-07-03 (zero `useQuery`/`useMutation` call sites existed). The `@tanstack/react-query` package is still a dependency in case it's reintroduced deliberately, but nothing wires it up today. The TTL cache is process-local and resets on every server restart/deploy, so it has no effect across Cloudflare Worker isolates.
 
 ---
 
-## 7. State Management
+## 7. Business Logic Highlights
 
-- **Global state (in-memory React Context):** `AppStoreProvider` from `src/lib/mock-store.tsx` is mounted in `__root.tsx`. It holds:
-  - `currentUser` (persisted to `localStorage` under `geek-collector-user`)
-  - `players` (🔴 seeded from `TAGS`/`CITIES` arrays at module load)
-  - `tournaments` (🔴 seeded mock data)
-  - `pendingSubmissions` (🔴 seeded mock data)
-  - Mutations: `login`, `signup`, `logout`, `loginAsDemo`, `submitTournament`, `approveSubmission`, `declineSubmission` — all purely in-memory.
-- **Auth state:** kept in component state via `useGeekarenaRole()` (re-fetched on `onAuthStateChange`). Not in a global store; each consumer subscribes independently and refetches `players` on mount.
-- **Server data:** Each route component owns its own `useEffect` + `useState` + `useServerFn(...)` pattern (e.g. `/admin/players`, `/admin/index`, `/organizer/new`). 🚧 React Query is installed and the provider is mounted, but **no `useQuery` / `useSuspenseQuery` / `ensureQueryData` calls exist** outside the shadcn `chart` file. There is no caching layer; every navigation refetches.
-- **Local UI state:** Standard `useState` / `useMemo` / `useRef` per component (filters, debounce timers, modal targets, etc.).
+### 7.1 Tournament lifecycle
+`DRAFT → APPROVED → PUBLISHED`, same as before, but moderation now forks by role: TCG managers approve/reject within their assigned games (`geekarena-manager.functions.ts`), admins can additionally unapprove/unpublish and force-recompute snapshots (`geekarena-admin.functions.ts`). Uploads now go through `TournamentUploadForm.tsx` + `read-excel-file`/`xlsx`, not a bare CSV URL — actual result rows are parsed and inserted (this closes the "CSV never parsed" gap from the old snapshot; verify still worth spot-checking given schema drift).
 
----
+### 7.2 Seasons
+`createSeason`, `activateSeason`, `deactivateSeason`, `listSeasons` — a `seasons` table (not in the migration) now scopes leaderboard periods; this concept didn't exist in the last snapshot.
 
-## 8. Business Logic
+### 7.3 Sponsors / Ads
+Full CRUD (`geekarena-ads.functions.ts`) plus view tracking (`registerAdView`, `ad_metrics` table) and carousel/vertical/horizontal placements. New since last snapshot.
 
-### 8.1 Tournament upload flow (DRAFT → APPROVED → PUBLISHED)
+### 7.4 Appeals
+Players/organizers can dispute a round result (`createAppeal`, `getStoreAppeals`, `resolveAppeal`) — new since last snapshot, tied to `round_appeals` table.
 
-1. **Create draft** — `/organizer/new` → `createTournament` server fn
-   - Inputs: `email`, `game_id` (uuid), `tournament_date` (YYYY-MM-DD), optional `csv_url` (must start with `http(s)://`).
-   - Computes `qualifying_month`, `qualifying_semester` (`<=6 ⇒ 1` else 2), `qualifying_year` from `tournament_date`.
-   - Inserts into `tournaments` with `status: 'DRAFT'`, returns `{ id }`.
-   - ⚠️ The CSV file is **not parsed**; only the URL is stored. No rows go into `tournament_results`.
+### 7.5 Deck identifiers — feature half-wired
+`deck_identifiers` holds leader-card metadata (name, set, colors, image) used by the Sessions round tracker for opponent-leader search (`getDeckIdentifiers`). The only thing that populates this table is the edge function below, and it is never called:
 
-2. **Moderation** — `/admin` → `approveTournament` / `rejectTournament` server fns
-   - `approveTournament`: sets `status = 'APPROVED'`, `approved_at = now()`.
-   - `rejectTournament`: 🔴 tries to set `status = 'REJECTED'` — invalid enum value → DB error.
-
-3. **Publish** — `/admin/approved` → `publishTournaments` server fn
-   - Filters the selected ids to those whose current `status` is `'APPROVED'` or `'DRAFT'`.
-   - Updates `status = 'PUBLISHED'`, `published_at = now()`, `approved_at = now()`.
-   - Then iterates one `(game_id, timeframe_type, timeframe_value)` slice at a time, calling `recomputeSnapshot` (see §8.3).
-   - 🔴 `recomputeSnapshot` writes `timeframe_type` values `'MONTH'`, `'SEMESTER'`, `'YEAR'`, but the DB enum only accepts `'MONTHLY'` and `'SEMESTRAL'` — every insert is expected to fail. There is no `'YEAR'` enum value at all.
-
-### 8.2 Undo window (48h)
-
-🚧 INCOMPLETE — `tournaments.undo_deadline` exists as a column but no code writes it, reads it, or implements an "undo publish" action. No cron / scheduled job present.
-
-### 8.3 Leaderboard recompute (`recomputeSnapshot`)
-
-For a `(game_id, timeframe_type, timeframe_value)` slice:
-1. Fetch all PUBLISHED `tournaments` for that `game_id` filtered by `(year[, month][, semester])`.
-2. Delete existing `leaderboard_snapshots` rows in that slice.
-3. Sum `points_earned`, count `tournaments_played`, count `rank === 1` as wins per `player_id` across `tournament_results`.
-4. Sort by `total_points DESC`, assign `rank_position = i + 1`, bulk insert into `leaderboard_snapshots`.
-
-Triggers: only invoked from `publishTournaments`. There is no scheduled recomputation, no on-result-insert trigger.
-
-### 8.4 Dual leaderboard system (MONTHLY vs SEMESTRAL, store vs global)
-
-- The schema supports it: `leaderboard_snapshots` has `timeframe_type`, `timeframe_value`, and a nullable `store_id` for "global vs store".
-- 🔴 The current `recomputeSnapshot` implementation never sets `store_id`, always writes `null`. There is **no store-scoped snapshot generation** anywhere.
-- The public leaderboard at `/` does **not query `leaderboard_snapshots` at all** — it renders mock players from `useStore()`. The dual-leaderboard UI on `/` shows hard-coded `MONTHS` (`["Mayo 2026", "Abril 2026", ...]`) and a fake `"S1 2026"` header.
-
-### 8.5 Cron jobs
-
-None. No `pg_cron`, no scheduled workers, no `/api/public/*` cron endpoints, no `supabase/functions/*`.
+**`supabase/functions/sync-deck-identifiers/index.ts`** — fetches One Piece TCG leader cards from `optcgapi.com` (sets/decks/promos), upserts into `deck_identifiers` (dedup on `game_id+card_image_id+api_source`), soft-deletes stale rows, logs to `deck_identifiers_sync_log`. Hardcoded to the One Piece `game_id`, excludes OP01–OP04. **Grep across `src/` finds zero invocations** — no cron, no admin button, no `functions.invoke("sync-deck-identifiers")` anywhere. Whatever data exists in `deck_identifiers` today was seeded manually or via a one-off run; there's no ongoing refresh path.
 
 ---
 
-## 9. Admin Panel (`/admin`)
+## 8. Known Issues & Incomplete Features
 
-Sidebar (defined in `routes/admin.tsx`):
-- `Torneos Pendientes` → `/admin`
-- `Torneos Aprobados` → `/admin/approved`
-- `Tiendas y Organizadores` → `/admin/stores`
-- `Jugadores` → `/admin/players`
-- `Publicar Manualmente` → `/admin/publish`
+### Still open
 
-### `/admin` — Pending tournaments
-- Lists tournaments with `status IN ('DRAFT')` (despite the section calling itself "Pendientes").
-- Actions: **Aprobar** (instant), **Rechazar** (alert-dialog confirm, 🔴 invalid enum).
-- Server fns: `listTournamentsByStatus({ statuses: ['DRAFT'] })`, `approveTournament`, `rejectTournament`.
+- 🔴 **Schema drift** (see §5) — the repo's migration cannot rebuild the live schema. Fixing this requires the Supabase CLI and a `supabase db pull` against the live project; deferred, needs a deliberate pass with DB access.
+- 🔴 **`sync-deck-identifiers` edge function is orphaned** — deck search data has no refresh mechanism. Fixing this requires deciding a trigger (pg_cron schedule vs. a manual admin "sync" button) and deploying via the Supabase CLI; deferred pending that decision.
 
-### `/admin/approved` — Approved tournaments
-- Lists `status = 'APPROVED'`.
-- Multi-select checkboxes, top "Publicar seleccionados (n)" button with confirm dialog.
-- Server fns: `listTournamentsByStatus({ statuses: ['APPROVED'] })`, `publishTournaments`.
+### Resolved 2026-07-03
 
-### `/admin/stores` — Tiendas y Organizadores
-- Loads all stores + all `players` whose `role IN ('organizer','admin')`.
-- Renders one card per store with its organizers grouped by `home_store_id`.
-- "Nueva tienda" dialog inserts a new `stores` row (slug + name + city + state, hardcoded `country = 'MX'`).
-- Server fns: `listStoresWithOrganizers`, `createStore`.
-
-### `/admin/players` — Jugadores (server-side at scale)
-- Tabs: **Todos**, **Organizadores**, **Administradores**. Tab forces `role` filter.
-- Filters: Rol, Estado (`is_active`), Tienda, Ordenar por (`recent | geek_tag | points`).
-- Search: 400ms debounce; if input contains `@` it `.ilike` searches `email`, otherwise `geek_tag`. Special chars `% , ( )` are stripped.
-- Pagination: 25/page server-side using `.range(from, to)` with `count: 'exact'`.
-- Sort by `points`: precomputes ordered player ids from `leaderboard_snapshots` `timeframe_type='YEAR'` (🔴 enum mismatch — see §5), takes the page slice, queries `.in('id', idsForPage)`, reorders client-side.
-- Actions per row (all gated by confirmation modals):
-  - **Cambiar rol** → `setPlayerRole`
-  - **Asignar tienda** (visible only on `organizers` tab) → `setPlayerRole` with `home_store_id`
-  - **Activar / Desactivar cuenta** → `setPlayerActive`
-  - **Ver perfil** → navigates to `/admin/players/$id`
-- Admins tab additionally requests `include_last_sign_in: true`, which calls Supabase Admin `auth.admin.listUsers({ page:1, perPage:1 })` per row and pulls `last_sign_in_at`. ⚠️ This `perPage:1` is incorrect — only the first auth user is fetched and then `.find(email===…)` is applied → the column will almost always be `—`.
-- Server fns: `listPlayers`, `setPlayerRole`, `setPlayerActive`, `listStoresWithOrganizers`.
-
-### `/admin/players/$id` — Player profile
-- Loads cumulative stats from `tournament_results` (sum of `points_earned`, count of `rank === 1`), the assigned store, and yearly `leaderboard_snapshots`.
-- Shows the tournament history list (date / rank / W-L / points) and yearly ranks.
-- Server fn: `getPlayerDetail`.
-
-### `/admin/publish` — Publicar Manualmente
-- 🚧 Effectively a redirect page: it only contains a link to `/admin/approved`. No standalone functionality.
+- ✅ **Branding mismatch** — root `<title>`/`og:title`/`twitter:title` in `__root.tsx` changed from "National Geek" to "Geek Arena"; `author` meta changed from "Geek Collector" to "Geek Arena".
+- ✅ **`.env` untracked from git** — was committed despite being gitignored; ran `git rm --cached .env` so it's no longer tracked going forward. Note: this does **not** scrub the credentials already present in git history — rotate the service role key / JWTs in the Supabase dashboard if this repo's history is or becomes shared.
+- ✅ **Lovable Cloud Supabase scaffold deleted** — `src/integrations/supabase/*` removed along with its one live wiring point in `src/start.ts` (see §4). Verified via `tsc --noEmit` and a full `vite build` that nothing else referenced it.
+- ✅ **Unused React Query provider removed** — `QueryClientProvider`/`QueryClient` construction removed from `router.tsx` and `__root.tsx` (root route no longer needs `createRootRouteWithContext`, uses plain `createRootRoute`). The app's only caching layer is now `query-cache.ts` (see §6).
 
 ---
 
-## 10. Organizer Panel (`/organizer`)
+## 9. Environment Variables
 
-Sidebar (defined in `routes/organizer.tsx`):
-- `Mi Tienda` → `/organizer`
-- `Mis Torneos` → `/organizer/tournaments`
-- `Subir Torneo` → `/organizer/new`
+From `.env` (names only — do not print values):
 
-### `/organizer` — Mi Tienda
-- Loads `getOrganizerOverview` → `stores`, active `games`, current `homeStore`.
-- "Asignar" → updates `players.home_store_id` (`updateHomeStore`).
-- If `homeStore` is set, second card with editable `name / city / state` → `updateStoreInfo` (enforces "you can only edit your assigned store unless admin").
+`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID`, `GEEKARENA_SERVICE_ROLE_KEY` (required server-side for all admin/organizer/manager server functions via `getGeekarenaAdmin()`).
 
-### `/organizer/tournaments` — Mis Torneos
-- Lists `tournaments WHERE store_id = player.home_store_id` (empty if not assigned).
-- DRAFT-only row action: **Eliminar** (confirm dialog) → `deleteDraftTournament`.
-- Status labels render Spanish translations for `DRAFT / PENDING_REVIEW / APPROVED / PUBLISHED / REJECTED`. 🔴 `PENDING_REVIEW` and `REJECTED` are never produced by the rest of the app.
-
-### `/organizer/new` — Subir Torneo
-- Loads `getOrganizerOverview` (needs store + active games).
-- If no `home_store_id`, shows "Primero debes asignar una tienda".
-- Form: TCG (select), Fecha (date), URL del CSV (optional, `http(s)://`).
-- Displays computed `mes / semestre / año` preview.
-- Submits → `createTournament`, navigates to `/organizer/tournaments`.
-
----
-
-## 11. Known Issues & Incomplete Features
-
-### 🔴 MOCK DATA (still wired)
-- `src/lib/mock-store.tsx` — entire 40-row leaderboard, tournament history, pending submissions, demo logins. Mounted globally.
-- `routes/index.tsx` — public leaderboard is 100% mock; only the TCG filter dropdown is real.
-- `routes/dashboard.tsx` — player dashboard is 100% mock (stats, rank, recent tournaments). All copy in English ⚠️.
-- `routes/index.tsx` — `MONTHS = ["Mayo 2026", ..., "Febrero 2026"]` hardcoded.
-- `routes/check-inbox.tsx`, `routes/login.tsx`, `routes/signup.tsx` use the real backend; the rest of the app does not consistently.
-
-### 🔴 Schema / enum bugs (will fail at runtime against the live DB)
-- `rejectTournament` writes `status = 'REJECTED'`, not in `tournament_status` enum.
-- `recomputeSnapshot` (called by `publishTournaments`) writes `timeframe_type` values `'MONTH' | 'SEMESTER' | 'YEAR'`; the enum is `'MONTHLY' | 'SEMESTRAL'` with no yearly variant. Every snapshot insert is expected to fail → leaderboards never populate.
-- `listPlayers` `sort='points'` reads `leaderboard_snapshots WHERE timeframe_type='YEAR'` — same enum mismatch, so this sort returns zero ids.
-- `players.role` is read/written everywhere but is missing from both the repo migration and `src/integrations/supabase/types.ts`. The live DB presumably has it but the schema-as-code is out of sync.
-
-### 🚧 INCOMPLETE features
-- **CSV ingestion:** No CSV parser. Tournaments only store a URL; `tournament_results` rows are never inserted. The whole leaderboard pipeline is therefore inert even before the enum bugs.
-- **Players auto-provisioning:** `signUp` does not insert into `players`. New users will land with `role = null` → `/dashboard` (mock).
-- **Undo publish (48h):** Column exists, no logic.
-- **Cron / scheduled snapshot refresh:** Not implemented anywhere.
-- **Per-store leaderboards:** `recomputeSnapshot` never sets `store_id`.
-- **`/admin/publish` page:** Placeholder only; redirects user back to `/admin/approved`.
-- **`<Toaster/>` provider:** `sonner` toasts are called all over the app but the provider is not mounted in `__root.tsx`.
-- **React Query usage:** Provider is mounted; no queries are actually defined. All fetching is `useEffect` + `useState`.
-- **Auth state invalidation:** No global `onAuthStateChange` listener that invalidates router/query state.
-- **`useGeekarenaSession` hook:** defined but never imported.
-
-### ⚠️ UNCLEAR / risk
-- Product branding splits across `Geek Arena / GeekCollector / National Geek`.
-- `/setup` is a publicly reachable route and `seedTestAccounts` has no auth gate — anyone can reset the passwords on the canonical test accounts at any time.
-- Server fns take the user's `email` as a body parameter and re-fetch `players` from it. There is no proof the caller is that user (no `requireSupabaseAuth` middleware, no JWT validation). Authorization is effectively trust-based on the email field.
-- `admin.players.tsx` line ~409 references `<Users />` icon in JSX without importing `Users` from `lucide-react`. Will throw a `Users is not defined` ReferenceError when the empty-state branch renders.
-- `admin.players.tsx` `setRole`/`setPlayerActive`/etc. casts use `as any` in several places.
-- The Lovable Cloud Supabase client files (`src/integrations/supabase/{client,client.server,auth-middleware,auth-attacher,types}.ts`) are wired by the platform but **not used** at runtime — all traffic goes to the hardcoded `tbtyxtigbsljyrwyelqr` GeekArena project.
-- `__root.tsx` `og:image` points to a `pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev` URL from an earlier project preview deploy. Should likely be replaced before publish.
-- 404 page (`__root.tsx`) is in English ("Page not found", "Go home", "Try again") — conflicts with the Spanish-MX language rule for the rest of the UI.
-- No TODO/FIXME/HACK/XXX comments were found in the codebase.
-
----
-
-## 12. Environment Variables
-
-From `.env` (names only):
-
-| Variable | Scope | Required? | Used for |
-|---|---|---|---|
-| `VITE_SUPABASE_URL` | client (build-time) | optional (unused at runtime) | Lovable Cloud browser client |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | client | optional (unused at runtime) | Lovable Cloud browser client |
-| `VITE_SUPABASE_PROJECT_ID` | client | optional | Lovable Cloud project id |
-| `SUPABASE_URL` | server | optional (unused at runtime) | Lovable Cloud server client |
-| `SUPABASE_PUBLISHABLE_KEY` | server | optional (unused at runtime) | Lovable Cloud server client |
-
-Lovable-managed secrets (not in `.env`, fetched from the secrets store):
-
-| Secret | Scope | Required? | Used for |
-|---|---|---|---|
-| `GEEKARENA_SERVICE_ROLE_KEY` | server | **REQUIRED** | All admin / organizer server fns (`getGeekarenaAdmin`). App breaks at runtime without it. |
-| `SUPABASE_SERVICE_ROLE_KEY` | server | optional (unused) | Lovable Cloud admin client |
-| `SUPABASE_DB_URL` | server | optional (unused) | — |
-| `LOVABLE_API_KEY` | server | optional (unused) | Lovable AI Gateway (no AI calls in code) |
-
-Note: the **real backend URL** (`https://tbtyxtigbsljyrwyelqr.supabase.co`) and the **publishable key** for that project are **hardcoded** in `src/integrations/geekarena/client.ts` and `src/lib/geekarena-admin.server.ts`. They are not configured via env vars.
+`supabase/config.toml` → `project_id = "tbanxcysqureaafohusj"`. Confirm this matches the hardcoded project reference in `src/integrations/geekarena/client.ts` (`tbtyxtigbsljyrwyelqr`) — if they differ, one of the two is stale.

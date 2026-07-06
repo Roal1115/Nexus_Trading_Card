@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { TournamentUploadForm } from "@/components/upload/TournamentUploadForm";
 import { getManagerGames } from "@/lib/geekarena-manager.functions";
+import { SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 
 type Game = { id: string; slug: string; name: string };
 
@@ -34,20 +34,12 @@ function TcgManagerUploadPage() {
   }, [role, fetchManagerGames]);
 
   if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsSectionSkeleton />;
   }
   if (role !== "tcg_manager" && role !== "admin") return null;
 
   if (role === "tcg_manager" && managerGames === null) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsSectionSkeleton />;
   }
 
   return (

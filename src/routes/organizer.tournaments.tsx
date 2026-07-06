@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Trash2, ExternalLink, Info, Filter } from "lucide-react";
+import { Plus, Trash2, ExternalLink, Info, Filter } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
+import { SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   getMyTournaments,
@@ -169,8 +170,21 @@ function TournamentsPage() {
 
   if (roleLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonBlock key={i} className="h-16 rounded-2xl" />
+          ))}
+        </div>
+        <div className="glass overflow-hidden rounded-2xl">
+          <table className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TournamentRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -282,8 +296,14 @@ function TournamentsPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-32 items-center justify-center">
-          <Loader2 className="animate-spin text-primary" />
+        <div className="glass overflow-hidden rounded-2xl">
+          <table className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TournamentRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : rows.length === 0 ? (
         <div className="glass rounded-2xl p-8 text-sm text-gray-400">

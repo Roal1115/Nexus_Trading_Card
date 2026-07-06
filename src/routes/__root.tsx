@@ -1,16 +1,19 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
-  createRootRouteWithContext,
+  createRootRoute,
   useRouter,
   useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-
+import { AnimatePresence, motion } from "framer-motion";
+import { GeekarenaAuthProvider } from "../context/geekarena-auth.context";
+import { TCGProvider } from "@/context/tcg.context";
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -35,7 +38,48 @@ function NotFoundComponent() {
   );
 }
 
+const CHUNK_RELOAD_KEY = "__chunk_reload_at__";
+
+function isChunkLoadError(error: unknown): boolean {
+  const msg = (error as any)?.message ?? String(error ?? "");
+  return (
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /ChunkLoadError/i.test(msg) ||
+    /Loading chunk [\d]+ failed/i.test(msg)
+  );
+}
+
+if (typeof window !== "undefined") {
+  const tryReload = (err: unknown) => {
+    if (!isChunkLoadError(err)) return;
+    try {
+      const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? "0");
+      if (Date.now() - last < 10_000) return;
+      sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+    } catch {
+      // ignore storage errors
+    }
+    window.location.reload();
+  };
+  window.addEventListener("error", (e) => tryReload((e as ErrorEvent).error ?? e.message));
+  window.addEventListener("unhandledrejection", (e) =>
+    tryReload((e as PromiseRejectionEvent).reason),
+  );
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  if (typeof window !== "undefined" && isChunkLoadError(error)) {
+    try {
+      const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? "0");
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  }
   console.error(error);
   const router = useRouter();
 
@@ -69,26 +113,83 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     </div>
   );
 }
+const description =
+  "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite por la cima del leaderboard nacional de One Piece, Pokémon y MTG.";
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "National Geek" },
-      { name: "description", content: "yes" },
-      { name: "author", content: "Geek Collector" },
-      { property: "og:title", content: "National Geek" },
-      { property: "og:description", content: "yes" },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "National Geek" },
-      { name: "twitter:description", content: "yes" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/252cadab-9e57-4dbf-9803-6170b38644e3/id-preview-b760d1ac--7816e8a3-9d96-43db-a57a-25bf43a687c9.lovable.app-1781539732674.png" },
+
+      {
+        title: "Trading Card Nexus | Meta, Torneos y Estadísticas de TCG",
+      },
+
+      {
+        name: "description",
+        content: description,
+      },
+
+      {
+        property: "og:title",
+        content: "Trading Card Nexus",
+      },
+
+      {
+        property: "og:description",
+        content: description,
+      },
+
+      {
+        property: "og:type",
+        content: "website",
+      },
+
+      {
+        property: "og:site_name",
+        content: "Trading Card Nexus",
+      },
+
+      {
+        property: "og:url",
+        content: "https://mxntcg.lovable.app",
+      },
+
+      {
+        property: "og:image",
+        content: "https://mxntcg.lovable.app/social/TCNSocial.webp",
+      },
+      {
+        name: "twitter:image",
+        content: "https://mxntcg.lovable.app/social/TCNSocial.webp",
+      },
+
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+
+      {
+        name: "twitter:title",
+        content: "Trading Card Nexus",
+      },
+
+      {
+        name: "twitter:description",
+        content: description,
+      },
     ],
     links: [
+      {
+        rel: "icon",
+        type: "image/x-icon",
+        href: "/favicon.ico", // o /favicon.ico si lo renombras
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/favicon.ico",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -106,7 +207,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
-          name: "Geek Arena",
+          name: "Trading Card Nexus",
           url: "https://mxntcg.lovable.app",
           logo: "https://mxntcg.lovable.app/favicon.ico",
         }),
@@ -116,7 +217,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "Geek Arena",
+          name: "Trading Card Nexus",
           url: "https://mxntcg.lovable.app",
           potentialAction: {
             "@type": "SearchAction",
@@ -135,7 +236,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es-MX">
       <head>
         <HeadContent />
       </head>
@@ -148,7 +249,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isPanel =
     pathname.startsWith("/admin") ||
@@ -156,21 +256,36 @@ function RootComponent() {
     pathname.startsWith("/tcg-manager");
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-radial-crimson">
-        {!isPanel && <AppHeader />}
-        <Outlet />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "#1e2130",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#ffffff",
-            },
-          }}
-        />
-      </div>
-    </QueryClientProvider>
+    <TCGProvider>
+      <GeekarenaAuthProvider>
+        <div className="min-h-dvh bg-radial-nexus">
+          {!isPanel && <AppHeader />}
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
+              className="pb-16 sm:pb-0"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: "#1e2130",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#ffffff",
+              },
+            }}
+          />
+          <BottomNav />
+          <PanelBottomNav />
+        </div>
+      </GeekarenaAuthProvider>
+    </TCGProvider>
   );
 }

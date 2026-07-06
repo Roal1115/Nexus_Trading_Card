@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Crown, Lock, Target, TrendingUp } from "lucide-react";
+import { Check, Crown, Lock, Share2, Target, TrendingUp, Trophy } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getPublicProfile } from "@/lib/geekarena-player.functions";
 import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
@@ -11,9 +11,7 @@ import { AdHorizontal } from "@/components/ads/AdHorizontal";
 export const Route = createFileRoute("/players/$playerTag")({
   head: ({ params }) => ({
     meta: [{ title: `Perfil de ${params.playerTag} — Geek Arena` }],
-    links: [
-      { rel: "canonical", href: `https://mxntcg.lovable.app/players/${params.playerTag}` },
-    ],
+    links: [{ rel: "canonical", href: `https://mxntcg.lovable.app/players/${params.playerTag}` }],
     scripts: [
       {
         type: "application/ld+json",
@@ -46,6 +44,7 @@ function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [sponsor, setSponsor] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -55,7 +54,9 @@ function PublicProfilePage() {
     registerView()
       .then(setSponsor)
       .catch(() => {
-        fetchActiveSponsor().then(setSponsor).catch(() => {});
+        fetchActiveSponsor()
+          .then(setSponsor)
+          .catch(() => {});
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,7 +77,7 @@ function PublicProfilePage() {
   }, [playerTag, viewer?.id, authLoading]);
 
   const tournaments: any[] =
-    profile && !profile.is_private ? (profile as any).tournaments ?? [] : [];
+    profile && !profile.is_private ? ((profile as any).tournaments ?? []) : [];
 
   const uniqueGames = useMemo(
     () =>
@@ -134,9 +135,7 @@ function PublicProfilePage() {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
         <h2 className="text-2xl font-bold text-white">Jugador no encontrado</h2>
-        <p className="mt-2 text-sm text-gray-400">
-          No existe un jugador con ese Player Tag.
-        </p>
+        <p className="mt-2 text-sm text-gray-400">No existe un jugador con ese Player Tag.</p>
         <Link
           to="/"
           className="mt-6 inline-block rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white"
@@ -153,9 +152,8 @@ function PublicProfilePage() {
         <Lock className="mb-4 text-gray-500" size={40} />
         <h2 className="text-2xl font-bold text-white">Perfil privado</h2>
         <p className="mt-2 text-sm text-gray-400">
-          El perfil de{" "}
-          <span className="font-semibold text-primary">@{profile.geek_tag}</span>{" "}
-          es privado.
+          El perfil de <span className="font-semibold text-primary">@{profile.geek_tag}</span> es
+          privado.
         </p>
         <Link
           to="/"
@@ -208,6 +206,43 @@ function PublicProfilePage() {
                   })}
                 </p>
               )}
+              <button
+                onClick={async () => {
+                  const url = `https://mxntcg.lovable.app/players/${profile.geek_tag}`;
+                  const shareData = {
+                    title: `${profile.geek_tag} — Geek Arena`,
+                    text: `Mira el ranking de ${profile.geek_tag} en Geek Arena 🏆`,
+                    url,
+                  };
+
+                  if (navigator.share && navigator.canShare?.(shareData)) {
+                    try {
+                      await navigator.share(shareData);
+                    } catch (err: any) {
+                      if (err?.name !== "AbortError") {
+                        navigator.clipboard.writeText(url);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }
+                    }
+                  } else {
+                    navigator.clipboard.writeText(url);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }
+                }}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+              >
+                {copied ? (
+                  <>
+                    <Check size={12} /> ¡Link copiado!
+                  </>
+                ) : (
+                  <>
+                    <Share2 size={12} /> Compartir perfil
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </section>
@@ -323,8 +358,24 @@ function PublicProfilePage() {
               <tbody>
                 {paginatedTournaments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
-                      Sin torneos registrados.
+                    <td colSpan={6} className="px-4 py-16 text-center">
+                      <div className="mx-auto max-w-xs">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                          <Trophy size={24} className="text-primary" />
+                        </div>
+                        <p className="text-sm font-semibold text-white">
+                          Aún sin torneos registrados
+                        </p>
+                        <p className="mt-2 text-xs text-gray-500">
+                          Participa en un torneo en tu tienda local para aparecer en el circuito.
+                        </p>
+                        <Link
+                          to="/stores"
+                          className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
+                        >
+                          Encontrar una tienda →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -341,13 +392,10 @@ function PublicProfilePage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
                       <td className="px-4 py-3 text-white">
-                        {t.store}{" "}
-                        <span className="text-xs text-gray-500">· {t.city}</span>
+                        {t.store} <span className="text-xs text-gray-500">· {t.city}</span>
                       </td>
                       <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
-                        {t.wins != null && t.losses != null
-                          ? `${t.wins} / ${t.losses}`
-                          : "—"}
+                        {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span
@@ -371,8 +419,22 @@ function PublicProfilePage() {
           {/* Mobile */}
           <div className="sm:hidden">
             {paginatedTournaments.length === 0 ? (
-              <div className="px-4 py-12 text-center text-gray-500">
-                Sin torneos registrados.
+              <div className="px-4 py-16 text-center">
+                <div className="mx-auto max-w-xs">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                    <Trophy size={24} className="text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-white">Aún sin torneos registrados</p>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Participa en un torneo en tu tienda local para aparecer en el circuito.
+                  </p>
+                  <Link
+                    to="/stores"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
+                  >
+                    Encontrar una tienda →
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
@@ -399,10 +461,10 @@ function PublicProfilePage() {
                           <span>·</span>
                           <span>
                             {t.date !== "—"
-                              ? new Date(t.date + "T12:00:00").toLocaleDateString(
-                                  "es-MX",
-                                  { day: "numeric", month: "short" },
-                                )
+                              ? new Date(t.date + "T12:00:00").toLocaleDateString("es-MX", {
+                                  day: "numeric",
+                                  month: "short",
+                                })
                               : "—"}
                           </span>
                           {t.wins != null && t.losses != null && (
@@ -439,15 +501,13 @@ function PublicProfilePage() {
           )}
         </section>
 
-        {/* CTA */}
+        {/* CTA
         {!profile.is_owner && (
           <section className="glass mt-6 rounded-2xl border border-primary/20 p-6 text-center">
-            <h3 className="text-lg font-bold text-white">
-              ¿Quieres ver tu propio ranking?
-            </h3>
+            <h3 className="text-lg font-bold text-white">¿Quieres ver tu propio ranking?</h3>
             <p className="mt-2 text-sm text-gray-400">
-              Regístrate y accede a tu historial completo, rankings por TCG y
-              estadísticas detalladas.
+              Regístrate y accede a tu historial completo, rankings por TCG y estadísticas
+              detalladas.
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Link
@@ -464,7 +524,7 @@ function PublicProfilePage() {
               </Link>
             </div>
           </section>
-        )}
+        )} */}
       </main>
 
       <aside className="hidden xl:block">

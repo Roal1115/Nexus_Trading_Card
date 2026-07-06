@@ -4,7 +4,10 @@ import { requireGeekarenaManager, requireGeekarenaAdmin } from "./geekarena-auth
 import { loadTournamentDetail } from "./geekarena-tournament-detail.server";
 import { logAction, recomputeSnapshot, tfMonth } from "./geekarena-admin.functions";
 
-async function getManagerGameIds(admin: any, player: { id: string; role: string }): Promise<string[]> {
+async function getManagerGameIds(
+  admin: any,
+  player: { id: string; role: string },
+): Promise<string[]> {
   if (player.role === "admin") {
     const { data } = await admin.from("games").select("id").eq("is_active", true);
     return (data ?? []).map((g: any) => g.id);
@@ -71,7 +74,11 @@ export const getManagerApprovedTournaments = createServerFn({ method: "POST" })
     return data ?? [];
   });
 
-async function assertManagerOwnsGame(admin: any, player: { id: string; role: string }, game_id: string) {
+async function assertManagerOwnsGame(
+  admin: any,
+  player: { id: string; role: string },
+  game_id: string,
+) {
   if (player.role === "admin") return;
   const { data: mg } = await admin
     .from("manager_games")
@@ -84,10 +91,16 @@ async function assertManagerOwnsGame(admin: any, player: { id: string; role: str
 
 export const getManagerTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    const { data: t } = await admin.from("tournaments").select("game_id").eq("id", data.tournament_id).maybeSingle();
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("game_id")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
     if (!t) throw new Error("Torneo no encontrado");
     await assertManagerOwnsGame(admin, player, t.game_id);
     return loadTournamentDetail(admin, data.tournament_id, "/tcg-manager");
@@ -95,7 +108,9 @@ export const getManagerTournamentDetail = createServerFn({ method: "POST" })
 
 export const managerApproveTournament = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: tournament } = await admin
@@ -104,7 +119,8 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
       .eq("id", data.tournament_id)
       .single();
     if (!tournament) throw new Error("Torneo no encontrado");
-    if (tournament.status !== "DRAFT") throw new Error("Solo se pueden aprobar torneos en estado DRAFT");
+    if (tournament.status !== "DRAFT")
+      throw new Error("Solo se pueden aprobar torneos en estado DRAFT");
     await assertManagerOwnsGame(admin, player, tournament.game_id);
 
     const now = new Date();
@@ -176,7 +192,9 @@ export const managerRejectTournament = createServerFn({ method: "POST" })
 
 export const managerUndoApproval = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: tournament } = await admin
@@ -185,7 +203,8 @@ export const managerUndoApproval = createServerFn({ method: "POST" })
       .eq("id", data.tournament_id)
       .single();
     if (!tournament) throw new Error("Torneo no encontrado");
-    if (tournament.status !== "APPROVED") throw new Error("Solo se pueden deshacer torneos aprobados");
+    if (tournament.status !== "APPROVED")
+      throw new Error("Solo se pueden deshacer torneos aprobados");
     if (tournament.undo_deadline && new Date(tournament.undo_deadline) < new Date()) {
       throw new Error("La ventana de 48 horas para deshacer ha expirado");
     }
@@ -196,9 +215,17 @@ export const managerUndoApproval = createServerFn({ method: "POST" })
       .update({ status: "DRAFT", approved_at: null, undo_deadline: null })
       .eq("id", data.tournament_id);
     if (error) throw new Error(error.message);
-    await logAction(admin, player, "APPROVAL_UNDONE", "tournament", data.tournament_id, data.tournament_id, {
-      undone_by_role: player.role,
-    });
+    await logAction(
+      admin,
+      player,
+      "APPROVAL_UNDONE",
+      "tournament",
+      data.tournament_id,
+      data.tournament_id,
+      {
+        undone_by_role: player.role,
+      },
+    );
     return { success: true };
   });
 
@@ -222,7 +249,10 @@ export const getManagerAssignedGameIds = createServerFn({ method: "POST" })
   .inputValidator((d: { player_id: string }) => z.object({ player_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const { data: rows, error } = await admin.from("manager_games").select("game_id").eq("player_id", data.player_id);
+    const { data: rows, error } = await admin
+      .from("manager_games")
+      .select("game_id")
+      .eq("player_id", data.player_id);
     if (error) throw new Error(error.message);
     return (rows ?? []).map((r: any) => r.game_id as string);
   });
@@ -239,7 +269,10 @@ export const assignManagerGames = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const { error: de } = await admin.from("manager_games").delete().eq("player_id", data.player_id);
+    const { error: de } = await admin
+      .from("manager_games")
+      .delete()
+      .eq("player_id", data.player_id);
     if (de) throw new Error(de.message);
 
     if (data.game_ids.length > 0) {
@@ -264,7 +297,10 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
       const { data } = await admin.from("games").select("id").eq("is_active", true);
       gameIds = (data ?? []).map((g: any) => g.id);
     } else {
-      const { data } = await admin.from("manager_games").select("game_id").eq("player_id", player.id);
+      const { data } = await admin
+        .from("manager_games")
+        .select("game_id")
+        .eq("player_id", player.id);
       gameIds = (data ?? []).map((d: any) => d.game_id);
     }
 
@@ -295,15 +331,16 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
 // ---------- Mi Historial ----------
 export const getManagerHistory = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .inputValidator((d: { action_type?: string; date_from?: string; date_to?: string; page?: number }) =>
-    z
-      .object({
-        action_type: z.string().optional(),
-        date_from: z.string().optional(),
-        date_to: z.string().optional(),
-        page: z.number().min(1).default(1),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: { action_type?: string; date_from?: string; date_to?: string; page?: number }) =>
+      z
+        .object({
+          action_type: z.string().optional(),
+          date_from: z.string().optional(),
+          date_to: z.string().optional(),
+          page: z.number().min(1).default(1),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -421,7 +458,9 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     // Get all store schedules for these games
     const { data: schedules, error: se } = await admin
       .from("store_schedules")
-      .select("id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)")
+      .select(
+        "id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)",
+      )
       .in("game_id", gameIds);
     if (se) throw new Error(se.message);
 
@@ -489,7 +528,8 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       let reportStatus: "submitted" | "overdue" | "pending" | "upcoming";
       const isSubmitted =
         tournament &&
-        (tournament.status !== "DRAFT" || (tournament.status === "DRAFT" && !tournament.rejection_reason));
+        (tournament.status !== "DRAFT" ||
+          (tournament.status === "DRAFT" && !tournament.rejection_reason));
       if (isSubmitted) {
         reportStatus = "submitted";
       } else if (hasEnded && !tournament) {
@@ -542,7 +582,8 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
         days_elapsed: elapsedEntries.length,
         total_expected: entries.length,
         today_expected: entries.filter((e: any) => e.is_today).length,
-        today_submitted: entries.filter((e: any) => e.is_today && e.report_status === "submitted").length,
+        today_submitted: entries.filter((e: any) => e.is_today && e.report_status === "submitted")
+          .length,
       },
     };
   });
@@ -578,16 +619,23 @@ export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
 
 export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .inputValidator((d: { store_id: string; game_id: string; day_of_week: number; start_time: string; id?: string }) =>
-    z
-      .object({
-        store_id: z.string().uuid(),
-        game_id: z.string().uuid(),
-        day_of_week: z.number().int().min(0).max(6),
-        start_time: z.string().regex(/^\d{2}:\d{2}$/),
-        id: z.string().uuid().optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: {
+      store_id: string;
+      game_id: string;
+      day_of_week: number;
+      start_time: string;
+      id?: string;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          game_id: z.string().uuid(),
+          day_of_week: z.number().int().min(0).max(6),
+          start_time: z.string().regex(/^\d{2}:\d{2}$/),
+          id: z.string().uuid().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -622,7 +670,9 @@ export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
 
 export const deleteStoreScheduleManager = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
-  .inputValidator((d: { schedule_id: string }) => z.object({ schedule_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { schedule_id: string }) =>
+    z.object({ schedule_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: row } = await admin
@@ -692,7 +742,10 @@ export const listManagerStores = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaManager])
   .handler(async ({ context }) => {
     const { admin } = context;
-    const { data } = await admin.from("stores").select("id, name, city, state, is_active").order("name");
+    const { data } = await admin
+      .from("stores")
+      .select("id, name, city, state, is_active")
+      .order("name");
     return { stores: data ?? [] };
   });
 
@@ -704,7 +757,10 @@ export const getManagerResponsibleStores = createServerFn({ method: "POST" })
     const gameIds = await getManagerGameIds(admin, player);
     if (gameIds.length === 0) return { stores: [], games: [] };
 
-    const { data: schedules } = await admin.from("store_schedules").select("store_id, game_id").in("game_id", gameIds);
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("store_id, game_id")
+      .in("game_id", gameIds);
 
     const storeIds = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
     if (storeIds.length === 0) return { stores: [], games: [] };
@@ -868,14 +924,10 @@ export const unpublishManagerTournament = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const monthKey = tfMonth((t as any).qualifying_month, (t as any).qualifying_year);
-    await recomputeSnapshot(
-      admin,
-      (t as any).game_id,
-      (t as any).store_id,
-      "MONTHLY",
-      monthKey,
-      { year: (t as any).qualifying_year, month: (t as any).qualifying_month },
-    );
+    await recomputeSnapshot(admin, (t as any).game_id, (t as any).store_id, "MONTHLY", monthKey, {
+      year: (t as any).qualifying_year,
+      month: (t as any).qualifying_month,
+    });
     if ((t as any).season_id) {
       const { data: season } = await admin
         .from("seasons")
@@ -944,14 +996,17 @@ export const getManagerTournamentHistory = createServerFn({ method: "POST" })
     }
 
     const gameIdsFilter = data.game_id
-      ? managerGameIds.includes(data.game_id) ? [data.game_id] : []
+      ? managerGameIds.includes(data.game_id)
+        ? [data.game_id]
+        : []
       : managerGameIds;
 
     if (gameIdsFilter.length === 0) {
       return { total: 0, page, stats: {}, tournaments: [] };
     }
 
-    const baseCols = "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
+    const baseCols =
+      "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
     const extraCols = ", rejection_reason, approved_by, season_id";
 
     const build = (cols: string) => {
@@ -979,7 +1034,9 @@ export const getManagerTournamentHistory = createServerFn({ method: "POST" })
     const count = res.count;
     const gameIds = Array.from(new Set(rows.map((r) => r.game_id)));
     const storeIds = Array.from(new Set(rows.map((r) => r.store_id)));
-    const approverIds = Array.from(new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)));
+    const approverIds = Array.from(
+      new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)),
+    );
     const tournamentIds = rows.map((r) => r.id);
 
     const [gmsRes, storesRes, approversRes, resultsRes, allStatsRes] = await Promise.all([
@@ -993,7 +1050,10 @@ export const getManagerTournamentHistory = createServerFn({ method: "POST" })
         ? admin.from("players").select("id, geek_tag, role").in("id", approverIds)
         : Promise.resolve({ data: [] as any[] }),
       tournamentIds.length
-        ? admin.from("tournament_results").select("tournament_id").in("tournament_id", tournamentIds)
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id")
+            .in("tournament_id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
       admin.from("tournaments").select("status").in("game_id", gameIdsFilter),
     ]);
@@ -1040,7 +1100,10 @@ export const getManagerFilterOptions = createServerFn({ method: "POST" })
       gameIds.length
         ? admin.from("games").select("id, name").in("id", gameIds).order("name")
         : Promise.resolve({ data: [] as any[] }),
-      admin.from("seasons").select("id, name, slug, status").order("start_date", { ascending: false }),
+      admin
+        .from("seasons")
+        .select("id, name, slug, status")
+        .order("start_date", { ascending: false }),
     ]);
 
     let stores: any[] = [];
@@ -1066,4 +1129,343 @@ export const getManagerFilterOptions = createServerFn({ method: "POST" })
       stores,
       seasons: seasonsRes.data ?? [],
     };
+  });
+
+export const getManagerAnalyticsOverview = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator(
+    (d: {
+      game_id: string;
+      zone?: string;
+      store_id?: string;
+      date_from?: string;
+      date_to?: string;
+    }) =>
+      z
+        .object({
+          game_id: z.string().uuid(),
+          zone: z.string().max(50).optional(),
+          store_id: z.string().uuid().optional(),
+          date_from: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          date_to: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    await assertManagerOwnsGame(admin, player, data.game_id);
+
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("store_id")
+      .eq("game_id", data.game_id);
+    const storeIdsWithGame = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
+    if (storeIdsWithGame.length === 0) {
+      return { total_players: 0, zone_breakdown: [], store_ranking: [], stores_offering_count: 0 };
+    }
+
+    let storeQuery = admin
+      .from("stores")
+      .select("id, name, city, zone")
+      .in("id", storeIdsWithGame)
+      .eq("is_active", true);
+    if (data.zone) storeQuery = storeQuery.eq("zone", data.zone);
+    if (data.store_id) storeQuery = storeQuery.eq("id", data.store_id);
+    const { data: stores } = await storeQuery;
+    const filteredStoreIds = (stores ?? []).map((s: any) => s.id);
+    const storeMap = new Map((stores ?? []).map((s: any) => [s.id, s]));
+
+    if (filteredStoreIds.length === 0) {
+      return { total_players: 0, zone_breakdown: [], store_ranking: [], stores_offering_count: 0 };
+    }
+
+    let tQuery = admin
+      .from("tournaments")
+      .select("id, store_id, tournament_date")
+      .eq("game_id", data.game_id)
+      .eq("status", "PUBLISHED")
+      .in("store_id", filteredStoreIds);
+    if (data.date_from) tQuery = tQuery.gte("tournament_date", data.date_from);
+    if (data.date_to) tQuery = tQuery.lte("tournament_date", data.date_to);
+    const { data: tournaments } = await tQuery;
+    const tournamentIds = (tournaments ?? []).map((t: any) => t.id);
+    const tournamentMap = new Map((tournaments ?? []).map((t: any) => [t.id, t]));
+
+    if (tournamentIds.length === 0) {
+      return {
+        total_players: 0,
+        zone_breakdown: (stores ?? []).reduce((acc: any[], s: any) => {
+          const existing = acc.find((z) => z.zone === s.zone);
+          if (existing) existing.store_count++;
+          else acc.push({ zone: s.zone, store_count: 1, players: 0 });
+          return acc;
+        }, []),
+        store_ranking: [],
+        stores_offering_count: filteredStoreIds.length,
+      };
+    }
+
+    const { data: results } = await admin
+      .from("tournament_results")
+      .select("player_id, tournament_id")
+      .in("tournament_id", tournamentIds);
+
+    const allPlayers = new Set((results ?? []).map((r: any) => r.player_id));
+
+    const playersByStore = new Map<string, Set<string>>();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get(r.tournament_id);
+      if (!t) continue;
+      const set = playersByStore.get(t.store_id) ?? new Set<string>();
+      set.add(r.player_id);
+      playersByStore.set(t.store_id, set);
+    }
+
+    const storeRanking = Array.from(playersByStore.entries())
+      .map(([storeId, playerSet]) => {
+        const store = storeMap.get(storeId);
+        return {
+          store_id: storeId,
+          store_name: store?.name ?? "—",
+          city: store?.city ?? "—",
+          zone: store?.zone ?? "—",
+          players: playerSet.size,
+        };
+      })
+      .sort((a, b) => b.players - a.players);
+
+    const zoneMap = new Map<string, { store_count: number; players: Set<string> }>();
+    for (const s of stores ?? []) {
+      const z = (s as any).zone ?? "—";
+      const entry = zoneMap.get(z) ?? { store_count: 0, players: new Set<string>() };
+      entry.store_count++;
+      zoneMap.set(z, entry);
+    }
+    for (const r of results ?? []) {
+      const t = tournamentMap.get(r.tournament_id);
+      if (!t) continue;
+      const store = storeMap.get(t.store_id);
+      const z = store?.zone ?? "—";
+      const entry = zoneMap.get(z);
+      if (entry) entry.players.add(r.player_id);
+    }
+    const zoneBreakdown = Array.from(zoneMap.entries()).map(([zone, v]) => ({
+      zone,
+      store_count: v.store_count,
+      players: v.players.size,
+    }));
+
+    return {
+      total_players: allPlayers.size,
+      zone_breakdown: zoneBreakdown,
+      store_ranking: storeRanking,
+      stores_offering_count: filteredStoreIds.length,
+    };
+  });
+
+export const managerRepublishTournament = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t } = await admin
+      .from("tournaments")
+      .select("status, game_id")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (!t || (t as any).status !== "UNPUBLISHED") {
+      throw new Error("Solo se pueden re-publicar torneos en estado Despublicado");
+    }
+    await assertManagerOwnsGame(admin, player, (t as any).game_id);
+    const now = new Date();
+    const undoDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const { error } = await admin
+      .from("tournaments")
+      .update({
+        status: "APPROVED",
+        approved_at: now.toISOString(),
+        undo_deadline: undoDeadline.toISOString(),
+        approved_by: player.id,
+        unpublish_reason: null,
+      } as any)
+      .eq("id", data.tournament_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const getManagerAnalyticsTrend = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaManager])
+  .inputValidator(
+    (d: {
+      game_id: string;
+      zone?: string;
+      store_id?: string;
+      date_from?: string;
+      date_to?: string;
+    }) =>
+      z
+        .object({
+          game_id: z.string().uuid(),
+          zone: z.string().max(50).optional(),
+          store_id: z.string().uuid().optional(),
+          date_from: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          date_to: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    await assertManagerOwnsGame(admin, player, data.game_id);
+
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("store_id")
+      .eq("game_id", data.game_id);
+    const storeIdsWithGame = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
+    if (storeIdsWithGame.length === 0) {
+      return { monthly_trend: [], player_classification: [], peak_days: [] };
+    }
+
+    let storeQuery = admin
+      .from("stores")
+      .select("id")
+      .in("id", storeIdsWithGame)
+      .eq("is_active", true);
+    if (data.zone) storeQuery = storeQuery.eq("zone", data.zone);
+    if (data.store_id) storeQuery = storeQuery.eq("id", data.store_id);
+    const { data: stores } = await storeQuery;
+    const filteredStoreIds = (stores ?? []).map((s: any) => s.id);
+    if (filteredStoreIds.length === 0) {
+      return { monthly_trend: [], player_classification: [], peak_days: [] };
+    }
+
+    let tQuery = admin
+      .from("tournaments")
+      .select("id, store_id, tournament_date")
+      .eq("game_id", data.game_id)
+      .eq("status", "PUBLISHED")
+      .in("store_id", filteredStoreIds)
+      .order("tournament_date", { ascending: true });
+    if (data.date_from) tQuery = tQuery.gte("tournament_date", data.date_from);
+    if (data.date_to) tQuery = tQuery.lte("tournament_date", data.date_to);
+    const { data: tournaments } = await tQuery;
+
+    if (!tournaments || tournaments.length === 0) {
+      return { monthly_trend: [], player_classification: [], peak_days: [] };
+    }
+
+    const tournamentIds = tournaments.map((t: any) => t.id);
+    const { data: results } = await admin
+      .from("tournament_results")
+      .select("player_id, tournament_id")
+      .in("tournament_id", tournamentIds);
+
+    const tournamentMap = new Map<string, any>(tournaments.map((t: any) => [t.id, t]));
+
+    const playerDates = new Map<string, string[]>();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get((r as any).tournament_id);
+      if (!t) continue;
+      const arr = playerDates.get((r as any).player_id) ?? [];
+      arr.push(t.tournament_date);
+      playerDates.set((r as any).player_id, arr);
+    }
+    for (const arr of playerDates.values()) arr.sort();
+
+    // ── Primera aparición de cada jugador (todo el historial del TCG, sin filtro de fecha) ──
+    const { data: allTimeResults } = await admin
+      .from("tournament_results")
+      .select("player_id, tournament_id")
+      .in(
+        "tournament_id",
+        await admin
+          .from("tournaments")
+          .select("id")
+          .eq("game_id", data.game_id)
+          .eq("status", "PUBLISHED")
+          .in("store_id", filteredStoreIds)
+          .then(({ data: ts }) => (ts ?? []).map((t: any) => t.id)),
+      );
+
+    const firstAppearance = new Map<string, string>(); // player_id → "YYYY-MM"
+    for (const r of allTimeResults ?? []) {
+      const t = tournamentMap.get(r.tournament_id);
+      const date = t?.tournament_date;
+      if (!date) continue;
+      const month = date.slice(0, 7);
+      const existing = firstAppearance.get(r.player_id);
+      if (!existing || month < existing) firstAppearance.set(r.player_id, month);
+    }
+
+    // ── Tendencia mensual: jugadores únicos + nuevos vs recurrentes ────
+    const monthlyMap = new Map<
+      string,
+      { total: Set<string>; new: Set<string>; returning: Set<string> }
+    >();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get(r.tournament_id);
+      if (!t) continue;
+      const monthKey = t.tournament_date.slice(0, 7);
+      const entry = monthlyMap.get(monthKey) ?? {
+        total: new Set<string>(),
+        new: new Set<string>(),
+        returning: new Set<string>(),
+      };
+      entry.total.add(r.player_id);
+      if (firstAppearance.get(r.player_id) === monthKey) {
+        entry.new.add(r.player_id);
+      } else {
+        entry.returning.add(r.player_id);
+      }
+      monthlyMap.set(monthKey, entry);
+    }
+    const monthly_trend = Array.from(monthlyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, v]) => ({
+        month,
+        players: v.total.size,
+        new_players: v.new.size,
+        returning_players: v.returning.size,
+      }));
+
+    const dayMap = new Map<string, Set<string>>();
+    for (const r of results ?? []) {
+      const t = tournamentMap.get((r as any).tournament_id);
+      if (!t) continue;
+      const s = dayMap.get(t.tournament_date) ?? new Set<string>();
+      s.add((r as any).player_id);
+      dayMap.set(t.tournament_date, s);
+    }
+    const dayList = Array.from(dayMap.entries())
+      .map(([date, players]) => ({ date, players: players.size }))
+      .sort((a, b) => b.players - a.players);
+    const peak_days = [
+      ...dayList.slice(0, 3).map((d) => ({ ...d, type: "peak" as const })),
+      ...dayList
+        .slice(-3)
+        .reverse()
+        .map((d) => ({ ...d, type: "valley" as const })),
+    ];
+
+    const player_classification = Array.from(playerDates.entries()).map(([player_id, dates]) => ({
+      player_id,
+      last_visit: dates[dates.length - 1],
+      total_tournaments: dates.length,
+    }));
+
+    return { monthly_trend, player_classification, peak_days };
   });

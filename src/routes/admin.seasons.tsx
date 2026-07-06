@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Calendar, Loader2, Plus, Play, X } from "lucide-react";
 import { toast } from "sonner";
+import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import {
   listSeasons,
   createSeason,
@@ -251,8 +252,14 @@ function AdminSeasonsPage() {
       </header>
 
       {loading ? (
-        <div className="flex h-48 items-center justify-center">
-          <Loader2 className="animate-spin text-primary" />
+        <div className="glass overflow-hidden rounded-2xl">
+          <table className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TournamentRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : seasons.length === 0 ? (
         <div className="glass rounded-2xl p-8 text-sm text-gray-400">

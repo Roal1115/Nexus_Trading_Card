@@ -18,6 +18,7 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   listStoresWithOrganizers,
@@ -223,8 +224,25 @@ function AdminStoresPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <SkeletonLine width="w-24" height="h-3" />
+          <SkeletonLine width="w-64" height="h-8" />
+        </div>
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonBlock key={i} className="h-20 rounded-2xl" />
+          ))}
+        </section>
+        <div className="glass overflow-hidden rounded-2xl">
+          <table className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TournamentRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -665,6 +683,7 @@ type EditStorePayload = {
   twitch?: string;
 };
 
+
 function EditStoreDialog({
   store,
   onClose,
@@ -767,6 +786,13 @@ function EditStoreDialog({
                 <Label className="text-xs text-gray-400">Estado *</Label>
                 <Input value={form.state} onChange={set("state")} />
               </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-400">Zona del circuito</Label>
+              <p className="rounded-md border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-gray-300">
+                {(store as any)?.zone ?? "—"}
+              </p>
+              <p className="text-[11px] text-gray-500">Se calcula automáticamente según la ciudad. Para cambiarla, edita la ciudad.</p>
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">País</Label>
@@ -1181,9 +1207,30 @@ function StaffTab() {
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="flex h-32 items-center justify-center">
-            <Loader2 className="animate-spin text-primary" />
-          </div>
+          <table className="w-full text-sm">
+            <thead className="bg-black/40 text-xs uppercase text-gray-400">
+              <tr>
+                <th className="text-left px-4 py-2">Geek Tag</th>
+                <th className="text-left px-4 py-2">Email</th>
+                <th className="text-left px-4 py-2">Rol</th>
+                <th className="text-left px-4 py-2">Asignación</th>
+                <th className="text-left px-4 py-2">Estado</th>
+                <th className="text-left px-4 py-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i} className="border-t border-white/5">
+                  <td className="px-4 py-3"><SkeletonLine width="w-24" height="h-3" /></td>
+                  <td className="px-4 py-3"><SkeletonLine width="w-32" height="h-3" /></td>
+                  <td className="px-4 py-3"><SkeletonLine width="w-16" height="h-5" className="rounded-md" /></td>
+                  <td className="px-4 py-3"><SkeletonLine width="w-24" height="h-3" /></td>
+                  <td className="px-4 py-3"><SkeletonLine width="w-14" height="h-5" className="rounded-md" /></td>
+                  <td className="px-4 py-3"><SkeletonBlock className="w-6 h-6 rounded-md" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
           <>
             {/* Desktop */}

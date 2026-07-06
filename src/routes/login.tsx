@@ -2,7 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveEmailByGeekTag } from "@/lib/geekarena-auth-helpers.functions";
 import { geekarena } from "@/integrations/geekarena/client";
+import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — Geek Arena" }] }),
@@ -16,10 +19,8 @@ function translateAuthError(msg: string): string {
     return "Contraseña incorrecta. Intenta de nuevo";
   if (m.includes("user not found") || m.includes("no user"))
     return "No encontramos una cuenta con ese correo";
-  if (m.includes("email not confirmed"))
-    return "Debes verificar tu correo antes de entrar";
-  if (m.includes("invalid email"))
-    return "Ingresa un correo electrónico válido";
+  if (m.includes("email not confirmed")) return "Debes verificar tu correo antes de entrar";
+  if (m.includes("invalid email")) return "Ingresa un correo electrónico válido";
   if (m.includes("already registered") || m.includes("user already"))
     return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
   if (m.includes("rate limit") || m.includes("too many"))
@@ -31,13 +32,20 @@ function translateAuthError(msg: string): string {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const resolveEmail = useServerFn(resolveEmailByGeekTag);
+  const [identifier, setIdentifier] = useState(""); // Geek Tag o email
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
+
+  const resolveLoginEmail = async (value: string): Promise<string | null> => {
+    if (value.includes("@")) return value;
+    const { email: resolved } = await resolveEmail({ data: { geek_tag: value } });
+    return resolved;
+  };
 
   const startCooldown = () => {
     setCooldown(true);
@@ -50,28 +58,38 @@ function LoginPage() {
     setLoading(true);
     setNeedsConfirm(null);
 
-    const { data, error } = await geekarena.auth.signInWithPassword({ email, password });
+    const resolvedEmail = await resolveLoginEmail(identifier.trim());
+    if (!resolvedEmail) {
+      setLoading(false);
+      startCooldown();
+      toast.error("No encontramos una cuenta con ese correo o Geek Tag");
+      return;
+    }
+
+    const { data, error } = await geekarena.auth.signInWithPassword({
+      email: resolvedEmail,
+      password,
+    });
     setLoading(false);
     startCooldown();
 
     if (error) {
       if (/not confirmed/i.test(error.message)) {
-        setNeedsConfirm(email);
+        setNeedsConfirm(resolvedEmail);
         return;
       }
       toast.error(translateAuthError(error.message));
       return;
     }
     if (!data.user?.email_confirmed_at) {
-      setNeedsConfirm(email);
+      setNeedsConfirm(resolvedEmail);
       await geekarena.auth.signOut();
       return;
     }
-    // Redirect según rol leído desde la tabla players
     const { data: playerRow } = await geekarena
       .from("players")
       .select("role")
-      .eq("email", data.user?.email ?? email)
+      .eq("email", data.user?.email ?? resolvedEmail)
       .maybeSingle();
     const role = (playerRow as { role?: string } | null)?.role;
 
@@ -93,7 +111,16 @@ function LoginPage() {
     e.preventDefault();
     if (loading || cooldown) return;
     setLoading(true);
-    const { error } = await geekarena.auth.resetPasswordForEmail(email, {
+
+    const resolvedEmail = await resolveLoginEmail(identifier.trim());
+    if (!resolvedEmail) {
+      setLoading(false);
+      startCooldown();
+      toast.error("No encontramos una cuenta con ese correo o Geek Tag");
+      return;
+    }
+
+    const { error } = await geekarena.auth.resetPasswordForEmail(resolvedEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
@@ -141,13 +168,13 @@ function LoginPage() {
           </div>
         ) : (
           <form onSubmit={forgotMode ? sendReset : submit} className="space-y-4">
-            <Field label="Correo electrónico">
+            <Field label="Geek Tag o correo electrónico">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
-                placeholder="jugador@geekarena.gg"
+                placeholder="Geek Tag o jugador@geekarena.gg"
                 className="input-base"
               />
             </Field>
@@ -175,14 +202,14 @@ function LoginPage() {
               </Field>
             )}
 
-            <button
+            <motion.button
               type="submit"
               disabled={loading || cooldown}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {forgotMode ? "Enviar enlace" : "Entrar a la Arena"}
-            </button>
+            </motion.button>
 
             <div className="flex items-center justify-between text-xs">
               <button
@@ -193,10 +220,7 @@ function LoginPage() {
                 {forgotMode ? "← Volver" : "¿Olvidaste tu contraseña?"}
               </button>
               {!forgotMode && (
-                <Link
-                  to="/signup"
-                  className="font-semibold text-primary hover:text-primary/80"
-                >
+                <Link to="/signup" className="font-semibold text-primary hover:text-primary/80">
                   ¿No tienes cuenta? Únete al Circuito →
                 </Link>
               )}
@@ -233,13 +257,7 @@ function LoginPage() {
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">

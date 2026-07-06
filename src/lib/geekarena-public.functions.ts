@@ -1,0 +1,93 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { getGeekarenaAdmin } from "./geekarena-admin.server";
+
+export const getPublicStoresList = createServerFn({ method: "POST" }).handler(async () => {
+  const admin = getGeekarenaAdmin();
+  const { data: stores, error } = await admin
+    .from("stores")
+    .select(
+      "id, slug, name, city, state, zone, google_maps_url, opening_hours, instagram, website, twitter, twitch",
+    )
+    .eq("is_active", true)
+    .order("name");
+  if (error) throw new Error(error.message);
+
+  const storeIds = (stores ?? []).map((s: any) => s.id);
+  const { data: schedules } = storeIds.length
+    ? await admin.from("store_schedules").select("store_id, game_id, games(id, name)").in("store_id", storeIds)
+    : { data: [] as any[] };
+
+  const gamesByStore = new Map<string, Array<{ id: string; name: string }>>();
+  for (const s of (schedules ?? []) as any[]) {
+    const arr = gamesByStore.get(s.store_id) ?? [];
+    const g = Array.isArray(s.games) ? s.games[0] : s.games;
+    if (g && !arr.some((x) => x.id === g.id)) arr.push(g);
+    gamesByStore.set(s.store_id, arr);
+  }
+
+  return {
+    stores: (stores ?? []).map((s: any) => ({
+      ...s,
+      games: gamesByStore.get(s.id) ?? [],
+    })),
+  };
+});
+
+export const getStoreProfile = createServerFn({ method: "POST" })
+  .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
+  .handler(async ({ data }) => {
+    const admin = getGeekarenaAdmin();
+    const { data: store, error } = await admin
+      .from("stores")
+      .select(
+        "id, slug, name, city, state, zone, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch",
+      )
+      .eq("slug", data.slug)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!store) throw new Error("Tienda no encontrada");
+
+    const { data: schedules } = await admin
+      .from("store_schedules")
+      .select("game_id, games(id, name)")
+      .eq("store_id", store.id);
+
+    const games: Array<{ id: string; name: string }> = [];
+    for (const s of (schedules ?? []) as any[]) {
+      const g = Array.isArray(s.games) ? s.games[0] : s.games;
+      if (g && !games.some((x) => x.id === g.id)) games.push(g);
+    }
+
+    return { store: { ...store, games } };
+  });
+
+export const getStoreWeeklySchedule = createServerFn({ method: "POST" })
+  .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
+  .handler(async ({ data }) => {
+    const admin = getGeekarenaAdmin();
+    const { data: store } = await admin
+      .from("stores")
+      .select("id")
+      .eq("slug", data.slug)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!store) throw new Error("Tienda no encontrada");
+
+    const { data: schedules, error } = await admin
+      .from("store_schedules")
+      .select("day_of_week, start_time, games(id, name)")
+      .eq("store_id", store.id)
+      .order("day_of_week")
+      .order("start_time");
+    if (error) throw new Error(error.message);
+
+    return {
+      schedule: (schedules ?? []).map((s: any) => ({
+        day_of_week: s.day_of_week,
+        start_time: String(s.start_time).slice(0, 5),
+        game_name: s.games?.name ?? "—",
+      })),
+    };
+  });

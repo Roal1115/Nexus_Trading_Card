@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { TournamentUploadForm } from "@/components/upload/TournamentUploadForm";
+import { SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/admin/upload")({
   head: () => ({ meta: [{ title: "Subir Torneo — Geek Arena" }] }),
@@ -21,11 +21,7 @@ function AdminUploadPage() {
   }, [loading, role, navigate]);
 
   if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsSectionSkeleton />;
   }
   if (role !== "admin") return null;
 
