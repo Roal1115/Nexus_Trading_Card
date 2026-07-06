@@ -1,271 +1,157 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Layers, LogOut, Menu, Shield, Store, Trophy, User, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { ChevronDown, Trophy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useTCG } from "@/contexts/tcg.context";
 import { geekarena } from "@/integrations/geekarena/client";
-import { Settings } from "lucide-react";
+import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 
 export function AppHeader() {
-  const navigate = useNavigate();
-  const { role, player } = useGeekarenaRole();
-  const geekTag = player?.geek_tag ?? null;
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { player, loading } = useGeekarenaRole();
+  const { activeTcg, setActiveTcg, tcgs, setTcgs } = useTCG();
+  const [tcgOpen, setTcgOpen] = useState(false);
+  const tcgRef = useRef<HTMLDivElement>(null);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const handleLogout = async () => {
-    await geekarena.auth.signOut();
-    navigate({ to: "/login" });
-  };
+  const isStaffRoute =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/organizer") ||
+    pathname.startsWith("/tcg-manager");
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const header = document.querySelector("header");
-      if (header && !header.contains(e.target as Node)) {
-        setMenuOpen(false);
+    geekarena
+      .from("games")
+      .select("id, name, slug")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data }) => {
+        if (data?.length) setTcgs(data as { id: string; name: string; slug: string }[]);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!tcgOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (tcgRef.current && !tcgRef.current.contains(e.target as Node)) {
+        setTcgOpen(false);
       }
     };
-    if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [tcgOpen]);
+
+  if (isStaffRoute) return null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl relative">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <button
-          className="lg:hidden text-gray-400 hover:text-white transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
-          onClick={() => setMenuOpen((prev) => !prev)}
-          aria-label="Abrir menú"
-          aria-expanded={menuOpen}
-        >
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-        <Link
-          to="/"
-          className="flex items-center gap-2 font-display text-xl font-bold tracking-tight"
-        >
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/20 text-primary">
-            <Trophy size={16} />
-          </span>
-          <span className="text-white">Trading Card</span>
-          <span className="text-primary">Nexus</span>
-        </Link>
+    <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl">
+      <div className="mx-auto grid h-16 max-w-7xl grid-cols-3 items-center px-4 sm:px-6">
+        {/* LEFT — Logo */}
+        <div className="flex items-center">
+          <Link
+            to="/"
+            className="flex items-center gap-2 font-display text-lg font-bold tracking-tight"
+          >
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/20 text-primary">
+              <Trophy size={16} />
+            </span>
+            <span className="hidden sm:inline text-white">Trading Card</span>
+            <span className="hidden sm:inline text-primary">Nexus</span>
+          </Link>
+        </div>
 
-        <nav className="hidden items-center gap-1 text-sm lg:flex">
-          <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
-          <NavItem to="/stores" icon={<Store size={14} />} label="Tiendas" />
-          {role === "player" && (
-            <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
-          )}
-          {player && <NavItem to="/meta" icon={<Layers size={14} />} label="Meta" />}
-          {role === "organizer" && (
-            <NavItem to="/organizer" icon={<Shield size={14} />} label="Moderación" />
-          )}
-          {role === "tcg_manager" && (
-            <NavItem to="/tcg-manager" icon={<Shield size={14} />} label="Moderación" />
-          )}
-          {role === "admin" && (
-            <NavItem to="/admin" icon={<Shield size={14} />} label="Moderación" />
-          )}
-          {player && <NavItem to="/settings" icon={<Settings size={14} />} label="Configuración" />}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          {player ? (
-            <>
-              <div className="hidden text-right lg:block">
-                <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Geek Tag
-                </div>
-                <div className="font-mono-stat text-sm text-primary">{geekTag}</div>
-              </div>
+        {/* CENTER — TCG Switcher */}
+        <div className="flex justify-center">
+          {tcgs.length > 0 && (
+            <div className="relative" ref={tcgRef}>
               <button
-                onClick={handleLogout}
-                className="hidden lg:inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                type="button"
+                onClick={() => setTcgOpen((o) => !o)}
+                className="flex items-center gap-1.5 rounded-lg border border-[#2A3A57] bg-[#111A2E] px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[#32D9FF]/40"
               >
-                <LogOut size={12} /> Cerrar Sesión
+                {activeTcg?.name ?? "TCG"}
+                <ChevronDown size={14} className={tcgOpen ? "rotate-180 transition" : "transition"} />
               </button>
-            </>
-          ) : (
-            <Link
-              to="/login"
-              className="hidden lg:flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
-            >
-              Iniciar Sesión
-            </Link>
+
+              {tcgOpen && (
+                <div className="absolute left-1/2 top-full mt-2 w-52 -translate-x-1/2 overflow-hidden rounded-xl border border-white/10 bg-[#0B1220]/95 shadow-2xl backdrop-blur-xl z-50">
+                  {tcgs.map((tcg) => (
+                    <button
+                      key={tcg.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTcg(tcg);
+                        setTcgOpen(false);
+                      }}
+                      className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition hover:bg-white/5 ${
+                        activeTcg?.id === tcg.id
+                          ? "text-[#32D9FF] font-semibold"
+                          : "text-white"
+                      }`}
+                    >
+                      {tcg.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
+
+        {/* RIGHT — Avatar / Login */}
+        <div className="flex items-center justify-end">
+          {!loading && player ? (
+            <AvatarButton player={player} />
+          ) : !loading ? (
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
+            >
+              Iniciar sesión
+            </Link>
+          ) : null}
+        </div>
       </div>
-
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="lg:hidden absolute top-16 left-0 right-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl"
-          >
-            <nav className="flex flex-col px-4 py-3 gap-1">
-              <Link
-                to="/"
-                onClick={() => setMenuOpen(false)}
-                activeProps={{
-                  className:
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-                }}
-                inactiveProps={{
-                  className:
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-                }}
-                activeOptions={{ exact: true }}
-              >
-                <Trophy size={16} />
-                Ranking
-              </Link>
-
-              {role === "player" && (
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMenuOpen(false)}
-                  activeProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-                  }}
-                  inactiveProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-                  }}
-                  activeOptions={{ exact: true }}
-                >
-                  <User size={16} />
-                  Mi Panel
-                </Link>
-              )}
-
-              {player && (
-                <Link
-                  to="/meta"
-                  onClick={() => setMenuOpen(false)}
-                  activeProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-                  }}
-                  inactiveProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-                  }}
-                  activeOptions={{ exact: true }}
-                >
-                  <Layers size={16} />
-                  Sesiones
-                </Link>
-              )}
-
-              <Link
-                to="/stores"
-                onClick={() => setMenuOpen(false)}
-                activeProps={{
-                  className:
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-                }}
-                inactiveProps={{
-                  className:
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-                }}
-              >
-                <Store size={16} />
-                Tiendas
-              </Link>
-
-              {player && (
-                <Link
-                  to="/settings"
-                  onClick={() => setMenuOpen(false)}
-                  activeProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-                  }}
-                  inactiveProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-                  }}
-                  activeOptions={{ exact: true }}
-                >
-                  <Settings size={16} />
-                  Configuración
-                </Link>
-              )}
-
-              {(role === "organizer" || role === "admin" || role === "tcg_manager") && (
-                <Link
-                  to={
-                    role === "admin"
-                      ? "/admin"
-                      : role === "tcg_manager"
-                        ? "/tcg-manager"
-                        : "/organizer"
-                  }
-                  onClick={() => setMenuOpen(false)}
-                  activeProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-primary bg-primary/10 transition",
-                  }}
-                  inactiveProps={{
-                    className:
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition",
-                  }}
-                >
-                  <Shield size={16} />
-                  Moderación
-                </Link>
-              )}
-
-              <div className="border-t border-white/10 my-1" />
-
-              {player ? (
-                <>
-                  <div className="px-3 py-2">
-                    <p className="text-xs uppercase tracking-widest text-gray-500">Geek Tag</p>
-                    <p className="text-sm font-bold text-primary mt-0.5">{geekTag}</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-white/5 transition w-full text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
-                  >
-                    <LogOut size={16} />
-                    Cerrar Sesión
-                  </button>
-                </>
-              ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium text-primary hover:bg-white/5 transition whitespace-nowrap"
-                >
-                  Iniciar Sesión
-                </Link>
-              )}
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </header>
   );
 }
 
-function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+function AvatarButton({
+  player,
+}: {
+  player: {
+    id: string;
+    geek_tag: string;
+    avatar_url?: string | null;
+    role: string;
+  };
+}) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const initials = player.geek_tag?.slice(0, 2).toUpperCase() ?? "GA";
+
   return (
-    <Link
-      to={to}
-      activeProps={{ className: "text-primary bg-primary/10" }}
-      inactiveProps={{ className: "text-gray-400 hover:text-white" }}
-      activeOptions={{ exact: true }}
-      className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium uppercase tracking-wider transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-    >
-      {icon} {label}
-    </Link>
+    <>
+      <button
+        type="button"
+        onClick={() => setDrawerOpen(true)}
+        aria-label="Abrir menú de perfil"
+        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#2A3A57] bg-[#111A2E] transition hover:border-[#32D9FF]/40"
+      >
+        {player.avatar_url ? (
+          <img
+            src={player.avatar_url}
+            alt={player.geek_tag}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-xs font-bold text-[#32D9FF]">{initials}</span>
+        )}
+      </button>
+      <ProfileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        player={player}
+      />
+    </>
   );
 }
