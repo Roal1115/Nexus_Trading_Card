@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRef, useEffect, useState } from "react";
-import { Trophy, LayoutDashboard, TrendingUp, BarChart3, Settings, LogIn } from "lucide-react";
+import { Trophy, LayoutDashboard, TrendingUp, Store, User, LogIn } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 
 type NavItem = {
   to: string;
@@ -17,10 +18,10 @@ const GUEST_ITEMS: NavItem[] = [
 
 const PLAYER_ITEMS: NavItem[] = [
   { to: "/", label: "Ranking", icon: Trophy },
-  { to: "/meta", label: "Meta", icon: TrendingUp },
+  { to: "/stores", label: "Tiendas", icon: Store },
   { to: "/dashboard", label: "Panel", icon: LayoutDashboard, isCta: true },
-  { to: "/my-stats", label: "Stats", icon: BarChart3 },
-  { to: "/settings", label: "Config", icon: Settings },
+  { to: "/meta", label: "Meta", icon: TrendingUp },
+  { to: "__profile__", label: "Menú", icon: User },
 ];
 
 function NavTab({ item, isActive }: { item: NavItem; isActive: boolean }) {
@@ -74,6 +75,7 @@ function NavTab({ item, isActive }: { item: NavItem; isActive: boolean }) {
 export function BottomNav() {
   const { player, loading } = useGeekarenaRole();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isStaffRoute =
     pathname.startsWith("/admin") ||
@@ -89,10 +91,41 @@ export function BottomNav() {
       <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] bg-black/90 backdrop-blur-xl border-t border-white/10 lg:hidden" />
       <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2 lg:hidden">
         {items.map((item) => {
+          if (item.to === "__profile__") {
+            const initials = player?.geek_tag?.slice(0, 2).toUpperCase() ?? "GA";
+            return (
+              <button
+                key="__profile__"
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                className="relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2.5 text-xs font-medium transition-all active:scale-95 rounded-lg"
+              >
+                {(player as any)?.avatar_url ? (
+                  <img
+                    src={(player as any).avatar_url}
+                    alt={player?.geek_tag ?? "avatar"}
+                    className="h-6 w-6 rounded-full border border-[#2A3A57] object-cover"
+                  />
+                ) : (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#2A3A57] bg-[#111A2E]">
+                    <span className="text-[9px] font-bold text-[#32D9FF]">{initials}</span>
+                  </span>
+                )}
+                <span className="text-gray-400">{item.label}</span>
+              </button>
+            );
+          }
           const isActive = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
           return <NavTab key={item.to} item={item} isActive={isActive} />;
         })}
       </nav>
+      {player && (
+        <ProfileDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          player={player as any}
+        />
+      )}
     </>
   );
 }

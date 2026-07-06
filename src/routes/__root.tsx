@@ -9,12 +9,13 @@ import {
 } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { GeekarenaAuthProvider } from "../context/geekarena-auth.context";
+import { TCGProvider } from "@/contexts/tcg.context";
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { Toaster } from "sonner";
-import { TCGProvider } from "@/context/tcg.context";
+
 
 function NotFoundComponent() {
   return (
@@ -208,7 +209,8 @@ function RootComponent() {
 
   return (
     <TCGProvider>
-      <GeekarenaAuthProvider>
+    <GeekarenaAuthProvider>
+      <TCGProvider>
         <div className="min-h-dvh bg-radial-nexus">
           {!isPanel && <AppHeader />}
           <AnimatePresence mode="popLayout" initial={false}>
@@ -236,7 +238,8 @@ function RootComponent() {
           <BottomNav />
           <PanelBottomNav />
         </div>
-      </GeekarenaAuthProvider>
+      </TCGProvider>
+    </GeekarenaAuthProvider>
     </TCGProvider>
   );
 }
