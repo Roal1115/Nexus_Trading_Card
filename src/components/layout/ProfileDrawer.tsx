@@ -22,14 +22,14 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
     player.role === "admin"
       ? "/admin"
       : player.role === "tcg_manager"
-      ? "/tcg-manager"
-      : "/organizer";
+        ? "/tcg-manager"
+        : "/organizer";
   const staffLabel =
     player.role === "admin"
       ? "Panel Admin"
       : player.role === "tcg_manager"
-      ? "Panel Manager"
-      : "Panel Organizador";
+        ? "Panel Manager"
+        : "Panel Organizador";
 
   const handleLogout = async () => {
     await geekarena.auth.signOut();
@@ -103,6 +103,7 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
               <Section title="Mi Carrera">
                 {[
                   { to: "/dashboard", label: "Mi Panel" },
+                  { to: "/meta", label: "Meta" },
                   { to: "/my-stats", label: "Mis Stats" },
                   { to: "/sessions", label: "Sesiones" },
                 ].map((item) => (
