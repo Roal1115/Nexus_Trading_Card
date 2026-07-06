@@ -1,0 +1,303 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
+import { TrendingUp, Shield } from "lucide-react";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { getMetaStats, getMetaFilterOptions } from "@/lib/geekarena-meta.functions";
+import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+
+export const Route = createFileRoute("/meta")({
+  head: () => ({ meta: [{ title: "Meta — Geek Arena" }] }),
+  component: MetaPage,
+});
+
+const DEFAULT_GAME_ID = "5b608762-d0a3-4a93-9739-e5cd150b01cd";
+
+type MetaData = Awaited<ReturnType<typeof getMetaStats>>;
+type FilterOptions = Awaited<ReturnType<typeof getMetaFilterOptions>>;
+
+const COLOR_MAP: Record<string, string> = {
+  Red: "bg-red-500",
+  Blue: "bg-blue-500",
+  Green: "bg-green-500",
+  Yellow: "bg-yellow-400",
+  Purple: "bg-purple-500",
+  Black: "bg-gray-900 border border-white/20",
+};
+
+function ColorDots({ colors }: { colors: string[] }) {
+  return (
+    <div className="flex items-center gap-1">
+      {colors.map((c) => (
+        <span
+          key={c}
+          title={c}
+          className={`h-2.5 w-2.5 rounded-full ${COLOR_MAP[c] ?? "bg-gray-600"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function wrColor(wr: number | null): string {
+  if (wr === null) return "text-gray-500";
+  if (wr >= 55) return "text-emerald-400";
+  if (wr >= 45) return "text-white";
+  return "text-red-400";
+}
+
+type Filters = {
+  game_id: string;
+  zone: string | null;
+  store_id: string | null;
+  date_from: string | null;
+  date_to: string | null;
+};
+
+function SimpleSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder: string;
+}) {
+  return (
+    <select
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value || null)}
+      className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function MetaPage() {
+  const { player, loading: authLoading } = useGeekarenaRole();
+  const fetchMeta = useServerFn(getMetaStats);
+  const fetchOptions = useServerFn(getMetaFilterOptions);
+
+  const [filters, setFilters] = useState<Filters>({
+    game_id: DEFAULT_GAME_ID,
+    zone: null,
+    store_id: null,
+    date_from: null,
+    date_to: null,
+  });
+  const [metaData, setMetaData] = useState<MetaData | null>(null);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadMeta = (f: Filters) => {
+    setLoading(true);
+    fetchMeta({ data: f })
+      .then(setMetaData)
+      .catch(() => setMetaData(null))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (authLoading || !player) return;
+    fetchOptions({ data: { game_id: filters.game_id } })
+      .then(setFilterOptions)
+      .catch(() => setFilterOptions(null));
+    loadMeta(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player?.id, authLoading]);
+
+  if (!authLoading && !player) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
+        <h2 className="text-2xl font-bold text-white">Debes iniciar sesión</h2>
+        <Link
+          to="/login"
+          className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
+        >
+          Iniciar sesión
+        </Link>
+      </main>
+    );
+  }
+
+  const handleGameChange = (gameId: string) => {
+    const next = { ...filters, game_id: gameId };
+    setFilters(next);
+    fetchOptions({ data: { game_id: gameId } })
+      .then(setFilterOptions)
+      .catch(() => {});
+    loadMeta(next);
+  };
+
+  const leaders = metaData?.leaders ?? [];
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 pb-20">
+      <header className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary inline-flex items-center gap-2">
+          <TrendingUp size={12} /> Meta
+        </p>
+        <h1 className="mt-1 text-3xl font-bold text-white">Meta Leaderboard</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          Win rates y play rates calculados desde torneos oficiales publicados.
+        </p>
+      </header>
+
+      {/* Filters */}
+      <div className="glass mb-6 rounded-2xl p-4 space-y-4">
+        {/* Game pills */}
+        <div className="flex flex-wrap gap-2">
+          {(filterOptions?.games ?? []).map((g: any) => (
+            <button
+              key={g.id}
+              onClick={() => handleGameChange(g.id)}
+              className={`rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-wider transition ${
+                filters.game_id === g.id
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-white/10 bg-white/5 text-gray-400 hover:text-white"
+              }`}
+            >
+              {g.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <SimpleSelect
+            value={filters.zone}
+            onChange={(v) => setFilters((f) => ({ ...f, zone: v }))}
+            options={(filterOptions?.zones ?? []).map((z: string) => ({ value: z, label: z }))}
+            placeholder="Todas las zonas"
+          />
+          <SimpleSelect
+            value={filters.store_id}
+            onChange={(v) => setFilters((f) => ({ ...f, store_id: v }))}
+            options={(filterOptions?.stores ?? [])
+              .filter((s: any) => !filters.zone || s.zone === filters.zone)
+              .map((s: any) => ({ value: s.id, label: s.name }))}
+            placeholder="Todas las tiendas"
+          />
+          <input
+            type="date"
+            value={filters.date_from ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value || null }))}
+            className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
+          />
+          <input
+            type="date"
+            value={filters.date_to ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value || null }))}
+            className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={() => loadMeta(filters)}
+            className="rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
+          >
+            Aplicar filtros
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="glass rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[900px]">
+            <div className="grid grid-cols-[32px_1fr_80px_80px_90px_90px_70px_70px_70px] gap-2 px-4 py-2 text-[10px] uppercase tracking-widest text-gray-500 border-b border-white/10">
+              <div>#</div>
+              <div>Leader</div>
+              <div>Set</div>
+              <div>Colores</div>
+              <div className="text-right">Play Rate</div>
+              <div className="text-right">Win Rate</div>
+              <div className="text-right">1st WR</div>
+              <div className="text-right">2nd WR</div>
+              <div className="text-right">Rondas</div>
+            </div>
+
+            {loading ? (
+              <div className="space-y-2 p-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <SkeletonBlock key={i} className="h-12 rounded-lg" />
+                ))}
+              </div>
+            ) : leaders.length === 0 ? (
+              <div className="p-12 text-center">
+                <p className="text-sm text-gray-400">
+                  Sin datos suficientes para mostrar el meta.
+                </p>
+                <p className="mt-2 text-xs text-gray-600">
+                  Se requieren mínimo 5 rondas por leader.
+                </p>
+              </div>
+            ) : (
+              leaders.map((leader, index) => (
+                <div
+                  key={leader.leader_id}
+                  className="grid grid-cols-[32px_1fr_80px_80px_90px_90px_70px_70px_70px] gap-2 px-4 py-3 items-center border-b border-white/[0.05] hover:bg-white/[0.02] transition"
+                >
+                  <div
+                    className={`font-mono text-sm ${
+                      index < 3 ? "text-primary font-bold" : "text-gray-400"
+                    }`}
+                  >
+                    #{index + 1}
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {leader.leader_image ? (
+                      <img
+                        src={leader.leader_image}
+                        alt={leader.leader_name}
+                        className="h-10 w-7 rounded-md border border-white/10 object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-7 items-center justify-center rounded-md border border-white/10 bg-black/30 flex-shrink-0">
+                        <Shield size={12} className="text-gray-600" />
+                      </div>
+                    )}
+                    <span className="text-sm font-semibold text-white truncate">
+                      {leader.leader_name}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">{leader.card_set_id ?? "—"}</div>
+                  <ColorDots colors={leader.colors} />
+                  <div className="text-right font-mono text-sm font-bold text-primary">
+                    {leader.play_rate}%
+                  </div>
+                  <div className={`text-right font-mono text-sm font-bold ${wrColor(leader.win_rate)}`}>
+                    {leader.win_rate}%
+                  </div>
+                  <div className={`text-right font-mono text-xs ${wrColor(leader.first_win_rate)}`}>
+                    {leader.first_win_rate != null ? `${leader.first_win_rate}%` : "—"}
+                  </div>
+                  <div className={`text-right font-mono text-xs ${wrColor(leader.second_win_rate)}`}>
+                    {leader.second_win_rate != null ? `${leader.second_win_rate}%` : "—"}
+                  </div>
+                  <div className="text-right font-mono text-xs text-gray-400">
+                    {leader.total_rounds}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-4 text-center text-[11px] text-gray-600">
+        Solo se muestran leaders con mínimo 5 rondas registradas en torneos oficiales.
+        {" · "}
+        {metaData?.total_rounds ?? 0} rondas totales en el meta.
+      </p>
+    </div>
+  );
+}
