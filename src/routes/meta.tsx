@@ -189,13 +189,15 @@ function MetaPage() {
             type="date"
             value={filters.date_from ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value || null }))}
-            className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
+            style={{ colorScheme: "dark" }}
+            className="w-full min-w-0 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
           />
           <input
             type="date"
             value={filters.date_to ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value || null }))}
-            className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
+            style={{ colorScheme: "dark" }}
+            className="w-full min-w-0 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
           />
         </div>
 
