@@ -19,10 +19,11 @@ import { ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Ranking del Circuito Nacional — Geek Arena" },
+      { title: "Trading Card Nexus" },
       {
         name: "description",
-        content: "Rankings competitivos en vivo de los principales TCG en México.",
+        content:
+          "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG.",
       },
     ],
   }),
@@ -122,24 +123,64 @@ function HeroBackground() {
 
       {/* Floating card silhouettes */}
       <g filter="url(#cardBlur)" opacity="0.18">
-        <rect x="78%" y="8%" width="8%" height="11%" rx="4" ry="4"
-          fill="none" stroke="#32D9FF" strokeWidth="1.2"
-          transform="rotate(-12, 82, 13)" />
-        <rect x="83%" y="5%" width="8%" height="11%" rx="4" ry="4"
-          fill="none" stroke="#9C5CFF" strokeWidth="1.2"
-          transform="rotate(5, 87, 10)" />
-        <rect x="74%" y="14%" width="8%" height="11%" rx="4" ry="4"
-          fill="none" stroke="#5F8CFF" strokeWidth="1"
-          transform="rotate(-20, 78, 19)" />
-        <line x1="79.5%" y1="10%" x2="84.5%" y2="10%"
-          stroke="#32D9FF" strokeWidth="0.6" strokeOpacity="0.6" />
-        <line x1="79.5%" y1="12%" x2="82%" y2="12%"
-          stroke="#32D9FF" strokeWidth="0.6" strokeOpacity="0.4" />
+        <rect
+          x="78%"
+          y="8%"
+          width="8%"
+          height="11%"
+          rx="4"
+          ry="4"
+          fill="none"
+          stroke="#32D9FF"
+          strokeWidth="1.2"
+          transform="rotate(-12, 82, 13)"
+        />
+        <rect
+          x="83%"
+          y="5%"
+          width="8%"
+          height="11%"
+          rx="4"
+          ry="4"
+          fill="none"
+          stroke="#9C5CFF"
+          strokeWidth="1.2"
+          transform="rotate(5, 87, 10)"
+        />
+        <rect
+          x="74%"
+          y="14%"
+          width="8%"
+          height="11%"
+          rx="4"
+          ry="4"
+          fill="none"
+          stroke="#5F8CFF"
+          strokeWidth="1"
+          transform="rotate(-20, 78, 19)"
+        />
+        <line
+          x1="79.5%"
+          y1="10%"
+          x2="84.5%"
+          y2="10%"
+          stroke="#32D9FF"
+          strokeWidth="0.6"
+          strokeOpacity="0.6"
+        />
+        <line
+          x1="79.5%"
+          y1="12%"
+          x2="82%"
+          y2="12%"
+          stroke="#32D9FF"
+          strokeWidth="0.6"
+          strokeOpacity="0.4"
+        />
       </g>
 
       {/* Scan line */}
-      <rect x="0" y="45%" width="100%" height="1px"
-        fill="url(#heroGlow1)" opacity="0.08" />
+      <rect x="0" y="45%" width="100%" height="1px" fill="url(#heroGlow1)" opacity="0.08" />
     </svg>
   );
 }
@@ -304,9 +345,7 @@ function LeaderboardPage() {
           </p>
         </section>
 
-        {!isStaff && (
-          <AdCarousel sponsors={allSponsors.filter((s) => s.is_active)} />
-        )}
+        {!isStaff && <AdCarousel sponsors={allSponsors.filter((s) => s.is_active)} />}
 
         <div
           className="z-30 mb-6 rounded-xl px-4 py-3"
@@ -378,8 +417,8 @@ function LeaderboardPage() {
         </div>
 
         {selectedStore && (
-          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-gray-300"> 
-          Mostrando resultados de:{" "}
+          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-gray-300">
+            Mostrando resultados de:{" "}
             <strong className="text-white">
               {selectedStore.name}
               {selectedStore.city ? ` — ${selectedStore.city}` : ""}
