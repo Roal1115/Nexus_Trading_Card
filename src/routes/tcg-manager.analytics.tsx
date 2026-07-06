@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
 import {
-  Loader2,
   Users,
   Store,
   MapPin,
@@ -13,6 +12,7 @@ import {
   AlertTriangle,
   Activity,
 } from "lucide-react";
+import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 import {
   AreaChart,
   Area,
@@ -88,8 +88,12 @@ function ManagerAnalyticsPage() {
 
   if (loadingGames) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="space-y-2">
+          <SkeletonLine width="w-24" height="h-6" />
+          <SkeletonLine width="w-16" height="h-3" />
+        </div>
+        <SkeletonBlock className="h-64 w-full rounded-2xl" />
       </div>
     );
   }
@@ -246,8 +250,17 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
       </div>
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="animate-spin text-primary" />
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="glass space-y-2 rounded-2xl p-5">
+                <SkeletonLine width="w-24" height="h-3" />
+                <SkeletonLine width="w-16" height="h-6" />
+              </div>
+            ))}
+          </div>
+          <SkeletonBlock className="h-40 w-full rounded-2xl" />
+          <SkeletonBlock className="h-64 w-full rounded-2xl" />
         </div>
       ) : !overview ? (
         <p className="text-sm text-gray-400">No se pudo cargar la información.</p>

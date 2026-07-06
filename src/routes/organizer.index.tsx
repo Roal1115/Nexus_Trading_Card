@@ -35,6 +35,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SkeletonLine, SkeletonBlock, TcgRankCardSkeleton } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/organizer/")({
   head: () => ({ meta: [{ title: "Analytics — Geek Arena" }] }),
@@ -105,11 +106,16 @@ function OrganizerAnalytics() {
 
   if (roleLoading || (loading && !data)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground text-sm">
-          Cargando experiencia personalizada...
-        </p>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="space-y-2">
+          <SkeletonLine width="w-20" height="h-3" />
+          <SkeletonLine width="w-64" height="h-8" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TcgRankCardSkeleton />
+          <SkeletonBlock className="h-40 w-full rounded-lg" />
+        </div>
+        <SkeletonBlock className="h-64 w-full rounded-lg" />
       </div>
     );
   }

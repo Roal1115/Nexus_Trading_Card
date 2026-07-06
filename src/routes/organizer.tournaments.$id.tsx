@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
-  Loader2,
   AlertTriangle,
   CheckCircle2,
   Store as StoreIcon,
@@ -18,6 +17,7 @@ import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { getOrganizerTournamentDetail } from "@/lib/geekarena-organizer.functions";
 import { Badge } from "@/components/ui/badge";
+import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/organizer/tournaments/$id")({
   component: OrganizerTournamentDetailPage,
@@ -85,8 +85,28 @@ function OrganizerTournamentDetailPage() {
 
   if (loading || !data) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="space-y-6">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="glass rounded-2xl p-4 space-y-2">
+              <SkeletonLine width="w-20" height="h-3" />
+              <SkeletonLine width="w-32" height="h-5" />
+            </div>
+          ))}
+        </section>
+        <div className="glass rounded-2xl p-5 space-y-3">
+          <SkeletonLine width="w-40" height="h-4" />
+          <SkeletonBlock className="h-10 w-full rounded-xl" />
+        </div>
+        <div className="glass overflow-hidden rounded-2xl">
+          <table className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TournamentRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }

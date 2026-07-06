@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useRef } from "react";
-import { Loader2, Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power, Trash2 } from "lucide-react";
+import { Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { SkeletonLine } from "@/components/ui/skeleton-loader";
 import { geekarena } from "@/integrations/geekarena/client";
 import {
   listSponsors,
   createSponsor,
   updateSponsor,
+  updateSponsorFull,
   updateSponsorImages,
   resetSponsorViews,
   deleteSponsor,
+  getSponsorMetrics,
 } from "@/lib/geekarena-ads.functions";
 
 export const Route = createFileRoute("/admin/ads")({
@@ -29,6 +32,17 @@ type Sponsor = {
   logo_url: string | null;
   vertical_url: string | null;
   horizontal_url: string | null;
+  carousel_url: string | null;
+  display_order: number;
+};
+
+type SponsorMetric = {
+  id: string;
+  name: string;
+  views_this_month: number;
+  view_limit: number;
+  pct_consumed: number;
+  cycles_count: number;
 };
 
 type Metrics = {
@@ -52,12 +66,17 @@ function AdminAdsPage() {
   const fetchList = useServerFn(listSponsors);
   const callCreate = useServerFn(createSponsor);
   const callUpdate = useServerFn(updateSponsor);
+  const callUpdateFull = useServerFn(updateSponsorFull);
   const callReset = useServerFn(resetSponsorViews);
   const callUpdateImages = useServerFn(updateSponsorImages);
   const callDelete = useServerFn(deleteSponsor);
+  const callGetMetrics = useServerFn(getSponsorMetrics);
 
+  const [tab, setTab] = useState<"sponsors" | "metrics">("sponsors");
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [liveMetrics, setLiveMetrics] = useState<SponsorMetric[]>([]);
+  const [secondsAgo, setSecondsAgo] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editSponsor, setEditSponsor] = useState<Sponsor | null>(null);
@@ -82,6 +101,27 @@ function AdminAdsPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await callGetMetrics();
+        setLiveMetrics(res.metrics as SponsorMetric[]);
+        setSecondsAgo(0);
+      } catch {
+        // silent — metrics panel is non-critical
+      }
+    };
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30_000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const tick = setInterval(() => setSecondsAgo((s) => s + 1), 1000);
+    return () => clearInterval(tick);
   }, []);
 
   const handleToggleActive = async (s: Sponsor) => {
@@ -127,28 +167,58 @@ function AdminAdsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-white">Sponsors & Ads</h1>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus size={16} /> Nuevo sponsor
-        </button>
+        {tab === "sponsors" && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus size={16} /> Nuevo sponsor
+          </button>
+        )}
       </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <MetricCard label="Sponsors" value={metrics?.total_sponsors ?? 0} />
-        <MetricCard label="Vistas / ciclo" value={metrics?.total_view_limit_per_cycle ?? 0} />
-        <MetricCard label="Total vistas" value={(metrics?.total_views ?? 0).toLocaleString()} />
-        <MetricCard label="Ciclos completos" value={metrics?.total_cycles ?? 0} />
-        <MetricCard label="Promedio diario" value={`${metrics?.avg_daily_views ?? 0}/día`} />
+      <div className="flex gap-1 rounded-lg bg-black/40 p-1 max-w-xs">
+        {(["sponsors", "metrics"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+              tab === t ? "bg-primary text-primary-foreground" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {t === "sponsors" ? "Sponsors" : "Métricas"}
+          </button>
+        ))}
       </div>
 
+      {tab === "sponsors" && (
+        <>
       {/* Sponsors table */}
       <div className="glass overflow-hidden rounded-2xl">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">
-            <Loader2 className="animate-spin" />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                <tr>
+                  <th className="px-3 py-2 text-left">Rank</th>
+                  <th className="px-3 py-2 text-left">Nombre</th>
+                  <th className="px-3 py-2 text-right">Límite</th>
+                  <th className="px-3 py-2 text-left">Estado</th>
+                  <th className="px-3 py-2 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="border-t border-white/5">
+                    <td className="px-3 py-3"><SkeletonLine width="w-6" height="h-3" /></td>
+                    <td className="px-3 py-3"><SkeletonLine width="w-32" height="h-3" /></td>
+                    <td className="px-3 py-3 text-right"><div className="flex justify-end"><SkeletonLine width="w-12" height="h-3" /></div></td>
+                    <td className="px-3 py-3"><SkeletonLine width="w-16" height="h-5" className="rounded-md" /></td>
+                    <td className="px-3 py-3"><div className="flex justify-end gap-1"><SkeletonLine width="w-20" height="h-6" className="rounded-md" /></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : sponsors.length === 0 ? (
           <div className="py-16 text-center text-sm text-gray-500">
@@ -162,16 +232,12 @@ function AdminAdsPage() {
                   <th className="px-3 py-2 text-left">Rank</th>
                   <th className="px-3 py-2 text-left">Nombre</th>
                   <th className="px-3 py-2 text-right">Límite</th>
-                  <th className="px-3 py-2 text-right">Vistas</th>
-                  <th className="px-3 py-2 text-left">Progreso</th>
-                  <th className="px-3 py-2 text-right">Ciclos</th>
                   <th className="px-3 py-2 text-left">Estado</th>
                   <th className="px-3 py-2 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {sponsors.map((s) => {
-                  const pct = s.view_limit > 0 ? Math.min(100, (s.views_count / s.view_limit) * 100) : 0;
                   const isCurrent = metrics?.current_sponsor_id === s.id;
                   return (
                     <tr key={s.id} className="border-t border-white/5">
@@ -187,13 +253,6 @@ function AdminAdsPage() {
                         </div>
                       </td>
                       <td className="px-3 py-3 text-right font-mono text-xs text-gray-400">{s.view_limit.toLocaleString()}</td>
-                      <td className="px-3 py-3 text-right font-mono text-xs text-white">{s.views_count.toLocaleString()}</td>
-                      <td className="px-3 py-3">
-                        <div className="h-2 w-32 overflow-hidden rounded-full bg-white/5">
-                          <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono text-xs text-gray-400">{s.cycles_count}</td>
                       <td className="px-3 py-3">
                         {s.is_active ? (
                           <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
@@ -239,6 +298,114 @@ function AdminAdsPage() {
           </div>
         )}
       </div>
+        </>
+      )}
+
+      {tab === "metrics" && (
+      <>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <MetricCard label="Sponsors" value={liveMetrics.length} />
+        <MetricCard
+          label="Vistas / ciclo"
+          value={liveMetrics.reduce((sum, m) => sum + (m.view_limit ?? 0), 0).toLocaleString()}
+        />
+        <MetricCard
+          label="Total vistas (mes)"
+          value={liveMetrics.reduce((sum, m) => sum + (m.views_this_month ?? 0), 0).toLocaleString()}
+        />
+        <MetricCard
+          label="Ciclos completos"
+          value={liveMetrics.reduce((sum, m) => sum + (m.cycles_count ?? 0), 0)}
+        />
+        <MetricCard
+          label="Promedio diario"
+          value={`${
+            new Date().getDate() > 0
+              ? Math.round(
+                  liveMetrics.reduce((sum, m) => sum + (m.views_this_month ?? 0), 0) /
+                    new Date().getDate(),
+                )
+              : 0
+          }/día`}
+        />
+      </div>
+
+      <div className="glass overflow-hidden rounded-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 px-4 py-3">
+          <h2 className="text-sm font-semibold text-white">Métricas en tiempo real · Este mes</h2>
+          <span className="text-[11px] text-gray-500">Actualizado hace {secondsAgo}s</span>
+        </div>
+        {liveMetrics.length === 0 ? (
+          <div className="py-10 text-center text-sm text-gray-500">Sin datos de métricas aún.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                <tr>
+                  <th className="px-3 py-2 text-left">Sponsor</th>
+                  <th className="px-3 py-2 text-right">Vistas este mes</th>
+                  <th className="px-3 py-2 text-right">Límite</th>
+                  <th className="px-3 py-2 text-left">Consumido</th>
+                  <th className="px-3 py-2 text-left">Ciclos</th>
+                  <th className="px-3 py-2 text-left">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liveMetrics.map((m) => {
+                  const pct = Math.min(Number(m.pct_consumed), 100);
+                  const barColor =
+                    Number(m.pct_consumed) < 70 ? "bg-emerald-500" : Number(m.pct_consumed) < 90 ? "bg-amber-500" : "bg-red-500";
+                  return (
+                    <tr key={m.id} className="border-t border-white/5">
+                      <td className="px-3 py-3 font-medium text-white">{m.name}</td>
+                      <td className="px-3 py-3 text-right font-mono text-xs text-white">
+                        {m.views_this_month.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono text-xs text-gray-400">
+                        {m.view_limit.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="h-2 w-32 overflow-hidden rounded-full bg-white/5">
+                          <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className="mt-1 text-[11px] text-gray-500">
+                          {m.views_this_month} / {m.view_limit} vistas
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        {m.cycles_count > 0 ? (
+                          <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                            {m.cycles_count} ciclos
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        {m.cycles_count > 0 ? (
+                          <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-400">
+                            En ciclo {m.cycles_count}
+                          </span>
+                        ) : Number(m.pct_consumed) >= 90 ? (
+                          <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-400">
+                            Casi al límite
+                          </span>
+                        ) : (
+                          <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                            Activo
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      </>
+      )}
 
       {showCreate && (
         <SponsorFormModal
@@ -260,10 +427,24 @@ function AdminAdsPage() {
             name: editSponsor.name,
             priority_rank: editSponsor.priority_rank,
             view_limit: editSponsor.view_limit,
+            horizontal_url: editSponsor.horizontal_url ?? "",
+            carousel_url: editSponsor.carousel_url ?? "",
+            is_active: editSponsor.is_active,
+            display_order: editSponsor.display_order ?? 0,
           }}
           onClose={() => setEditSponsor(null)}
           onSubmit={async (vals) => {
-            await callUpdate({ data: { sponsor_id: editSponsor.id, ...vals } });
+            await callUpdateFull({
+              data: {
+                id: editSponsor.id,
+                name: vals.name,
+                view_limit: vals.view_limit,
+                horizontal_url: vals.horizontal_url || null,
+                carousel_url: vals.carousel_url || null,
+                is_active: vals.is_active,
+                display_order: vals.display_order,
+              },
+            });
             toast.success("Sponsor actualizado");
             setEditSponsor(null);
             load();
@@ -409,6 +590,13 @@ function IconBtn({
   );
 }
 
+type SponsorFormExtra = {
+  horizontal_url: string;
+  carousel_url: string;
+  is_active: boolean;
+  display_order: number;
+};
+
 function SponsorFormModal({
   title,
   initial,
@@ -416,20 +604,35 @@ function SponsorFormModal({
   onSubmit,
 }: {
   title: string;
-  initial?: { name: string; priority_rank: number; view_limit: number };
+  initial?: { name: string; priority_rank: number; view_limit: number } & Partial<SponsorFormExtra>;
   onClose: () => void;
-  onSubmit: (vals: { name: string; priority_rank: number; view_limit: number }) => Promise<void>;
+  onSubmit: (
+    vals: { name: string; priority_rank: number; view_limit: number } & SponsorFormExtra,
+  ) => Promise<void>;
 }) {
+  const isEdit = initial != null && "is_active" in initial;
   const [name, setName] = useState(initial?.name ?? "");
   const [rank, setRank] = useState(initial?.priority_rank ?? 1);
   const [limit, setLimit] = useState(initial?.view_limit ?? 500);
+  const [horizontalUrl, setHorizontalUrl] = useState(initial?.horizontal_url ?? "");
+  const [carouselUrl, setCarouselUrl] = useState(initial?.carousel_url ?? "");
+  const [isActive, setIsActive] = useState(initial?.is_active ?? true);
+  const [displayOrder, setDisplayOrder] = useState(initial?.display_order ?? 0);
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSubmit({ name, priority_rank: rank, view_limit: limit });
+      await onSubmit({
+        name,
+        priority_rank: rank,
+        view_limit: limit,
+        horizontal_url: horizontalUrl,
+        carousel_url: carouselUrl,
+        is_active: isActive,
+        display_order: displayOrder,
+      });
     } catch (err: any) {
       toast.error(err?.message ?? "Error");
     } finally {
@@ -469,6 +672,44 @@ function SponsorFormModal({
             className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
           />
         </Field>
+        {isEdit && (
+          <>
+            <Field label="Banner Horizontal URL">
+              <input
+                value={horizontalUrl}
+                onChange={(e) => setHorizontalUrl(e.target.value)}
+                placeholder="https://... (640×100px .webp)"
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Logo Carrusel URL">
+              <input
+                value={carouselUrl}
+                onChange={(e) => setCarouselUrl(e.target.value)}
+                placeholder="https://... (320×160px .webp)"
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Orden de prioridad">
+              <input
+                type="number"
+                min={0}
+                value={displayOrder}
+                onChange={(e) => setDisplayOrder(Number(e.target.value))}
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
+              />
+            </Field>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-primary"
+              />
+              <span className="text-sm text-gray-300">Activo</span>
+            </label>
+          </>
+        )}
         <div className="flex justify-end gap-2 pt-2">
           <button
             type="button"

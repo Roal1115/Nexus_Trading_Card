@@ -1,4 +1,15 @@
+import { useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { registerSponsorView } from "@/lib/geekarena-ads.functions";
+
 export function AdVertical({ sponsor }: { sponsor: any }) {
+  const registerSponsorViewFn = useServerFn(registerSponsorView);
+
+  useEffect(() => {
+    if (!sponsor?.id) return;
+    registerSponsorViewFn({ data: { sponsor_id: sponsor.id } }).catch(() => {});
+  }, [sponsor?.id]);
+
   return (
     <div className="hidden xl:flex flex-col items-center w-[160px] flex-shrink-0">
       {sponsor?.vertical_url && (

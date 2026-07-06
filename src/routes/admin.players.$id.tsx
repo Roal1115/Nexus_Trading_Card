@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2, Trophy } from "lucide-react";
+import { ArrowLeft, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { getPlayerDetail } from "@/lib/geekarena-admin.functions";
 import { Badge } from "@/components/ui/badge";
+import { SkeletonLine, SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin/players/$id")({
@@ -34,8 +35,20 @@ function PlayerDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex h-60 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <SkeletonLine width="w-32" height="h-3" />
+          <SkeletonLine width="w-64" height="h-8" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="glass rounded-2xl p-6 space-y-2">
+              <SkeletonLine width="w-24" height="h-3" />
+              <SkeletonLine width="w-16" height="h-8" />
+            </div>
+          ))}
+        </div>
+        <SettingsSectionSkeleton />
       </div>
     );
   }

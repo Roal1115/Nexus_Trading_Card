@@ -32,7 +32,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl relative">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <button
-          className="sm:hidden hidden text-gray-400 hover:text-white transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
+          className="lg:hidden text-gray-400 hover:text-white transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label="Abrir menú"
           aria-expanded={menuOpen}
@@ -50,7 +50,7 @@ export function AppHeader() {
           <span className="text-primary">Nexus</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 text-sm sm:flex">
+        <nav className="hidden items-center gap-1 text-sm lg:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
           {role === "player" && (
             <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
@@ -74,7 +74,7 @@ export function AppHeader() {
         <div className="flex items-center gap-3">
           {player ? (
             <>
-              <div className="hidden text-right sm:block">
+              <div className="hidden text-right lg:block">
                 <div className="text-xs text-muted-foreground uppercase tracking-wider">
                   Geek Tag
                 </div>
@@ -82,7 +82,7 @@ export function AppHeader() {
               </div>
               <button
                 onClick={handleLogout}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                className="hidden lg:inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-gray-300 transition hover:border-primary/50 hover:text-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
                 <LogOut size={12} /> Cerrar Sesión
               </button>
@@ -90,7 +90,7 @@ export function AppHeader() {
           ) : (
             <Link
               to="/login"
-              className="hidden sm:flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
+              className="hidden lg:flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
             >
               Iniciar Sesión
             </Link>
@@ -105,7 +105,7 @@ export function AppHeader() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="sm:hidden absolute top-16 left-0 right-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl"
+            className="lg:hidden absolute top-16 left-0 right-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl"
           >
             <nav className="flex flex-col px-4 py-3 gap-1">
               <Link

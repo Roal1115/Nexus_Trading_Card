@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Store, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   getOrganizerOverview,
@@ -142,8 +143,9 @@ function OrganizerHome() {
 
   if (roleLoading || loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="space-y-6">
+        <SettingsSectionSkeleton />
+        <SettingsSectionSkeleton />
       </div>
     );
   }

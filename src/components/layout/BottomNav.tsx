@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRef, useEffect, useState } from "react";
-import { Trophy, LayoutDashboard, Zap, BarChart3, Settings, LogIn } from "lucide-react";
+import { Trophy, LayoutDashboard, TrendingUp, BarChart3, Settings, LogIn } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 
 type NavItem = {
@@ -17,8 +17,8 @@ const GUEST_ITEMS: NavItem[] = [
 
 const PLAYER_ITEMS: NavItem[] = [
   { to: "/", label: "Ranking", icon: Trophy },
-  { to: "/dashboard", label: "Panel", icon: LayoutDashboard },
-  { to: "/sessions", label: "Sesiones", icon: Zap, isCta: true },
+  { to: "/meta", label: "Meta", icon: TrendingUp },
+  { to: "/dashboard", label: "Panel", icon: LayoutDashboard, isCta: true },
   { to: "/my-stats", label: "Stats", icon: BarChart3 },
   { to: "/settings", label: "Config", icon: Settings },
 ];
@@ -45,9 +45,7 @@ function NavTab({ item, isActive }: { item: NavItem; isActive: boolean }) {
         <span className="mr-1.5">
           <Icon size={16} />
         </span>
-        <span ref={textRef}>
-          {item.label}
-        </span>
+        <span ref={textRef}>{item.label}</span>
       </Link>
     );
   }
@@ -88,8 +86,8 @@ export function BottomNav() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] bg-black/90 backdrop-blur-xl border-t border-white/10 sm:hidden" />
-      <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2 sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] bg-black/90 backdrop-blur-xl border-t border-white/10 lg:hidden" />
+      <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2 lg:hidden">
         {items.map((item) => {
           const isActive = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
           return <NavTab key={item.to} item={item} isActive={isActive} />;

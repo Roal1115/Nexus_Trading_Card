@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Eye, ArrowRight, XCircle, FileX } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
+import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import {
   getManagerPendingTournaments,
@@ -169,8 +170,14 @@ function ManagerTournamentsPanel() {
         {/* PENDIENTES */}
         <TabsContent value="pending" className="mt-4">
           {pendingLoading ? (
-            <div className="flex h-64 items-center justify-center">
-              <Loader2 className="animate-spin text-primary" />
+            <div className="glass overflow-hidden rounded-2xl">
+              <table className="w-full text-sm">
+                <tbody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TournamentRowSkeleton key={i} />
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : pendingRows.length === 0 ? (
             <div className="glass rounded-2xl p-8 text-sm text-gray-400">
@@ -253,8 +260,14 @@ function ManagerTournamentsPanel() {
         {/* APROBADOS */}
         <TabsContent value="approved" className="mt-4">
           {approvedLoading ? (
-            <div className="flex h-64 items-center justify-center">
-              <Loader2 className="animate-spin text-primary" />
+            <div className="glass overflow-hidden rounded-2xl">
+              <table className="w-full text-sm">
+                <tbody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TournamentRowSkeleton key={i} />
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : approvedRows.length === 0 ? (
             <div className="glass rounded-2xl p-8 text-sm text-gray-400">
@@ -355,8 +368,14 @@ function ManagerTournamentsPanel() {
         {/* PUBLICADOS */}
         <TabsContent value="published" className="mt-4">
           {publishedLoading ? (
-            <div className="flex h-64 items-center justify-center">
-              <Loader2 className="animate-spin text-primary" />
+            <div className="glass overflow-hidden rounded-2xl">
+              <table className="w-full text-sm">
+                <tbody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TournamentRowSkeleton key={i} />
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : publishedRows.length === 0 ? (
             <div className="glass rounded-2xl p-8 text-sm text-gray-400">

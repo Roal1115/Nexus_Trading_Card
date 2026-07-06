@@ -57,6 +57,7 @@ import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
+import { Route as SessionsTournamentTournamentIdRouteImport } from './routes/sessions.tournament.$tournamentId'
 import { Route as OrganizerTournamentsIdRouteImport } from './routes/organizer.tournaments.$id'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
@@ -302,6 +303,12 @@ const TcgManagerTournamentsIdRoute = TcgManagerTournamentsIdRouteImport.update({
   path: '/tournaments/$id',
   getParentRoute: () => TcgManagerRoute,
 } as any)
+const SessionsTournamentTournamentIdRoute =
+  SessionsTournamentTournamentIdRouteImport.update({
+    id: '/tournament/$tournamentId',
+    path: '/tournament/$tournamentId',
+    getParentRoute: () => SessionsRoute,
+  } as any)
 const OrganizerTournamentsIdRoute = OrganizerTournamentsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -369,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
+  '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRoutesByTo {
@@ -417,6 +425,7 @@ export interface FileRoutesByTo {
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
+  '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRoutesById {
@@ -471,6 +480,7 @@ export interface FileRoutesById {
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
+  '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
 }
 export interface FileRouteTypes {
@@ -526,6 +536,7 @@ export interface FileRouteTypes {
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
+    | '/sessions/tournament/$tournamentId'
     | '/tcg-manager/tournaments/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -574,6 +585,7 @@ export interface FileRouteTypes {
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
+    | '/sessions/tournament/$tournamentId'
     | '/tcg-manager/tournaments/$id'
   id:
     | '__root__'
@@ -627,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/organizer/tournaments/$id'
+    | '/sessions/tournament/$tournamentId'
     | '/tcg-manager/tournaments/$id'
   fileRoutesById: FileRoutesById
 }
@@ -986,6 +999,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TcgManagerTournamentsIdRouteImport
       parentRoute: typeof TcgManagerRoute
     }
+    '/sessions/tournament/$tournamentId': {
+      id: '/sessions/tournament/$tournamentId'
+      path: '/tournament/$tournamentId'
+      fullPath: '/sessions/tournament/$tournamentId'
+      preLoaderRoute: typeof SessionsTournamentTournamentIdRouteImport
+      parentRoute: typeof SessionsRoute
+    }
     '/organizer/tournaments/$id': {
       id: '/organizer/tournaments/$id'
       path: '/$id'
@@ -1094,11 +1114,13 @@ const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(
 interface SessionsRouteChildren {
   SessionsSessionIdRoute: typeof SessionsSessionIdRoute
   SessionsIndexRoute: typeof SessionsIndexRoute
+  SessionsTournamentTournamentIdRoute: typeof SessionsTournamentTournamentIdRoute
 }
 
 const SessionsRouteChildren: SessionsRouteChildren = {
   SessionsSessionIdRoute: SessionsSessionIdRoute,
   SessionsIndexRoute: SessionsIndexRoute,
+  SessionsTournamentTournamentIdRoute: SessionsTournamentTournamentIdRoute,
 }
 
 const SessionsRouteWithChildren = SessionsRoute._addFileChildren(

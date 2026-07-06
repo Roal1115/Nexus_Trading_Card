@@ -97,8 +97,8 @@ export function PanelBottomNav() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] bg-black/95 backdrop-blur-xl border-t border-white/10 sm:hidden" />
-      <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2 sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] bg-black/95 backdrop-blur-xl border-t border-white/10 lg:hidden" />
+      <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2 lg:hidden">
         {items.map((item) => {
           const isActive = pathname === item.to || pathname.startsWith(item.to + "/");
           return <NavTab key={item.to} item={item} isActive={isActive} />;

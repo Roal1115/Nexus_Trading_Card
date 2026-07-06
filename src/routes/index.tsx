@@ -8,11 +8,7 @@ import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
-import {
-  getActiveSponsor,
-  listActiveSponsors,
-  registerAdView,
-} from "@/lib/geekarena-ads.functions";
+import { listActiveSponsors, getActiveBanner } from "@/lib/geekarena-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
@@ -150,28 +146,26 @@ function HeroBackground() {
 function LeaderboardPage() {
   const fetchOptions = useServerFn(getLeaderboardOptions);
   const fetchLeaderboard = useServerFn(getLeaderboard);
-  const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const fetchActiveSponsors = useServerFn(listActiveSponsors);
-  const registerView = useServerFn(registerAdView);
-  const { player: viewer } = useGeekarenaRole();
+  const fetchBanner = useServerFn(getActiveBanner);
+  const { player: viewer, role } = useGeekarenaRole();
   const myGeekTag = viewer?.geek_tag ?? null;
 
-  const [sponsor, setSponsor] = useState<any>(null);
+  const isStaff = role === "admin" || role === "tcg_manager" || role === "organizer";
+
+  const [activeSponsor, setActiveSponsor] = useState<any>(null);
   const [allSponsors, setAllSponsors] = useState<any[]>([]);
 
   useEffect(() => {
-    registerView()
-      .then(setSponsor)
-      .catch(() => {
-        fetchActiveSponsor()
-          .then(setSponsor)
-          .catch(() => {});
-      });
+    if (isStaff) return;
+    fetchBanner()
+      .then((r) => setActiveSponsor(r.sponsor))
+      .catch(() => {});
     fetchActiveSponsors()
       .then(setAllSponsors)
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [role]);
 
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -285,7 +279,7 @@ function LeaderboardPage() {
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px] items-start">
       <aside className="hidden xl:block">
-        <AdVertical sponsor={sponsor} />
+        {!isStaff && <AdVertical sponsor={activeSponsor} />}
       </aside>
       <main className="min-w-0 pb-20">
         <section className="relative my-8 overflow-hidden rounded-2xl border-[#2A3A57] bg-[#111A2E] p-8 sm:p-12">
@@ -303,7 +297,9 @@ function LeaderboardPage() {
           </p>
         </section>
 
-        <AdCarousel sponsors={allSponsors} />
+        {!isStaff && (
+          <AdCarousel sponsors={allSponsors.filter((s) => s.is_active)} />
+        )}
 
         <div
           className="z-30 mb-6 rounded-xl px-4 py-3"
@@ -400,7 +396,7 @@ function LeaderboardPage() {
             onClearSearch={() => setSearch("")}
           />
           <div className="xl:hidden lg:hidden">
-            <AdHorizontal sponsor={sponsor} />
+            {!isStaff && <AdHorizontal sponsor={activeSponsor} />}
           </div>
           <LeaderboardTable
             title="General Semestral"
@@ -415,7 +411,7 @@ function LeaderboardPage() {
         </div>
       </main>
       <aside className="hidden xl:block">
-        <AdVertical sponsor={sponsor} />
+        {!isStaff && <AdVertical sponsor={activeSponsor} />}
       </aside>
     </div>
   );

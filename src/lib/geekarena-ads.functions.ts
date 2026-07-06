@@ -39,7 +39,11 @@ export const getActiveSponsor = createServerFn({ method: "POST" }).handler(async
     return first ?? null;
   }
 
-  const { data: sponsor } = await admin.from("sponsors").select("*").eq("id", metrics.current_sponsor_id).maybeSingle();
+  const { data: sponsor } = await admin
+    .from("sponsors")
+    .select("*")
+    .eq("id", metrics.current_sponsor_id)
+    .maybeSingle();
 
   return sponsor ?? null;
 });
@@ -78,7 +82,11 @@ export const registerAdView = createServerFn({ method: "POST" }).handler(async (
       .eq("id", metrics.id);
   }
 
-  const { data: current } = await admin.from("sponsors").select("*").eq("id", currentId).maybeSingle();
+  const { data: current } = await admin
+    .from("sponsors")
+    .select("*")
+    .eq("id", currentId)
+    .maybeSingle();
   if (!current) return null;
 
   const newViews = (current.views_count ?? 0) + 1;
@@ -157,8 +165,12 @@ export const listSponsors = createServerFn({ method: "POST" })
     const sponsors = sponsorsRes.data ?? [];
     const totalViewLimit = sponsors.reduce((sum: number, s: any) => sum + (s.view_limit ?? 0), 0);
     const updatedAt = metricsRes.data?.updated_at;
-    const days = updatedAt ? Math.max(Math.ceil((Date.now() - new Date(updatedAt).getTime()) / 86400000), 1) : 1;
-    const avgDailyViews = metricsRes.data?.total_views ? Math.round((metricsRes.data.total_views ?? 0) / days) : 0;
+    const days = updatedAt
+      ? Math.max(Math.ceil((Date.now() - new Date(updatedAt).getTime()) / 86400000), 1)
+      : 1;
+    const avgDailyViews = metricsRes.data?.total_views
+      ? Math.round((metricsRes.data.total_views ?? 0) / days)
+      : 0;
 
     return {
       sponsors,
@@ -201,15 +213,21 @@ export const createSponsor = createServerFn({ method: "POST" })
 // ─── Admin: update sponsor images ─────────────────────────────────────────
 export const updateSponsorImages = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { sponsor_id: string; logo_url?: string; vertical_url?: string; horizontal_url?: string }) =>
-    z
-      .object({
-        sponsor_id: z.string().uuid(),
-        logo_url: z.string().url().optional(),
-        vertical_url: z.string().url().optional(),
-        horizontal_url: z.string().url().optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: {
+      sponsor_id: string;
+      logo_url?: string;
+      vertical_url?: string;
+      horizontal_url?: string;
+    }) =>
+      z
+        .object({
+          sponsor_id: z.string().uuid(),
+          logo_url: z.string().url().optional(),
+          vertical_url: z.string().url().optional(),
+          horizontal_url: z.string().url().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const update: Record<string, string> = {};
@@ -226,7 +244,13 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
 export const updateSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
   .inputValidator(
-    (d: { sponsor_id: string; name?: string; priority_rank?: number; view_limit?: number; is_active?: boolean }) =>
+    (d: {
+      sponsor_id: string;
+      name?: string;
+      priority_rank?: number;
+      view_limit?: number;
+      is_active?: boolean;
+    }) =>
       z
         .object({
           sponsor_id: z.string().uuid(),
@@ -247,9 +271,14 @@ export const updateSponsor = createServerFn({ method: "POST" })
 // ─── Admin: reset a sponsor's view count ──────────────────────────────────
 export const resetSponsorViews = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { sponsor_id: string }) =>
+    z.object({ sponsor_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { error } = await context.admin.from("sponsors").update({ views_count: 0 }).eq("id", data.sponsor_id);
+    const { error } = await context.admin
+      .from("sponsors")
+      .update({ views_count: 0 })
+      .eq("id", data.sponsor_id);
     if (error) throw new Error(error.message);
     return { success: true };
   });
@@ -257,7 +286,9 @@ export const resetSponsorViews = createServerFn({ method: "POST" })
 // ─── Admin: delete a sponsor ─────────────────────────────────────────────
 export const deleteSponsor = createServerFn({ method: "POST" })
   .middleware([requireGeekarenaAdmin])
-  .inputValidator((d: { sponsor_id: string }) => z.object({ sponsor_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { sponsor_id: string }) =>
+    z.object({ sponsor_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
@@ -269,15 +300,109 @@ export const deleteSponsor = createServerFn({ method: "POST" })
       .maybeSingle();
 
     // If this was the active sponsor, clear current_sponsor_id in metrics
-    await admin.from("ad_metrics").update({ current_sponsor_id: null }).eq("current_sponsor_id", data.sponsor_id);
+    await admin
+      .from("ad_metrics")
+      .update({ current_sponsor_id: null })
+      .eq("current_sponsor_id", data.sponsor_id);
 
     const { error } = await admin.from("sponsors").delete().eq("id", data.sponsor_id);
 
     if (error) throw new Error(error.message);
 
-    await logAction(admin, player, "SPONSOR_DELETED", "sponsor", data.sponsor_id, sponsor?.name ?? data.sponsor_id, {
-      priority_rank: sponsor?.priority_rank,
-    });
+    await logAction(
+      admin,
+      player,
+      "SPONSOR_DELETED",
+      "sponsor",
+      data.sponsor_id,
+      sponsor?.name ?? data.sponsor_id,
+      {
+        priority_rank: sponsor?.priority_rank,
+      },
+    );
 
+    return { success: true };
+  });
+
+// Selecciona el sponsor activo para el banner
+// Lógica: menor pct_consumed primero — el que menos ha consumido su límite va primero
+// Si todos superaron 100%, se reinicia desde el de menor pct (ciclo continuo)
+export const getActiveBanner = createServerFn({ method: "POST" }).handler(async () => {
+  const admin = getGeekarenaAdmin();
+
+  const { data, error } = await admin
+    .from("sponsor_metrics_current_month")
+    .select("id, name, pct_consumed")
+    .order("pct_consumed", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return { sponsor: null };
+
+  const { data: sponsor } = await admin
+    .from("sponsors")
+    .select("id, name, horizontal_url, vertical_url, carousel_url")
+    .eq("id", data.id)
+    .maybeSingle();
+
+  return { sponsor: sponsor ?? null };
+});
+
+// Incrementa vistas de un sponsor via la función SQL
+export const registerSponsorView = createServerFn({ method: "POST" })
+  .inputValidator((d: { sponsor_id: string }) =>
+    z.object({ sponsor_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const admin = getGeekarenaAdmin();
+    const { error } = await admin.rpc("increment_sponsor_view", {
+      p_sponsor_id: data.sponsor_id,
+    });
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+// Métricas en tiempo real para el panel de admin
+export const getSponsorMetrics = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .handler(async () => {
+    const admin = getGeekarenaAdmin();
+    const { data, error } = await admin.from("sponsor_metrics_current_month").select("*");
+    if (error) throw new Error(error.message);
+    return { metrics: data ?? [] };
+  });
+
+// Actualizar sponsor con todos los campos nuevos
+export const updateSponsorFull = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaAdmin])
+  .inputValidator(
+    (d: {
+      id: string;
+      name?: string;
+      vertical_url?: string | null;
+      horizontal_url?: string | null;
+      carousel_url?: string | null;
+      is_active?: boolean;
+      display_order?: number;
+      view_limit?: number;
+    }) =>
+      z
+        .object({
+          id: z.string().uuid(),
+          name: z.string().min(1).optional(),
+          vertical_url: z.string().nullable().optional(),
+          horizontal_url: z.string().nullable().optional(),
+          carousel_url: z.string().nullable().optional(),
+          is_active: z.boolean().optional(),
+          display_order: z.number().int().min(0).optional(),
+          view_limit: z.number().int().min(1).optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { id, ...updates } = data;
+    const { error } = await admin.from("sponsors").update(updates).eq("id", id);
+    if (error) throw new Error(error.message);
     return { success: true };
   });

@@ -24,6 +24,7 @@ import {
   deleteStandaloneSession,
   createStandaloneSession,
   searchStores,
+  getMyTrackedTournaments,
 } from "@/lib/geekarena-standalone.functions";
 import { getMyStatsGames } from "@/lib/geekarena-player.functions";
 import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
@@ -47,6 +48,21 @@ export const Route = createFileRoute("/sessions/")({
 
 type SessionsResult = Awaited<ReturnType<typeof getStandaloneSessions>>;
 type SessionRow = SessionsResult["sessions"][number];
+type TrackedTournamentsResult = Awaited<ReturnType<typeof getMyTrackedTournaments>>;
+type TrackedTournament = TrackedTournamentsResult["tournaments"][number];
+
+function formatTournamentDate(date: string): string {
+  try {
+    const d = new Date(date + "T00:00:00");
+    return d.toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return date;
+  }
+}
 
 function formatSessionDate(date: string | null): string {
   if (!date) return "Sin fecha";
@@ -229,13 +245,41 @@ function SessionCard({
   );
 }
 
+function TrackedTournamentCard({ tournament }: { tournament: TrackedTournament }) {
+  return (
+    <Link
+      to="/sessions/tournament/$tournamentId"
+      params={{ tournamentId: tournament.id }}
+      className="glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-white/10 p-4 transition hover:border-primary/40 hover:bg-white/[0.04]"
+    >
+      <Trophy size={16} className="text-primary flex-shrink-0" />
+
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold text-white">{tournament.store_name}</div>
+        <div className="mt-0.5 text-xs text-gray-500">
+          {tournament.game_name} · {formatTournamentDate(tournament.tournament_date)}
+        </div>
+      </div>
+
+      <div className="hidden sm:block text-xs text-gray-400 flex-shrink-0">
+        {tournament.total_rounds} rondas · {tournament.wins}W {tournament.losses}L
+      </div>
+
+      <ChevronRight size={14} className="text-gray-500 flex-shrink-0" />
+    </Link>
+  );
+}
+
 function SessionsPage() {
   const { player, loading: roleLoading } = useGeekarenaRole();
   const fetchSessions = useServerFn(getStandaloneSessions);
   const removeSession = useServerFn(deleteStandaloneSession);
+  const fetchTracked = useServerFn(getMyTrackedTournaments);
 
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trackedTournaments, setTrackedTournaments] = useState<TrackedTournament[]>([]);
+  const [loadingTournaments, setLoadingTournaments] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const navigate = useNavigate();
@@ -245,6 +289,7 @@ function SessionsPage() {
     if (roleLoading) return;
     if (!player) {
       setLoading(false);
+      setLoadingTournaments(false);
       return;
     }
     let cancelled = false;
@@ -258,10 +303,18 @@ function SessionsPage() {
         if (!cancelled) setLoading(false);
       }
     })();
+    fetchTracked()
+      .then((res) => {
+        if (!cancelled) setTrackedTournaments(res.tournaments);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingTournaments(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [player, roleLoading, fetchSessions]);
+  }, [player, roleLoading, fetchSessions, fetchTracked]);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -369,6 +422,27 @@ function SessionsPage() {
           ))
         )}
       </div>
+
+      {/* Torneos con Performance Tracker */}
+      {loadingTournaments ? (
+        <div className="mt-8 space-y-3">
+          <SkeletonBlock className="h-5 w-64" />
+          <SkeletonBlock className="h-16 w-full" />
+          <SkeletonBlock className="h-16 w-full" />
+        </div>
+      ) : trackedTournaments.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-white">Torneos con Performance Tracker</h2>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Torneos oficiales donde registraste rondas directamente
+          </p>
+          <div className="mt-3 space-y-3">
+            {trackedTournaments.map((t) => (
+              <TrackedTournamentCard key={t.id} tournament={t} />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* Create button (mobile sticky) */}
       <div className="fixed bottom-20 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">

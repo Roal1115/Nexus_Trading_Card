@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Loader2,
   Search,
   CalendarDays,
   Instagram,
@@ -15,6 +14,7 @@ import {
   Map as MapIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { StoreCardSkeleton } from "@/components/ui/skeleton-loader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -100,8 +100,10 @@ function ManagerStoresPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
+      <div className="grid gap-4 md:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <StoreCardSkeleton key={i} />
+        ))}
       </div>
     );
   }
