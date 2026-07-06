@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, X, Plus, Trophy, ChevronDown, Save, Trash2 } from "lucide-react";
+import { Search, X, Plus, Trophy, ChevronDown, Trash2, ShieldQuestion } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { toast } from "sonner";
@@ -375,134 +375,317 @@ function RoundCard({
   saving: boolean;
   deleting: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  const resultColor = round.won_match === true
+    ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
+    : round.won_match === false
+    ? "bg-red-500/10 border-l-2 border-l-red-500"
+    : "bg-white/[0.02]";
+
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-bold text-white">Ronda {round.round_number}</p>
-        <label className="flex items-center gap-2 text-xs text-gray-300">
-          <input
-            type="checkbox"
-            checked={round.is_bye}
-            onChange={(e) =>
-              onChange({
-                is_bye: e.target.checked,
-                opponent_player_id: null,
-                opponent_leader_id: null,
-                won_die_roll: null,
-                turn_order: null,
-                won_match: e.target.checked ? true : null,
-              })
-            }
-          />
-          Bye
-        </label>
-      </div>
+    <div
+      className={`rounded-xl border overflow-hidden transition-colors duration-150 ${
+        deleteConfirm ? "border-red-500/40" : "border-white/10"
+      } ${resultColor}`}
+    >
+      {/* Collapsed row */}
+      <div
+        onClick={() => !deleteConfirm && setOpen((o) => !o)}
+        className={`relative grid grid-cols-[40px_1fr_52px_52px_52px_36px] items-center gap-2 px-3 py-3 cursor-pointer transition-colors duration-150 ${
+          open ? "bg-white/[0.04]" : "hover:bg-white/[0.04] active:bg-white/[0.07]"
+        }`}
+      >
+        {/* Round number */}
+        <span
+          className={`font-mono text-sm font-bold ${
+            round.won_match === true
+              ? "text-emerald-400"
+              : round.won_match === false
+              ? "text-red-400"
+              : "text-gray-400"
+          }`}
+        >
+          R{round.round_number}
+        </span>
 
-      {!round.is_bye && (
-        <>
-          <div className="mb-3">
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              Contra quién jugaste
-            </label>
-            <SimpleSelect
-              value={round.opponent_player_id ?? ""}
-              onChange={(v) => onChange({ opponent_player_id: v || null })}
-              placeholder="Selecciona oponente…"
-              options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
+        {/* Opponent */}
+        <div className="flex items-center gap-2 min-w-0 text-left">
+          {round.opponent_leader?.card_image ? (
+            <img
+              src={round.opponent_leader.card_image}
+              alt={round.opponent_leader.base_name}
+              className="h-9 w-6 flex-shrink-0 rounded-md border border-white/10 object-cover"
             />
-          </div>
-
-          <div className="mb-3">
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              Leader del oponente
-            </label>
-            <OpponentLeaderSelect
-              gameId={gameId}
-              value={round.opponent_leader ?? null}
-              onChange={(d) => {
-                onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
-              }}
-            />
-          </div>
-
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                ¿Quién ganó el dado?
-              </label>
-              <SimpleSelect
-                value={round.won_die_roll === null ? "" : round.won_die_roll ? "me" : "opp"}
-                onChange={(v) => onChange({ won_die_roll: v === "" ? null : v === "me" })}
-                placeholder="—"
-                options={[
-                  { value: "me", label: "Yo" },
-                  { value: "opp", label: "Oponente" },
-                ]}
-              />
+          ) : (
+            <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
+              <span className="text-[8px] text-gray-600">?</span>
             </div>
-            <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-                Tu turno
-              </label>
-              <SimpleSelect
-                value={round.turn_order ?? ""}
-                onChange={(v) => onChange({ turn_order: (v || null) as "first" | "second" | null })}
-                placeholder="—"
-                options={[
-                  { value: "first", label: "Primero" },
-                  { value: "second", label: "Segundo" },
-                ]}
-              />
-            </div>
-          </div>
+          )}
+          <span className="truncate text-xs text-gray-300">
+            {round.is_bye
+              ? "Bye"
+              : opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—"}
+          </span>
+        </div>
 
-          <div className="mb-3">
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              ¿Quién ganó el match?
-            </label>
-            <SimpleSelect
-              value={round.won_match === null ? "" : round.won_match ? "me" : "opp"}
-              onChange={(v) => onChange({ won_match: v === "" ? null : v === "me" })}
-              placeholder="—"
-              options={[
-                { value: "me", label: "Yo" },
-                { value: "opp", label: "Oponente" },
-              ]}
-            />
-          </div>
-        </>
-      )}
+        {/* Dice */}
+        <span className="text-center text-[11px] text-gray-400">
+          {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Opp"}
+        </span>
 
-      <div>
-        <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-          Notas (opcional)
-        </label>
-        <textarea
-          value={round.notes ?? ""}
-          onChange={(e) => onChange({ notes: e.target.value || null })}
-          rows={2}
-          className="w-full resize-none rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
-        />
-      </div>
+        {/* Order */}
+        <span className="text-center text-[11px] text-gray-400">
+          {round.turn_order === "first" ? "1st" : round.turn_order === "second" ? "2nd" : "—"}
+        </span>
 
-      <div className="mt-3 flex items-center gap-2">
+        {/* Result */}
+        <span
+          className={`text-center text-xs font-bold ${
+            round.won_match === true
+              ? "text-emerald-400"
+              : round.won_match === false
+              ? "text-red-400"
+              : "text-gray-500"
+          }`}
+        >
+          {round.is_bye ? "Bye" : round.won_match === true ? "W" : round.won_match === false ? "L" : "—"}
+        </span>
+
+        {/* Delete button */}
         <button
           type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground disabled:opacity-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteConfirm(true);
+          }}
+          className="relative z-10 flex items-center justify-center rounded-md p-1.5 text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
         >
-          <Save size={13} /> {saving ? "Guardando…" : "Guardar Ronda"}
+          <Trash2 size={13} />
         </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={deleting}
-          className="flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition"
-        >
-          <Trash2 size={13} /> {deleting ? "Eliminando…" : ""}
-        </button>
+
+        {/* Delete confirmation — full-row overlay */}
+        <AnimatePresence>
+          {deleteConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`absolute inset-0 z-40 flex items-center justify-between gap-3 rounded-t-xl bg-red-950/95 px-4 backdrop-blur-sm ${
+                open ? "" : "rounded-b-xl"
+              }`}
+            >
+              <span className="text-xs font-medium text-red-100">
+                ¿Eliminar Ronda {round.round_number}?
+              </span>
+              <div className="flex flex-shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  disabled={deleting}
+                  className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
+                >
+                  {deleting ? "…" : "Eliminar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/10"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Expanded form */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-white/10 px-4 pb-5 pt-4 space-y-5">
+              <label className="flex items-center gap-2 text-xs text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={round.is_bye}
+                  onChange={(e) =>
+                    onChange({
+                      is_bye: e.target.checked,
+                      opponent_player_id: null,
+                      opponent_leader_id: null,
+                      won_die_roll: null,
+                      turn_order: null,
+                      won_match: e.target.checked ? true : null,
+                    })
+                  }
+                />
+                Bye (ronda libre, sin oponente)
+              </label>
+
+              {!round.is_bye && (
+                <>
+                  {/* Oponente */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+                      Contra quién jugaste
+                    </label>
+                    <SimpleSelect
+                      value={round.opponent_player_id ?? ""}
+                      onChange={(v) => onChange({ opponent_player_id: v || null })}
+                      placeholder="Selecciona oponente…"
+                      options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
+                    />
+                  </div>
+
+                  {/* Leader del oponente */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+                      Leader del oponente
+                    </label>
+                    <OpponentLeaderSelect
+                      gameId={gameId}
+                      value={round.opponent_leader ?? null}
+                      onChange={(d) => {
+                        onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
+                      }}
+                    />
+                  </div>
+
+                  {/* Dado — 2 toggle buttons */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+                      Dado
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onChange({ won_die_roll: true })}
+                        className={`rounded-xl py-3 text-sm font-semibold transition ${
+                          round.won_die_roll === true
+                            ? "bg-emerald-500 text-white"
+                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-emerald-500/40 hover:text-emerald-400"
+                        }`}
+                      >
+                        Gané
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onChange({ won_die_roll: false })}
+                        className={`rounded-xl py-3 text-sm font-semibold transition ${
+                          round.won_die_roll === false
+                            ? "bg-red-500 text-white"
+                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-red-500/40 hover:text-red-400"
+                        }`}
+                      >
+                        Perdí
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Turno — 2 toggle buttons */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+                      Turno
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onChange({ turn_order: "first" })}
+                        className={`rounded-xl py-3 text-sm font-semibold transition ${
+                          round.turn_order === "first"
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-primary/40 hover:text-primary"
+                        }`}
+                      >
+                        Primero
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onChange({ turn_order: "second" })}
+                        className={`rounded-xl py-3 text-sm font-semibold transition ${
+                          round.turn_order === "second"
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-primary/40 hover:text-primary"
+                        }`}
+                      >
+                        Segundo
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Resultado — 2 toggle buttons */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+                      Resultado
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onChange({ won_match: true })}
+                        className={`rounded-xl py-3 text-sm font-semibold transition ${
+                          round.won_match === true
+                            ? "bg-emerald-500 text-white"
+                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-emerald-500/40 hover:text-emerald-400"
+                        }`}
+                      >
+                        Victoria
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onChange({ won_match: false })}
+                        className={`rounded-xl py-3 text-sm font-semibold transition ${
+                          round.won_match === false
+                            ? "bg-red-500 text-white"
+                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-red-500/40 hover:text-red-400"
+                        }`}
+                      >
+                        Derrota
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Notas */}
+              <div>
+                <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+                  Notas (opcional)
+                </label>
+                <textarea
+                  value={round.notes ?? ""}
+                  onChange={(e) => onChange({ notes: e.target.value || null })}
+                  rows={2}
+                  placeholder="Estrategia, observaciones…"
+                  className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-primary"
+                />
+              </div>
+
+              {/* Save button — full width */}
+              <button
+                type="button"
+                onClick={async () => {
+                  await onSave();
+                  setOpen(false);
+                }}
+                disabled={saving}
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50 transition hover:brightness-110"
+              >
+                {saving ? "Guardando…" : "Guardar Ronda"}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -585,6 +768,9 @@ export function PerformanceTrackerModal({
       ),
     [rounds],
   );
+
+  const wins = rounds.filter((r) => r.won_match === true).length;
+  const losses = rounds.filter((r) => r.won_match === false).length;
 
   const occupiedRoundNumbers = useMemo(() => new Set(rounds.map((r) => r.round_number)), [rounds]);
 
@@ -705,9 +891,43 @@ export function PerformanceTrackerModal({
         <p className="py-10 text-center text-sm text-gray-400">Cargando…</p>
       ) : (
         <div className="space-y-4">
+          {/* Hero header — leader image + record, same format as /sessions/$sessionId */}
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+            <div className="flex items-end gap-4 p-4">
+              <div className="relative flex-shrink-0">
+                {myLeader?.card_image ? (
+                  <img
+                    src={myLeader.card_image}
+                    alt={myLeader.base_name}
+                    className="h-24 w-16 rounded-xl border border-white/20 object-cover shadow-xl"
+                  />
+                ) : (
+                  <div className="flex h-24 w-16 items-center justify-center rounded-xl border border-white/10 bg-black/40">
+                    <ShieldQuestion size={20} className="text-gray-600" />
+                  </div>
+                )}
+                {(wins > 0 || losses > 0) && (
+                  <div className="absolute bottom-1 left-0 right-0 flex justify-center">
+                    <span className="rounded-full bg-black/80 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                      <span className="text-emerald-400">{wins}V</span>
+                      <span className="text-gray-500"> · </span>
+                      <span className="text-red-400">{losses}D</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1 pb-1">
+                <p className="text-lg font-bold text-white truncate">
+                  {myLeader ? cleanDisplayName(myLeader.base_name) : "Sin leader"}
+                </p>
+                <p className="text-xs text-gray-500">Tu leader en este torneo</p>
+              </div>
+            </div>
+          </div>
+
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              Tu Leader en este torneo
+            <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+              Cambiar tu leader
             </label>
             <LeaderSelect
               gameId={gameId}
@@ -717,7 +937,24 @@ export function PerformanceTrackerModal({
             />
           </div>
 
-          <div className="space-y-3">
+          {/* Table header */}
+          {rounds.length > 0 && (
+            <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
+              <span className="text-[10px] uppercase tracking-widest text-gray-600">Round</span>
+              <span className="text-[10px] uppercase tracking-widest text-gray-600">Rival</span>
+              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+                Dado
+              </span>
+              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+                Turno
+              </span>
+              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+                Res
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-2">
             {rounds.map((round, idx) =>
               round.is_auto_populated ? (
                 <div

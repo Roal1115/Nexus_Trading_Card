@@ -14,6 +14,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { Toaster } from "sonner";
+import { TCGProvider } from "@/context/tcg.context";
 
 function NotFoundComponent() {
   return (
@@ -206,34 +207,36 @@ function RootComponent() {
     pathname.startsWith("/tcg-manager");
 
   return (
-    <GeekarenaAuthProvider>
-      <div className="min-h-dvh bg-radial-nexus">
-        {!isPanel && <AppHeader />}
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeInOut" }}
-            className="pb-16 sm:pb-0"
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "#1e2130",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#ffffff",
-            },
-          }}
-        />
-        <BottomNav />
-        <PanelBottomNav />
-      </div>
-    </GeekarenaAuthProvider>
+    <TCGProvider>
+      <GeekarenaAuthProvider>
+        <div className="min-h-dvh bg-radial-nexus">
+          {!isPanel && <AppHeader />}
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
+              className="pb-16 sm:pb-0"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: "#1e2130",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#ffffff",
+              },
+            }}
+          />
+          <BottomNav />
+          <PanelBottomNav />
+        </div>
+      </GeekarenaAuthProvider>
+    </TCGProvider>
   );
 }

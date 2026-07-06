@@ -52,13 +52,11 @@ export function AppHeader() {
 
         <nav className="hidden items-center gap-1 text-sm lg:flex">
           <NavItem to="/" icon={<Trophy size={14} />} label="Ranking" />
+          <NavItem to="/stores" icon={<Store size={14} />} label="Tiendas" />
           {role === "player" && (
             <NavItem to="/dashboard" icon={<User size={14} />} label="Mi Panel" />
           )}
-          {player && (
-            <NavItem to="/sessions" icon={<Layers size={14} />} label="Sesiones" />
-          )}
-          <NavItem to="/stores" icon={<Store size={14} />} label="Tiendas" />
+          {player && <NavItem to="/meta" icon={<Layers size={14} />} label="Meta" />}
           {role === "organizer" && (
             <NavItem to="/organizer" icon={<Shield size={14} />} label="Moderación" />
           )}
@@ -146,7 +144,7 @@ export function AppHeader() {
 
               {player && (
                 <Link
-                  to="/sessions"
+                  to="/meta"
                   onClick={() => setMenuOpen(false)}
                   activeProps={{
                     className:

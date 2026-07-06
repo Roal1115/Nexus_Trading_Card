@@ -56,8 +56,18 @@ type Metrics = {
 
 const IMAGE_SPECS = {
   logo: { label: "Logo Carrusel", dims: "320 × 160 px", max: 150_000, maxLabel: "150 KB" },
-  vertical: { label: "Banner Vertical (Desktop)", dims: "160 × 600 px", max: 300_000, maxLabel: "300 KB" },
-  horizontal: { label: "Banner Horizontal (Mobile)", dims: "640 × 100 px", max: 200_000, maxLabel: "200 KB" },
+  vertical: {
+    label: "Banner Vertical (Desktop)",
+    dims: "160 × 600 px",
+    max: 300_000,
+    maxLabel: "300 KB",
+  },
+  horizontal: {
+    label: "Banner Horizontal (Mobile)",
+    dims: "640 × 100 px",
+    max: 200_000,
+    maxLabel: "200 KB",
+  },
 } as const;
 
 type ImageType = keyof typeof IMAGE_SPECS;
@@ -193,218 +203,249 @@ function AdminAdsPage() {
 
       {tab === "sponsors" && (
         <>
-      {/* Sponsors table */}
-      <div className="glass overflow-hidden rounded-2xl">
-        {loading ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-3 py-2 text-left">Rank</th>
-                  <th className="px-3 py-2 text-left">Nombre</th>
-                  <th className="px-3 py-2 text-right">Límite</th>
-                  <th className="px-3 py-2 text-left">Estado</th>
-                  <th className="px-3 py-2 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-t border-white/5">
-                    <td className="px-3 py-3"><SkeletonLine width="w-6" height="h-3" /></td>
-                    <td className="px-3 py-3"><SkeletonLine width="w-32" height="h-3" /></td>
-                    <td className="px-3 py-3 text-right"><div className="flex justify-end"><SkeletonLine width="w-12" height="h-3" /></div></td>
-                    <td className="px-3 py-3"><SkeletonLine width="w-16" height="h-5" className="rounded-md" /></td>
-                    <td className="px-3 py-3"><div className="flex justify-end gap-1"><SkeletonLine width="w-20" height="h-6" className="rounded-md" /></div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : sponsors.length === 0 ? (
-          <div className="py-16 text-center text-sm text-gray-500">
-            No hay sponsors aún. Crea el primero con "Nuevo sponsor".
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-3 py-2 text-left">Rank</th>
-                  <th className="px-3 py-2 text-left">Nombre</th>
-                  <th className="px-3 py-2 text-right">Límite</th>
-                  <th className="px-3 py-2 text-left">Estado</th>
-                  <th className="px-3 py-2 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sponsors.map((s) => {
-                  const isCurrent = metrics?.current_sponsor_id === s.id;
-                  return (
-                    <tr key={s.id} className="border-t border-white/5">
-                      <td className="px-3 py-3 font-mono text-xs text-gray-400">#{s.priority_rank}</td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">{s.name}</span>
-                          {isCurrent && (
-                            <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                              Activo ahora
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono text-xs text-gray-400">{s.view_limit.toLocaleString()}</td>
-                      <td className="px-3 py-3">
-                        {s.is_active ? (
-                          <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
-                            Activo
-                          </span>
-                        ) : (
-                          <span className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
-                            Inactivo
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <IconBtn label="Subir imágenes" onClick={() => setImagesSponsor(s)}>
-                            <ImageIcon size={14} />
-                          </IconBtn>
-                          <IconBtn label="Editar" onClick={() => setEditSponsor(s)}>
-                            <Pencil size={14} />
-                          </IconBtn>
-                          <IconBtn label="Resetear vistas" onClick={() => handleReset(s)}>
-                            <RotateCcw size={14} />
-                          </IconBtn>
-                          <IconBtn label={s.is_active ? "Desactivar" : "Activar"} onClick={() => handleToggleActive(s)}>
-                            <Power size={14} />
-                          </IconBtn>
-                          <button
-                            onClick={() => {
-                              setDeleteTarget({ id: s.id, name: s.name });
-                              setDeleteInput("");
-                            }}
-                            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 border border-red-400/20 hover:border-red-400/40 rounded px-2 py-1 transition"
-                          >
-                            <Trash2 size={12} />
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
+          {/* Sponsors table */}
+          <div className="glass overflow-hidden rounded-2xl">
+            {loading ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Rank</th>
+                      <th className="px-3 py-2 text-left">Nombre</th>
+                      <th className="px-3 py-2 text-right">Límite</th>
+                      <th className="px-3 py-2 text-left">Estado</th>
+                      <th className="px-3 py-2 text-right">Acciones</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i} className="border-t border-white/5">
+                        <td className="px-3 py-3">
+                          <SkeletonLine width="w-6" height="h-3" />
+                        </td>
+                        <td className="px-3 py-3">
+                          <SkeletonLine width="w-32" height="h-3" />
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <div className="flex justify-end">
+                            <SkeletonLine width="w-12" height="h-3" />
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <SkeletonLine width="w-16" height="h-5" className="rounded-md" />
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex justify-end gap-1">
+                            <SkeletonLine width="w-20" height="h-6" className="rounded-md" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : sponsors.length === 0 ? (
+              <div className="py-16 text-center text-sm text-gray-500">
+                No hay sponsors aún. Crea el primero con "Nuevo sponsor".
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Rank</th>
+                      <th className="px-3 py-2 text-left">Nombre</th>
+                      <th className="px-3 py-2 text-right">Límite</th>
+                      <th className="px-3 py-2 text-left">Estado</th>
+                      <th className="px-3 py-2 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sponsors.map((s) => {
+                      const isCurrent = metrics?.current_sponsor_id === s.id;
+                      return (
+                        <tr key={s.id} className="border-t border-white/5">
+                          <td className="px-3 py-3 font-mono text-xs text-gray-400">
+                            #{s.priority_rank}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-white">{s.name}</span>
+                              {isCurrent && (
+                                <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                                  Activo ahora
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-right font-mono text-xs text-gray-400">
+                            {s.view_limit.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-3">
+                            {s.is_active ? (
+                              <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                                Activo
+                              </span>
+                            ) : (
+                              <span className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
+                                Inactivo
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              <IconBtn label="Subir imágenes" onClick={() => setImagesSponsor(s)}>
+                                <ImageIcon size={14} />
+                              </IconBtn>
+                              <IconBtn label="Editar" onClick={() => setEditSponsor(s)}>
+                                <Pencil size={14} />
+                              </IconBtn>
+                              <IconBtn label="Resetear vistas" onClick={() => handleReset(s)}>
+                                <RotateCcw size={14} />
+                              </IconBtn>
+                              <IconBtn
+                                label={s.is_active ? "Desactivar" : "Activar"}
+                                onClick={() => handleToggleActive(s)}
+                              >
+                                <Power size={14} />
+                              </IconBtn>
+                              <button
+                                onClick={() => {
+                                  setDeleteTarget({ id: s.id, name: s.name });
+                                  setDeleteInput("");
+                                }}
+                                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 border border-red-400/20 hover:border-red-400/40 rounded px-2 py-1 transition"
+                              >
+                                <Trash2 size={12} />
+                                Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
         </>
       )}
 
       {tab === "metrics" && (
-      <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <MetricCard label="Sponsors" value={liveMetrics.length} />
-        <MetricCard
-          label="Vistas / ciclo"
-          value={liveMetrics.reduce((sum, m) => sum + (m.view_limit ?? 0), 0).toLocaleString()}
-        />
-        <MetricCard
-          label="Total vistas (mes)"
-          value={liveMetrics.reduce((sum, m) => sum + (m.views_this_month ?? 0), 0).toLocaleString()}
-        />
-        <MetricCard
-          label="Ciclos completos"
-          value={liveMetrics.reduce((sum, m) => sum + (m.cycles_count ?? 0), 0)}
-        />
-        <MetricCard
-          label="Promedio diario"
-          value={`${
-            new Date().getDate() > 0
-              ? Math.round(
-                  liveMetrics.reduce((sum, m) => sum + (m.views_this_month ?? 0), 0) /
-                    new Date().getDate(),
-                )
-              : 0
-          }/día`}
-        />
-      </div>
-
-      <div className="glass overflow-hidden rounded-2xl">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 px-4 py-3">
-          <h2 className="text-sm font-semibold text-white">Métricas en tiempo real · Este mes</h2>
-          <span className="text-[11px] text-gray-500">Actualizado hace {secondsAgo}s</span>
-        </div>
-        {liveMetrics.length === 0 ? (
-          <div className="py-10 text-center text-sm text-gray-500">Sin datos de métricas aún.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-3 py-2 text-left">Sponsor</th>
-                  <th className="px-3 py-2 text-right">Vistas este mes</th>
-                  <th className="px-3 py-2 text-right">Límite</th>
-                  <th className="px-3 py-2 text-left">Consumido</th>
-                  <th className="px-3 py-2 text-left">Ciclos</th>
-                  <th className="px-3 py-2 text-left">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {liveMetrics.map((m) => {
-                  const pct = Math.min(Number(m.pct_consumed), 100);
-                  const barColor =
-                    Number(m.pct_consumed) < 70 ? "bg-emerald-500" : Number(m.pct_consumed) < 90 ? "bg-amber-500" : "bg-red-500";
-                  return (
-                    <tr key={m.id} className="border-t border-white/5">
-                      <td className="px-3 py-3 font-medium text-white">{m.name}</td>
-                      <td className="px-3 py-3 text-right font-mono text-xs text-white">
-                        {m.views_this_month.toLocaleString()}
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono text-xs text-gray-400">
-                        {m.view_limit.toLocaleString()}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="h-2 w-32 overflow-hidden rounded-full bg-white/5">
-                          <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
-                        </div>
-                        <div className="mt-1 text-[11px] text-gray-500">
-                          {m.views_this_month} / {m.view_limit} vistas
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        {m.cycles_count > 0 ? (
-                          <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                            {m.cycles_count} ciclos
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-3">
-                        {m.cycles_count > 0 ? (
-                          <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-400">
-                            En ciclo {m.cycles_count}
-                          </span>
-                        ) : Number(m.pct_consumed) >= 90 ? (
-                          <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-400">
-                            Casi al límite
-                          </span>
-                        ) : (
-                          <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
-                            Activo
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <MetricCard label="Sponsors" value={liveMetrics.length} />
+            <MetricCard
+              label="Vistas / ciclo"
+              value={liveMetrics.reduce((sum, m) => sum + (m.view_limit ?? 0), 0).toLocaleString()}
+            />
+            <MetricCard
+              label="Total vistas (mes)"
+              value={liveMetrics
+                .reduce((sum, m) => sum + (m.views_this_month ?? 0), 0)
+                .toLocaleString()}
+            />
+            <MetricCard
+              label="Ciclos completos"
+              value={liveMetrics.reduce((sum, m) => sum + (m.cycles_count ?? 0), 0)}
+            />
+            <MetricCard
+              label="Promedio diario"
+              value={`${
+                new Date().getDate() > 0
+                  ? Math.round(
+                      liveMetrics.reduce((sum, m) => sum + (m.views_this_month ?? 0), 0) /
+                        new Date().getDate(),
+                    )
+                  : 0
+              }/día`}
+            />
           </div>
-        )}
-      </div>
-      </>
+
+          <div className="glass overflow-hidden rounded-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 px-4 py-3">
+              <h2 className="text-sm font-semibold text-white">
+                Métricas en tiempo real · Este mes
+              </h2>
+              <span className="text-[11px] text-gray-500">Actualizado hace {secondsAgo}s</span>
+            </div>
+            {liveMetrics.length === 0 ? (
+              <div className="py-10 text-center text-sm text-gray-500">
+                Sin datos de métricas aún.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Sponsor</th>
+                      <th className="px-3 py-2 text-right">Vistas este mes</th>
+                      <th className="px-3 py-2 text-right">Límite</th>
+                      <th className="px-3 py-2 text-left">Consumido</th>
+                      <th className="px-3 py-2 text-left">Ciclos</th>
+                      <th className="px-3 py-2 text-left">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {liveMetrics.map((m) => {
+                      const pct = Math.min(Number(m.pct_consumed), 100);
+                      const barColor =
+                        Number(m.pct_consumed) < 70
+                          ? "bg-emerald-500"
+                          : Number(m.pct_consumed) < 90
+                            ? "bg-amber-500"
+                            : "bg-red-500";
+                      return (
+                        <tr key={m.id} className="border-t border-white/5">
+                          <td className="px-3 py-3 font-medium text-white">{m.name}</td>
+                          <td className="px-3 py-3 text-right font-mono text-xs text-white">
+                            {m.views_this_month.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-3 text-right font-mono text-xs text-gray-400">
+                            {m.view_limit.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="h-2 w-32 overflow-hidden rounded-full bg-white/5">
+                              <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="mt-1 text-[11px] text-gray-500">
+                              {m.views_this_month} / {m.view_limit} vistas
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            {m.cycles_count > 0 ? (
+                              <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                                {m.cycles_count} ciclos
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3">
+                            {m.cycles_count > 0 ? (
+                              <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-400">
+                                En ciclo {m.cycles_count}
+                              </span>
+                            ) : Number(m.pct_consumed) >= 90 ? (
+                              <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-400">
+                                Casi al límite
+                              </span>
+                            ) : (
+                              <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                                Activo
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {showCreate && (
@@ -472,7 +513,11 @@ function AdminAdsPage() {
             const { data } = geekarena.storage.from("sponsor-assets").getPublicUrl(path);
             const url = `${data.publicUrl}?v=${Date.now()}`;
             const updateField =
-              type === "logo" ? { logo_url: url } : type === "vertical" ? { vertical_url: url } : { horizontal_url: url };
+              type === "logo"
+                ? { logo_url: url }
+                : type === "vertical"
+                  ? { vertical_url: url }
+                  : { horizontal_url: url };
             await callUpdateImages({ data: { sponsor_id: imagesSponsor.id, ...updateField } });
             toast.success(`${spec.label} actualizada`);
             load();
@@ -485,7 +530,10 @@ function AdminAdsPage() {
       {deleteTarget && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-          onClick={() => { setDeleteTarget(null); setDeleteInput(""); }}
+          onClick={() => {
+            setDeleteTarget(null);
+            setDeleteInput("");
+          }}
         >
           <div
             className="glass rounded-2xl w-full max-w-md p-6 flex flex-col gap-4"
@@ -506,9 +554,9 @@ function AdminAdsPage() {
             <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4">
               <p className="text-sm text-gray-300">
                 Estás a punto de eliminar permanentemente al sponsor{" "}
-                <span className="font-bold text-white">"{deleteTarget.name}"</span>.
-                Todas sus imágenes y métricas serán eliminadas.
-                Si era el sponsor activo, los anuncios se detendrán hasta que se asigne uno nuevo.
+                <span className="font-bold text-white">"{deleteTarget.name}"</span>. Todas sus
+                imágenes y métricas serán eliminadas. Si era el sponsor activo, los anuncios se
+                detendrán hasta que se asigne uno nuevo.
               </p>
             </div>
 
@@ -516,8 +564,8 @@ function AdminAdsPage() {
             <div className="flex flex-col gap-2">
               <label className="text-xs text-gray-400">
                 Para confirmar, escribe{" "}
-                <span className="font-mono font-bold text-red-400">ELIMINAR</span>{" "}
-                en el campo de abajo:
+                <span className="font-mono font-bold text-red-400">ELIMINAR</span> en el campo de
+                abajo:
               </label>
               <input
                 type="text"
@@ -525,9 +573,10 @@ function AdminAdsPage() {
                 onChange={(e) => setDeleteInput(e.target.value)}
                 placeholder="Escribe ELIMINAR para confirmar"
                 className={`w-full rounded-lg border px-4 py-3 text-sm bg-black/30 text-white placeholder-gray-600 outline-none transition
-                  ${isConfirmed
-                    ? "border-red-500/60 focus:border-red-500"
-                    : "border-white/10 focus:border-white/30"
+                  ${
+                    isConfirmed
+                      ? "border-red-500/60 focus:border-red-500"
+                      : "border-white/10 focus:border-white/30"
                   }`}
                 autoFocus
               />
@@ -536,7 +585,10 @@ function AdminAdsPage() {
             {/* Actions */}
             <div className="flex gap-3 mt-2">
               <button
-                onClick={() => { setDeleteTarget(null); setDeleteInput(""); }}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteInput("");
+                }}
                 className="flex-1 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-gray-400 hover:text-white transition"
               >
                 Cancelar
@@ -545,9 +597,10 @@ function AdminAdsPage() {
                 onClick={handleDelete}
                 disabled={!isConfirmed || deleting}
                 className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition
-                  ${isConfirmed && !deleting
-                    ? "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
-                    : "bg-red-500/20 text-red-500/40 cursor-not-allowed"
+                  ${
+                    isConfirmed && !deleting
+                      ? "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+                      : "bg-red-500/20 text-red-500/40 cursor-not-allowed"
                   }`}
               >
                 {deleting ? "Eliminando..." : "Eliminar definitivamente"}
@@ -746,7 +799,11 @@ function ImagesModal({
         {(Object.keys(IMAGE_SPECS) as ImageType[]).map((type) => {
           const spec = IMAGE_SPECS[type];
           const currentUrl =
-            type === "logo" ? sponsor.logo_url : type === "vertical" ? sponsor.vertical_url : sponsor.horizontal_url;
+            type === "logo"
+              ? sponsor.logo_url
+              : type === "vertical"
+                ? sponsor.vertical_url
+                : sponsor.horizontal_url;
           return (
             <ImageUploadRow
               key={type}
@@ -843,21 +900,38 @@ function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const shouldClose = useRef(false);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-      onClick={onClose}
+      onPointerDown={(e) => {
+        // Only allow closing if the interaction STARTS on the backdrop.
+        shouldClose.current = e.target === e.currentTarget;
+      }}
+      onPointerUp={(e) => {
+        // Only close if it also ENDS on the backdrop.
+        if (shouldClose.current && e.target === e.currentTarget) {
+          onClose();
+        }
+
+        shouldClose.current = false;
+      }}
     >
-      <div
-        className="w-full max-w-lg rounded-2xl border border-white/10 bg-background p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-background p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Cerrar">
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-white"
+            aria-label="Cerrar"
+          >
             <X size={18} />
           </button>
         </div>
+
         {children}
       </div>
     </div>
