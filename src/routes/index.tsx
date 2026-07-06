@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useTCG } from "@/context/tcg.context";
 
 import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
 import { listActiveSponsors, getActiveBanner } from "@/lib/geekarena-ads.functions";
@@ -172,11 +173,17 @@ function LeaderboardPage() {
   const [months, setMonths] = useState<string[]>([]);
 
   const [tcg, setTcg] = useState<string>(ALL);
+  const { activeTcg } = useTCG();
 
   useEffect(() => {
     const saved = window.localStorage.getItem("ga_filter_tcg");
     if (saved && saved !== ALL) setTcg(saved);
   }, []);
+
+  useEffect(() => {
+    if (!activeTcg?.id) return;
+    setTcg(activeTcg.id);
+  }, [activeTcg?.id]);
 
   const handleTcgChange = (v: string) => {
     setTcg(v);

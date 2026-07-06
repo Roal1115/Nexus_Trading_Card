@@ -3,19 +3,33 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, X } from "lucide-react";
 import { geekarena } from "@/integrations/geekarena/client";
 
+// 1. El prop player ya tiene role — confirma que el tipo lo incluye:
 type ProfileDrawerProps = {
   open: boolean;
   onClose: () => void;
   player: {
     id: string;
     geek_tag: string;
-    avatar_url?: string | null;
-    role: string;
+    avatar_url: string | null;
+    role: string; // "player" | "organizer" | "tcg_manager" | "admin"
   };
 };
 
 export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
   const initials = player.geek_tag?.slice(0, 2).toUpperCase() ?? "GA";
+  const isStaff = ["organizer", "tcg_manager", "admin"].includes(player.role);
+  const staffRoute =
+    player.role === "admin"
+      ? "/admin"
+      : player.role === "tcg_manager"
+      ? "/tcg-manager"
+      : "/organizer";
+  const staffLabel =
+    player.role === "admin"
+      ? "Panel Admin"
+      : player.role === "tcg_manager"
+      ? "Panel Manager"
+      : "Panel Organizador";
 
   const handleLogout = async () => {
     await geekarena.auth.signOut();
@@ -56,9 +70,7 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
                   )}
                 </div>
                 <div>
-                  <p className="font-mono-stat text-base font-bold text-white">
-                    {player.geek_tag}
-                  </p>
+                  <p className="font-mono-stat text-base font-bold text-white">{player.geek_tag}</p>
                   <Link
                     to="/players/$playerTag"
                     params={{ playerTag: player.geek_tag }}
@@ -80,11 +92,19 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
 
             {/* Nav sections */}
             <div className="flex-1 overflow-y-auto p-4">
+              {isStaff && (
+                <Section title="Administración">
+                  <DrawerLink to={staffRoute} onClose={onClose}>
+                    {staffLabel}
+                  </DrawerLink>
+                </Section>
+              )}
+
               <Section title="Mi Carrera">
                 {[
+                  { to: "/dashboard", label: "Mi Panel" },
                   { to: "/my-stats", label: "Mis Stats" },
                   { to: "/sessions", label: "Sesiones" },
-                  { to: "/dashboard", label: "Mi Panel" },
                 ].map((item) => (
                   <DrawerLink key={item.to} to={item.to} onClose={onClose}>
                     {item.label}

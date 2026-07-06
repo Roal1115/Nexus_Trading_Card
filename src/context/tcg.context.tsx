@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type TCG = {
+export type TCG = {
   id: string;
   name: string;
   slug: string;
@@ -8,9 +8,9 @@ type TCG = {
 
 type TCGContextValue = {
   activeTcg: TCG | null;
-  setActiveTcg: (tcg: TCG) => void;
+  setActiveTcg: (t: TCG | null) => void;
   tcgs: TCG[];
-  setTcgs: (tcgs: TCG[]) => void;
+  setTcgs: (t: TCG[]) => void;
 };
 
 const TCGContext = createContext<TCGContextValue>({
@@ -20,24 +20,49 @@ const TCGContext = createContext<TCGContextValue>({
   setTcgs: () => {},
 });
 
+const STORAGE_KEY = "geekarena.activeTcg";
+
 export function TCGProvider({ children }: { children: React.ReactNode }) {
-  const [tcgs, setTcgs] = useState<TCG[]>([]);
+  const [tcgs, setTcgsState] = useState<TCG[]>([]);
   const [activeTcg, setActiveTcgState] = useState<TCG | null>(null);
 
-  const setActiveTcg = (tcg: TCG) => {
-    setActiveTcgState(tcg);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) setActiveTcgState(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const setActiveTcg = (t: TCG | null) => {
+    setActiveTcgState(t);
     if (typeof window !== "undefined") {
-      localStorage.setItem("ga_active_tcg_id", tcg.id);
+      try {
+        if (t) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
+        else window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
     }
   };
 
-  // Restaurar TCG activo del localStorage después del mount
-  useEffect(() => {
-    if (!tcgs.length) return;
-    const saved = typeof window !== "undefined" ? localStorage.getItem("ga_active_tcg_id") : null;
-    const found = saved ? tcgs.find((t) => t.id === saved) : null;
-    setActiveTcgState(found ?? tcgs[0]);
-  }, [tcgs]);
+  const setTcgs = (list: TCG[]) => {
+    setTcgsState(list);
+    setActiveTcgState((prev) => {
+      if (prev && list.some((x) => x.id === prev.id)) return prev;
+      const next = list[0] ?? null;
+      if (next && typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+      }
+      return next;
+    });
+  };
 
   return (
     <TCGContext.Provider value={{ activeTcg, setActiveTcg, tcgs, setTcgs }}>
