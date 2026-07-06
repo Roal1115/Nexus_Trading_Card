@@ -18,6 +18,7 @@ import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as MyStatsRouteImport } from './routes/my-stats'
+import { Route as MetaRouteImport } from './routes/meta'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckInboxRouteImport } from './routes/check-inbox'
@@ -105,6 +106,11 @@ const OrganizerRoute = OrganizerRouteImport.update({
 const MyStatsRoute = MyStatsRouteImport.update({
   id: '/my-stats',
   path: '/my-stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetaRoute = MetaRouteImport.update({
+  id: '/meta',
+  path: '/meta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -384,6 +391,7 @@ export interface FileRoutesByTo {
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
@@ -435,6 +443,7 @@ export interface FileRoutesById {
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/check-inbox'
     | '/dashboard'
     | '/login'
+    | '/meta'
     | '/my-stats'
     | '/organizer'
     | '/reset-password'
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/check-inbox'
     | '/dashboard'
     | '/login'
+    | '/meta'
     | '/my-stats'
     | '/reset-password'
     | '/settings'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/check-inbox'
     | '/dashboard'
     | '/login'
+    | '/meta'
     | '/my-stats'
     | '/organizer'
     | '/reset-password'
@@ -649,6 +661,7 @@ export interface RootRouteChildren {
   CheckInboxRoute: typeof CheckInboxRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  MetaRoute: typeof MetaRoute
   MyStatsRoute: typeof MyStatsRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -724,6 +737,13 @@ declare module '@tanstack/react-router' {
       path: '/my-stats'
       fullPath: '/my-stats'
       preLoaderRoute: typeof MyStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meta': {
+      id: '/meta'
+      path: '/meta'
+      fullPath: '/meta'
+      preLoaderRoute: typeof MetaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1176,6 +1196,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckInboxRoute: CheckInboxRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  MetaRoute: MetaRoute,
   MyStatsRoute: MyStatsRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -1190,13 +1211,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
