@@ -18,7 +18,7 @@ const GUEST_ITEMS: NavItem[] = [
 
 const PLAYER_ITEMS: NavItem[] = [
   { to: "/", label: "Ranking", icon: Trophy },
-  { to: "/stores", label: "Tiendas", icon: Store },
+  { to: "/calendar", label: "Calendario", icon: CalendarDays },
   { to: "/dashboard", label: "Panel", icon: LayoutDashboard, isCta: true },
   { to: "/meta", label: "Meta", icon: TrendingUp },
   { to: "__profile__", label: "Menú", icon: User },
