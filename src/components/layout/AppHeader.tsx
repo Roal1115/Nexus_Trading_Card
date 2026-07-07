@@ -118,7 +118,7 @@ export function AppHeader() {
       </header>
 
       {player && (
-        <ProfileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} player={player} />
+        <ProfileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} player={player as any} />
       )}
     </>
   );

@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRef, useEffect, useState } from "react";
-import { Trophy, LayoutDashboard, TrendingUp, Store, User, LogIn } from "lucide-react";
+import { Trophy, LayoutDashboard, TrendingUp, CalendarDays, User, LogIn } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 
@@ -18,7 +18,7 @@ const GUEST_ITEMS: NavItem[] = [
 
 const PLAYER_ITEMS: NavItem[] = [
   { to: "/", label: "Ranking", icon: Trophy },
-  { to: "/stores", label: "Tiendas", icon: Store },
+  { to: "/calendar", label: "Calendario", icon: CalendarDays },
   { to: "/dashboard", label: "Panel", icon: LayoutDashboard, isCta: true },
   { to: "/meta", label: "Meta", icon: TrendingUp },
   { to: "__profile__", label: "Menú", icon: User },
