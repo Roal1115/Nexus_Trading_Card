@@ -91,3 +91,72 @@ export const getStoreWeeklySchedule = createServerFn({ method: "POST" })
       })),
     };
   });
+
+export const getPublicCalendar = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      game_id?: string | null;
+      zone?: string | null;
+      store_id?: string | null;
+      year: number;
+      month: number;
+    }) =>
+      z
+        .object({
+          game_id: z.string().uuid().nullable().optional(),
+          zone: z.string().nullable().optional(),
+          store_id: z.string().uuid().nullable().optional(),
+          year: z.number().int().min(2000).max(3000),
+          month: z.number().int().min(1).max(12),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const admin = getGeekarenaAdmin();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const start = `${data.year}-${pad(data.month)}-01`;
+    const endDate = new Date(data.year, data.month, 1);
+    const end = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-01`;
+
+    let q = admin
+      .from("tournaments")
+      .select(
+        "id, tournament_date, store_id, game_id, stores(id, name, city, state, zone), games(id, name)",
+      )
+      .eq("status", "APPROVED")
+      .gte("tournament_date", start)
+      .lt("tournament_date", end)
+      .order("tournament_date");
+
+    if (data.game_id) q = q.eq("game_id", data.game_id);
+    if (data.store_id) q = q.eq("store_id", data.store_id);
+
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    let events = (rows ?? []).map((r: any) => {
+      const store = Array.isArray(r.stores) ? r.stores[0] : r.stores;
+      const game = Array.isArray(r.games) ? r.games[0] : r.games;
+      return {
+        id: r.id,
+        date: String(r.tournament_date).slice(0, 10),
+        start_time: null as string | null,
+        store_id: store?.id ?? r.store_id,
+        store_name: store?.name ?? "—",
+        city: store?.city ?? "",
+        state: store?.state ?? "",
+        zone: store?.zone ?? "",
+        game_id: game?.id ?? r.game_id,
+        game_name: game?.name ?? "—",
+      };
+    });
+
+    if (data.zone) events = events.filter((e) => e.zone === data.zone);
+
+    const stores = Array.from(
+      new Map(events.map((e) => [e.store_id, { id: e.store_id, name: e.store_name }])).values(),
+    );
+    const zones = Array.from(new Set(events.map((e) => e.zone).filter(Boolean)));
+
+    return { events, stores, zones };
+  });
