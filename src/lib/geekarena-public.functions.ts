@@ -93,70 +93,75 @@ export const getStoreWeeklySchedule = createServerFn({ method: "POST" })
   });
 
 export const getPublicCalendar = createServerFn({ method: "POST" })
-  .inputValidator(
-    (d: {
-      game_id?: string | null;
-      zone?: string | null;
-      store_id?: string | null;
-      year: number;
-      month: number;
-    }) =>
-      z
-        .object({
-          game_id: z.string().uuid().nullable().optional(),
-          zone: z.string().nullable().optional(),
-          store_id: z.string().uuid().nullable().optional(),
-          year: z.number().int().min(2000).max(3000),
-          month: z.number().int().min(1).max(12),
-        })
-        .parse(d),
+  .inputValidator((d: {
+    game_id?: string | null;
+    zone?: string | null;
+    store_id?: string | null;
+    year: number;
+    month: number;
+  }) =>
+    z.object({
+      game_id: z.string().uuid().nullable().optional(),
+      zone: z.string().nullable().optional(),
+      store_id: z.string().uuid().nullable().optional(),
+      year: z.number().int().min(2024).max(2030),
+      month: z.number().int().min(1).max(12),
+    }).parse(d)
   )
   .handler(async ({ data }) => {
     const admin = getGeekarenaAdmin();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const start = `${data.year}-${pad(data.month)}-01`;
-    const endDate = new Date(data.year, data.month, 1);
-    const end = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-01`;
 
-    let q = admin
+    const startDate = `${data.year}-${String(data.month).padStart(2, "0")}-01`;
+    const endDate = new Date(data.year, data.month, 0)
+      .toISOString().split("T")[0];
+
+    let query = admin
       .from("tournaments")
-      .select(
-        "id, tournament_date, store_id, game_id, stores(id, name, city, state, zone), games(id, name)",
-      )
-      .eq("status", "APPROVED")
-      .gte("tournament_date", start)
-      .lt("tournament_date", end)
-      .order("tournament_date");
+      .select(`
+        id, tournament_date, tournament_time, game_id,
+        store_id,
+        stores!inner(id, name, city, state, zone),
+        games!inner(id, name, slug)
+      `)
+      .eq("status", "PUBLISHED")
+      .gte("tournament_date", startDate)
+      .lte("tournament_date", endDate)
+      .order("tournament_date", { ascending: true });
 
-    if (data.game_id) q = q.eq("game_id", data.game_id);
-    if (data.store_id) q = q.eq("store_id", data.store_id);
+    if (data.game_id) query = query.eq("game_id", data.game_id);
+    if (data.store_id) query = query.eq("store_id", data.store_id);
+    if (data.zone) query = query.eq("stores.zone", data.zone);
 
-    const { data: rows, error } = await q;
+    const { data: tournaments, error } = await query;
     if (error) throw new Error(error.message);
 
-    let events = (rows ?? []).map((r: any) => {
-      const store = Array.isArray(r.stores) ? r.stores[0] : r.stores;
-      const game = Array.isArray(r.games) ? r.games[0] : r.games;
-      return {
-        id: r.id,
-        date: String(r.tournament_date).slice(0, 10),
-        start_time: null as string | null,
-        store_id: store?.id ?? r.store_id,
-        store_name: store?.name ?? "—",
-        city: store?.city ?? "",
-        state: store?.state ?? "",
-        zone: store?.zone ?? "",
-        game_id: game?.id ?? r.game_id,
-        game_name: game?.name ?? "—",
-      };
-    });
+    // Stores para filtro
+    const { data: stores } = await admin
+      .from("stores")
+      .select("id, name, city, zone")
+      .eq("is_active", true)
+      .order("name");
 
-    if (data.zone) events = events.filter((e) => e.zone === data.zone);
+    // Zonas únicas
+    const zones = Array.from(new Set(
+      ((stores ?? []) as any[]).map((s: any) => s.zone).filter(Boolean)
+    )).sort();
 
-    const stores = Array.from(
-      new Map(events.map((e) => [e.store_id, { id: e.store_id, name: e.store_name }])).values(),
-    );
-    const zones = Array.from(new Set(events.map((e) => e.zone).filter(Boolean)));
-
-    return { events, stores, zones };
+    return {
+      events: (tournaments ?? []).map((t: any) => ({
+        id: t.id,
+        date: t.tournament_date as string,
+        time: t.tournament_time as string | null,
+        game_id: t.game_id as string,
+        game_name: t.games?.name ?? "—",
+        game_slug: t.games?.slug ?? "",
+        store_id: t.store_id as string,
+        store_name: t.stores?.name ?? "—",
+        store_city: t.stores?.city ?? "—",
+        store_state: t.stores?.state ?? "—",
+        zone: t.stores?.zone ?? "—",
+      })),
+      stores: stores ?? [],
+      zones,
+    };
   });
