@@ -1,310 +1,280 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, X, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Globe,
+  Instagram,
+  MapPin,
+  Navigation,
+  Phone,
+  Twitch,
+  Twitter,
+} from "lucide-react";
 import { getPublicCalendar } from "@/lib/geekarena-public.functions";
+import { getMyAttendedTournamentIds } from "@/lib/geekarena-standalone.functions";
+import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { useTCG } from "@/context/tcg.context";
-import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { useWeekNav, useCalendarGrid, WeeklyGrid } from "@/components/calendar/weekly-grid";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Geek Arena" }] }),
   component: CalendarPage,
 });
 
-const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-
-const GAME_COLORS: Record<string, string> = {
-  "one piece": "#f97316",
-  magic: "#3b82f6",
-  pokemon: "#eab308",
-  pokémon: "#eab308",
-};
-const DEFAULT_COLOR = "#32D9FF";
-
-function colorForGame(name: string) {
-  const n = (name ?? "").toLowerCase();
-  for (const k of Object.keys(GAME_COLORS)) if (n.includes(k)) return GAME_COLORS[k];
-  return DEFAULT_COLOR;
-}
-
-type Event = {
-  id: string;
-  date: string;
-  start_time: string | null;
-  store_id: string;
-  store_name: string;
-  city: string;
-  state: string;
-  zone: string;
-  game_id: string;
-  game_name: string;
-};
-
 function CalendarPage() {
-  const fetchCal = useServerFn(getPublicCalendar);
+  const fetchCalendar = useServerFn(getPublicCalendar);
+  const fetchAttended = useServerFn(getMyAttendedTournamentIds);
+  const { player } = useGeekarenaRole();
   const { activeTcg } = useTCG();
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [stores, setStores] = useState<Array<{ id: string; name: string }>>([]);
+  const { weekDates, weekStartStr, goToPrevWeek, goToNextWeek, goToToday, weekLabel } = useWeekNav();
+  const [events, setEvents] = useState<any[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
   const [zones, setZones] = useState<string[]>([]);
-  const [filterZone, setFilterZone] = useState<string>("");
-  const [filterStore, setFilterStore] = useState<string>("");
+  const [filterZone, setFilterZone] = useState<string | null>(null);
+  const [filterStore, setFilterStore] = useState<string | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const [attendedIds, setAttendedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setLoading(true);
-    fetchCal({
+    fetchCalendar({
       data: {
         game_id: activeTcg?.id ?? null,
-        zone: filterZone || null,
-        store_id: filterStore || null,
-        year,
-        month: month + 1,
+        zone: filterZone,
+        store_id: filterStore,
+        week_start: weekStartStr,
       },
     } as any)
-      .then((d: any) => {
-        setEvents(d.events ?? []);
-        setStores(d.stores ?? []);
-        setZones(d.zones ?? []);
+      .then((res: any) => {
+        setEvents(res.events ?? []);
+        setStores(res.stores ?? []);
+        setZones(res.zones ?? []);
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, month, activeTcg?.id, filterZone, filterStore]);
+  }, [weekStartStr, activeTcg?.id, filterZone, filterStore]);
 
-  const eventsByDay = useMemo(() => {
-    const m = new Map<string, Event[]>();
-    for (const e of events) {
-      const arr = m.get(e.date) ?? [];
-      arr.push(e);
-      m.set(e.date, arr);
+  useEffect(() => {
+    const realTournamentIds = events.filter((e) => !e.is_scheduled).map((e) => e.id);
+    if (!player?.id || realTournamentIds.length === 0) {
+      setAttendedIds(new Set());
+      return;
     }
-    return m;
-  }, [events]);
-
-  const gridCells = useMemo(() => {
-    const firstDay = new Date(year, month, 1);
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startPad = firstDay.getDay(); // 0=Dom
-    const cells: Array<{ date: Date | null; key: string }> = [];
-    for (let i = 0; i < startPad; i++) cells.push({ date: null, key: `p${i}` });
-    for (let d = 1; d <= daysInMonth; d++) {
-      cells.push({ date: new Date(year, month, d), key: `d${d}` });
-    }
-    while (cells.length % 7 !== 0) cells.push({ date: null, key: `t${cells.length}` });
-    return cells;
-  }, [year, month]);
-
-  const navigateMonth = (dir: -1 | 1) => {
-    setCurrentDate(new Date(year, month + dir, 1));
-  };
-
-  const fmtDate = (iso: string) => {
-    const [y, m, d] = iso.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString("es-MX", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
+    fetchAttended({ data: { tournament_ids: realTournamentIds } } as any).then((d: any) => {
+      setAttendedIds(new Set(d.tournament_ids ?? []));
     });
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player?.id, events]);
 
-  const dayEvents = selectedDay ? eventsByDay.get(selectedDay) ?? [] : [];
+  const calendarGrid = useCalendarGrid(events, weekDates);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      <div>
-        <div className="text-xs uppercase tracking-wider text-primary">Público</div>
-        <h1 className="text-2xl font-bold text-white mt-1">Calendario de torneos</h1>
-        <div className="mt-2 flex items-center gap-2">
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border"
-            style={{
-              color: activeTcg ? colorForGame(activeTcg.name) : DEFAULT_COLOR,
-              borderColor: (activeTcg ? colorForGame(activeTcg.name) : DEFAULT_COLOR) + "55",
-              backgroundColor: (activeTcg ? colorForGame(activeTcg.name) : DEFAULT_COLOR) + "1a",
-            }}
-          >
-            {activeTcg?.name ?? "Todos los TCGs"}
-          </span>
-        </div>
+    <div className="mx-auto max-w-6xl px-4 py-8 pb-24 sm:px-6">
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Torneos</p>
+        <h1 className="mt-1 text-3xl font-bold text-white">Calendario</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          Torneos programados — {activeTcg?.name ?? "Todos los TCGs"}
+        </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2">
-          <button onClick={() => navigateMonth(-1)} className="text-gray-400 hover:text-white">
-            <ChevronLeft size={18} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToPrevWeek}
+            className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+          >
+            <ChevronLeft size={16} />
           </button>
-          <div className="text-sm text-white min-w-[160px] text-center capitalize">
-            {currentDate.toLocaleDateString("es-MX", { month: "long", year: "numeric" })}
-          </div>
-          <button onClick={() => navigateMonth(1)} className="text-gray-400 hover:text-white">
-            <ChevronRight size={18} />
+          <span className="min-w-[200px] text-center text-sm font-semibold text-white">{weekLabel}</span>
+          <button
+            onClick={goToNextWeek}
+            className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+          >
+            <ChevronRight size={16} />
+          </button>
+          <button
+            onClick={goToToday}
+            className="rounded-lg border border-[#2A3A57] px-3 py-1.5 text-xs font-medium text-[#AAB6D1] hover:text-white transition"
+          >
+            Hoy
           </button>
         </div>
-        <select
-          value={filterZone}
-          onChange={(e) => {
-            setFilterZone(e.target.value);
-            setFilterStore("");
-          }}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
-        >
-          <option value="">Todas las zonas</option>
-          {zones.map((z) => (
-            <option key={z} value={z}>
-              {z}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterStore}
-          onChange={(e) => setFilterStore(e.target.value)}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
-        >
-          <option value="">Todas las tiendas</option>
-          {stores.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={filterZone ?? ""}
+            onChange={(e) => setFilterZone(e.target.value || null)}
+            className="rounded-lg border border-[#2A3A57] bg-[#111A2E] px-3 py-1.5 text-xs text-white outline-none focus:border-[#32D9FF]"
+          >
+            <option value="">Todas las zonas</option>
+            {zones.map((z) => (
+              <option key={z} value={z}>
+                {z}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={filterStore ?? ""}
+            onChange={(e) => setFilterStore(e.target.value || null)}
+            className="rounded-lg border border-[#2A3A57] bg-[#111A2E] px-3 py-1.5 text-xs text-white outline-none focus:border-[#32D9FF]"
+          >
+            <option value="">Todas las tiendas</option>
+            {stores.map((s: any) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          {player && attendedIds.size > 0 && (
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1">
+              <CheckCircle2 size={11} className="text-emerald-400" />
+              <span className="text-[11px] font-semibold text-emerald-400">
+                {attendedIds.size} torneos asistidos
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-white/10">
-          {DAY_NAMES.map((d) => (
-            <div key={d} className="p-2 text-center text-[10px] uppercase text-gray-400">
-              {d}
-            </div>
-          ))}
-        </div>
-
-        {loading ? (
-          <div className="p-4">
-            <SkeletonBlock className="h-64 w-full rounded-lg" />
-          </div>
-        ) : events.length === 0 ? (
-          <div className="p-10 text-center">
-            <p className="text-white font-medium">Sin torneos este mes.</p>
-            <p className="text-xs text-gray-400 mt-1">
-              Prueba con otro mes o cambia los filtros.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-7">
-            {gridCells.map((cell) => {
-              if (!cell.date) {
-                return <div key={cell.key} className="min-h-[72px] border-t border-l border-white/5" />;
-              }
-              const iso = `${cell.date.getFullYear()}-${String(cell.date.getMonth() + 1).padStart(2, "0")}-${String(cell.date.getDate()).padStart(2, "0")}`;
-              const dayEvts = eventsByDay.get(iso) ?? [];
-              const isToday = cell.date.toDateString() === new Date().toDateString();
-              const hasEvents = dayEvts.length > 0;
-              return (
-                <button
-                  key={cell.key}
-                  type="button"
-                  disabled={!hasEvents}
-                  onClick={() => hasEvents && setSelectedDay(iso)}
-                  className={`min-h-[72px] border-t border-l border-white/5 p-1.5 text-left transition ${
-                    isToday ? "bg-primary/10" : ""
-                  } ${hasEvents ? "hover:bg-white/5 cursor-pointer" : "cursor-default"}`}
-                >
-                  <div
-                    className={`text-xs font-semibold ${
-                      isToday ? "text-primary" : "text-white"
-                    }`}
-                  >
-                    {cell.date.getDate()}
-                  </div>
-                  {hasEvents && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {dayEvts.slice(0, 4).map((e) => (
-                        <span
-                          key={e.id}
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{ backgroundColor: colorForGame(e.game_name) }}
-                        />
-                      ))}
-                      {dayEvts.length > 4 && (
-                        <span className="text-[9px] text-gray-400">+{dayEvts.length - 4}</span>
-                      )}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <WeeklyGrid
+          weekDates={weekDates}
+          calendarGrid={calendarGrid}
+          attendedIds={attendedIds}
+          loading={loading}
+          onSelectEntry={setSelectedEntry}
+        />
       </div>
 
-      {selectedDay && (
+      {selectedEntry && (
         <div
-          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
-          onClick={() => setSelectedDay(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="w-full sm:max-w-lg max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-white/10 bg-[#0B1220]/95 backdrop-blur-xl"
+            className="glass w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6 max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-white/10 p-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-gray-400">
-                  Torneos
+            <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
+              {selectedEntry.game_name}
+            </span>
+
+            {selectedEntry.is_scheduled && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400 mb-2 ml-2">
+                Torneo programado · Pendiente de confirmar
+              </span>
+            )}
+
+            <h3 className="text-lg font-bold text-white">{selectedEntry.store_name}</h3>
+
+            <div className="mt-3 space-y-2 text-sm text-[#AAB6D1]">
+              <p className="flex items-center gap-2">
+                <MapPin size={14} className="flex-shrink-0 text-[#72819D]" />
+                {[selectedEntry.store_address, selectedEntry.store_city, selectedEntry.store_state]
+                  .filter(Boolean)
+                  .join(", ") || "—"}
+              </p>
+              {selectedEntry.time && (
+                <p className="flex items-center gap-2">
+                  <Clock size={14} className="flex-shrink-0 text-[#72819D]" />
+                  {selectedEntry.time.slice(0, 5)} hrs
                 </p>
-                <p className="text-sm font-semibold text-white capitalize">
-                  {fmtDate(selectedDay)}
+              )}
+              {selectedEntry.store_phone && (
+                <p className="flex items-center gap-2">
+                  <Phone size={14} className="flex-shrink-0 text-[#72819D]" />
+                  {selectedEntry.store_phone}
                 </p>
+              )}
+              <p className="flex items-center gap-2">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{selectedEntry.zone}</span>
+              </p>
+            </div>
+
+            {selectedEntry.store_description && (
+              <p className="mt-3 text-sm text-gray-300">{selectedEntry.store_description}</p>
+            )}
+
+            {player && !selectedEntry.is_scheduled && attendedIds.has(selectedEntry.id) && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+                <CheckCircle2 size={14} className="text-emerald-400" />
+                <span className="text-sm font-semibold text-emerald-400">Asististe a este torneo</span>
               </div>
-              <button
-                onClick={() => setSelectedDay(null)}
-                aria-label="Cerrar"
-                className="rounded-md p-1 text-gray-400 hover:text-white"
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {selectedEntry.store_google_maps_url && (
+                <a
+                  href={selectedEntry.store_google_maps_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground"
+                >
+                  <Navigation size={12} /> Cómo llegar
+                </a>
+              )}
+              {selectedEntry.store_instagram && (
+                <a
+                  href={`https://instagram.com/${selectedEntry.store_instagram.replace("@", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-400 hover:text-primary"
+                >
+                  <Instagram size={18} />
+                </a>
+              )}
+              {selectedEntry.store_website && (
+                <a href={selectedEntry.store_website} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
+                  <Globe size={18} />
+                </a>
+              )}
+              {selectedEntry.store_twitter && (
+                <a
+                  href={`https://x.com/${selectedEntry.store_twitter.replace("@", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-400 hover:text-primary"
+                >
+                  <Twitter size={18} />
+                </a>
+              )}
+              {selectedEntry.store_twitch && (
+                <a
+                  href={`https://twitch.tv/${selectedEntry.store_twitch.replace("@", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-400 hover:text-primary"
+                >
+                  <Twitch size={18} />
+                </a>
+              )}
+            </div>
+
+            {selectedEntry.store_slug && (
+              <Link
+                to="/stores/$slug"
+                params={{ slug: selectedEntry.store_slug }}
+                className="mt-3 block text-center text-xs font-semibold text-primary hover:underline"
               >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              {dayEvents.map((e) => {
-                const color = colorForGame(e.game_name);
-                return (
-                  <div
-                    key={e.id}
-                    className="rounded-xl border border-white/10 bg-white/5 p-3"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border"
-                        style={{
-                          color,
-                          borderColor: color + "55",
-                          backgroundColor: color + "1a",
-                        }}
-                      >
-                        {e.game_name}
-                      </span>
-                      {e.zone && (
-                        <span className="text-[10px] rounded-full bg-white/10 px-2 py-0.5 text-gray-300">
-                          {e.zone}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-2 font-semibold text-white">{e.store_name}</p>
-                    <p className="text-xs text-gray-400">
-                      {[e.city, e.state].filter(Boolean).join(", ")}
-                    </p>
-                    <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400">
-                      <MapPin size={12} />
-                      {e.city || "—"}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                Ver perfil de la tienda →
+              </Link>
+            )}
+
+            <button
+              onClick={() => setSelectedEntry(null)}
+              className="mt-5 w-full rounded-xl border border-[#2A3A57] py-2.5 text-sm font-medium text-[#AAB6D1] hover:text-white transition"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}

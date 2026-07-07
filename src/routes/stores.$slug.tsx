@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone } from "lucide-react";
-import { getStoreProfile } from "@/lib/geekarena-public.functions";
+import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { getStoreProfile, getPublicCalendar } from "@/lib/geekarena-public.functions";
+import { useWeekNav, useCalendarGrid, WeeklyGrid, dotColorForGame } from "@/components/calendar/weekly-grid";
 
 export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
@@ -12,9 +13,15 @@ export const Route = createFileRoute("/stores/$slug")({
 function StoreProfilePage() {
   const { slug } = Route.useParams();
   const fetchProfile = useServerFn(getStoreProfile);
+  const fetchCalendar = useServerFn(getPublicCalendar);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
+
+  const { weekDates, weekStartStr, goToPrevWeek, goToNextWeek, goToToday, weekLabel } = useWeekNav();
+  const [events, setEvents] = useState<any[]>([]);
+  const [calLoading, setCalLoading] = useState(true);
+  const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
 
   useEffect(() => {
     fetchProfile({ data: { slug } })
@@ -23,6 +30,23 @@ function StoreProfilePage() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  useEffect(() => {
+    if (!store?.id) return;
+    setCalLoading(true);
+    fetchCalendar({
+      data: { game_id: null, zone: null, store_id: store.id, week_start: weekStartStr },
+    } as any)
+      .then((res: any) => setEvents(res.events ?? []))
+      .catch(() => {})
+      .finally(() => setCalLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store?.id, weekStartStr]);
+
+  const calendarGrid = useCalendarGrid(events, weekDates);
+  const gamesInSchedule = Array.from(
+    new Map(events.map((e) => [e.game_slug, e.game_name])).entries(),
+  );
 
   if (loading) {
     return (
@@ -121,6 +145,88 @@ function StoreProfilePage() {
           )}
         </div>
       </header>
+
+      <section className="glass space-y-4 rounded-2xl p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-bold text-white">Calendario de torneos</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToPrevWeek}
+              className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="min-w-[180px] text-center text-sm font-semibold text-white">{weekLabel}</span>
+            <button
+              onClick={goToNextWeek}
+              className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <button
+              onClick={goToToday}
+              className="rounded-lg border border-[#2A3A57] px-3 py-1.5 text-xs font-medium text-[#AAB6D1] hover:text-white transition"
+            >
+              Hoy
+            </button>
+          </div>
+        </div>
+
+        {gamesInSchedule.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3">
+            {gamesInSchedule.map(([slug, name]) => (
+              <div key={slug} className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span className={`h-2 w-2 rounded-full ${dotColorForGame(slug)}`} />
+                {name}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+          <WeeklyGrid
+            weekDates={weekDates}
+            calendarGrid={calendarGrid}
+            attendedIds={new Set()}
+            loading={calLoading}
+            onSelectEntry={setSelectedEntry}
+          />
+        </div>
+      </section>
+
+      {selectedEntry && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setSelectedEntry(null)}
+        >
+          <div
+            className="glass w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
+              {selectedEntry.game_name}
+            </span>
+            <h3 className="text-lg font-bold text-white">{selectedEntry.store_name}</h3>
+            <div className="mt-3 space-y-2 text-sm text-[#AAB6D1]">
+              {selectedEntry.time && (
+                <p className="flex items-center gap-2">
+                  <Clock size={14} className="flex-shrink-0 text-[#72819D]" />
+                  {selectedEntry.time.slice(0, 5)} hrs
+                </p>
+              )}
+              <p className="flex items-center gap-2">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{selectedEntry.zone}</span>
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedEntry(null)}
+              className="mt-5 w-full rounded-xl border border-[#2A3A57] py-2.5 text-sm font-medium text-[#AAB6D1] hover:text-white transition"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

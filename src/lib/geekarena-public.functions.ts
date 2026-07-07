@@ -15,7 +15,10 @@ export const getPublicStoresList = createServerFn({ method: "POST" }).handler(as
 
   const storeIds = (stores ?? []).map((s: any) => s.id);
   const { data: schedules } = storeIds.length
-    ? await admin.from("store_schedules").select("store_id, game_id, games(id, name)").in("store_id", storeIds)
+    ? await admin
+        .from("store_schedules")
+        .select("store_id, game_id, games(id, name)")
+        .in("store_id", storeIds)
     : { data: [] as any[] };
 
   const gamesByStore = new Map<string, Array<{ id: string; name: string }>>();
@@ -93,62 +96,113 @@ export const getStoreWeeklySchedule = createServerFn({ method: "POST" })
   });
 
 export const getPublicCalendar = createServerFn({ method: "POST" })
-  .inputValidator((d: {
-    game_id?: string | null;
-    zone?: string | null;
-    store_id?: string | null;
-    year: number;
-    month: number;
-  }) =>
-    z.object({
-      game_id: z.string().uuid().nullable().optional(),
-      zone: z.string().nullable().optional(),
-      store_id: z.string().uuid().nullable().optional(),
-      year: z.number().int().min(2024).max(2030),
-      month: z.number().int().min(1).max(12),
-    }).parse(d)
+  .inputValidator(
+    (d: {
+      game_id?: string | null;
+      zone?: string | null;
+      store_id?: string | null;
+      week_start: string; // "YYYY-MM-DD" — lunes de la semana
+    }) =>
+      z
+        .object({
+          game_id: z.string().uuid().nullable().optional(),
+          zone: z.string().nullable().optional(),
+          store_id: z.string().uuid().nullable().optional(),
+          week_start: z.string(),
+        })
+        .parse(d),
   )
   .handler(async ({ data }) => {
     const admin = getGeekarenaAdmin();
 
-    const startDate = `${data.year}-${String(data.month).padStart(2, "0")}-01`;
-    const endDate = new Date(data.year, data.month, 0)
-      .toISOString().split("T")[0];
+    const weekStartDate = new Date(data.week_start + "T00:00:00");
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStartDate);
+      d.setDate(weekStartDate.getDate() + i);
+      return d.toISOString().split("T")[0];
+    });
+    const weekEndStr = weekDates[6];
+    const today = new Date().toISOString().split("T")[0];
+    const fromDate = data.week_start < today ? today : data.week_start;
 
-    let query = admin
+    // 1. Torneos reales publicados en esta semana
+    let tournamentQuery = admin
       .from("tournaments")
-      .select(`
-        id, tournament_date, tournament_time, game_id,
-        store_id,
-        stores!inner(id, name, city, state, zone),
+      .select(
+        `
+        id, tournament_date, tournament_time, game_id, store_id,
+        stores!inner(id, slug, name, city, state, zone, address, phone, description, opening_hours, instagram, website, twitter, twitch, google_maps_url),
         games!inner(id, name, slug)
-      `)
+      `,
+      )
       .eq("status", "PUBLISHED")
-      .gte("tournament_date", startDate)
-      .lte("tournament_date", endDate)
-      .order("tournament_date", { ascending: true });
+      .gte("tournament_date", fromDate)
+      .lte("tournament_date", weekEndStr);
 
-    if (data.game_id) query = query.eq("game_id", data.game_id);
-    if (data.store_id) query = query.eq("store_id", data.store_id);
-    if (data.zone) query = query.eq("stores.zone", data.zone);
+    if (data.game_id) tournamentQuery = tournamentQuery.eq("game_id", data.game_id);
+    if (data.store_id) tournamentQuery = tournamentQuery.eq("store_id", data.store_id);
+    if (data.zone) tournamentQuery = tournamentQuery.eq("stores.zone", data.zone);
 
-    const { data: tournaments, error } = await query;
+    const { data: tournaments, error } = await tournamentQuery;
     if (error) throw new Error(error.message);
 
-    // Stores para filtro
-    const { data: stores } = await admin
-      .from("stores")
-      .select("id, name, city, zone")
-      .eq("is_active", true)
-      .order("name");
+    // 2. Store schedules (plantilla recurrente) — proyectar a fechas de esta semana
+    let scheduleQuery = admin.from("store_schedules").select(
+      `
+        id, store_id, game_id, day_of_week, start_time,
+        stores!inner(id, slug, name, city, state, zone, address, phone, description, opening_hours, instagram, website, twitter, twitch, google_maps_url),
+        games!inner(id, name, slug)
+      `,
+    );
 
-    // Zonas únicas
-    const zones = Array.from(new Set(
-      ((stores ?? []) as any[]).map((s: any) => s.zone).filter(Boolean)
-    )).sort();
+    if (data.game_id) scheduleQuery = scheduleQuery.eq("game_id", data.game_id);
+    if (data.store_id) scheduleQuery = scheduleQuery.eq("store_id", data.store_id);
+    if (data.zone) scheduleQuery = scheduleQuery.eq("stores.zone", data.zone);
 
-    return {
-      events: (tournaments ?? []).map((t: any) => ({
+    const { data: schedules, error: scheduleError } = await scheduleQuery;
+    if (scheduleError) throw new Error(scheduleError.message);
+
+    const realTournamentDates = new Set(
+      (tournaments ?? []).map((t: any) => `${t.store_id}_${t.tournament_date}`),
+    );
+
+    const scheduledEvents: any[] = [];
+    for (const s of (schedules ?? []) as any[]) {
+      for (const dateStr of weekDates) {
+        if (dateStr < fromDate) continue;
+        const d = new Date(dateStr + "T12:00:00");
+        if (d.getDay() !== s.day_of_week) continue;
+        if (realTournamentDates.has(`${s.store_id}_${dateStr}`)) continue;
+
+        scheduledEvents.push({
+          id: `schedule_${s.id}_${dateStr}`,
+          date: dateStr,
+          time: s.start_time,
+          game_id: s.game_id,
+          game_name: s.games?.name ?? "—",
+          game_slug: s.games?.slug ?? "",
+          store_id: s.store_id,
+          store_slug: s.stores?.slug ?? "",
+          store_name: s.stores?.name ?? "—",
+          store_city: s.stores?.city ?? "—",
+          store_state: s.stores?.state ?? "—",
+          store_address: s.stores?.address ?? null,
+          store_phone: s.stores?.phone ?? null,
+          store_description: s.stores?.description ?? null,
+          store_opening_hours: s.stores?.opening_hours ?? null,
+          store_instagram: s.stores?.instagram ?? null,
+          store_website: s.stores?.website ?? null,
+          store_twitter: s.stores?.twitter ?? null,
+          store_twitch: s.stores?.twitch ?? null,
+          store_google_maps_url: s.stores?.google_maps_url ?? null,
+          zone: s.stores?.zone ?? "—",
+          is_scheduled: true,
+        });
+      }
+    }
+
+    const allEvents = [
+      ...(tournaments ?? []).map((t: any) => ({
         id: t.id,
         date: t.tournament_date as string,
         time: t.tournament_time as string | null,
@@ -156,11 +210,40 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         game_name: t.games?.name ?? "—",
         game_slug: t.games?.slug ?? "",
         store_id: t.store_id as string,
+        store_slug: t.stores?.slug ?? "",
         store_name: t.stores?.name ?? "—",
         store_city: t.stores?.city ?? "—",
         store_state: t.stores?.state ?? "—",
+        store_address: t.stores?.address ?? null,
+        store_phone: t.stores?.phone ?? null,
+        store_description: t.stores?.description ?? null,
+        store_opening_hours: t.stores?.opening_hours ?? null,
+        store_instagram: t.stores?.instagram ?? null,
+        store_website: t.stores?.website ?? null,
+        store_twitter: t.stores?.twitter ?? null,
+        store_twitch: t.stores?.twitch ?? null,
+        store_google_maps_url: t.stores?.google_maps_url ?? null,
         zone: t.stores?.zone ?? "—",
+        is_scheduled: false,
       })),
+      ...scheduledEvents,
+    ].sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.time ?? "00:00").localeCompare(b.time ?? "00:00");
+    });
+
+    const { data: stores } = await admin
+      .from("stores")
+      .select("id, name, city, zone")
+      .eq("is_active", true)
+      .order("name");
+
+    const zones = Array.from(
+      new Set(((stores ?? []) as any[]).map((s: any) => s.zone).filter(Boolean)),
+    ).sort();
+
+    return {
+      events: allEvents,
       stores: stores ?? [],
       zones,
     };

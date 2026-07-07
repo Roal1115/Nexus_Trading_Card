@@ -107,6 +107,7 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
                   { to: "/my-stats", label: "Mis Stats" },
                   { to: "/sessions", label: "Sesiones" },
                   { to: "/stores", label: "Tiendas" },
+                  { to: "/calendar", label: "Calendario" },
                 ].map((item) => (
                   <DrawerLink key={item.to} to={item.to} onClose={onClose}>
                     {item.label}

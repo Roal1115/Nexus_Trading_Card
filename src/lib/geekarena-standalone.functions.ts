@@ -950,3 +950,27 @@ export const getTournamentSessionDetail = createServerFn({ method: "POST" })
       })),
     };
   });
+
+// ============================================================
+// getMyAttendedTournamentIds — de una lista de torneos, cuáles jugó el player
+// ============================================================
+export const getMyAttendedTournamentIds = createServerFn({ method: "POST" })
+  .middleware([requireGeekarenaUser])
+  .inputValidator((d: { tournament_ids: string[] }) =>
+    z.object({ tournament_ids: z.array(z.string().uuid()) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (data.tournament_ids.length === 0) return { tournament_ids: [] as string[] };
+
+    const { data: results, error } = await admin
+      .from("tournament_results")
+      .select("tournament_id")
+      .eq("player_id", player.id)
+      .in("tournament_id", data.tournament_ids);
+    if (error) throw new Error(error.message);
+
+    return {
+      tournament_ids: Array.from(new Set((results ?? []).map((r: any) => r.tournament_id as string))),
+    };
+  });
