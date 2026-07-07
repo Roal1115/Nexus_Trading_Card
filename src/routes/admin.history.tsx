@@ -8,7 +8,7 @@ import {
   getAdminTournamentHistory,
   getAdminFilterOptions,
   republishTournament,
-} from "@/lib/geekarena-admin.functions";
+} from "@/lib/nexus-admin.functions";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,

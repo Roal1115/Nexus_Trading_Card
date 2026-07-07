@@ -26,7 +26,7 @@ import {
   Check,
   CalendarDays,
 } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getStandaloneSessionDetail,
   undoSessionLink,
@@ -36,13 +36,13 @@ import {
   saveStandaloneRound,
   deleteStandaloneRound,
   updateStandaloneSessionDetails,
-} from "@/lib/geekarena-standalone.functions";
-import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
+} from "@/lib/nexus-standalone.functions";
+import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const Route = createFileRoute("/sessions/$sessionId")({
-  head: () => ({ meta: [{ title: "Sesión — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Sesión — Nexus" }] }),
   component: SessionDetailPage,
 });
 
@@ -1082,7 +1082,7 @@ function DisambiguationPicker({
 function SessionDetailPage() {
   const { sessionId } = useParams({ from: "/sessions/$sessionId" });
   const navigate = useNavigate();
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
 
   const fetchDetail = useServerFn(getStandaloneSessionDetail);
   const undoLink = useServerFn(undoSessionLink);

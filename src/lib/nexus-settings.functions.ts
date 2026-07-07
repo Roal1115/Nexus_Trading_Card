@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaUser } from "./geekarena-auth.middleware";
-import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { requireNexusUser } from "./nexus-auth.middleware";
+import { getNexusAdmin, failDb } from "./nexus-admin.server";
 
 // ── Leer perfil actual del usuario ────────────────────────────────
 export const getMyProfile = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -42,7 +42,7 @@ export const getMyProfile = createServerFn({ method: "POST" })
 
 // ── Actualizar Geek Tag y nombre completo ─────────────────────────
 export const updateMyProfile = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { geek_tag?: string; display_name?: string }) =>
     z
       .object({
@@ -82,7 +82,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
 
 // ── Agregar nuevo TCG ID (solo INSERT, nunca UPDATE) ──────────────
 export const addMyTcgId = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { game_id: string; tcg_user_id: string }) =>
     z
       .object({
@@ -118,7 +118,7 @@ export const addMyTcgId = createServerFn({ method: "POST" })
 
 // ── Cambiar email (Supabase Auth) ─────────────────────────────────
 export const updateMyEmail = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { new_email: string }) =>
     z.object({ new_email: z.string().email() }).parse(d),
   )
@@ -131,7 +131,7 @@ export const updateMyEmail = createServerFn({ method: "POST" })
 
 // ── Cambiar contraseña (Supabase Auth) ────────────────────────────
 export const updateMyPassword = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { new_password: string }) =>
     z.object({ new_password: z.string().min(8, "Mínimo 8 caracteres") }).parse(d),
   )

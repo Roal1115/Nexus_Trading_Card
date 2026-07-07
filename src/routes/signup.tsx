@@ -3,12 +3,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { geekarena, type Game } from "@/integrations/geekarena/client";
-import { signupPlayer } from "@/lib/geekarena-auth.functions";
+import { nexus, type Game } from "@/integrations/nexus/client";
+import { signupPlayer } from "@/lib/nexus-auth.functions";
 import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Únete al Circuito — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Únete al Circuito — Nexus" }] }),
   component: SignupPage,
 });
 
@@ -94,7 +94,7 @@ function SignupPage() {
 
   useEffect(() => {
     let mounted = true;
-    geekarena
+    nexus
       .from("games")
       .select("*")
       .eq("is_active", true)
@@ -121,7 +121,7 @@ function SignupPage() {
     }
     setTagStatus("checking");
     const handle = setTimeout(async () => {
-      const { data, error } = await geekarena
+      const { data, error } = await nexus
         .from("players")
         .select("id, auth_user_id")
         .eq("geek_tag", tag)
@@ -236,7 +236,7 @@ function SignupPage() {
         },
       });
 
-      const { error: resendErr } = await geekarena.auth.resend({
+      const { error: resendErr } = await nexus.auth.resend({
         type: "signup",
         email: result.email,
         options: { emailRedirectTo: `${window.location.origin}/login` },
@@ -246,7 +246,7 @@ function SignupPage() {
         return;
       }
 
-      await geekarena.auth.signOut();
+      await nexus.auth.signOut();
       navigate({ to: "/check-inbox", search: { email: result.email } });
     } catch (err: any) {
       toast.error(translateAuthError(err?.message ?? ""));
@@ -471,7 +471,7 @@ function Step1(props: {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="jugador@geekarena.gg"
+          placeholder="jugador@nexus.gg"
           className="input-base"
         />
       </Field>

@@ -10,7 +10,7 @@ import {
   saveRoundResult,
   clearTournamentRounds,
   deleteRoundResult,
-} from "@/lib/geekarena-tournament-tracker.functions";
+} from "@/lib/nexus-tournament-tracker.functions";
 
 type DeckIdentifier = {
   id: string;

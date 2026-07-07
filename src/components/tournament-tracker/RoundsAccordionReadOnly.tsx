@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getTournamentRoundsForPlayer } from "@/lib/geekarena-tournament-tracker.functions";
+import { getTournamentRoundsForPlayer } from "@/lib/nexus-tournament-tracker.functions";
 import { AppealForm } from "@/components/tournament-tracker/AppealForm";
 import { AnimatePresence } from "framer-motion";
-import { confirmRoundResult } from "@/lib/geekarena-tournament-tracker.functions";
+import { confirmRoundResult } from "@/lib/nexus-tournament-tracker.functions";
 // En lucide-react agrega:
 import {
   ChevronDown,

@@ -1,13 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 
 export function AppHeader() {
-  const { player, loading } = useGeekarenaRole();
+  const { player, loading } = useNexusRole();
   const { activeTcg, setActiveTcg, tcgs, setTcgs } = useTCG();
   const [tcgOpen, setTcgOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -20,7 +20,7 @@ export function AppHeader() {
     pathname.startsWith("/tcg-manager");
 
   useEffect(() => {
-    geekarena
+    nexus
       .from("games")
       .select("id, name, slug")
       .eq("is_active", true)

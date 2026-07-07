@@ -2,10 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mail } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 
 export const Route = createFileRoute("/check-inbox")({
-  head: () => ({ meta: [{ title: "Revisa tu correo — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Revisa tu correo — Nexus" }] }),
   validateSearch: (s) => ({ email: (s.email as string) ?? "" }),
   component: CheckInboxPage,
 });
@@ -18,7 +18,7 @@ function CheckInboxPage() {
     if (!email || cooldown) return;
     setCooldown(true);
     setTimeout(() => setCooldown(false), 30_000);
-    const { error } = await geekarena.auth.resend({ type: "signup", email });
+    const { error } = await nexus.auth.resend({ type: "signup", email });
     if (error) toast.error("Ocurrió un error. Intenta de nuevo en unos momentos");
     else toast.success("Nuevo correo de verificación enviado");
   };

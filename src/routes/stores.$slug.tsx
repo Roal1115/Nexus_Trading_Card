@@ -2,11 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, ChevronLeft, ChevronRight } from "lucide-react";
-import { getStoreProfile, getPublicCalendar } from "@/lib/geekarena-public.functions";
+import { getStoreProfile, getPublicCalendar } from "@/lib/nexus-public.functions";
 import { useWeekNav, useCalendarGrid, WeeklyGrid, dotColorForGame } from "@/components/calendar/weekly-grid";
 
 export const Route = createFileRoute("/stores/$slug")({
-  head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Tienda — Nexus" }] }),
   component: StoreProfilePage,
 });
 

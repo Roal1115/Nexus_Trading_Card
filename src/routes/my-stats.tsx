@@ -2,12 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ShieldQuestion, AlertTriangle, BarChart3, HelpCircle } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getMyStats, getMyStatsGames } from "@/lib/geekarena-player.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { getMyStats, getMyStatsGames } from "@/lib/nexus-player.functions";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/my-stats")({
-  head: () => ({ meta: [{ title: "Mis Stats — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Mis Stats — Nexus" }] }),
   component: StatsPage,
 });
 
@@ -286,7 +286,7 @@ function MatchupRow({ matchup }: { matchup: Matchup }) {
 }
 
 function StatsPage() {
-  const { player, loading: authLoading } = useGeekarenaRole();
+  const { player, loading: authLoading } = useNexusRole();
   const fetchGames = useServerFn(getMyStatsGames);
   const fetchStats = useServerFn(getMyStats);
 

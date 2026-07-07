@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaUser } from "./geekarena-auth.middleware";
+import { requireNexusUser } from "./nexus-auth.middleware";
 
 const MIN_ROUNDS = 5;
 
 export const getMetaStats = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator(
     (d: {
       game_id: string;
@@ -178,7 +178,7 @@ export const getMetaStats = createServerFn({ method: "POST" })
   });
 
 export const getMetaFilterOptions = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin } = context;

@@ -15,18 +15,18 @@ import {
   Upload,
 } from "lucide-react";
 
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts, useActivityLastSeen } from "@/hooks/use-badge-counts";
-import { getAdminBadgeCounts } from "@/lib/geekarena-admin.functions";
+import { getAdminBadgeCounts } from "@/lib/nexus-admin.functions";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Panel Administrador — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Panel Administrador — Nexus" }] }),
   component: AdminLayout,
 });
 
 function AdminLayout() {
-  const { role, player, loading } = useGeekarenaRole();
+  const { role, player, loading } = useNexusRole();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 

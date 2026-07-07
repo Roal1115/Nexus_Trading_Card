@@ -9,10 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getOrganizerCalendar } from "@/lib/geekarena-organizer.functions";
+import { getOrganizerCalendar } from "@/lib/nexus-organizer.functions";
 
 export const Route = createFileRoute("/organizer/calendar")({
-  head: () => ({ meta: [{ title: "Calendario — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
   component: OrganizerCalendarPage,
 });
 

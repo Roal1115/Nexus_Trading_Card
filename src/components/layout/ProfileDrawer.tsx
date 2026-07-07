@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, X } from "lucide-react";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 
 // 1. El prop player ya tiene role — confirma que el tipo lo incluye:
 type ProfileDrawerProps = {
@@ -32,7 +32,7 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
         : "Panel Organizador";
 
   const handleLogout = async () => {
-    await geekarena.auth.signOut();
+    await nexus.auth.signOut();
     window.location.href = "/login";
   };
 

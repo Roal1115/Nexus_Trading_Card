@@ -14,15 +14,15 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { geekarena } from "@/integrations/geekarena/client";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { nexus } from "@/integrations/nexus/client";
 import {
   getOrganizerOverview,
   listActiveStores,
   lookupPlayerTags,
   uploadTournamentResults,
-} from "@/lib/geekarena-organizer.functions";
-import { getManagerResponsibleStores } from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-organizer.functions";
+import { getManagerResponsibleStores } from "@/lib/nexus-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -303,14 +303,14 @@ async function uploadFileToStorage(file: File, tournamentId: string): Promise<st
   try {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "csv";
     const path = `tournaments/${tournamentId}.${ext}`;
-    const { error } = await geekarena.storage
+    const { error } = await nexus.storage
       .from("tournament-files")
       .upload(path, file, { upsert: true, contentType: file.type || undefined });
     if (error) {
       console.error("Storage upload error:", error.message);
       return null;
     }
-    const { data } = await geekarena.storage.from("tournament-files").createSignedUrl(path, 60 * 60 * 24 * 365);
+    const { data } = await nexus.storage.from("tournament-files").createSignedUrl(path, 60 * 60 * 24 * 365);
     return data?.signedUrl ?? null;
   } catch (e) {
     console.error("Storage error:", e);
@@ -339,7 +339,7 @@ export function TournamentUploadForm({
   gamesOverride?: Game[];
 } = {}) {
   const navigate = useNavigate();
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
   const isAdmin = player?.role === "admin";
   const isManager = player?.role === "tcg_manager";
 
@@ -373,7 +373,7 @@ export function TournamentUploadForm({
     if (!player) return;
     (async () => {
       try {
-        const { data: sess } = await geekarena.auth.getSession();
+        const { data: sess } = await nexus.auth.getSession();
         if (!sess.session) return;
         const ov = await fetchOverview();
         setGames(gamesOverride !== undefined ? gamesOverride : (ov.games as Game[]));

@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRef, useEffect, useState } from "react";
 import { Trophy, LayoutDashboard, TrendingUp, CalendarDays, User, LogIn } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 
 type NavItem = {
@@ -73,7 +73,7 @@ function NavTab({ item, isActive }: { item: NavItem; isActive: boolean }) {
 }
 
 export function BottomNav() {
-  const { player, loading } = useGeekarenaRole();
+  const { player, loading } = useNexusRole();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [drawerOpen, setDrawerOpen] = useState(false);
 

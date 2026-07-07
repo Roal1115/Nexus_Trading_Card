@@ -1,4 +1,4 @@
-# Geek Arena
+# Nexus
 
 > El sistema oficial de ranking competitivo para TCG en México. Consulta tablas de clasificación mensuales y semestrales, perfiles de jugadores y resultados de torneos del Circuito Nacional.
 

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentRowSkeleton, SettingsSectionSkeleton, SkeletonBlock } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   listPlayers,
   setPlayerRole,
@@ -29,8 +29,8 @@ import {
   updatePlayerDetail,
   getManagerAssignedGames,
   deletePlayerAccount,
-} from "@/lib/geekarena-admin.functions";
-import { assignManagerGames } from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-admin.functions";
+import { assignManagerGames } from "@/lib/nexus-manager.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +85,7 @@ type Store = { id: string; name: string; city: string | null };
 const PAGE_SIZE = 25;
 
 function AdminPlayersPage() {
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
 
   const fetchPlayers = useServerFn(listPlayers);

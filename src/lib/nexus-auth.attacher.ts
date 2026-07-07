@@ -1,19 +1,19 @@
-// Client-side middleware that attaches the GeekArena access token to every
-// server function call. Server middleware (requireGeekarenaAdmin/Organizer)
+// Client-side middleware that attaches the Nexus access token to every
+// server function call. Server middleware (requireNexusAdmin/Organizer)
 // then validates and authorizes the caller based on the verified JWT.
 import { createMiddleware } from "@tanstack/react-start";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 
-export const attachGeekarenaAuth = createMiddleware({ type: "function" }).client(
+export const attachNexusAuth = createMiddleware({ type: "function" }).client(
   async ({ next }) => {
     let token: string | undefined;
     try {
-      const { data, error } = await geekarena.auth.getSession();
+      const { data, error } = await nexus.auth.getSession();
       if (error) {
         // Stale/invalid refresh token — clear local session so the user is
         // redirected to /login on next interaction instead of looping 401s.
         if (typeof window !== "undefined") {
-          await geekarena.auth.signOut().catch(() => {});
+          await nexus.auth.signOut().catch(() => {});
         }
       }
       token = data.session?.access_token;

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   listStoresWithOrganizers,
   createStore,
@@ -34,8 +34,8 @@ import {
   getStoreSchedules,
   upsertStoreSchedule,
   deleteStoreSchedule,
-} from "@/lib/geekarena-admin.functions";
-import { assignManagerGames } from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-admin.functions";
+import { assignManagerGames } from "@/lib/nexus-manager.functions";
 import { StoreSchedulesDialog } from "@/components/admin/StoreSchedulesDialog";
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin/stores")({
-  head: () => ({ meta: [{ title: "Tiendas y Staff — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Tiendas y Staff — Nexus" }] }),
   component: AdminStoresPage,
 });
 
@@ -98,7 +98,7 @@ type Organizer = {
 
 
 function AdminStoresPage() {
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
   const [activeTab, setActiveTab] = useState<"stores" | "staff">("stores");
   const fetchAll = useServerFn(listStoresWithOrganizers);

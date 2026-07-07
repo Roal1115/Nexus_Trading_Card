@@ -11,14 +11,14 @@ import {
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   listTournamentsByStatus,
   publishTournaments,
   unapproveAdminTournament,
   unpublishTournament,
   getAdminTournamentHistory,
-} from "@/lib/geekarena-admin.functions";
+} from "@/lib/nexus-admin.functions";
 import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +67,7 @@ type PublishedRow = {
 
 function TournamentsPanel() {
   const navigate = useNavigate();
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
 
   const fetchList = useServerFn(listTournamentsByStatus);

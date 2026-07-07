@@ -6,7 +6,7 @@ import { FileLink } from "@/components/ui/FileLink";
 import {
   getOrganizerTournamentHistory,
   getOrganizerFilterOptions,
-} from "@/lib/geekarena-organizer.functions";
+} from "@/lib/nexus-organizer.functions";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,

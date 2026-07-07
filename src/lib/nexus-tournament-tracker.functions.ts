@@ -1,7 +1,7 @@
-import { failDb } from "./geekarena-admin.server";
+import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaUser } from "./geekarena-auth.middleware";
+import { requireNexusUser } from "./nexus-auth.middleware";
 
 const EXCLUDED_EVENT_LEADER_IDS = ["P-900", "P-800", "P-700"];
 
@@ -15,7 +15,7 @@ function groupOrder(cardSetId: string): number {
 // getDeckIdentifiers
 // ============================================================
 export const getDeckIdentifiers = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator(
     (d: { game_id: string; search?: string; basic_only?: boolean; card_set_id?: string }) =>
       z
@@ -62,7 +62,7 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
 // getTournamentRoundsForPlayer
 // ============================================================
 export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -246,7 +246,7 @@ async function validateMaxWins(
 const turnOrderSchema = z.enum(["first", "second"]).nullable().optional();
 
 export const saveRoundResult = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator(
     (d: {
       tournament_id: string;
@@ -380,7 +380,7 @@ export const saveRoundResult = createServerFn({ method: "POST" })
 // clearTournamentRounds
 // ============================================================
 export const clearTournamentRounds = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -401,7 +401,7 @@ export const clearTournamentRounds = createServerFn({ method: "POST" })
 // deleteRoundResult
 // ============================================================
 export const deleteRoundResult = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { tournament_id: string; round_number: number }) =>
     z
       .object({
@@ -428,7 +428,7 @@ export const deleteRoundResult = createServerFn({ method: "POST" })
 // confirmRoundResult
 // ============================================================
 export const confirmRoundResult = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { round_id: string }) => z.object({ round_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;

@@ -2,15 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Crown, Lock, Share2, Target, TrendingUp, Trophy } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getPublicProfile } from "@/lib/geekarena-player.functions";
-import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { getPublicProfile } from "@/lib/nexus-player.functions";
+import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 
 export const Route = createFileRoute("/players/$playerTag")({
   head: ({ params }) => ({
-    meta: [{ title: `Perfil de ${params.playerTag} — Geek Arena` }],
+    meta: [{ title: `Perfil de ${params.playerTag} — Nexus` }],
     links: [{ rel: "canonical", href: `https://mxntcg.lovable.app/players/${params.playerTag}` }],
     scripts: [
       {
@@ -35,7 +35,7 @@ type ProfileData = Awaited<ReturnType<typeof getPublicProfile>>;
 
 function PublicProfilePage() {
   const { playerTag } = Route.useParams();
-  const { player: viewer, loading: authLoading } = useGeekarenaRole();
+  const { player: viewer, loading: authLoading } = useNexusRole();
   const fetchProfile = useServerFn(getPublicProfile);
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
@@ -210,8 +210,8 @@ function PublicProfilePage() {
                 onClick={async () => {
                   const url = `https://mxntcg.lovable.app/players/${profile.geek_tag}`;
                   const shareData = {
-                    title: `${profile.geek_tag} — Geek Arena`,
-                    text: `Mira el ranking de ${profile.geek_tag} en Geek Arena 🏆`,
+                    title: `${profile.geek_tag} — Nexus`,
+                    text: `Mira el ranking de ${profile.geek_tag} en Nexus 🏆`,
                     url,
                   };
 

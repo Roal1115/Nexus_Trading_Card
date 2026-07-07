@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** Geek Arena
+**Project:** Nexus
 **Generated:** 2026-06-29 16:09:58
 **Category:** Gaming
 

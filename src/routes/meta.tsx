@@ -2,13 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { TrendingUp, Shield, Calendar } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
-import { getMetaStats, getMetaFilterOptions } from "@/lib/geekarena-meta.functions";
+import { getMetaStats, getMetaFilterOptions } from "@/lib/nexus-meta.functions";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/meta")({
-  head: () => ({ meta: [{ title: "Meta — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Meta — Nexus" }] }),
   component: MetaPage,
 });
 
@@ -83,7 +83,7 @@ function SimpleSelect({
 }
 
 function MetaPage() {
-  const { player, loading: authLoading } = useGeekarenaRole();
+  const { player, loading: authLoading } = useNexusRole();
   const { activeTcg } = useTCG();
   const fetchMeta = useServerFn(getMetaStats);
   const fetchOptions = useServerFn(getMetaFilterOptions);

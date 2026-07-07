@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
-import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
+import { getNexusAdmin } from "./nexus-admin.server";
+import { requireNexusAdmin } from "./nexus-auth.middleware";
 
 type SeedAccount = {
   email: string;
@@ -28,7 +28,7 @@ const ACCOUNTS: SeedAccount[] = [
 ];
 
 export const seedTestAccounts = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .handler(async () => {
     // Only callable by an authenticated admin (enforced by middleware).
     // Additionally restrict to non-production environments to prevent
@@ -36,7 +36,7 @@ export const seedTestAccounts = createServerFn({ method: "POST" })
     if (process.env.NODE_ENV === "production") {
       throw new Error("Esta operación está deshabilitada en producción.");
     }
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
     const results: Array<{ email: string; ok: boolean; message: string }> = [];
 
     for (const acc of ACCOUNTS) {

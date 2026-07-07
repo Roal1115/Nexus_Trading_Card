@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
-import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
+import { getNexusAdmin, failDb } from "./nexus-admin.server";
+import { requireNexusAdmin } from "./nexus-auth.middleware";
 import { getClientIp } from "./rate-limit.server";
-import { logAction } from "./geekarena-admin.functions";
+import { logAction } from "./nexus-admin.functions";
 
 // ─── Dedupe de vistas por IP ──────────────────────────────────────────────
 // Los ads viven en páginas públicas, así que no podemos exigir login para
@@ -28,7 +28,7 @@ function isDuplicateView(key: string): boolean {
 }
 
 // ─── Helper: ensure ad_metrics row exists ────────────────────────────────
-async function ensureMetricsRow(admin: ReturnType<typeof getGeekarenaAdmin>) {
+async function ensureMetricsRow(admin: ReturnType<typeof getNexusAdmin>) {
   const { data } = await admin.from("ad_metrics").select("*").maybeSingle();
   if (data) return data;
   const { data: inserted } = await admin
@@ -41,7 +41,7 @@ async function ensureMetricsRow(admin: ReturnType<typeof getGeekarenaAdmin>) {
 
 // ─── Public: get active sponsor ───────────────────────────────────────────
 export const getActiveSponsor = createServerFn({ method: "POST" }).handler(async () => {
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
   const metrics = await ensureMetricsRow(admin);
   if (!metrics) return null;
 
@@ -73,7 +73,7 @@ export const getActiveSponsor = createServerFn({ method: "POST" }).handler(async
 
 // ─── Public: list all active sponsors for the carousel ───────────────────
 export const listActiveSponsors = createServerFn({ method: "POST" }).handler(async () => {
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
   const { data } = await admin
     .from("sponsors")
     .select("*")
@@ -86,7 +86,7 @@ export const listActiveSponsors = createServerFn({ method: "POST" }).handler(asy
 export const registerAdView = createServerFn({ method: "POST" }).handler(async () => {
   if (isDuplicateView(`ad_${getClientIp()}`)) return null;
 
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
   const metrics = await ensureMetricsRow(admin);
   if (!metrics) return null;
 
@@ -178,7 +178,7 @@ export const registerAdView = createServerFn({ method: "POST" }).handler(async (
 
 // ─── Admin: list all sponsors ──────────────────────────────────────────────
 export const listSponsors = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .handler(async ({ context }) => {
     const { admin } = context;
     await ensureMetricsRow(admin);
@@ -212,7 +212,7 @@ export const listSponsors = createServerFn({ method: "POST" })
 
 // ─── Admin: create sponsor ─────────────────────────────────────────────────
 export const createSponsor = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator((d: { name: string; priority_rank: number; view_limit: number }) =>
     z
       .object({
@@ -237,7 +237,7 @@ export const createSponsor = createServerFn({ method: "POST" })
 
 // ─── Admin: update sponsor images ─────────────────────────────────────────
 export const updateSponsorImages = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator(
     (d: {
       sponsor_id: string;
@@ -267,7 +267,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
 
 // ─── Admin: update sponsor settings ───────────────────────────────────────
 export const updateSponsor = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator(
     (d: {
       sponsor_id: string;
@@ -295,7 +295,7 @@ export const updateSponsor = createServerFn({ method: "POST" })
 
 // ─── Admin: reset a sponsor's view count ──────────────────────────────────
 export const resetSponsorViews = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator((d: { sponsor_id: string }) =>
     z.object({ sponsor_id: z.string().uuid() }).parse(d),
   )
@@ -310,7 +310,7 @@ export const resetSponsorViews = createServerFn({ method: "POST" })
 
 // ─── Admin: delete a sponsor ─────────────────────────────────────────────
 export const deleteSponsor = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator((d: { sponsor_id: string }) =>
     z.object({ sponsor_id: z.string().uuid() }).parse(d),
   )
@@ -353,7 +353,7 @@ export const deleteSponsor = createServerFn({ method: "POST" })
 // Lógica: menor pct_consumed primero — el que menos ha consumido su límite va primero
 // Si todos superaron 100%, se reinicia desde el de menor pct (ciclo continuo)
 export const getActiveBanner = createServerFn({ method: "POST" }).handler(async () => {
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
 
   const { data, error } = await admin
     .from("sponsor_metrics_current_month")
@@ -382,7 +382,7 @@ export const registerSponsorView = createServerFn({ method: "POST" })
     if (isDuplicateView(`sponsor_${getClientIp()}_${data.sponsor_id}`)) {
       return { success: true };
     }
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
     const { error } = await admin.rpc("increment_sponsor_view", {
       p_sponsor_id: data.sponsor_id,
     });
@@ -392,9 +392,9 @@ export const registerSponsorView = createServerFn({ method: "POST" })
 
 // Métricas en tiempo real para el panel de admin
 export const getSponsorMetrics = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .handler(async () => {
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
     const { data, error } = await admin.from("sponsor_metrics_current_month").select("*");
     if (error) failDb(error);
     return { metrics: data ?? [] };
@@ -402,7 +402,7 @@ export const getSponsorMetrics = createServerFn({ method: "POST" })
 
 // Actualizar sponsor con todos los campos nuevos
 export const updateSponsorFull = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator(
     (d: {
       id: string;

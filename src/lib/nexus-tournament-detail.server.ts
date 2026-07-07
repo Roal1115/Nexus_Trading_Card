@@ -1,9 +1,9 @@
 // Shared server-only helper that builds the tournament detail payload
 // consumed by both /admin and /tcg-manager review screens.
-import { failDb } from "./geekarena-admin.server";
-import type { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { failDb } from "./nexus-admin.server";
+import type { getNexusAdmin } from "./nexus-admin.server";
 
-type Admin = ReturnType<typeof getGeekarenaAdmin>;
+type Admin = ReturnType<typeof getNexusAdmin>;
 
 type Alert = {
   level: "CRITICAL" | "WARNING";

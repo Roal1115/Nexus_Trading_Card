@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 
 export type AppRole = "player" | "organizer" | "tcg_manager" | "admin";
 
@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
 });
 
-export function GeekarenaAuthProvider({ children }: { children: React.ReactNode }) {
+export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [player, setPlayer] = useState<PlayerRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export function GeekarenaAuthProvider({ children }: { children: React.ReactNode 
         return;
       }
 
-      const { data } = await geekarena
+      const { data } = await nexus
         .from("players")
         .select("id, geek_tag, email, role, home_store_id")
         .eq("email", s.user.email)
@@ -64,12 +64,12 @@ export function GeekarenaAuthProvider({ children }: { children: React.ReactNode 
       hasInitializedRef.current = true;
     };
 
-    geekarena.auth.getSession().then(({ data }) => {
+    nexus.auth.getSession().then(({ data }) => {
       if (!mountedRef.current) return;
       loadPlayer(data.session);
     });
 
-    const { data: sub } = geekarena.auth.onAuthStateChange((event, s) => {
+    const { data: sub } = nexus.auth.onAuthStateChange((event, s) => {
       if (!mountedRef.current) return;
       if (
         event === "SIGNED_IN" ||
@@ -95,7 +95,7 @@ export function GeekarenaAuthProvider({ children }: { children: React.ReactNode 
   );
 }
 
-export function useGeekarenaRole() {
+export function useNexusRole() {
   return useContext(AuthContext);
 }
 

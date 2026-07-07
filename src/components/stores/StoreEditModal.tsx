@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X } from "lucide-react";
 import { toast } from "sonner";
-import { updateStoreData } from "@/lib/geekarena-manager.functions";
+import { updateStoreData } from "@/lib/nexus-manager.functions";
 
 type StoreLike = {
   id: string;

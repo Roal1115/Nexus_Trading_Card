@@ -16,11 +16,11 @@ import {
 } from "lucide-react";
 import {
   getManagerCalendar,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 
 
 export const Route = createFileRoute("/admin/calendar")({
-  head: () => ({ meta: [{ title: "Calendario Nacional — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Calendario Nacional — Nexus" }] }),
   component: AdminCalendarPage,
 });
 

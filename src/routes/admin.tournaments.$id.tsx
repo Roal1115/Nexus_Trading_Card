@@ -24,7 +24,7 @@ import {
   approveTournamentForReview,
   rejectTournamentWithReason,
   undoApproveTournament,
-} from "@/lib/geekarena-admin.functions";
+} from "@/lib/nexus-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";

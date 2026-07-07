@@ -12,19 +12,19 @@ import {
   Store as StoreIcon,
   Upload,
 } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts } from "@/hooks/use-badge-counts";
-import { getManagerBadgeCounts } from "@/lib/geekarena-manager.functions";
+import { getManagerBadgeCounts } from "@/lib/nexus-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager")({
-  head: () => ({ meta: [{ title: "Panel TCG Manager — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Panel TCG Manager — Nexus" }] }),
   component: TcgManagerLayout,
 });
 
 
 function TcgManagerLayout() {
-  const { role, player, loading } = useGeekarenaRole();
+  const { role, player, loading } = useNexusRole();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 

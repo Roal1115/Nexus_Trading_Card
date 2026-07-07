@@ -1,4 +1,4 @@
-# Geek Arena
+# Nexus
 
 A Cloudflare Worker–hosted React application for managing a Mexican national TCG circuit. The app supports players, organizers, TCG managers, and admins for One Piece, Magic: The Gathering, and Pokémon TCG rankings and tournament workflows.
 
@@ -11,9 +11,9 @@ This repository contains a full-stack app built with TanStack Start and deployed
 - `src/` — application source code
 - `src/routes/` — TanStack Router pages and panel layouts (public, `/organizer`, `/tcg-manager`, `/admin`, `/sessions`)
 - `src/components/` — reusable UI, layout, and feature components (ads, tournament-tracker, upload, stores)
-- `src/context/` — `GeekarenaAuthProvider`, the app-wide auth/role context
+- `src/context/` — `NexusAuthProvider`, the app-wide auth/role context
 - `src/lib/` — server functions (one file per domain), query cache, error handling
-- `src/integrations/geekarena/` — the only Supabase client in the app (the legacy, unused Lovable Cloud scaffold that used to live in `src/integrations/supabase/` was removed)
+- `src/integrations/nexus/` — the only Supabase client in the app (the legacy, unused Lovable Cloud scaffold that used to live in `src/integrations/supabase/` was removed)
 - `supabase/` — project config, edge functions, and the initial migration (⚠️ the live schema has drifted well beyond this migration — see `PROJECT_CONTEXT.md`)
 - `wrangler.jsonc` — Cloudflare Workers deployment config
 - `vite.config.ts` — Vite + TanStack + Tailwind + Cloudflare plugin config
@@ -73,10 +73,10 @@ src/
 │   ├── upload/               # tournament result upload form
 │   └── ui/                   # shadcn Radix UI primitives
 ├── context/
-│   └── geekarena-auth.context.tsx  # app-wide auth/role provider
+│   └── nexus-auth.context.tsx  # app-wide auth/role provider
 ├── hooks/                    # custom hooks
 ├── integrations/
-│   └── geekarena/            # the only Supabase client
+│   └── nexus/            # the only Supabase client
 ├── lib/                      # one *.functions.ts per domain, query-cache.ts, error handling
 ├── routes/                   # public + /organizer + /tcg-manager + /admin + /sessions routes
 ├── router.tsx                # router setup

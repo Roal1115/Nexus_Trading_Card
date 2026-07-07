@@ -20,13 +20,13 @@ import {
 } from "lucide-react";
 
 import { toast } from "sonner";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getMyDashboard,
   getTournamentDetail,
   toggleProfilePrivacy,
-} from "@/lib/geekarena-player.functions";
-import { getActiveSponsor, registerAdView } from "@/lib/geekarena-ads.functions";
+} from "@/lib/nexus-player.functions";
+import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
 import { RoundsAccordionReadOnly } from "@/components/tournament-tracker/RoundsAccordionReadOnly";
@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Mi Panel — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Mi Panel — Nexus" }] }),
   component: DashboardPage,
 });
 
@@ -47,7 +47,7 @@ type DashboardData = Awaited<ReturnType<typeof getMyDashboard>>;
 type TournamentDetail = Awaited<ReturnType<typeof getTournamentDetail>>;
 
 function DashboardPage() {
-  const { player: gaPlayer } = useGeekarenaRole();
+  const { player: gaPlayer } = useNexusRole();
   const navigate = useNavigate();
   const fetchDashboard = useServerFn(getMyDashboard);
   const fetchTournamentDetail = useServerFn(getTournamentDetail);
@@ -171,8 +171,8 @@ function DashboardPage() {
   const handleShareProfile = async () => {
     const url = `https://mxntcg.lovable.app/players/${tag}`;
     const shareData = {
-      title: `${tag} — Geek Arena`,
-      text: `Mira mi ranking competitivo en Geek Arena 🏆`,
+      title: `${tag} — Nexus`,
+      text: `Mira mi ranking competitivo en Nexus 🏆`,
       url,
     };
 

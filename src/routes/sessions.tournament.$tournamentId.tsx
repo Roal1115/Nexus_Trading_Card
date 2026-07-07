@@ -15,14 +15,14 @@ import {
   ShieldHalf,
   StickyNote,
 } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getTournamentSessionDetail } from "@/lib/geekarena-standalone.functions";
-import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { getTournamentSessionDetail } from "@/lib/nexus-standalone.functions";
+import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const Route = createFileRoute("/sessions/tournament/$tournamentId")({
-  head: () => ({ meta: [{ title: "Torneo — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Torneo — Nexus" }] }),
   component: SessionDetailPage,
 });
 
@@ -484,7 +484,7 @@ function StandaloneRoundTracker({
 // ============================================================
 function SessionDetailPage() {
   const { tournamentId } = useParams({ from: "/sessions/tournament/$tournamentId" });
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
 
   const fetchDetail = useServerFn(getTournamentSessionDetail);
 

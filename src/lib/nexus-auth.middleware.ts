@@ -1,9 +1,9 @@
 // Server-only middleware that authenticates server functions against the
-// GeekArena Supabase project's JWT (NOT Lovable Cloud's auth).
-// The browser attaches the geekarena access token via `attachGeekarenaAuth`.
+// Nexus Supabase project's JWT (NOT Lovable Cloud's auth).
+// The browser attaches the nexus access token via `attachNexusAuth`.
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { getNexusAdmin, failDb } from "./nexus-admin.server";
 
 type AppRole = "player" | "organizer" | "tcg_manager" | "admin";
 
@@ -16,7 +16,7 @@ type PlayerCtx = {
 };
 
 async function resolveCaller(): Promise<{
-  admin: ReturnType<typeof getGeekarenaAdmin>;
+  admin: ReturnType<typeof getNexusAdmin>;
   player: PlayerCtx;
 }> {
   const request = getRequest();
@@ -30,7 +30,7 @@ async function resolveCaller(): Promise<{
   const token = authHeader.slice(7).trim();
   if (!token) throw new Error("Unauthorized: Empty token");
 
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data?.user?.email) {
     throw new Error("Unauthorized: Invalid token");
@@ -51,7 +51,7 @@ async function resolveCaller(): Promise<{
   return { admin, player: player as PlayerCtx };
 }
 
-export const requireGeekarenaAdmin = createMiddleware({ type: "function" }).server(
+export const requireNexusAdmin = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
     const { admin, player } = await resolveCaller();
     if (player.role !== "admin") throw new Error("No autorizado");
@@ -59,7 +59,7 @@ export const requireGeekarenaAdmin = createMiddleware({ type: "function" }).serv
   },
 );
 
-export const requireGeekarenaManager = createMiddleware({ type: "function" }).server(
+export const requireNexusManager = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
     const { admin, player } = await resolveCaller();
     if (player.role !== "tcg_manager" && player.role !== "admin") {
@@ -69,7 +69,7 @@ export const requireGeekarenaManager = createMiddleware({ type: "function" }).se
   },
 );
 
-export const requireGeekarenaOrganizer = createMiddleware({ type: "function" }).server(
+export const requireNexusOrganizer = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
     const { admin, player } = await resolveCaller();
     if (
@@ -83,7 +83,7 @@ export const requireGeekarenaOrganizer = createMiddleware({ type: "function" }).
   },
 );
 
-export const requireGeekarenaUser = createMiddleware({ type: "function" }).server(
+export const requireNexusUser = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
     const { admin, player } = await resolveCaller();
     return next({ context: { admin, player } });

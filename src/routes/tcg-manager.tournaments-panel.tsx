@@ -5,7 +5,7 @@ import { Loader2, Eye, ArrowRight, XCircle, FileX } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getManagerPendingTournaments,
   getManagerApprovedTournaments,
@@ -13,7 +13,7 @@ import {
   managerUndoApproval,
   unapproveManagerTournament,
   unpublishManagerTournament,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,7 +49,7 @@ function formatCountdown(target: string | null | undefined): { text: string; exp
 
 function ManagerTournamentsPanel() {
   const navigate = useNavigate();
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
 
   const fetchPending = useServerFn(getManagerPendingTournaments);

@@ -5,13 +5,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getNexusAdmin } from "./nexus-admin.server";
 import { checkRateLimit, getClientIp } from "./rate-limit.server";
-import { GEEKARENA_URL, GEEKARENA_PUBLISHABLE_KEY } from "@/integrations/geekarena/client";
+import { NEXUS_URL, NEXUS_PUBLISHABLE_KEY } from "@/integrations/nexus/client";
 
 // Cliente anónimo efímero para operaciones de auth server-side.
 function getAuthClient() {
-  return createClient(GEEKARENA_URL, GEEKARENA_PUBLISHABLE_KEY, {
+  return createClient(NEXUS_URL, NEXUS_PUBLISHABLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -24,7 +24,7 @@ function escapeLike(s: string) {
 // Resuelve identifier (email o geek_tag) → email. Solo en servidor.
 async function resolveEmail(identifier: string): Promise<string | null> {
   if (identifier.includes("@")) return identifier;
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
   const { data: player } = await admin
     .from("players")
     .select("email")
@@ -75,7 +75,7 @@ export const loginWithIdentifier = createServerFn({ method: "POST" })
       return { ok: false as const, code: "unconfirmed" as const, masked_email: maskEmail(email) };
     }
 
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
     const { data: player } = await admin
       .from("players")
       .select("role")

@@ -5,8 +5,8 @@ import { Eye, ArrowRight, FileDown, FileX } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getManagerPendingTournaments } from "@/lib/geekarena-manager.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { getManagerPendingTournaments } from "@/lib/nexus-manager.functions";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/tcg-manager/")({
@@ -27,7 +27,7 @@ type Row = {
 
 function ManagerPendingTournaments() {
   const navigate = useNavigate();
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
   const fetchList = useServerFn(getManagerPendingTournaments);
 

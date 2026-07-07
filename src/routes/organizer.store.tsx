@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { Store, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getOrganizerOverview,
   updateStoreInfo,
-} from "@/lib/geekarena-organizer.functions";
+} from "@/lib/nexus-organizer.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,7 @@ const emptyForm: FormState = {
 };
 
 function OrganizerHome() {
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
   const email = player?.email ?? null;
 
   const fetchOverview = useServerFn(getOrganizerOverview);

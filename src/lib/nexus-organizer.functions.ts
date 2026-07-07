@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaOrganizer } from "./geekarena-auth.middleware";
-import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { requireNexusOrganizer } from "./nexus-auth.middleware";
+import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { todayInMexicoStr } from "./utils";
 
 function normalizeId(id: string): string {
@@ -10,7 +10,7 @@ function normalizeId(id: string): string {
 }
 
 async function resolvePlayer(
-  admin: ReturnType<typeof getGeekarenaAdmin>,
+  admin: ReturnType<typeof getNexusAdmin>,
   geekTag: string,
   membershipId: string | null,
   gameId: string,
@@ -74,7 +74,7 @@ function computeQualifying(dateStr: string) {
 
 // ---------- Mi Tienda ----------
 export const getOrganizerOverview = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -110,7 +110,7 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
   });
 
 export const updateHomeStore = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -123,7 +123,7 @@ export const updateHomeStore = createServerFn({ method: "POST" })
   });
 
 export const updateStoreInfo = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator(
     (d: {
       store_id: string;
@@ -187,7 +187,7 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
 
 // ---------- Mis Torneos ----------
 export const getMyTournaments = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator((d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
     z
       .object({
@@ -287,7 +287,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
   });
 
 export const deleteDraftTournament = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -311,7 +311,7 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
 
 // ---------- Subir Torneo (DRAFT vacío, legacy) ----------
 export const createTournament = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator((d: { game_id: string; tournament_date: string; csv_url?: string | null }) =>
     z
       .object({
@@ -357,7 +357,7 @@ const ResultRowSchema = z.object({
 });
 
 export const uploadTournamentResults = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator(
     (d: {
       store_id: string;
@@ -525,7 +525,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
 
 // ---------- Stores list (organizer/admin) ----------
 export const listActiveStores = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .handler(async ({ context }) => {
     const { admin } = context;
     const { data, error } = await admin
@@ -540,7 +540,7 @@ export const listActiveStores = createServerFn({ method: "POST" })
 
 // ---------- Check existing player tags (for preview) ----------
 export const lookupPlayerTags = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator((d: { tags: string[] }) =>
     z.object({ tags: z.array(z.string().min(1).max(120)).min(1).max(2000) }).parse(d),
   )
@@ -553,7 +553,7 @@ export const lookupPlayerTags = createServerFn({ method: "POST" })
 
 // ---------- Badge counts ----------
 export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -586,7 +586,7 @@ export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
 
 // ---------- Organizer read-only calendar (scoped to home_store) ----------
 export const getOrganizerCalendar = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator((d: { week_start?: string }) => z.object({ week_start: z.string().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -769,7 +769,7 @@ function classifyPlayer(
 }
 
 export const getStoreAnalytics = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator(
     (d: { store_id?: string; date_from?: string; date_to?: string; game_id?: string }) =>
       z
@@ -1038,7 +1038,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
 
 // ---------- Historial de Torneos (organizer scoped) ----------
 export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator(
     (d: {
       status?: string;
@@ -1145,7 +1145,7 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
   });
 
 export const getOrganizerFilterOptions = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -1178,7 +1178,7 @@ type Alert = {
 };
 
 export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaOrganizer])
+  .middleware([requireNexusOrganizer])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )

@@ -1,13 +1,13 @@
-import { failDb } from "./geekarena-admin.server";
+import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaUser } from "./geekarena-auth.middleware";
+import { requireNexusUser } from "./nexus-auth.middleware";
 
 // ============================================================
 // searchStores — busca tiendas activas por nombre para autocompletar
 // ============================================================
 export const searchStores = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { search: string }) => z.object({ search: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin } = context;
@@ -32,7 +32,7 @@ export const searchStores = createServerFn({ method: "POST" })
 // createStandaloneSession
 // ============================================================
 export const createStandaloneSession = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator(
     (d: {
       session_type: "competitive" | "casual";
@@ -90,7 +90,7 @@ export const createStandaloneSession = createServerFn({ method: "POST" })
 // getStandaloneSessions — lista sesiones del player con metadata
 // ============================================================
 export const getStandaloneSessions = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -193,7 +193,7 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
 // getStandaloneSessionDetail — rondas de una sesión específica
 // ============================================================
 export const getStandaloneSessionDetail = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { session_id: string }) =>
     z.object({ session_id: z.string().uuid() }).parse(d),
   )
@@ -298,7 +298,7 @@ export const getStandaloneSessionDetail = createServerFn({ method: "POST" })
 // saveStandaloneRound — guarda o actualiza una ronda
 // ============================================================
 export const saveStandaloneRound = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator(
     (d: {
       session_id: string;
@@ -388,7 +388,7 @@ export const saveStandaloneRound = createServerFn({ method: "POST" })
 // deleteStandaloneRound — elimina una ronda específica
 // ============================================================
 export const deleteStandaloneRound = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { session_id: string; round_number: number }) =>
     z
       .object({
@@ -415,7 +415,7 @@ export const deleteStandaloneRound = createServerFn({ method: "POST" })
 // deleteStandaloneSession — elimina una sesión y sus rondas
 // ============================================================
 export const deleteStandaloneSession = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { session_id: string }) =>
     z.object({ session_id: z.string().uuid() }).parse(d),
   )
@@ -448,7 +448,7 @@ export const deleteStandaloneSession = createServerFn({ method: "POST" })
 // updateStandaloneSessionDetails — actualiza nombre y/o fecha de una sesión
 // ============================================================
 export const updateStandaloneSessionDetails = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { session_id: string; name?: string; session_date?: string | null }) =>
     z
       .object({
@@ -489,7 +489,7 @@ export const updateStandaloneSessionDetails = createServerFn({ method: "POST" })
 // undoSessionLink — revierte el vínculo de una sesión matched
 // ============================================================
 export const undoSessionLink = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { session_id: string }) =>
     z.object({ session_id: z.string().uuid() }).parse(d),
   )
@@ -573,7 +573,7 @@ export const undoSessionLink = createServerFn({ method: "POST" })
 // getTournamentCandidates — torneos candidatos para desambiguación manual
 // ============================================================
 export const getTournamentCandidates = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { session_id: string }) =>
     z.object({ session_id: z.string().uuid() }).parse(d),
   )
@@ -679,7 +679,7 @@ export const getTournamentCandidates = createServerFn({ method: "POST" })
 // linkSessionManually — vinculación manual por el player
 // ============================================================
 export const linkSessionManually = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { session_id: string; tournament_id: string }) =>
     z
       .object({
@@ -783,7 +783,7 @@ export const linkSessionManually = createServerFn({ method: "POST" })
   });
 
 export const getMyTrackedTournaments = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -856,7 +856,7 @@ export const getMyTrackedTournaments = createServerFn({ method: "POST" })
   });
 
 export const getTournamentSessionDetail = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -956,7 +956,7 @@ export const getTournamentSessionDetail = createServerFn({ method: "POST" })
 // getMyAttendedTournamentIds — de una lista de torneos, cuáles jugó el player
 // ============================================================
 export const getMyAttendedTournamentIds = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { tournament_ids: string[] }) =>
     z.object({ tournament_ids: z.array(z.string().uuid()) }).parse(d),
   )

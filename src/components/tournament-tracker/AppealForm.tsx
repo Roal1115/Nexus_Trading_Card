@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X, Send, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { createAppeal } from "@/lib/geekarena-appeals.functions";
-import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
+import { createAppeal } from "@/lib/nexus-appeals.functions";
+import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { motion } from "framer-motion";
 
 type DeckIdentifier = {

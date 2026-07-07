@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Filter, Search } from "lucide-react";
-import { listAuditLog, type AuditLogRow } from "@/lib/geekarena-admin.functions";
+import { listAuditLog, type AuditLogRow } from "@/lib/nexus-admin.functions";
 import { useActivityLastSeen } from "@/hooks/use-badge-counts";
 
 export const Route = createFileRoute("/admin/activity")({
-  head: () => ({ meta: [{ title: "Activity Center — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Activity Center — Nexus" }] }),
   component: ActivityPage,
 });
 

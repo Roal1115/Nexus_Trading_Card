@@ -1,10 +1,10 @@
-import { failDb } from "./geekarena-admin.server";
+import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaUser } from "./geekarena-auth.middleware";
+import { requireNexusUser } from "./nexus-auth.middleware";
 
 export const getMyDashboard = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -279,7 +279,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
   });
 
 export const getTournamentDetail = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -368,7 +368,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
   });
 
 export const toggleProfilePrivacy = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { is_public: boolean }) => z.object({ is_public: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -381,7 +381,7 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
   });
 
 export const getPublicProfile = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player: viewer } = context;
@@ -535,7 +535,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
   });
 
 export const getMyStats = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -812,7 +812,7 @@ export const getMyStats = createServerFn({ method: "POST" })
   });
 
 export const getMyStatsGames = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 

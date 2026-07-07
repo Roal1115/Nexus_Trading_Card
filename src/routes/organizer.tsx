@@ -2,18 +2,18 @@ import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { BarChart3, Calendar, History, Loader2, Menu, Scale, Store, Trophy, Upload } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts } from "@/hooks/use-badge-counts";
-import { getOrganizerBadgeCounts } from "@/lib/geekarena-organizer.functions";
+import { getOrganizerBadgeCounts } from "@/lib/nexus-organizer.functions";
 
 export const Route = createFileRoute("/organizer")({
-  head: () => ({ meta: [{ title: "Panel del Organizador — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Panel del Organizador — Nexus" }] }),
   component: OrganizerLayout,
 });
 
 function OrganizerLayout() {
-  const { role, player, loading } = useGeekarenaRole();
+  const { role, player, loading } = useNexusRole();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 

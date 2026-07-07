@@ -2,7 +2,7 @@
 // All reads go through the admin client server-side to keep RLS simple.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { getNexusAdmin, failDb } from "./nexus-admin.server";
 
 // ── Caché en memoria ─────────────────────────────────────────────
 const leaderboardCache = new Map<string, { data: any; ts: number }>();
@@ -20,7 +20,7 @@ function setCache(key: string, data: any) {
 // ─────────────────────────────────────────────────────────────────
 
 export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(async () => {
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
   const [gamesRes, storesRes, monthsRes] = await Promise.all([
     admin.from("games").select("id, slug, name").eq("is_active", true).order("name"),
     admin
@@ -69,7 +69,7 @@ const MONTH_NAMES = [
 ];
 
 async function getSeasonForMonth(
-  admin: ReturnType<typeof getGeekarenaAdmin>,
+  admin: ReturnType<typeof getNexusAdmin>,
   monthValue: string,
 ): Promise<{ id: string; slug: string; name: string } | null> {
   const [year, month] = monthValue.split("-").map(Number);
@@ -121,7 +121,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
     const cached = getCached(cacheKey);
     if (cached) return cached;
 
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
 
     // 1. Resolver cityStoreIds
     let cityStoreIds: string[] | null = null;

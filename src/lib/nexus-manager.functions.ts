@@ -1,9 +1,9 @@
-import { failDb } from "./geekarena-admin.server";
+import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaManager, requireGeekarenaAdmin } from "./geekarena-auth.middleware";
-import { loadTournamentDetail } from "./geekarena-tournament-detail.server";
-import { logAction, recomputeSnapshot, tfMonth } from "./geekarena-admin.functions";
+import { requireNexusManager, requireNexusAdmin } from "./nexus-auth.middleware";
+import { loadTournamentDetail } from "./nexus-tournament-detail.server";
+import { logAction, recomputeSnapshot, tfMonth } from "./nexus-admin.functions";
 
 async function getManagerGameIds(
   admin: any,
@@ -18,7 +18,7 @@ async function getManagerGameIds(
 }
 
 export const getManagerGames = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
     if (player.role === "admin") {
@@ -37,7 +37,7 @@ export const getManagerGames = createServerFn({ method: "POST" })
   });
 
 export const getManagerPendingTournaments = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
     const gameIds = await getManagerGameIds(admin, player);
@@ -57,7 +57,7 @@ export const getManagerPendingTournaments = createServerFn({ method: "POST" })
   });
 
 export const getManagerApprovedTournaments = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
     const gameIds = await getManagerGameIds(admin, player);
@@ -91,7 +91,7 @@ async function assertManagerOwnsGame(
 }
 
 export const getManagerTournamentDetail = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -108,7 +108,7 @@ export const getManagerTournamentDetail = createServerFn({ method: "POST" })
   });
 
 export const managerApproveTournament = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -150,7 +150,7 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
   });
 
 export const managerRejectTournament = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { tournament_id: string; reason: string }) =>
     z
       .object({
@@ -192,7 +192,7 @@ export const managerRejectTournament = createServerFn({ method: "POST" })
   });
 
 export const managerUndoApproval = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -232,7 +232,7 @@ export const managerUndoApproval = createServerFn({ method: "POST" })
 
 // Admin-only: list all active games (used by Asignar TCGs modal)
 export const listAllGames = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .handler(async ({ context }) => {
     const { admin } = context;
     const { data, error } = await admin
@@ -246,7 +246,7 @@ export const listAllGames = createServerFn({ method: "POST" })
 
 // Admin-only: get a manager's currently assigned game ids
 export const getManagerAssignedGameIds = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator((d: { player_id: string }) => z.object({ player_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin } = context;
@@ -259,7 +259,7 @@ export const getManagerAssignedGameIds = createServerFn({ method: "POST" })
   });
 
 export const assignManagerGames = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaAdmin])
+  .middleware([requireNexusAdmin])
   .inputValidator((d: { player_id: string; game_ids: string[] }) =>
     z
       .object({
@@ -289,7 +289,7 @@ export const assignManagerGames = createServerFn({ method: "POST" })
 
 // ---------- Badge counts ----------
 export const getManagerBadgeCounts = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -331,7 +331,7 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
 
 // ---------- Mi Historial ----------
 export const getManagerHistory = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator(
     (d: { action_type?: string; date_from?: string; date_to?: string; page?: number }) =>
       z
@@ -398,7 +398,7 @@ export const getManagerHistory = createServerFn({ method: "POST" })
   });
 
 export const getManagerCalendar = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { game_id?: string; week_start?: string }) =>
     z
       .object({
@@ -592,7 +592,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
 // ==================== Store Schedules (Manager) ====================
 
 export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -619,7 +619,7 @@ export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
   });
 
 export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator(
     (d: {
       store_id: string;
@@ -670,7 +670,7 @@ export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
   });
 
 export const deleteStoreScheduleManager = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { schedule_id: string }) =>
     z.object({ schedule_id: z.string().uuid() }).parse(d),
   )
@@ -694,7 +694,7 @@ export const deleteStoreScheduleManager = createServerFn({ method: "POST" })
 // ==================== Unapprove Tournament (Manager) ====================
 
 export const unapproveManagerTournament = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { tournament_id: string; reason: string }) =>
     z
       .object({
@@ -740,7 +740,7 @@ export const unapproveManagerTournament = createServerFn({ method: "POST" })
 // ==================== List stores (Manager) ====================
 
 export const listManagerStores = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin } = context;
     const { data } = await admin
@@ -751,7 +751,7 @@ export const listManagerStores = createServerFn({ method: "POST" })
   });
 
 export const getManagerResponsibleStores = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -794,7 +794,7 @@ export const getManagerResponsibleStores = createServerFn({ method: "POST" })
   });
 
 export const updateStoreData = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator(
     (d: {
       store_id: string;
@@ -871,7 +871,7 @@ export const updateStoreData = createServerFn({ method: "POST" })
   });
 
 export const getManagerPublishedTournaments = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
     const gameIds = await getManagerGameIds(admin, player);
@@ -890,7 +890,7 @@ export const getManagerPublishedTournaments = createServerFn({ method: "POST" })
   });
 
 export const unpublishManagerTournament = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { tournament_id: string; reason: string }) =>
     z
       .object({
@@ -962,7 +962,7 @@ export const unpublishManagerTournament = createServerFn({ method: "POST" })
 
 // ---------- Historial de Torneos (scoped al manager) ----------
 export const getManagerTournamentHistory = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator(
     (d: {
       status?: string;
@@ -1092,7 +1092,7 @@ export const getManagerTournamentHistory = createServerFn({ method: "POST" })
   });
 
 export const getManagerFilterOptions = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
     const gameIds = await getManagerGameIds(admin, player);
@@ -1133,7 +1133,7 @@ export const getManagerFilterOptions = createServerFn({ method: "POST" })
   });
 
 export const getManagerAnalyticsOverview = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator(
     (d: {
       game_id: string;
@@ -1271,7 +1271,7 @@ export const getManagerAnalyticsOverview = createServerFn({ method: "POST" })
   });
 
 export const managerRepublishTournament = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator((d: { tournament_id: string }) =>
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
@@ -1303,7 +1303,7 @@ export const managerRepublishTournament = createServerFn({ method: "POST" })
   });
 
 export const getManagerAnalyticsTrend = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaManager])
+  .middleware([requireNexusManager])
   .inputValidator(
     (d: {
       game_id: string;

@@ -1,8 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { seedTestAccounts } from "@/lib/geekarena-setup.functions";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { seedTestAccounts } from "@/lib/nexus-setup.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/setup")({
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/setup")({
 
 function SetupPage() {
   const router = useRouter();
-  const { role, loading: roleLoading } = useGeekarenaRole();
+  const { role, loading: roleLoading } = useNexusRole();
 
   if (roleLoading) return null;
   if (role !== "admin") {

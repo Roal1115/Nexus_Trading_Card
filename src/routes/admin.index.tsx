@@ -5,8 +5,8 @@ import { Eye, ArrowRight, FileDown, FileX } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { listTournamentsByStatus } from "@/lib/geekarena-admin.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { listTournamentsByStatus } from "@/lib/nexus-admin.functions";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/admin/")({
@@ -24,7 +24,7 @@ type Row = {
 
 function PendingTournaments() {
   const navigate = useNavigate();
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
   const fetchList = useServerFn(listTournamentsByStatus);
 

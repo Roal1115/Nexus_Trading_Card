@@ -7,12 +7,12 @@ import {
   loginWithIdentifier,
   resendConfirmation,
   sendPasswordReset,
-} from "@/lib/geekarena-auth-helpers.functions";
-import { geekarena } from "@/integrations/geekarena/client";
+} from "@/lib/nexus-auth-helpers.functions";
+import { nexus } from "@/integrations/nexus/client";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Iniciar sesión — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Iniciar sesión — Nexus" }] }),
   component: LoginPage,
 });
 
@@ -77,7 +77,7 @@ function LoginPage() {
     }
 
     // Instalar la sesión emitida por el servidor en el cliente
-    const { error: sessionError } = await geekarena.auth.setSession(res.session);
+    const { error: sessionError } = await nexus.auth.setSession(res.session);
     if (sessionError) {
       toast.error(translateAuthError(sessionError.message));
       return;
@@ -116,7 +116,7 @@ function LoginPage() {
       <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
         <div className="mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Geek Arena
+            Nexus
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
             {forgotMode ? "Recupera tu acceso" : "Bienvenido de vuelta"}
@@ -156,7 +156,7 @@ function LoginPage() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
-                placeholder="Geek Tag o jugador@geekarena.gg"
+                placeholder="Geek Tag o jugador@nexus.gg"
                 className="input-base"
               />
             </Field>

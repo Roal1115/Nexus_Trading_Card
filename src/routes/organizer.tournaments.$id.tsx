@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
-import { getOrganizerTournamentDetail } from "@/lib/geekarena-organizer.functions";
+import { getOrganizerTournamentDetail } from "@/lib/nexus-organizer.functions";
 import { Badge } from "@/components/ui/badge";
 import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 

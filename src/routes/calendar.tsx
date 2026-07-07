@@ -14,21 +14,21 @@ import {
   Twitch,
   Twitter,
 } from "lucide-react";
-import { getPublicCalendar } from "@/lib/geekarena-public.functions";
-import { getMyAttendedTournamentIds } from "@/lib/geekarena-standalone.functions";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { getPublicCalendar } from "@/lib/nexus-public.functions";
+import { getMyAttendedTournamentIds } from "@/lib/nexus-standalone.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
 import { useWeekNav, useCalendarGrid, WeeklyGrid } from "@/components/calendar/weekly-grid";
 
 export const Route = createFileRoute("/calendar")({
-  head: () => ({ meta: [{ title: "Calendario — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
   component: CalendarPage,
 });
 
 function CalendarPage() {
   const fetchCalendar = useServerFn(getPublicCalendar);
   const fetchAttended = useServerFn(getMyAttendedTournamentIds);
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const { activeTcg } = useTCG();
 
   const { weekDates, weekStartStr, goToPrevWeek, goToNextWeek, goToToday, weekLabel } = useWeekNav();

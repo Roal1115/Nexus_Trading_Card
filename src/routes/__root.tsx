@@ -8,7 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { GeekarenaAuthProvider } from "../context/geekarena-auth.context";
+import { NexusAuthProvider } from "../context/nexus-auth.context";
 import { TCGProvider } from "@/context/tcg.context";
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -257,7 +257,7 @@ function RootComponent() {
 
   return (
     <TCGProvider>
-      <GeekarenaAuthProvider>
+      <NexusAuthProvider>
         <div className="min-h-dvh bg-radial-nexus">
           {!isPanel && <AppHeader />}
           <AnimatePresence mode="popLayout" initial={false}>
@@ -285,7 +285,7 @@ function RootComponent() {
           <BottomNav />
           <PanelBottomNav />
         </div>
-      </GeekarenaAuthProvider>
+      </NexusAuthProvider>
     </TCGProvider>
   );
 }

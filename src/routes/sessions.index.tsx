@@ -18,16 +18,16 @@ import {
   Search,
   Loader2,
 } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getStandaloneSessions,
   deleteStandaloneSession,
   createStandaloneSession,
   searchStores,
   getMyTrackedTournaments,
-} from "@/lib/geekarena-standalone.functions";
-import { getMyStatsGames } from "@/lib/geekarena-player.functions";
-import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
+} from "@/lib/nexus-standalone.functions";
+import { getMyStatsGames } from "@/lib/nexus-player.functions";
+import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 type DeckIdentifier = {
@@ -42,7 +42,7 @@ function cleanName(name: string): string {
 }
 
 export const Route = createFileRoute("/sessions/")({
-  head: () => ({ meta: [{ title: "Mis Sesiones — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Mis Sesiones — Nexus" }] }),
   component: SessionsPage,
 });
 
@@ -271,7 +271,7 @@ function TrackedTournamentCard({ tournament }: { tournament: TrackedTournament }
 }
 
 function SessionsPage() {
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
   const fetchSessions = useServerFn(getStandaloneSessions);
   const removeSession = useServerFn(deleteStandaloneSession);
   const fetchTracked = useServerFn(getMyTrackedTournaments);

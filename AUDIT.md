@@ -1,4 +1,4 @@
-# GeekArena — Auditoría de seguridad y mejoras
+# Nexus — Auditoría de seguridad y mejoras
 
 Fecha: 2026-07-06 · Alcance: `src/` completo (~44k LOC), config del repo, flujo de auth y las 154 server functions.
 
@@ -9,7 +9,7 @@ Fecha: 2026-07-06 · Alcance: `src/` completo (~44k LOC), config del repo, flujo
 ### 🔴 CRÍTICO
 
 #### 1.1 Service role key commiteada en git
-- **Dónde:** `.env` está trackeado en git (`git ls-files` lo confirma) y contiene `GEEKARENA_SERVICE_ROLE_KEY`.
+- **Dónde:** `.env` está trackeado en git (`git ls-files` lo confirma) y contiene `NEXUS_SERVICE_ROLE_KEY`.
 - **Riesgo:** cualquiera con acceso al repo (colaborador, fork, leak del historial) tiene **acceso total a la base de datos**, bypaseando RLS y toda la lógica de autorización. La key vive en el historial aunque la borres del archivo.
 - **Fix:**
   1. Rotar la service role key en el dashboard de Supabase **ya** (Settings → API → regenerate).
@@ -20,14 +20,14 @@ Fecha: 2026-07-06 · Alcance: `src/` completo (~44k LOC), config del repo, flujo
 ### 🟠 ALTO
 
 #### 1.2 Enumeración de emails sin autenticación (`resolveEmailByGeekTag`)
-- **Dónde:** `src/lib/geekarena-auth-helpers.functions.ts:5`.
+- **Dónde:** `src/lib/nexus-auth-helpers.functions.ts:5`.
 - **Riesgo:** endpoint público que convierte cualquier `geek_tag` en el **email real del jugador**. Un atacante puede scrapear el leaderboard (tags públicos) y construir una lista de correos para phishing dirigido. Además usa `ilike` sin escapar, así que `%` como tag devuelve el primer email de la tabla.
 - **Fix:** en lugar de devolver el email al cliente, haz el sign-in del lado del servidor: una server function `loginWithGeekTag(tag, password)` que resuelve el email internamente y llama a `signInWithPassword` con el admin client, devolviendo solo la sesión o el error. El email nunca viaja al navegador de un no-autenticado.
 
 #### 1.3 Métricas de sponsors inflables sin autenticación
-- **Dónde:** `registerAdView` y `registerSponsorView` en `geekarena-ads.functions.ts` (sin middleware).
+- **Dónde:** `registerAdView` y `registerSponsorView` en `nexus-ads.functions.ts` (sin middleware).
 - **Riesgo:** si les cobras o reportas vistas a los sponsors, cualquiera puede inflar los contadores con un loop de `fetch`. Es fraude de métricas trivial.
-- **Fix mínimo:** requerir `requireGeekarenaUser` + dedupe por (player, sponsor, día) en una tabla o constraint único. Si necesitas contar vistas anónimas, agrega rate limiting por IP en el edge (Cloudflare WAF rule) y acepta que el número es aproximado.
+- **Fix mínimo:** requerir `requireNexusUser` + dedupe por (player, sponsor, día) en una tabla o constraint único. Si necesitas contar vistas anónimas, agrega rate limiting por IP en el edge (Cloudflare WAF rule) y acepta que el número es aproximado.
 
 ### 🟡 MEDIO
 
@@ -47,18 +47,18 @@ Fecha: 2026-07-06 · Alcance: `src/` completo (~44k LOC), config del repo, flujo
 
 ### 🟢 BAJO / observaciones
 
-- **1.7** `seedTestAccounts` (`geekarena-setup.functions.ts`) está gated a admin, pero código de seeding no debería llegar a producción — muévelo a un script o borra.
-- **1.8** El anon key hardcodeado en `src/integrations/geekarena/client.ts` está bien (es publishable por diseño), pero **verifica que RLS esté habilitado en TODAS las tablas** del proyecto GeekArena. Hoy nada del cliente lee tablas directamente, pero el anon key permite intentarlo. Corre: `select tablename from pg_tables where schemaname='public' and rowsecurity=false;`
-- **1.9** Tokens de sesión en `localStorage` (`storageKey: "geekarena.auth"`) — estándar de supabase-js, pero significa que cualquier XSS roba la sesión. El único `dangerouslySetInnerHTML` está en `chart.tsx` (shadcn, contenido controlado) — OK hoy, mantenlo así.
+- **1.7** `seedTestAccounts` (`nexus-setup.functions.ts`) está gated a admin, pero código de seeding no debería llegar a producción — muévelo a un script o borra.
+- **1.8** El anon key hardcodeado en `src/integrations/nexus/client.ts` está bien (es publishable por diseño), pero **verifica que RLS esté habilitado en TODAS las tablas** del proyecto Nexus. Hoy nada del cliente lee tablas directamente, pero el anon key permite intentarlo. Corre: `select tablename from pg_tables where schemaname='public' and rowsecurity=false;`
+- **1.9** Tokens de sesión en `localStorage` (`storageKey: "nexus.auth"`) — estándar de supabase-js, pero significa que cualquier XSS roba la sesión. El único `dangerouslySetInnerHTML` está en `chart.tsx` (shadcn, contenido controlado) — OK hoy, mantenlo así.
 - **1.10** El middleware hace 2 round-trips a Supabase por **cada** server function call (getUser + select player). Con navegación normal son decenas por minuto por usuario. Considera cachear el lookup del player por token unos segundos (Map en memoria con TTL), o validar el JWT localmente con el JWT secret.
 
 ---
 
 ## 2. Calidad de código / arquitectura
 
-- **2.1 `inputValidator` deprecado** — las 3 funciones de `geekarena-public.functions.ts` (y probablemente el resto) usan la API deprecada de TanStack Start. Migrar a `.validator()` antes de que un upgrade lo rompa.
-- **2.2 `as any` y `any[]` por todos lados** — los tipos de fila están escritos a mano y desincronizados. Genera tipos reales: `supabase gen types typescript --project-id tbtyxtigbsljyrwyelqr > src/integrations/geekarena/types.ts` y tipa el client. Elimina la mitad de los `as any` de golpe.
-- **2.3 `geekarena-admin.functions.ts` tiene 2,100+ líneas** — divide por dominio (stores, players, seasons, tournaments, staff). Mismo caso `geekarena-standalone.functions.ts` (~950).
+- **2.1 `inputValidator` deprecado** — las 3 funciones de `nexus-public.functions.ts` (y probablemente el resto) usan la API deprecada de TanStack Start. Migrar a `.validator()` antes de que un upgrade lo rompa.
+- **2.2 `as any` y `any[]` por todos lados** — los tipos de fila están escritos a mano y desincronizados. Genera tipos reales: `supabase gen types typescript --project-id tbtyxtigbsljyrwyelqr > src/integrations/nexus/types.ts` y tipa el client. Elimina la mitad de los `as any` de golpe.
+- **2.3 `nexus-admin.functions.ts` tiene 2,100+ líneas** — divide por dominio (stores, players, seasons, tournaments, staff). Mismo caso `nexus-standalone.functions.ts` (~950).
 - **2.4 Fetch imperativo repetido** — cada ruta repite el patrón `useState + useEffect + setLoading`. Ya tienes `@tanstack/react-query` instalado y no lo usas en las rutas. Migrar gradualmente: elimina estados de loading manuales, agrega cache/retry/refetch gratis, y de paso los `// eslint-disable exhaustive-deps` desaparecen.
 - **2.5 Colores de TCG duplicados** — `GAME_COLORS` existe en `weekly-grid.tsx` (por slug) y una versión vieja por nombre existía en `calendar.tsx`; `admin.calendar.tsx` tiene `ZONE_COLORS` propio. Un solo módulo `src/lib/game-colors.ts` como fuente de verdad — idealmente el color debería venir de la tabla `games` para que agregar un TCG no requiera deploy.
 - **2.6 Lógica de "semana" duplicada** — `useWeekNav` (domingo-based) vs `getManagerCalendar` (lunes-based) vs `getPublicCalendar`. Unifica la convención (elige domingo o lunes) o habrá bugs de off-by-one en los bordes.

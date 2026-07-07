@@ -22,7 +22,7 @@ import {
   getStoreSchedulesForManager,
   upsertStoreScheduleManager,
   deleteStoreScheduleManager,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 import { StoreSchedulesDialog } from "@/components/admin/StoreSchedulesDialog";
 import { StoreEditModal } from "@/components/stores/StoreEditModal";
 

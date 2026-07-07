@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SkeletonLine } from "@/components/ui/skeleton-loader";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 import {
   listSponsors,
   createSponsor,
@@ -14,7 +14,7 @@ import {
   resetSponsorViews,
   deleteSponsor,
   getSponsorMetrics,
-} from "@/lib/geekarena-ads.functions";
+} from "@/lib/nexus-ads.functions";
 
 export const Route = createFileRoute("/admin/ads")({
   head: () => ({ meta: [{ title: "Sponsors & Ads — Panel Admin" }] }),
@@ -506,11 +506,11 @@ function AdminAdsPage() {
               throw new Error(`El archivo excede el tamaño máximo permitido (${spec.maxLabel})`);
             }
             const path = `sponsors/${imagesSponsor.id}/${type}.webp`;
-            const { error } = await geekarena.storage
+            const { error } = await nexus.storage
               .from("sponsor-assets")
               .upload(path, file, { upsert: true, contentType: "image/webp" });
             if (error) throw new Error(error.message);
-            const { data } = geekarena.storage.from("sponsor-assets").getPublicUrl(path);
+            const { data } = nexus.storage.from("sponsor-assets").getPublicUrl(path);
             const url = `${data.publicUrl}?v=${Date.now()}`;
             const updateField =
               type === "logo"

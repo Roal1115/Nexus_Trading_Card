@@ -25,7 +25,7 @@ import {
   managerRejectTournament,
   managerUndoApproval,
   managerRepublishTournament,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";

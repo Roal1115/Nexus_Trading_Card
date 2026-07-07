@@ -9,7 +9,7 @@ import {
   createSeason,
   activateSeason,
   closeSeason,
-} from "@/lib/geekarena-admin.functions";
+} from "@/lib/nexus-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

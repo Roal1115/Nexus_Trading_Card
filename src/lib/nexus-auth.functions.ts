@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { getNexusAdmin, failDb } from "./nexus-admin.server";
 
 export const signupPlayer = createServerFn({ method: "POST" })
   .inputValidator(
@@ -30,7 +30,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data }) => {
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
 
     // Validar que cada juego seleccionado tenga su ID
     for (const gameId of data.game_ids) {

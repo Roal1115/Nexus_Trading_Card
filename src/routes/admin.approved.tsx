@@ -5,12 +5,12 @@ import { Upload, Eye, ArrowRight, FileDown, FileX, XCircle } from "lucide-react"
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   listTournamentsByStatus,
   publishTournaments,
   unapproveAdminTournament,
-} from "@/lib/geekarena-admin.functions";
+} from "@/lib/nexus-admin.functions";
 import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,7 @@ type Row = {
 
 function ApprovedTournaments() {
   const navigate = useNavigate();
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
   const fetchList = useServerFn(listTournamentsByStatus);
   const publish = useServerFn(publishTournaments);

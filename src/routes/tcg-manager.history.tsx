@@ -6,7 +6,7 @@ import { FileLink } from "@/components/ui/FileLink";
 import {
   getManagerTournamentHistory,
   getManagerFilterOptions,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,

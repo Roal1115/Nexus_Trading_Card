@@ -5,11 +5,11 @@ import { Plus, Trash2, ExternalLink, Info, Filter } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getMyTournaments,
   deleteDraftTournament,
-} from "@/lib/geekarena-organizer.functions";
+} from "@/lib/nexus-organizer.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -103,7 +103,7 @@ function StatusBadge({ status, reason }: { status: string; reason?: string | nul
 }
 
 function TournamentsPage() {
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
   const fetchList = useServerFn(getMyTournaments);
   const removeDraft = useServerFn(deleteDraftTournament);
 

@@ -1,22 +1,22 @@
-// GeekArena Supabase client
+// Nexus Supabase client
 // This project is bound to a Lovable Cloud backend, so the auto-generated
 // client in src/integrations/supabase/* cannot be repointed. Instead we
-// expose a second client here that talks to the user's own GeekArena
+// expose a second client here that talks to the user's own Nexus
 // Supabase project. Publishable (anon) keys are safe to ship in code.
 
 import { createClient } from "@supabase/supabase-js";
 
-export const GEEKARENA_URL = "https://tbtyxtigbsljyrwyelqr.supabase.co";
-export const GEEKARENA_PUBLISHABLE_KEY = "sb_publishable_Td7bOB5_MLT1Y5MHbO35qw_y-jeLHCw";
+export const NEXUS_URL = "https://tbtyxtigbsljyrwyelqr.supabase.co";
+export const NEXUS_PUBLISHABLE_KEY = "sb_publishable_Td7bOB5_MLT1Y5MHbO35qw_y-jeLHCw";
 
 const isBrowser = typeof window !== "undefined";
 
-export const geekarena = createClient(GEEKARENA_URL, GEEKARENA_PUBLISHABLE_KEY, {
+export const nexus = createClient(NEXUS_URL, NEXUS_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storageKey: "geekarena.auth",
+    storageKey: "nexus.auth",
     storage: isBrowser
       ? window.localStorage
       : {

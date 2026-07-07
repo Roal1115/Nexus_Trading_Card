@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRef, useEffect, useState } from "react";
 import { BarChart3, Trophy, Upload, CalendarDays, Store, Users } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 
 type NavItem = {
   to: string;
@@ -81,7 +81,7 @@ function NavTab({ item, isActive }: { item: NavItem; isActive: boolean }) {
 }
 
 export function PanelBottomNav() {
-  const { role } = useGeekarenaRole();
+  const { role } = useNexusRole();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const items =

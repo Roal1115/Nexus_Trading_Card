@@ -3,8 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getPlayerDetail } from "@/lib/geekarena-admin.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { getPlayerDetail } from "@/lib/nexus-admin.functions";
 import { Badge } from "@/components/ui/badge";
 import { SkeletonLine, SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ type Detail = Awaited<ReturnType<typeof getPlayerDetail>>;
 
 function PlayerDetailPage() {
   const { id } = Route.useParams();
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
   const fetchDetail = useServerFn(getPlayerDetail);
 

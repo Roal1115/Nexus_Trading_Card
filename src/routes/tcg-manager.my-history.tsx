@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Loader2 } from "lucide-react";
-import { getManagerHistory } from "@/lib/geekarena-manager.functions";
+import { getManagerHistory } from "@/lib/nexus-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager/my-history")({
   head: () => ({ meta: [{ title: "Mi Historial — TCG Manager" }] }),

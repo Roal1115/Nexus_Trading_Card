@@ -20,7 +20,7 @@ const TCGContext = createContext<TCGContextValue>({
   setTcgs: () => {},
 });
 
-const STORAGE_KEY = "geekarena.activeTcg";
+const STORAGE_KEY = "nexus.activeTcg";
 
 export function TCGProvider({ children }: { children: React.ReactNode }) {
   const [tcgs, setTcgsState] = useState<TCG[]>([]);

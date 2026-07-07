@@ -5,11 +5,11 @@ import { ChevronDown, HelpCircle, Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
 
-import { getLeaderboard, getLeaderboardOptions } from "@/lib/geekarena-leaderboard.functions";
-import { listActiveSponsors, getActiveBanner } from "@/lib/geekarena-ads.functions";
+import { getLeaderboard, getLeaderboardOptions } from "@/lib/nexus-leaderboard.functions";
+import { listActiveSponsors, getActiveBanner } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
@@ -190,7 +190,7 @@ function LeaderboardPage() {
   const fetchLeaderboard = useServerFn(getLeaderboard);
   const fetchActiveSponsors = useServerFn(listActiveSponsors);
   const fetchBanner = useServerFn(getActiveBanner);
-  const { player: viewer, role } = useGeekarenaRole();
+  const { player: viewer, role } = useNexusRole();
   const myGeekTag = viewer?.geek_tag ?? null;
 
   const isStaff = role === "admin" || role === "tcg_manager" || role === "organizer";

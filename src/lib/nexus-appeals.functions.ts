@@ -1,7 +1,7 @@
-import { failDb } from "./geekarena-admin.server";
+import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireGeekarenaUser } from "./geekarena-auth.middleware";
+import { requireNexusUser } from "./nexus-auth.middleware";
 
 const turnOrderSchema = z.enum(["first", "second"]).nullable().optional();
 
@@ -9,7 +9,7 @@ const turnOrderSchema = z.enum(["first", "second"]).nullable().optional();
 // createAppeal — jugador apela una ronda auto-poblada
 // ============================================================
 export const createAppeal = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: {
     round_id: string;
     proposed_player_leader_id?: string | null;
@@ -107,7 +107,7 @@ export const createAppeal = createServerFn({ method: "POST" })
 // getStoreAppeals — organizador ve apelaciones pendientes de su tienda
 // ============================================================
 export const getStoreAppeals = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
@@ -205,7 +205,7 @@ export const getStoreAppeals = createServerFn({ method: "POST" })
 // resolveAppeal — organizador acepta versión original o propuesta
 // ============================================================
 export const resolveAppeal = createServerFn({ method: "POST" })
-  .middleware([requireGeekarenaUser])
+  .middleware([requireNexusUser])
   .inputValidator((d: { appeal_id: string; resolution: "accepted_original" | "accepted_proposed" }) =>
     z
       .object({

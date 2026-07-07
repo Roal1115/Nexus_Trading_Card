@@ -13,10 +13,10 @@ import {
   Twitter,
   Twitch,
 } from "lucide-react";
-import { getPublicStoresList } from "@/lib/geekarena-public.functions";
+import { getPublicStoresList } from "@/lib/nexus-public.functions";
 
 export const Route = createFileRoute("/stores/")({
-  head: () => ({ meta: [{ title: "Tiendas — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Tiendas — Nexus" }] }),
   component: TiendasPage,
 });
 
@@ -122,7 +122,7 @@ function TiendasPage() {
       <div className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6">
         <header className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Geek Arena
+            Nexus
           </p>
           <h1 className="text-4xl font-bold text-white">Tiendas del Circuito</h1>
         </header>
@@ -145,7 +145,7 @@ function TiendasPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6">
       <header className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Geek Arena</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Nexus</p>
         <h1 className="text-4xl font-bold text-white">Tiendas del Circuito</h1>
         <p className="max-w-2xl text-sm text-gray-400">Encuentra dónde jugar en cada región.</p>
       </header>

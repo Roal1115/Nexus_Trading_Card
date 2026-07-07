@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { registerSponsorView } from "@/lib/geekarena-ads.functions";
+import { registerSponsorView } from "@/lib/nexus-ads.functions";
 
 export function AdVertical({ sponsor }: { sponsor: any }) {
   const registerSponsorViewFn = useServerFn(registerSponsorView);

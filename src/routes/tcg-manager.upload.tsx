@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { TournamentUploadForm } from "@/components/upload/TournamentUploadForm";
-import { getManagerGames } from "@/lib/geekarena-manager.functions";
+import { getManagerGames } from "@/lib/nexus-manager.functions";
 import { SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 
 type Game = { id: string; slug: string; name: string };
 
 export const Route = createFileRoute("/tcg-manager/upload")({
-  head: () => ({ meta: [{ title: "Subir Torneo — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Subir Torneo — Nexus" }] }),
   component: TcgManagerUploadPage,
 });
 
 function TcgManagerUploadPage() {
-  const { role, loading } = useGeekarenaRole();
+  const { role, loading } = useNexusRole();
   const navigate = useNavigate();
   const fetchManagerGames = useServerFn(getManagerGames);
   const [managerGames, setManagerGames] = useState<Game[] | null>(null);

@@ -30,7 +30,7 @@ import {
   getManagerGames,
   getManagerAnalyticsOverview,
   getManagerAnalyticsTrend,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager/analytics")({
   head: () => ({ meta: [{ title: "Analytics — TCG Manager" }] }),

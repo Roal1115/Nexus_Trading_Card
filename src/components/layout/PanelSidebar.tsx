@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut, Trophy, X } from "lucide-react";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 import { toast } from "sonner";
 import { NotificationBadge } from "@/components/ui/NotificationBadge";
 
@@ -44,7 +44,7 @@ export function PanelSidebar({
 
   const logout = async () => {
     closeMobile();
-    await geekarena.auth.signOut();
+    await nexus.auth.signOut();
     toast.success("Sesión cerrada");
     navigate({ to: "/login" });
   };
@@ -99,7 +99,7 @@ export function PanelSidebar({
             <Trophy size={16} />
           </span>
           <div>
-            <div className="text-sm font-bold text-white">Geek Arena</div>
+            <div className="text-sm font-bold text-white">Nexus</div>
             <div className="text-[10px] uppercase tracking-widest text-primary">{subtitle}</div>
           </div>
         </Link>

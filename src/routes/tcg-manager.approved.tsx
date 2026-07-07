@@ -5,12 +5,12 @@ import { Loader2, Eye, ArrowRight, FileDown, FileX, XCircle } from "lucide-react
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getManagerApprovedTournaments,
   managerUndoApproval,
   unapproveManagerTournament,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
@@ -43,7 +43,7 @@ function formatCountdown(target: string | null): { text: string; expired: boolea
 
 function ManagerApprovedTournaments() {
   const navigate = useNavigate();
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
   const fetchList = useServerFn(getManagerApprovedTournaments);
   const undoFn = useServerFn(managerUndoApproval);

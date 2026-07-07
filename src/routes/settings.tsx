@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown, LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 import {
   SkeletonLine,
@@ -16,11 +16,11 @@ import {
   addMyTcgId,
   updateMyEmail,
   updateMyPassword,
-} from "@/lib/geekarena-settings.functions";
+} from "@/lib/nexus-settings.functions";
 import ReactDOM from "react-dom";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Configuración — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Configuración — Nexus" }] }),
   component: SettingsPage,
 });
 
@@ -532,7 +532,7 @@ function SettingsPage() {
         <button
           type="button"
           onClick={async () => {
-            await geekarena.auth.signOut();
+            await nexus.auth.signOut();
             window.location.href = "/login";
           }}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-500/20 active:scale-95"

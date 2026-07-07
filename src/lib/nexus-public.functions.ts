@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { toLocalDateStr, todayInMexicoStr } from "./utils";
 
 export const getPublicStoresList = createServerFn({ method: "POST" }).handler(async () => {
-  const admin = getGeekarenaAdmin();
+  const admin = getNexusAdmin();
   const { data: stores, error } = await admin
     .from("stores")
     .select(
@@ -41,7 +41,7 @@ export const getPublicStoresList = createServerFn({ method: "POST" }).handler(as
 export const getStoreProfile = createServerFn({ method: "POST" })
   .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data }) => {
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
     const { data: store, error } = await admin
       .from("stores")
       .select(
@@ -70,7 +70,7 @@ export const getStoreProfile = createServerFn({ method: "POST" })
 export const getStoreWeeklySchedule = createServerFn({ method: "POST" })
   .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data }) => {
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
     const { data: store } = await admin
       .from("stores")
       .select("id")
@@ -114,7 +114,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data }) => {
-    const admin = getGeekarenaAdmin();
+    const admin = getNexusAdmin();
 
     const weekStartDate = new Date(data.week_start + "T00:00:00");
     const weekDates = Array.from({ length: 7 }, (_, i) => {

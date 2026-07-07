@@ -23,8 +23,8 @@ import {
   Bar,
   Cell,
 } from "recharts";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { getStoreAnalytics } from "@/lib/geekarena-organizer.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { getStoreAnalytics } from "@/lib/nexus-organizer.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkeletonLine, SkeletonBlock, TcgRankCardSkeleton } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/organizer/")({
-  head: () => ({ meta: [{ title: "Analytics — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Analytics — Nexus" }] }),
   component: OrganizerAnalytics,
 });
 
@@ -59,7 +59,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function OrganizerAnalytics() {
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
   const fetchAnalytics = useServerFn(getStoreAnalytics);
 
   const [data, setData] = useState<AnalyticsResult | null>(null);
