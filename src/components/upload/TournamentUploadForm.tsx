@@ -34,7 +34,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 type Game = { id: string; slug: string; name: string };
 type Store = { id: string; name: string; city: string | null };
 
-type Platform = "bandai" | "limitless" | "unknown";
+type Platform = "bandai" | "limitless" | "magic" | "unknown";
 type ColumnMap = {
   platform: Platform;
   rank?: string;
@@ -82,8 +82,45 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
     membershipId: "User ID",
   },
   pokemon: { platform: "unknown" },
-  "magic-the-gathering": { platform: "unknown" },
+  "magic-the-gathering": {
+    platform: "magic",
+    rank: "Puesto",
+    geekTag: "Nombre",
+    matchPoints: "Puntos",
+    omw: "%VPO",
+    record: "V/D/E",
+  },
 };
+
+// "Copy Paste Magic" exporta V/D/E (Victorias/Derrotas/Empates) como texto "2/1/0".
+// Excel lo interpreta como una fecha mes/día/año y lo corrompe (ej. "2/1/0" -> 01/02/2000).
+// Esta función revierte esa corrupción reconstruyendo el triplete original.
+function parseVDE(raw: string): { wins: number | null; losses: number | null; draws: number | null } {
+  const val = raw.trim();
+  if (!val) return { wins: null, losses: null, draws: null };
+
+  // Celda XLSX: Date real (ya normalizada a "YYYY-MM-DD" en readFileToRows)
+  let m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const [, y, mo, d] = m;
+    return { wins: Number(mo), losses: Number(d), draws: Number(y) % 100 };
+  }
+
+  // Celda CSV: mismo valor ya corrompido y guardado como texto localizado DD/MM/YYYY
+  m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const [, d, mo, y] = m;
+    return { wins: Number(mo), losses: Number(d), draws: Number(y) % 100 };
+  }
+
+  // Valor sano: el triplete "V/D/E" tal cual lo exportó la herramienta
+  const parts = val.split("/").map((p) => Number(p.trim()));
+  if (parts.length === 3 && parts.every((n) => isFinite(n))) {
+    return { wins: parts[0], losses: parts[1], draws: parts[2] };
+  }
+
+  return { wins: null, losses: null, draws: null };
+}
 
 function normalizarPuntos(rows: ParsedRow[]): ParsedRow[] {
   // El máximo es el match_points del jugador en rank 1
@@ -173,6 +210,11 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
       wins = isFinite(parts[0]) ? parts[0] : null;
       losses = isFinite(parts[1]) ? parts[1] : null;
       draws = isFinite(parts[2]) ? parts[2] : 0;
+    } else if (map.platform === "magic" && iRec !== -1) {
+      const vde = parseVDE(cols[iRec] || "");
+      wins = vde.wins;
+      losses = vde.losses;
+      draws = vde.draws;
     } else if (map.platform === "bandai") {
       draws = 0;
     }
@@ -220,7 +262,21 @@ async function readFileToRows(file: File): Promise<string[][]> {
     const sheets = await readXlsxFile(file);
     const data = sheets[0]?.data ?? [];
     // data is (string | number | boolean | Date | null)[][]
-    const rows: string[][] = data.map((row) => row.map((cell) => (cell == null ? "" : String(cell))));
+    const rows: string[][] = data.map((row) =>
+      row.map((cell) => {
+        if (cell == null) return "";
+        if (cell instanceof Date) {
+          // read-excel-file construye estas fechas en UTC+0 (00:00) — hay que leer
+          // los componentes en UTC, si no, en timezones negativos (ej. México)
+          // el día se recorre uno hacia atrás.
+          const y = cell.getUTCFullYear();
+          const mo = String(cell.getUTCMonth() + 1).padStart(2, "0");
+          const d = String(cell.getUTCDate()).padStart(2, "0");
+          return `${y}-${mo}-${d}`;
+        }
+        return String(cell);
+      }),
+    );
     if (rows.length === 0) {
       throw new Error("El archivo no contiene filas con datos.");
     }
@@ -670,7 +726,12 @@ export function TournamentUploadForm({
                 </div>
                 <p className="text-sm font-semibold text-white">Arrastra tu archivo aquí, o haz clic para buscar</p>
                 <p className="mt-1 text-xs text-gray-500">
-                  Formato detectado: {colMap?.platform === "bandai" ? "Bandai TCG+" : "Limitless"}
+                  Formato detectado:{" "}
+                  {colMap?.platform === "bandai"
+                    ? "Bandai TCG+"
+                    : colMap?.platform === "magic"
+                      ? "Copy Paste Magic"
+                      : "Limitless"}
                 </p>
               </label>
             ) : (

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { TrendingUp, Shield } from "lucide-react";
+import { TrendingUp, Shield, Calendar } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useTCG } from "@/context/tcg.context";
 import { getMetaStats, getMetaFilterOptions } from "@/lib/geekarena-meta.functions";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 
@@ -83,6 +84,7 @@ function SimpleSelect({
 
 function MetaPage() {
   const { player, loading: authLoading } = useGeekarenaRole();
+  const { activeTcg } = useTCG();
   const fetchMeta = useServerFn(getMetaStats);
   const fetchOptions = useServerFn(getMetaFilterOptions);
 
@@ -114,6 +116,21 @@ function MetaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.id, authLoading]);
 
+  const handleGameChange = (gameId: string) => {
+    const next = { ...filters, game_id: gameId };
+    setFilters(next);
+    fetchOptions({ data: { game_id: gameId } })
+      .then(setFilterOptions)
+      .catch(() => {});
+    loadMeta(next);
+  };
+
+  useEffect(() => {
+    if (!activeTcg?.id || activeTcg.id === filters.game_id) return;
+    handleGameChange(activeTcg.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTcg?.id]);
+
   if (!authLoading && !player) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
@@ -127,15 +144,6 @@ function MetaPage() {
       </main>
     );
   }
-
-  const handleGameChange = (gameId: string) => {
-    const next = { ...filters, game_id: gameId };
-    setFilters(next);
-    fetchOptions({ data: { game_id: gameId } })
-      .then(setFilterOptions)
-      .catch(() => {});
-    loadMeta(next);
-  };
 
   const leaders = metaData?.leaders ?? [];
 
@@ -153,24 +161,7 @@ function MetaPage() {
 
       {/* Filters */}
       <div className="glass mb-6 rounded-2xl p-4 space-y-4">
-        {/* Game pills */}
-        <div className="flex flex-wrap gap-2">
-          {(filterOptions?.games ?? []).map((g: any) => (
-            <button
-              key={g.id}
-              onClick={() => handleGameChange(g.id)}
-              className={`rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-wider transition ${
-                filters.game_id === g.id
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-white/10 bg-white/5 text-gray-400 hover:text-white"
-              }`}
-            >
-              {g.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SimpleSelect
             value={filters.zone}
             onChange={(v) => setFilters((f) => ({ ...f, zone: v }))}
@@ -185,20 +176,44 @@ function MetaPage() {
               .map((s: any) => ({ value: s.id, label: s.name }))}
             placeholder="Todas las tiendas"
           />
-          <input
-            type="date"
-            value={filters.date_from ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value || null }))}
-            style={{ colorScheme: "dark" }}
-            className="w-full min-w-0 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
-          />
-          <input
-            type="date"
-            value={filters.date_to ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value || null }))}
-            style={{ colorScheme: "dark" }}
-            className="w-full min-w-0 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
-          />
+          <div className="min-w-0 w-full max-w-full">
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+              Desde
+            </label>
+            <div className="relative min-w-0 w-full max-w-full">
+              <Calendar
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              />
+              <input
+                type="date"
+                value={filters.date_from ?? ""}
+                onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value || null }))}
+                placeholder="mm/dd/yy"
+                style={{ colorScheme: "dark", minWidth: 0 }}
+                className="block w-full min-w-0 max-w-full appearance-none rounded-lg border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white focus:border-primary focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="min-w-0 w-full max-w-full">
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+              Hasta
+            </label>
+            <div className="relative min-w-0 w-full max-w-full">
+              <Calendar
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              />
+              <input
+                type="date"
+                value={filters.date_to ?? ""}
+                onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value || null }))}
+                placeholder="mm/dd/yy"
+                style={{ colorScheme: "dark", minWidth: 0 }}
+                className="block w-full min-w-0 max-w-full appearance-none rounded-lg border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white focus:border-primary focus:outline-none"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end">
@@ -235,9 +250,7 @@ function MetaPage() {
               </div>
             ) : leaders.length === 0 ? (
               <div className="p-12 text-center">
-                <p className="text-sm text-gray-400">
-                  Sin datos suficientes para mostrar el meta.
-                </p>
+                <p className="text-sm text-gray-400">Sin datos suficientes para mostrar el meta.</p>
                 <p className="mt-2 text-xs text-gray-600">
                   Se requieren mínimo 5 rondas por leader.
                 </p>
@@ -276,13 +289,17 @@ function MetaPage() {
                   <div className="text-right font-mono text-sm font-bold text-primary">
                     {leader.play_rate}%
                   </div>
-                  <div className={`text-right font-mono text-sm font-bold ${wrColor(leader.win_rate)}`}>
+                  <div
+                    className={`text-right font-mono text-sm font-bold ${wrColor(leader.win_rate)}`}
+                  >
                     {leader.win_rate}%
                   </div>
                   <div className={`text-right font-mono text-xs ${wrColor(leader.first_win_rate)}`}>
                     {leader.first_win_rate != null ? `${leader.first_win_rate}%` : "—"}
                   </div>
-                  <div className={`text-right font-mono text-xs ${wrColor(leader.second_win_rate)}`}>
+                  <div
+                    className={`text-right font-mono text-xs ${wrColor(leader.second_win_rate)}`}
+                  >
                     {leader.second_win_rate != null ? `${leader.second_win_rate}%` : "—"}
                   </div>
                   <div className="text-right font-mono text-xs text-gray-400">
