@@ -1,8 +1,31 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
 import { requireGeekarenaAdmin } from "./geekarena-auth.middleware";
+import { getClientIp } from "./rate-limit.server";
 import { logAction } from "./geekarena-admin.functions";
+
+// ─── Dedupe de vistas por IP ──────────────────────────────────────────────
+// Los ads viven en páginas públicas, así que no podemos exigir login para
+// contar vistas. En su lugar: máximo 1 vista por IP+sponsor por hora.
+// ponytail: dedupe en memoria del worker — se reinicia con cada isolate;
+// si las métricas se vuelven facturables, migrar a tabla con constraint
+// único (ip_hash, sponsor_id, day).
+const VIEW_DEDUPE_MS = 60 * 60 * 1000;
+const recentViews = new Map<string, number>();
+
+function isDuplicateView(key: string): boolean {
+  const now = Date.now();
+  if (recentViews.size > 5000) {
+    for (const [k, t] of recentViews) {
+      if (now - t > VIEW_DEDUPE_MS) recentViews.delete(k);
+    }
+  }
+  const last = recentViews.get(key);
+  if (last && now - last < VIEW_DEDUPE_MS) return true;
+  recentViews.set(key, now);
+  return false;
+}
 
 // ─── Helper: ensure ad_metrics row exists ────────────────────────────────
 async function ensureMetricsRow(admin: ReturnType<typeof getGeekarenaAdmin>) {
@@ -61,6 +84,8 @@ export const listActiveSponsors = createServerFn({ method: "POST" }).handler(asy
 
 // ─── Public: register a page view and rotate if needed ────────────────────
 export const registerAdView = createServerFn({ method: "POST" }).handler(async () => {
+  if (isDuplicateView(`ad_${getClientIp()}`)) return null;
+
   const admin = getGeekarenaAdmin();
   const metrics = await ensureMetricsRow(admin);
   if (!metrics) return null;
@@ -206,7 +231,7 @@ export const createSponsor = createServerFn({ method: "POST" })
       cycles_count: 0,
       is_active: true,
     });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -236,7 +261,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
     if (data.horizontal_url) update.horizontal_url = data.horizontal_url;
     if (Object.keys(update).length === 0) return { success: true };
     const { error } = await context.admin.from("sponsors").update(update).eq("id", data.sponsor_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -264,7 +289,7 @@ export const updateSponsor = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { sponsor_id, ...fields } = data;
     const { error } = await context.admin.from("sponsors").update(fields).eq("id", sponsor_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -279,7 +304,7 @@ export const resetSponsorViews = createServerFn({ method: "POST" })
       .from("sponsors")
       .update({ views_count: 0 })
       .eq("id", data.sponsor_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -307,7 +332,7 @@ export const deleteSponsor = createServerFn({ method: "POST" })
 
     const { error } = await admin.from("sponsors").delete().eq("id", data.sponsor_id);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     await logAction(
       admin,
@@ -354,11 +379,14 @@ export const registerSponsorView = createServerFn({ method: "POST" })
     z.object({ sponsor_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data }) => {
+    if (isDuplicateView(`sponsor_${getClientIp()}_${data.sponsor_id}`)) {
+      return { success: true };
+    }
     const admin = getGeekarenaAdmin();
     const { error } = await admin.rpc("increment_sponsor_view", {
       p_sponsor_id: data.sponsor_id,
     });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -368,7 +396,7 @@ export const getSponsorMetrics = createServerFn({ method: "POST" })
   .handler(async () => {
     const admin = getGeekarenaAdmin();
     const { data, error } = await admin.from("sponsor_metrics_current_month").select("*");
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { metrics: data ?? [] };
   });
 
@@ -403,6 +431,6 @@ export const updateSponsorFull = createServerFn({ method: "POST" })
     const { admin } = context;
     const { id, ...updates } = data;
     const { error } = await admin.from("sponsors").update(updates).eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });

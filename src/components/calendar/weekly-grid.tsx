@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { toLocalDateStr } from "@/lib/utils";
 
 export const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 export const HOURS = Array.from({ length: 10 }, (_, i) => i + 14); // 2pm a 10pm
@@ -41,7 +42,7 @@ export function useWeekNav() {
     });
   }, [weekStart]);
 
-  const weekStartStr = weekStart.toISOString().split("T")[0];
+  const weekStartStr = toLocalDateStr(weekStart);
 
   const goToPrevWeek = () => {
     const d = new Date(weekStart);

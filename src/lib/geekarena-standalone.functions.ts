@@ -1,3 +1,4 @@
+import { failDb } from "./geekarena-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
@@ -81,7 +82,7 @@ export const createStandaloneSession = createServerFn({ method: "POST" })
       .select("id, name, session_type, status, created_at")
       .single();
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { session };
   });
 
@@ -101,7 +102,7 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
       .eq("player_id", player.id)
       .order("created_at", { ascending: false });
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     const sessionList = sessions ?? [];
 
     // Enriquecer con nombre del juego, tienda, torneo vinculado, leader y récord
@@ -208,7 +209,7 @@ export const getStandaloneSessionDetail = createServerFn({ method: "POST" })
       .eq("player_id", player.id)
       .maybeSingle();
 
-    if (sessionError) throw new Error(sessionError.message);
+    if (sessionError) failDb(sessionError);
     if (!session) throw new Error("Sesión no encontrada");
 
     const { data: rounds, error: roundsError } = await admin
@@ -219,7 +220,7 @@ export const getStandaloneSessionDetail = createServerFn({ method: "POST" })
       .eq("session_id", data.session_id)
       .order("round_number", { ascending: true });
 
-    if (roundsError) throw new Error(roundsError.message);
+    if (roundsError) failDb(roundsError);
     const roundList = rounds ?? [];
 
     // Enriquecer con leaders y oponentes
@@ -374,10 +375,10 @@ export const saveStandaloneRound = createServerFn({ method: "POST" })
         .from("standalone_round_results")
         .update(payload)
         .eq("id", existing.id);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     } else {
       const { error } = await admin.from("standalone_round_results").insert(payload);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     }
 
     return { success: true };
@@ -406,7 +407,7 @@ export const deleteStandaloneRound = createServerFn({ method: "POST" })
       .eq("player_id", player.id)
       .eq("round_number", data.round_number);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -439,7 +440,7 @@ export const deleteStandaloneSession = createServerFn({ method: "POST" })
       .eq("id", data.session_id)
       .eq("player_id", player.id);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -480,7 +481,7 @@ export const updateStandaloneSessionDetails = createServerFn({ method: "POST" })
       .eq("id", data.session_id)
       .eq("player_id", player.id);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -543,7 +544,7 @@ export const undoSessionLink = createServerFn({ method: "POST" })
       .delete()
       .eq("source_session_id", data.session_id);
 
-    if (deleteError) throw new Error(deleteError.message);
+    if (deleteError) failDb(deleteError);
 
     // Revertir la sesión a unlinked
     const { error: updateError } = await admin
@@ -555,7 +556,7 @@ export const undoSessionLink = createServerFn({ method: "POST" })
       })
       .eq("id", data.session_id);
 
-    if (updateError) throw new Error(updateError.message);
+    if (updateError) failDb(updateError);
 
     // Log del evento
     await admin.from("session_link_events").insert({
@@ -757,7 +758,7 @@ export const linkSessionManually = createServerFn({ method: "POST" })
           })),
       );
 
-      if (insertError) throw new Error(insertError.message);
+      if (insertError) failDb(insertError);
     }
 
     // Actualizar sesión
@@ -968,7 +969,7 @@ export const getMyAttendedTournamentIds = createServerFn({ method: "POST" })
       .select("tournament_id")
       .eq("player_id", player.id)
       .in("tournament_id", data.tournament_ids);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     return {
       tournament_ids: Array.from(new Set((results ?? []).map((r: any) => r.tournament_id as string))),

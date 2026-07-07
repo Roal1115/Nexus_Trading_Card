@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
 
 // ── Leer perfil actual del usuario ────────────────────────────────
 export const getMyProfile = createServerFn({ method: "POST" })
@@ -76,7 +76,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         ...(data.display_name !== undefined && { display_name: data.display_name }),
       })
       .eq("id", player.id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -112,7 +112,7 @@ export const addMyTcgId = createServerFn({ method: "POST" })
       tcg_user_id: data.tcg_user_id,
       tcg_user_id_normalized: normalized,
     });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -125,7 +125,7 @@ export const updateMyEmail = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const { error } = await admin.auth.updateUser({ email: data.new_email });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true, message: "Te enviamos un correo de confirmación a tu nuevo email." };
   });
 
@@ -138,6 +138,6 @@ export const updateMyPassword = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const { error } = await admin.auth.updateUser({ password: data.new_password });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });

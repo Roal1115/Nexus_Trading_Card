@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
 import { requireGeekarenaAdmin, requireGeekarenaUser } from "./geekarena-auth.middleware";
 
 // ---------- Audit log helper ----------
@@ -92,7 +92,7 @@ export async function recomputeSnapshot(
   if (filter.season_id != null) q = q.eq("season_id", filter.season_id);
 
   const { data: tournaments, error: te } = await q;
-  if (te) throw new Error(te.message);
+  if (te) failDb(te);
   const tIds = (tournaments ?? []).map((t) => t.id);
 
   const { error: de } = await admin
@@ -102,7 +102,7 @@ export async function recomputeSnapshot(
     .eq("store_id", store_id)
     .eq("timeframe_type", timeframe_type)
     .eq("timeframe_value", timeframe_value);
-  if (de) throw new Error(de.message);
+  if (de) failDb(de);
 
   if (tIds.length === 0) return;
 
@@ -110,7 +110,7 @@ export async function recomputeSnapshot(
     .from("tournament_results")
     .select("player_id, rank, points_earned, omw_percentage, tournament_id")
     .in("tournament_id", tIds);
-  if (re) throw new Error(re.message);
+  if (re) failDb(re);
 
   // Build a map from tournament_id -> tournament_date
   const tournamentDateMap = new Map<string, string>((tournaments ?? []).map((t) => [t.id, t.tournament_date]));
@@ -193,7 +193,7 @@ export async function recomputeSnapshot(
 
   if (rows.length === 0) return;
   const { error: ie } = await admin.from("leaderboard_snapshots").insert(rows);
-  if (ie) throw new Error(ie.message);
+  if (ie) failDb(ie);
 }
 
 // ---------- Torneos pendientes / aprobados ----------
@@ -218,7 +218,7 @@ export const listTournamentsByStatus = createServerFn({ method: "POST" })
     // Excluir torneos rechazados de la cola de pendientes (DRAFT con rejection_reason).
     if (data.statuses.includes("DRAFT")) q = q.is("rejection_reason", null);
     const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const gameIds = Array.from(new Set((rows ?? []).map((r) => r.game_id)));
     const storeIds = Array.from(new Set((rows ?? []).map((r) => r.store_id)));
@@ -266,7 +266,7 @@ export const approveTournament = createServerFn({ method: "POST" })
         approved_by: player.id,
       })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const { data: t } = await admin
       .from("tournaments")
@@ -311,7 +311,7 @@ export const rejectTournament = createServerFn({ method: "POST" })
         undo_deadline: null,
       })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     const game = (t as any)?.games;
     const store = (t as any)?.stores;
     await logAction(
@@ -349,7 +349,7 @@ export const publishTournaments = createServerFn({ method: "POST" })
       .from("tournaments")
       .select("id, store_id, game_id, tournament_date, qualifying_year, qualifying_month, status")
       .in("id", data.tournament_ids);
-    if (te) throw new Error(te.message);
+    if (te) failDb(te);
 
     const approved = (tournaments ?? []).filter((t) => t.status === "APPROVED");
     const publishable = approved.filter((t) => {
@@ -379,7 +379,7 @@ export const publishTournaments = createServerFn({ method: "POST" })
         "id",
         publishable.map((t) => t.id),
       );
-    if (ue) throw new Error(ue.message);
+    if (ue) failDb(ue);
 
     const slices = new Set<string>();
     for (const t of publishable) {
@@ -443,8 +443,8 @@ export const listStoresWithOrganizers = createServerFn({ method: "POST" })
       admin.from("players").select("id, geek_tag, email, role, home_store_id").in("role", ["organizer", "admin"]),
     ]);
 
-    if (storesRes.error) throw new Error(storesRes.error.message);
-    if (playersRes.error) throw new Error(playersRes.error.message);
+    if (storesRes.error) failDb(storesRes.error);
+    if (playersRes.error) failDb(playersRes.error);
 
     return {
       stores: storesRes.data ?? [],
@@ -525,7 +525,7 @@ export const createStore = createServerFn({ method: "POST" })
       })
       .select("id")
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(admin, player, "STORE_CREATED", "store", newStore?.id ?? null, data.name, { city: data.city });
     return { ok: true };
   });
@@ -543,7 +543,7 @@ export const setStoreActive = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const { error } = await admin.from("stores").update({ is_active: data.is_active }).eq("id", data.store_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -585,7 +585,7 @@ export const listPlayers = createServerFn({ method: "POST" })
         .from("leaderboard_snapshots")
         .select("player_id, total_points")
         .eq("timeframe_type", "SEMESTRAL");
-      if (se) throw new Error(se.message);
+      if (se) failDb(se);
       const sum = new Map<string, number>();
       for (const s of snaps ?? []) {
         sum.set(s.player_id, (sum.get(s.player_id) ?? 0) + (s.total_points ?? 0));
@@ -629,7 +629,7 @@ export const listPlayers = createServerFn({ method: "POST" })
       }
       q = q.in("id", idsForPage);
       const { data: rows, error, count } = await q;
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
       const map = new Map((rows ?? []).map((r) => [r.id, r]));
       const ordered = idsForPage.map((id) => map.get(id)).filter(Boolean);
       return await withLastSignIn(admin, ordered, {
@@ -647,7 +647,7 @@ export const listPlayers = createServerFn({ method: "POST" })
     q = q.range(from, to);
 
     const { data: rows, error, count } = await q;
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     return await withLastSignIn(admin, rows ?? [], {
       total: count ?? 0,
@@ -700,7 +700,7 @@ export const setPlayerActive = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const { error } = await admin.from("players").update({ is_active: data.is_active }).eq("id", data.player_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -727,10 +727,10 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
         .maybeSingle();
       if (r.error && /column .* does not exist/i.test(r.error.message)) {
         const r2 = await admin.from("players").select(baseCols).eq("id", data.player_id).maybeSingle();
-        if (r2.error) throw new Error(r2.error.message);
+        if (r2.error) failDb(r2.error);
         player = r2.data;
       } else if (r.error) {
-        throw new Error(r.error.message);
+        failDb(r.error);
       } else {
         player = r.data;
       }
@@ -833,7 +833,7 @@ export const updatePlayerDetail = createServerFn({ method: "POST" })
     if (Object.keys(update).length > 0) {
       const { error } = await admin.from("players").update(update).eq("id", data.player_id);
       if (error && !/column .* does not exist/i.test(error.message)) {
-        throw new Error(error.message);
+        failDb(error);
       }
       if (error) {
         // Retry only with always-present columns
@@ -841,7 +841,7 @@ export const updatePlayerDetail = createServerFn({ method: "POST" })
         if (update.display_name !== undefined) safe.display_name = update.display_name;
         if (Object.keys(safe).length > 0) {
           const r2 = await admin.from("players").update(safe).eq("id", data.player_id);
-          if (r2.error) throw new Error(r2.error.message);
+          if (r2.error) failDb(r2.error);
         }
       }
     }
@@ -855,7 +855,7 @@ export const updatePlayerDetail = createServerFn({ method: "POST" })
       }));
       if (rows.length > 0) {
         const { error } = await admin.from("player_tcg_ids").upsert(rows, { onConflict: "player_id,game_id" });
-        if (error) throw new Error(error.message);
+        if (error) failDb(error);
       }
     }
 
@@ -896,7 +896,7 @@ export const setPlayerRole = createServerFn({ method: "POST" })
     const update: Record<string, unknown> = { role: data.role };
     if (data.home_store_id !== undefined) update.home_store_id = data.home_store_id;
     const { error } = await admin.from("players").update(update).eq("id", data.player_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     // Limpiar TCGs asignados si el rol ya no es tcg_manager
     if (data.role !== "tcg_manager") {
@@ -930,7 +930,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       )
       .eq("id", data.tournament_id)
       .maybeSingle();
-    if (te) throw new Error(te.message);
+    if (te) failDb(te);
     if (!t) throw new Error("Torneo no encontrado");
 
     const [storeRes, gameRes, resultsRes] = await Promise.all([
@@ -953,9 +953,9 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
         return full;
       })(),
     ]);
-    if (storeRes.error) throw new Error(storeRes.error.message);
-    if (gameRes.error) throw new Error(gameRes.error.message);
-    if (resultsRes.error) throw new Error(resultsRes.error.message);
+    if (storeRes.error) failDb(storeRes.error);
+    if (gameRes.error) failDb(gameRes.error);
+    if (resultsRes.error) failDb(resultsRes.error);
 
     const playerIds = Array.from(new Set((resultsRes.data ?? []).map((r: any) => r.player_id)));
     const playersRes = playerIds.length
@@ -1133,7 +1133,7 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
       const retry = await admin.from("tournaments").update(update).eq("id", data.tournament_id);
       error = retry.error;
     }
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     const game = (tBefore as any)?.games;
     const store = (tBefore as any)?.stores;
     await logAction(
@@ -1176,9 +1176,9 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
             approved_by: player.id,
           })
           .eq("id", data.tournament_id);
-        if (retry.error) throw new Error(retry.error.message);
+        if (retry.error) failDb(retry.error);
       } else {
-        throw new Error(error.message);
+        failDb(error);
       }
     }
     const { data: tAfter } = await admin
@@ -1210,7 +1210,7 @@ export const undoApproveTournament = createServerFn({ method: "POST" })
       .select("status, undo_deadline")
       .eq("id", data.tournament_id)
       .maybeSingle();
-    if (te) throw new Error(te.message);
+    if (te) failDb(te);
     if (!t) throw new Error("Torneo no encontrado");
     if (t.status !== "APPROVED") {
       throw new Error("Solo se puede deshacer un torneo aprobado");
@@ -1222,7 +1222,7 @@ export const undoApproveTournament = createServerFn({ method: "POST" })
       .from("tournaments")
       .update({ status: "DRAFT", approved_at: null, undo_deadline: null })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -1285,7 +1285,7 @@ export const updateStore = createServerFn({ method: "POST" })
         twitch: data.twitch || null,
       })
       .eq("id", data.store_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(admin, player, "STORE_UPDATED", "store", data.store_id, data.name, {
       changes: data as unknown as Record<string, unknown>,
     });
@@ -1310,10 +1310,10 @@ export const assignOrganizerToStore = createServerFn({ method: "POST" })
       .update({ home_store_id: null })
       .eq("home_store_id", data.store_id)
       .neq("id", data.player_id);
-    if (ce) throw new Error(ce.message);
+    if (ce) failDb(ce);
 
     const { error } = await admin.from("players").update({ home_store_id: data.store_id }).eq("id", data.player_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const { data: store } = await admin.from("stores").select("name").eq("id", data.store_id).maybeSingle();
     const { data: targetPlayer } = await admin
@@ -1336,7 +1336,7 @@ export const listSeasons = createServerFn({ method: "POST" })
       .from("seasons")
       .select("id, name, slug, start_date, end_date, is_active, status, created_at")
       .order("start_date", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return data ?? [];
   });
 
@@ -1373,7 +1373,7 @@ export const createSeason = createServerFn({ method: "POST" })
       })
       .select("id")
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(admin, player, "SEASON_CREATED", "season", newSeason?.id ?? null, data.name, {
       start_date: data.start_date,
       end_date: data.end_date,
@@ -1387,12 +1387,12 @@ export const activateSeason = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { error: de } = await admin.from("seasons").update({ is_active: false }).neq("id", data.season_id);
-    if (de) throw new Error(de.message);
+    if (de) failDb(de);
     const { error } = await admin
       .from("seasons")
       .update({ is_active: true, status: "ACTIVE" })
       .eq("id", data.season_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     const { data: season } = await admin.from("seasons").select("name").eq("id", data.season_id).maybeSingle();
     await logAction(admin, player, "SEASON_ACTIVATED", "season", data.season_id, season?.name ?? data.season_id);
     return { ok: true };
@@ -1407,7 +1407,7 @@ export const closeSeason = createServerFn({ method: "POST" })
       .from("seasons")
       .update({ is_active: false, status: "CLOSED" })
       .eq("id", data.season_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     const { data: season } = await admin.from("seasons").select("name").eq("id", data.season_id).maybeSingle();
     await logAction(admin, player, "SEASON_CLOSED", "season", data.season_id, season?.name ?? data.season_id);
     return { ok: true };
@@ -1462,7 +1462,7 @@ export const listAuditLog = createServerFn({ method: "POST" })
     }
 
     const { data: logs, count, error } = await q;
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     return {
       logs: (logs ?? []) as AuditLogRow[],
@@ -1583,7 +1583,7 @@ export const getAdminTournamentHistory = createServerFn({ method: "POST" })
     if (res.error && /column .* does not exist/i.test(res.error.message)) {
       res = await build(baseCols);
     }
-    if (res.error) throw new Error(res.error.message);
+    if (res.error) failDb(res.error);
 
     const rows = (res.data ?? []) as any[];
     const count = res.count;
@@ -1689,7 +1689,7 @@ export const listStaffMembers = createServerFn({ method: "POST" })
       .order("role", { ascending: true })
       .order("geek_tag", { ascending: true });
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const storeIds = Array.from(
       new Set((data ?? []).filter((p: any) => p.home_store_id).map((p: any) => p.home_store_id as string)),
@@ -1767,7 +1767,7 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
         if (!tagTaken) updates.geek_tag = data.geek_tag;
       }
       const { error } = await admin.from("players").update(updates).eq("id", existingByEmail.id);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
 
       if (existingByEmail.role === "tcg_manager" && data.role !== "tcg_manager") {
         await admin.from("manager_games").delete().eq("player_id", existingByEmail.id);
@@ -1790,7 +1790,7 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
       email_confirm: true,
       user_metadata: { geek_tag: data.geek_tag },
     });
-    if (authErr) throw new Error(authErr.message);
+    if (authErr) failDb(authErr);
 
     // Trigger handle_new_auth_user should create the players row; fetch it
     const { data: newPlayer } = await admin
@@ -1850,7 +1850,7 @@ export const updateStaffOperationalFields = createServerFn({ method: "POST" })
         contact_backup: data.contact_backup ?? null,
       })
       .eq("id", data.player_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -1868,7 +1868,7 @@ export const deactivateStaffMember = createServerFn({ method: "POST" })
     const { admin, player: actor } = context;
     if (data.action === "deactivate") {
       const { error } = await admin.from("players").update({ is_active: false }).eq("id", data.player_id);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
       await logAction(admin, actor, "ROLE_CHANGED", "player", data.player_id, data.player_id, {
         action: "deactivated",
       });
@@ -1877,7 +1877,7 @@ export const deactivateStaffMember = createServerFn({ method: "POST" })
         .from("players")
         .update({ role: "player", is_active: false })
         .eq("id", data.player_id);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
       await admin.from("manager_games").delete().eq("player_id", data.player_id);
       await logAction(admin, actor, "ROLE_CHANGED", "player", data.player_id, data.player_id, {
         action: "removed_from_staff",
@@ -1932,7 +1932,7 @@ export const upsertStoreSchedule = createServerFn({ method: "POST" })
           start_time: data.start_time,
         })
         .eq("id", data.id);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     } else {
       const { error } = await admin.from("store_schedules").upsert(
         {
@@ -1943,7 +1943,7 @@ export const upsertStoreSchedule = createServerFn({ method: "POST" })
         },
         { onConflict: "store_id,game_id,day_of_week" },
       );
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     }
     return { success: true };
   });
@@ -1953,7 +1953,7 @@ export const deleteStoreSchedule = createServerFn({ method: "POST" })
   .inputValidator((d: { schedule_id: string }) => z.object({ schedule_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.admin.from("store_schedules").delete().eq("id", data.schedule_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -1992,7 +1992,7 @@ export const deletePlayerAccount = createServerFn({ method: "POST" })
       }
     }
     const { error } = await admin.from("players").delete().eq("id", data.player_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(admin, actor, "ACCOUNT_DELETED", "player", data.player_id, (target as any).geek_tag);
     return { success: true };
   });
@@ -2029,7 +2029,7 @@ export const unapproveAdminTournament = createServerFn({ method: "POST" })
         rejection_reason: data.reason,
       })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(
       admin,
       player,
@@ -2074,7 +2074,7 @@ export const unpublishTournament = createServerFn({ method: "POST" })
         unpublished_by: player.id,
       } as any)
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const monthKey = tfMonth((t as any).qualifying_month, (t as any).qualifying_year);
     await recomputeSnapshot(
@@ -2145,7 +2145,7 @@ export const republishTournament = createServerFn({ method: "POST" })
         unpublish_reason: null,
       } as any)
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(
       admin,
       player,

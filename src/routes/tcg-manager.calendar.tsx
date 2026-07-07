@@ -1,3 +1,4 @@
+import { toLocalDateStr } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -127,7 +128,7 @@ function ManagerCalendarPage() {
     if (!weekStart) return;
     const d = new Date(weekStart + "T00:00:00");
     d.setDate(d.getDate() + dir * 7);
-    setWeekStart(d.toISOString().split("T")[0]);
+    setWeekStart(toLocalDateStr(d));
   };
 
   const filteredEntries = useMemo<CalEntry[]>(() => {

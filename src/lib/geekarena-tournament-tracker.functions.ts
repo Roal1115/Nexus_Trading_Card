@@ -1,3 +1,4 @@
+import { failDb } from "./geekarena-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
@@ -43,7 +44,7 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
 
     const limit = data.search && data.search.trim().length > 0 ? 100 : 800;
     const { data: rows, error } = await q.limit(limit);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const basicOnly = data.card_set_id ? false : (data.basic_only ?? true);
     const filtered = basicOnly
@@ -322,10 +323,10 @@ export const saveRoundResult = createServerFn({ method: "POST" })
         .from("tournament_round_results")
         .update(myRow)
         .eq("id", existing.id);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     } else {
       const { error } = await admin.from("tournament_round_results").insert(myRow);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     }
 
     if (!data.is_bye && data.opponent_player_id) {
@@ -362,13 +363,13 @@ export const saveRoundResult = createServerFn({ method: "POST" })
 
       if (!existingMirror) {
         const { error } = await admin.from("tournament_round_results").insert(opponentRow);
-        if (error) throw new Error(error.message);
+        if (error) failDb(error);
       } else if (existingMirror.is_auto_populated) {
         const { error } = await admin
           .from("tournament_round_results")
           .update(opponentRow)
           .eq("id", existingMirror.id);
-        if (error) throw new Error(error.message);
+        if (error) failDb(error);
       }
     }
 
@@ -392,7 +393,7 @@ export const clearTournamentRounds = createServerFn({ method: "POST" })
       .eq("tournament_id", data.tournament_id)
       .eq("player_id", player.id);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -419,7 +420,7 @@ export const deleteRoundResult = createServerFn({ method: "POST" })
       .eq("player_id", player.id)
       .eq("round_number", data.round_number);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -439,7 +440,7 @@ export const confirmRoundResult = createServerFn({ method: "POST" })
       .eq("player_id", player.id)
       .maybeSingle();
 
-    if (fetchError) throw new Error(fetchError.message);
+    if (fetchError) failDb(fetchError);
     if (!round) throw new Error("Ronda no encontrada o no autorizado");
     if (!round.is_auto_populated) throw new Error("Solo se pueden confirmar rondas auto-populadas");
     if (round.status === "confirmed") throw new Error("La ronda ya está confirmada");
@@ -450,6 +451,6 @@ export const confirmRoundResult = createServerFn({ method: "POST" })
       .eq("id", data.round_id)
       .eq("player_id", player.id);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });

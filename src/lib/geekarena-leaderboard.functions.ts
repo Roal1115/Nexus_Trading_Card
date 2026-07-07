@@ -2,7 +2,7 @@
 // All reads go through the admin client server-side to keep RLS simple.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
 
 // ── Caché en memoria ─────────────────────────────────────────────
 const leaderboardCache = new Map<string, { data: any; ts: number }>();
@@ -36,9 +36,9 @@ export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(
       .order("qualifying_year", { ascending: false })
       .order("qualifying_month", { ascending: false }),
   ]);
-  if (gamesRes.error) throw new Error(gamesRes.error.message);
-  if (storesRes.error) throw new Error(storesRes.error.message);
-  if (monthsRes.error) throw new Error(monthsRes.error.message);
+  if (gamesRes.error) failDb(gamesRes.error);
+  if (storesRes.error) failDb(storesRes.error);
+  if (monthsRes.error) failDb(monthsRes.error);
 
   const monthSet = new Set<string>();
   for (const r of monthsRes.data ?? []) {
@@ -131,7 +131,7 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         .select("id")
         .eq("is_active", true)
         .eq("city", data.city);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
       cityStoreIds = (cityStores ?? []).map((s) => s.id);
     }
 
@@ -250,8 +250,8 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         ? admin.from("stores").select("id, city").in("id", allStoreIds)
         : Promise.resolve({ data: [], error: null } as const),
     ]);
-    if (playersRes.error) throw new Error(playersRes.error.message);
-    if (storesRes.error) throw new Error(storesRes.error.message);
+    if (playersRes.error) failDb(playersRes.error);
+    if (storesRes.error) failDb(storesRes.error);
 
     const playerMap = new Map((playersRes.data ?? []).map((p) => [p.id, p]));
     const storeMap = new Map((storesRes.data ?? []).map((s) => [s.id, s]));

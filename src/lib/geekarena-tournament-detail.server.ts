@@ -1,5 +1,6 @@
 // Shared server-only helper that builds the tournament detail payload
 // consumed by both /admin and /tcg-manager review screens.
+import { failDb } from "./geekarena-admin.server";
 import type { getGeekarenaAdmin } from "./geekarena-admin.server";
 
 type Admin = ReturnType<typeof getGeekarenaAdmin>;
@@ -22,7 +23,7 @@ export async function loadTournamentDetail(
     )
     .eq("id", tournament_id)
     .maybeSingle();
-  if (te) throw new Error(te.message);
+  if (te) failDb(te);
   if (!t) throw new Error("Torneo no encontrado");
 
   const [storeRes, gameRes, resultsRes] = await Promise.all([
@@ -54,9 +55,9 @@ export async function loadTournamentDetail(
       return full;
     })(),
   ]);
-  if (storeRes.error) throw new Error(storeRes.error.message);
-  if (gameRes.error) throw new Error(gameRes.error.message);
-  if (resultsRes.error) throw new Error(resultsRes.error.message);
+  if (storeRes.error) failDb(storeRes.error);
+  if (gameRes.error) failDb(gameRes.error);
+  if (resultsRes.error) failDb(resultsRes.error);
 
   const playerIds = Array.from(
     new Set((resultsRes.data ?? []).map((r: any) => r.player_id)),

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
 
 export const signupPlayer = createServerFn({ method: "POST" })
   .inputValidator(
@@ -75,7 +75,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
           is_active: false,
         })
         .eq("id", existing.id);
-      if (updateErr) throw new Error(updateErr.message);
+      if (updateErr) failDb(updateErr);
       playerId = existing.id;
     } else {
       const { data: created, error: insertErr } = await admin
@@ -89,7 +89,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
         })
         .select("id")
         .single();
-      if (insertErr) throw new Error(insertErr.message);
+      if (insertErr) failDb(insertErr);
       playerId = created.id;
     }
 
@@ -101,7 +101,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
         birth_date: data.birth_date,
       })
       .eq("id", playerId);
-    if (demoErr) throw new Error(demoErr.message);
+    if (demoErr) failDb(demoErr);
 
     // 4. Insertar juegos seleccionados en player_games
     if (data.game_ids.length > 0) {
@@ -112,7 +112,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
         })),
       );
       if (pgErr && !/duplicate/i.test(pgErr.message)) {
-        throw new Error(pgErr.message);
+        failDb(pgErr);
       }
     }
 
@@ -127,7 +127,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
         tcg_user_id: tcg_user_id.trim(),
       }));
       const { error: tcgErr } = await admin.from("player_tcg_ids").upsert(tcgRows, { onConflict: "player_id,game_id" });
-      if (tcgErr) throw new Error(tcgErr.message);
+      if (tcgErr) failDb(tcgErr);
     }
 
     return { ok: true as const, email: data.email };

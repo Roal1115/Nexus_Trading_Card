@@ -3,7 +3,7 @@
 // The browser attaches the geekarena access token via `attachGeekarenaAuth`.
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
 
 type AppRole = "player" | "organizer" | "tcg_manager" | "admin";
 
@@ -36,13 +36,16 @@ async function resolveCaller(): Promise<{
     throw new Error("Unauthorized: Invalid token");
   }
   const email = data.user.email.toLowerCase();
+  // Escapar metacaracteres de LIKE — sin esto, un email con "%" o "_"
+  // (válido para Supabase Auth) podría hacer match con el row de otro jugador.
+  const emailPattern = email.replace(/[\\%_]/g, "\\$&");
 
   const { data: player, error: pe } = await admin
     .from("players")
     .select("id, geek_tag, email, role, home_store_id")
-    .ilike("email", email)
+    .ilike("email", emailPattern)
     .maybeSingle();
-  if (pe) throw new Error(pe.message);
+  if (pe) failDb(pe);
   if (!player) throw new Error("No autorizado: jugador no encontrado");
 
   return { admin, player: player as PlayerCtx };

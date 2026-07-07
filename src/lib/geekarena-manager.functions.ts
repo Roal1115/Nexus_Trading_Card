@@ -1,3 +1,4 @@
+import { failDb } from "./geekarena-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaManager, requireGeekarenaAdmin } from "./geekarena-auth.middleware";
@@ -51,7 +52,7 @@ export const getManagerPendingTournaments = createServerFn({ method: "POST" })
       .is("rejection_reason", null)
       .in("game_id", gameIds)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return data ?? [];
   });
 
@@ -70,7 +71,7 @@ export const getManagerApprovedTournaments = createServerFn({ method: "POST" })
       .eq("status", "APPROVED")
       .in("game_id", gameIds)
       .order("approved_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return data ?? [];
   });
 
@@ -135,7 +136,7 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
         approved_by: player.id,
       })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(
       admin,
       player,
@@ -177,7 +178,7 @@ export const managerRejectTournament = createServerFn({ method: "POST" })
         rejection_reason: data.reason,
       })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(
       admin,
       player,
@@ -214,7 +215,7 @@ export const managerUndoApproval = createServerFn({ method: "POST" })
       .from("tournaments")
       .update({ status: "DRAFT", approved_at: null, undo_deadline: null })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(
       admin,
       player,
@@ -239,7 +240,7 @@ export const listAllGames = createServerFn({ method: "POST" })
       .select("id, name, slug")
       .eq("is_active", true)
       .order("name", { ascending: true });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return data ?? [];
   });
 
@@ -253,7 +254,7 @@ export const getManagerAssignedGameIds = createServerFn({ method: "POST" })
       .from("manager_games")
       .select("game_id")
       .eq("player_id", data.player_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return (rows ?? []).map((r: any) => r.game_id as string);
   });
 
@@ -273,7 +274,7 @@ export const assignManagerGames = createServerFn({ method: "POST" })
       .from("manager_games")
       .delete()
       .eq("player_id", data.player_id);
-    if (de) throw new Error(de.message);
+    if (de) failDb(de);
 
     if (data.game_ids.length > 0) {
       const rows = data.game_ids.map((game_id) => ({
@@ -281,7 +282,7 @@ export const assignManagerGames = createServerFn({ method: "POST" })
         game_id,
       }));
       const { error } = await admin.from("manager_games").insert(rows);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     }
     return { success: true };
   });
@@ -362,7 +363,7 @@ export const getManagerHistory = createServerFn({ method: "POST" })
     if (data.date_to) q = q.lte("created_at", data.date_to + "T23:59:59Z");
 
     const { data: logs, count, error } = await q;
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const tournamentIds = Array.from(
       new Set((logs ?? []).filter((l: any) => l.target_id).map((l: any) => l.target_id as string)),
@@ -462,7 +463,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
         "id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)",
       )
       .in("game_id", gameIds);
-    if (se) throw new Error(se.message);
+    if (se) failDb(se);
 
     // Game names
     const { data: gamesData } = await admin.from("games").select("id, name").in("id", gameIds);
@@ -652,7 +653,7 @@ export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
           start_time: data.start_time,
         })
         .eq("id", data.id);
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     } else {
       const { error } = await admin.from("store_schedules").upsert(
         {
@@ -663,7 +664,7 @@ export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
         },
         { onConflict: "store_id,game_id,day_of_week" },
       );
-      if (error) throw new Error(error.message);
+      if (error) failDb(error);
     }
     return { success: true };
   });
@@ -686,7 +687,7 @@ export const deleteStoreScheduleManager = createServerFn({ method: "POST" })
       throw new Error("No tienes permisos para este TCG");
     }
     const { error } = await admin.from("store_schedules").delete().eq("id", data.schedule_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -723,7 +724,7 @@ export const unapproveManagerTournament = createServerFn({ method: "POST" })
         rejection_reason: data.reason,
       })
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     await logAction(
       admin,
       player,
@@ -772,7 +773,7 @@ export const getManagerResponsibleStores = createServerFn({ method: "POST" })
       )
       .in("id", storeIds)
       .order("name");
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const { data: games } = await admin.from("games").select("id, name").in("id", gameIds);
 
@@ -863,7 +864,7 @@ export const updateStoreData = createServerFn({ method: "POST" })
         twitch: fields.twitch || null,
       })
       .eq("id", store_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     await logAction(admin, player, "STORE_UPDATED", "store", store_id, fields.name);
     return { ok: true };
@@ -884,7 +885,7 @@ export const getManagerPublishedTournaments = createServerFn({ method: "POST" })
       .eq("status", "PUBLISHED")
       .in("game_id", gameIds)
       .order("published_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return data ?? [];
   });
 
@@ -921,7 +922,7 @@ export const unpublishManagerTournament = createServerFn({ method: "POST" })
         unpublished_by: player.id,
       } as any)
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     const monthKey = tfMonth((t as any).qualifying_month, (t as any).qualifying_year);
     await recomputeSnapshot(admin, (t as any).game_id, (t as any).store_id, "MONTHLY", monthKey, {
@@ -1028,7 +1029,7 @@ export const getManagerTournamentHistory = createServerFn({ method: "POST" })
     if (res.error && /column .* does not exist/i.test(res.error.message)) {
       res = await build(baseCols);
     }
-    if (res.error) throw new Error(res.error.message);
+    if (res.error) failDb(res.error);
 
     const rows = (res.data ?? []) as any[];
     const count = res.count;
@@ -1297,7 +1298,7 @@ export const managerRepublishTournament = createServerFn({ method: "POST" })
         unpublish_reason: null,
       } as any)
       .eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 

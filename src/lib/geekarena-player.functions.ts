@@ -1,3 +1,4 @@
+import { failDb } from "./geekarena-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
@@ -375,7 +376,7 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
       .from("players")
       .update({ is_profile_public: data.is_public } as any)
       .eq("id", player.id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { success: true };
   });
 
@@ -572,7 +573,7 @@ export const getMyStats = createServerFn({ method: "POST" })
       .not("won_match", "is", null)
       .in("tournament_id", tcgTournamentIds);
 
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     const allRounds = rounds ?? [];
 
     // 3. Total de rondas en el meta para Play Rate

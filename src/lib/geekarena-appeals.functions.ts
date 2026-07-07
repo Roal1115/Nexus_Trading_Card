@@ -1,3 +1,4 @@
+import { failDb } from "./geekarena-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaUser } from "./geekarena-auth.middleware";
@@ -90,14 +91,14 @@ export const createAppeal = createServerFn({ method: "POST" })
       if (insertError.message.includes("duplicate") || insertError.message.includes("unique")) {
         throw new Error("Ya existe una apelación en revisión para esta ronda");
       }
-      throw new Error(insertError.message);
+      failDb(insertError);
     }
 
     const { error: updateError } = await admin
       .from("tournament_round_results")
       .update({ status: "under_appeal" })
       .eq("id", round.id);
-    if (updateError) throw new Error(updateError.message);
+    if (updateError) failDb(updateError);
 
     return { success: true };
   });
@@ -245,7 +246,7 @@ export const resolveAppeal = createServerFn({ method: "POST" })
       .from("tournament_round_results")
       .update(updatePayload)
       .eq("id", appeal.original_round_id);
-    if (updateError) throw new Error(updateError.message);
+    if (updateError) failDb(updateError);
 
     const { error: resolveError } = await admin
       .from("round_appeals")
@@ -256,7 +257,7 @@ export const resolveAppeal = createServerFn({ method: "POST" })
         resolved_at: new Date().toISOString(),
       })
       .eq("id", data.appeal_id);
-    if (resolveError) throw new Error(resolveError.message);
+    if (resolveError) failDb(resolveError);
 
     return { success: true };
   });

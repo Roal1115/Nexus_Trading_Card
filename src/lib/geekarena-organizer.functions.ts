@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireGeekarenaOrganizer } from "./geekarena-auth.middleware";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { todayInMexicoStr } from "./utils";
 
 function normalizeId(id: string): string {
   const stripped = id.replace(/^0+/, "");
@@ -96,9 +97,9 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
         : Promise.resolve({ data: null, error: null } as const),
     ]);
 
-    if (storesRes.error) throw new Error(storesRes.error.message);
-    if (gamesRes.error) throw new Error(gamesRes.error.message);
-    if (homeStoreRes.error) throw new Error(homeStoreRes.error.message);
+    if (storesRes.error) failDb(storesRes.error);
+    if (gamesRes.error) failDb(gamesRes.error);
+    if (homeStoreRes.error) failDb(homeStoreRes.error);
 
     return {
       player,
@@ -117,7 +118,7 @@ export const updateHomeStore = createServerFn({ method: "POST" })
       throw new Error("Tu tienda es asignada por el administrador. Contacta a soporte para cambios.");
     }
     const { error } = await admin.from("players").update({ home_store_id: data.store_id }).eq("id", player.id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -180,7 +181,7 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
         twitch: fields.twitch || null,
       })
       .eq("id", store_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -240,7 +241,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       rows = res.data as any[] | null;
       err = res.error;
     }
-    if (err) throw new Error(err.message);
+    if (err) failDb(err);
 
     const tournamentIds = (rows ?? []).map((r) => r.id);
     const gameIds = Array.from(new Set((rows ?? []).map((r) => r.game_id)));
@@ -295,7 +296,7 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
       .select("id, store_id, status")
       .eq("id", data.tournament_id)
       .maybeSingle();
-    if (te) throw new Error(te.message);
+    if (te) failDb(te);
     if (!t) throw new Error("Torneo no encontrado");
     if (t.store_id !== player.home_store_id && player.role !== "admin") {
       throw new Error("Este torneo no pertenece a tu tienda");
@@ -304,7 +305,7 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
       throw new Error("Solo se pueden eliminar torneos en estado DRAFT");
     }
     const { error } = await admin.from("tournaments").delete().eq("id", data.tournament_id);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { ok: true };
   });
 
@@ -338,7 +339,7 @@ export const createTournament = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { id: created.id };
   });
 
@@ -398,11 +399,8 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
 
     // Restringir fecha a la semana actual (lunes → hoy). Admin puede saltar la validación.
     if (player.role !== "admin") {
-      // Calcular "hoy" en zona horaria de México (UTC-6), no UTC del servidor
-      const MX_OFFSET_HOURS = -6;
-      const nowUtc = new Date();
-      const mxNow = new Date(nowUtc.getTime() + MX_OFFSET_HOURS * 60 * 60 * 1000);
-      const todayStr = mxNow.toISOString().split("T")[0]; // "YYYY-MM-DD" en hora MX
+      // "Hoy" en zona horaria de México, no UTC del servidor
+      const todayStr = todayInMexicoStr();
       const today = new Date(todayStr + "T12:00:00");
 
       const dayOfWeek = today.getDay();
@@ -443,7 +441,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       .eq("game_id", data.game_id)
       .eq("tournament_date", data.tournament_date)
       .maybeSingle();
-    if (dupErr) throw new Error(dupErr.message);
+    if (dupErr) failDb(dupErr);
     if (existing) {
       return {
         ok: false as const,
@@ -463,7 +461,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     };
     if (data.tournament_id) insertPayload.id = data.tournament_id;
     const { data: tournament, error: te } = await admin.from("tournaments").insert(insertPayload).select("id").single();
-    if (te) throw new Error(te.message);
+    if (te) failDb(te);
     const tournamentId = tournament.id;
 
     const cleanup = async (msg: string): Promise<never> => {
@@ -536,7 +534,7 @@ export const listActiveStores = createServerFn({ method: "POST" })
       .eq("is_active", true)
       .order("city", { ascending: true })
       .order("name", { ascending: true });
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { stores: data ?? [] };
   });
 
@@ -549,7 +547,7 @@ export const lookupPlayerTags = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const { data: rows, error } = await admin.from("players").select("geek_tag").in("geek_tag", data.tags);
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     return { existing: (rows ?? []).map((r) => r.geek_tag) };
   });
 
@@ -627,7 +625,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       .from("store_schedules")
       .select("id, store_id, game_id, day_of_week, start_time, stores(id, name, city, state, zone, phone, instagram)")
       .eq("store_id", player.home_store_id);
-    if (se) throw new Error(se.message);
+    if (se) failDb(se);
 
     const gameIds = Array.from(new Set((schedules ?? []).map((s: any) => s.game_id)));
     const { data: gamesData } = gameIds.length
@@ -1093,7 +1091,7 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
     if (res.error && /column .* does not exist/i.test(res.error.message)) {
       res = await build(baseCols);
     }
-    if (res.error) throw new Error(res.error.message);
+    if (res.error) failDb(res.error);
 
     const rows = (res.data ?? []) as any[];
     const count = res.count;
@@ -1194,7 +1192,7 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
       )
       .eq("id", data.tournament_id)
       .maybeSingle();
-    if (te) throw new Error(te.message);
+    if (te) failDb(te);
     if (!t) throw new Error("Torneo no encontrado");
 
     // Security: organizer can only view tournaments of their home store.
@@ -1221,9 +1219,9 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
         return full;
       })(),
     ]);
-    if (storeRes.error) throw new Error(storeRes.error.message);
-    if (gameRes.error) throw new Error(gameRes.error.message);
-    if (resultsRes.error) throw new Error(resultsRes.error.message);
+    if (storeRes.error) failDb(storeRes.error);
+    if (gameRes.error) failDb(gameRes.error);
+    if (resultsRes.error) failDb(resultsRes.error);
 
     const playerIds = Array.from(new Set((resultsRes.data ?? []).map((r: any) => r.player_id)));
     const playersRes = playerIds.length

@@ -3,7 +3,11 @@ import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { resolveEmailByGeekTag } from "@/lib/geekarena-auth-helpers.functions";
+import {
+  loginWithIdentifier,
+  resendConfirmation,
+  sendPasswordReset,
+} from "@/lib/geekarena-auth-helpers.functions";
 import { geekarena } from "@/integrations/geekarena/client";
 import { motion } from "framer-motion";
 
@@ -32,20 +36,17 @@ function translateAuthError(msg: string): string {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const resolveEmail = useServerFn(resolveEmailByGeekTag);
+  const doLogin = useServerFn(loginWithIdentifier);
+  const doResend = useServerFn(resendConfirmation);
+  const doReset = useServerFn(sendPasswordReset);
   const [identifier, setIdentifier] = useState(""); // Geek Tag o email
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(false);
+  // Email enmascarado (j*****@gmail.com) — el email real nunca llega al cliente
   const [needsConfirm, setNeedsConfirm] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
-
-  const resolveLoginEmail = async (value: string): Promise<string | null> => {
-    if (value.includes("@")) return value;
-    const { email: resolved } = await resolveEmail({ data: { geek_tag: value } });
-    return resolved;
-  };
 
   const startCooldown = () => {
     setCooldown(true);
@@ -58,75 +59,56 @@ function LoginPage() {
     setLoading(true);
     setNeedsConfirm(null);
 
-    const resolvedEmail = await resolveLoginEmail(identifier.trim());
-    if (!resolvedEmail) {
-      setLoading(false);
-      startCooldown();
-      toast.error("No encontramos una cuenta con ese correo o Geek Tag");
-      return;
-    }
-
-    const { data, error } = await geekarena.auth.signInWithPassword({
-      email: resolvedEmail,
-      password,
-    });
+    const res: any = await doLogin({
+      data: { identifier: identifier.trim(), password },
+    }).catch(() => ({ ok: false, code: "error", message: "network" }));
     setLoading(false);
     startCooldown();
 
-    if (error) {
-      if (/not confirmed/i.test(error.message)) {
-        setNeedsConfirm(resolvedEmail);
-        return;
+    if (!res.ok) {
+      if (res.code === "not_found") {
+        toast.error("No encontramos una cuenta con ese correo o Geek Tag");
+      } else if (res.code === "unconfirmed") {
+        setNeedsConfirm(res.masked_email ?? "tu correo");
+      } else {
+        toast.error(translateAuthError(res.message ?? ""));
       }
-      toast.error(translateAuthError(error.message));
       return;
     }
-    if (!data.user?.email_confirmed_at) {
-      setNeedsConfirm(resolvedEmail);
-      await geekarena.auth.signOut();
+
+    // Instalar la sesión emitida por el servidor en el cliente
+    const { error: sessionError } = await geekarena.auth.setSession(res.session);
+    if (sessionError) {
+      toast.error(translateAuthError(sessionError.message));
       return;
     }
-    const { data: playerRow } = await geekarena
-      .from("players")
-      .select("role")
-      .eq("email", data.user?.email ?? resolvedEmail)
-      .maybeSingle();
-    const role = (playerRow as { role?: string } | null)?.role;
 
     toast.success("¡Bienvenido de vuelta a la Arena!");
-    if (role === "admin") navigate({ to: "/admin" });
-    else if (role === "tcg_manager") navigate({ to: "/tcg-manager" });
-    else if (role === "organizer") navigate({ to: "/organizer" });
+    if (res.role === "admin") navigate({ to: "/admin" });
+    else if (res.role === "tcg_manager") navigate({ to: "/tcg-manager" });
+    else if (res.role === "organizer") navigate({ to: "/organizer" });
     else navigate({ to: "/dashboard" });
   };
 
   const resend = async () => {
-    if (!needsConfirm) return;
-    const { error } = await geekarena.auth.resend({ type: "signup", email: needsConfirm });
-    if (error) toast.error(translateAuthError(error.message));
-    else toast.success("Correo de verificación reenviado");
+    await doResend({ data: { identifier: identifier.trim() } }).catch(() => {});
+    toast.success("Correo de verificación reenviado");
   };
 
   const sendReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || cooldown) return;
     setLoading(true);
-
-    const resolvedEmail = await resolveLoginEmail(identifier.trim());
-    if (!resolvedEmail) {
-      setLoading(false);
-      startCooldown();
-      toast.error("No encontramos una cuenta con ese correo o Geek Tag");
-      return;
-    }
-
-    const { error } = await geekarena.auth.resetPasswordForEmail(resolvedEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    await doReset({
+      data: {
+        identifier: identifier.trim(),
+        redirect_to: `${window.location.origin}/reset-password`,
+      },
+    }).catch(() => {});
     setLoading(false);
     startCooldown();
-    if (error) toast.error(translateAuthError(error.message));
-    else toast.success("Enlace enviado — revisa tu bandeja de entrada");
+    // Respuesta idéntica exista o no la cuenta — sin señal de enumeración
+    toast.success("Si la cuenta existe, enviamos un enlace — revisa tu bandeja de entrada");
   };
 
   return (

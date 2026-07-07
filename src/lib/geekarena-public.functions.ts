@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getGeekarenaAdmin } from "./geekarena-admin.server";
+import { getGeekarenaAdmin, failDb } from "./geekarena-admin.server";
+import { toLocalDateStr, todayInMexicoStr } from "./utils";
 
 export const getPublicStoresList = createServerFn({ method: "POST" }).handler(async () => {
   const admin = getGeekarenaAdmin();
@@ -11,7 +12,7 @@ export const getPublicStoresList = createServerFn({ method: "POST" }).handler(as
     )
     .eq("is_active", true)
     .order("name");
-  if (error) throw new Error(error.message);
+  if (error) failDb(error);
 
   const storeIds = (stores ?? []).map((s: any) => s.id);
   const { data: schedules } = storeIds.length
@@ -49,7 +50,7 @@ export const getStoreProfile = createServerFn({ method: "POST" })
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
     if (!store) throw new Error("Tienda no encontrada");
 
     const { data: schedules } = await admin
@@ -84,7 +85,7 @@ export const getStoreWeeklySchedule = createServerFn({ method: "POST" })
       .eq("store_id", store.id)
       .order("day_of_week")
       .order("start_time");
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     return {
       schedule: (schedules ?? []).map((s: any) => ({
@@ -119,10 +120,12 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     const weekDates = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStartDate);
       d.setDate(weekStartDate.getDate() + i);
-      return d.toISOString().split("T")[0];
+      return toLocalDateStr(d);
     });
     const weekEndStr = weekDates[6];
-    const today = new Date().toISOString().split("T")[0];
+    // "Hoy" en hora de México — el server corre en UTC y a las 6pm MX
+    // el toISOString() de UTC ya marca mañana, ocultando torneos de hoy.
+    const today = todayInMexicoStr();
     const fromDate = data.week_start < today ? today : data.week_start;
 
     // 1. Torneos reales publicados en esta semana
@@ -144,7 +147,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     if (data.zone) tournamentQuery = tournamentQuery.eq("stores.zone", data.zone);
 
     const { data: tournaments, error } = await tournamentQuery;
-    if (error) throw new Error(error.message);
+    if (error) failDb(error);
 
     // 2. Store schedules (plantilla recurrente) — proyectar a fechas de esta semana
     let scheduleQuery = admin.from("store_schedules").select(
@@ -160,7 +163,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     if (data.zone) scheduleQuery = scheduleQuery.eq("stores.zone", data.zone);
 
     const { data: schedules, error: scheduleError } = await scheduleQuery;
-    if (scheduleError) throw new Error(scheduleError.message);
+    if (scheduleError) failDb(scheduleError);
 
     const realTournamentDates = new Set(
       (tournaments ?? []).map((t: any) => `${t.store_id}_${t.tournament_date}`),

@@ -7,6 +7,10 @@ export function AdVertical({ sponsor }: { sponsor: any }) {
 
   useEffect(() => {
     if (!sponsor?.id) return;
+    // Una vista por sponsor por sesión de navegador
+    const key = `ad_viewed_${sponsor.id}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
     registerSponsorViewFn({ data: { sponsor_id: sponsor.id } }).catch(() => {});
   }, [sponsor?.id]);
 
