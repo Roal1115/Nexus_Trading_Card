@@ -72,9 +72,11 @@ function SimpleSelect({
       onChange={(e) => onChange(e.target.value || null)}
       className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
     >
-      <option value="">{placeholder}</option>
+      <option value="" className="bg-gray-900 text-white">
+        {placeholder}
+      </option>
       {options.map((o) => (
-        <option key={o.value} value={o.value}>
+        <option key={o.value} value={o.value} className="bg-gray-900 text-white">
           {o.label}
         </option>
       ))}
@@ -162,20 +164,30 @@ function MetaPage() {
       {/* Filters */}
       <div className="glass mb-6 rounded-2xl p-4 space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SimpleSelect
-            value={filters.zone}
-            onChange={(v) => setFilters((f) => ({ ...f, zone: v }))}
-            options={(filterOptions?.zones ?? []).map((z: string) => ({ value: z, label: z }))}
-            placeholder="Todas las zonas"
-          />
-          <SimpleSelect
-            value={filters.store_id}
-            onChange={(v) => setFilters((f) => ({ ...f, store_id: v }))}
-            options={(filterOptions?.stores ?? [])
-              .filter((s: any) => !filters.zone || s.zone === filters.zone)
-              .map((s: any) => ({ value: s.id, label: s.name }))}
-            placeholder="Todas las tiendas"
-          />
+          <div className="min-w-0 w-full max-w-full">
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+              Zona
+            </label>
+            <SimpleSelect
+              value={filters.zone}
+              onChange={(v) => setFilters((f) => ({ ...f, zone: v }))}
+              options={(filterOptions?.zones ?? []).map((z: string) => ({ value: z, label: z }))}
+              placeholder="Todas las zonas"
+            />
+          </div>
+          <div className="min-w-0 w-full max-w-full">
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
+              Tienda
+            </label>
+            <SimpleSelect
+              value={filters.store_id}
+              onChange={(v) => setFilters((f) => ({ ...f, store_id: v }))}
+              options={(filterOptions?.stores ?? [])
+                .filter((s: any) => !filters.zone || s.zone === filters.zone)
+                .map((s: any) => ({ value: s.id, label: s.name }))}
+              placeholder="Todas las tiendas"
+            />
+          </div>
           <div className="min-w-0 w-full max-w-full">
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               Desde
@@ -216,7 +228,23 @@ function MetaPage() {
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => {
+              const reset: Filters = {
+                game_id: filters.game_id,
+                zone: null,
+                store_id: null,
+                date_from: null,
+                date_to: null,
+              };
+              setFilters(reset);
+              loadMeta(reset);
+            }}
+            className="rounded-md border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-300 hover:bg-white/[0.05] transition"
+          >
+            Limpiar filtros
+          </button>
           <button
             onClick={() => loadMeta(filters)}
             className="rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
