@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRef, useEffect, useState } from "react";
-import { Trophy, LayoutDashboard, TrendingUp, Store, User, LogIn } from "lucide-react";
+import { Trophy, LayoutDashboard, TrendingUp, CalendarDays, User, LogIn } from "lucide-react";
 import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 
