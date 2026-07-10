@@ -514,7 +514,7 @@ function AdminAdsPage() {
             const url = `${data.publicUrl}?v=${Date.now()}`;
             const updateField =
               type === "logo"
-                ? { logo_url: url }
+                ? { carousel_url: url }
                 : type === "vertical"
                   ? { vertical_url: url }
                   : { horizontal_url: url };
@@ -800,7 +800,7 @@ function ImagesModal({
           const spec = IMAGE_SPECS[type];
           const currentUrl =
             type === "logo"
-              ? sponsor.logo_url
+              ? sponsor.carousel_url
               : type === "vertical"
                 ? sponsor.vertical_url
                 : sponsor.horizontal_url;

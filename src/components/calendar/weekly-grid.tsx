@@ -4,7 +4,7 @@ import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { toLocalDateStr } from "@/lib/utils";
 
 export const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-export const HOURS = Array.from({ length: 10 }, (_, i) => i + 14); // 2pm a 10pm
+export const HOURS = Array.from({ length: 10 }, (_, i) => i + 16); // 2pm a 10pm
 
 export const GAME_COLORS: Record<string, string> = {
   "one-piece": "bg-orange-500/20 border-orange-500/40 text-orange-300",

@@ -22,7 +22,7 @@ export function AdHorizontal({ sponsor }: { sponsor: any }) {
         alt={sponsor.name ?? "Patrocinador"}
         width={640}
         height={100}
-        className="w-full h-[100px] object-cover rounded-lg"
+        className="w-full h-auto aspect-[640/100] object-contain rounded-lg"
         loading="lazy"
       />
     </div>
