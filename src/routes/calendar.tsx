@@ -157,11 +157,11 @@ function CalendarPage() {
 
       {selectedEntry && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pb-24 lg:items-center lg:pb-4"
           onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="glass w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6 max-h-[85vh] overflow-y-auto"
+            className="glass my-auto w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">

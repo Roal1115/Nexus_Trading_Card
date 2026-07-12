@@ -130,8 +130,29 @@ export function WeeklyGrid({
     );
   }
 
+  const totalEntries = Array.from(calendarGrid.values()).reduce(
+    (sum, col) => sum + Array.from(col.values()).reduce((s, arr) => s + arr.length, 0),
+    0,
+  );
+
+  if (totalEntries === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 p-12 text-center">
+        <p className="text-sm font-semibold text-white">Sin torneos esta semana</p>
+        <p className="text-xs text-gray-500">Prueba con otra semana o quita los filtros aplicados.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto">
+    <>
+      <MobileWeeklyList
+        weekDates={weekDates}
+        calendarGrid={calendarGrid}
+        attendedIds={attendedIds}
+        onSelectEntry={onSelectEntry}
+      />
+      <div className="hidden overflow-x-auto sm:block">
       <div style={{ minWidth: "760px", width: "100%" }}>
         <div
           style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
@@ -206,6 +227,52 @@ export function WeeklyGrid({
           </div>
         ))}
       </div>
+      </div>
+    </>
+  );
+}
+
+function MobileWeeklyList({
+  weekDates,
+  calendarGrid,
+  attendedIds,
+  onSelectEntry,
+}: {
+  weekDates: Date[];
+  calendarGrid: Map<number, Map<number, any[]>>;
+  attendedIds: Set<string>;
+  onSelectEntry: (entry: any) => void;
+}) {
+  return (
+    <div className="divide-y divide-white/5 sm:hidden">
+      {weekDates.map((d, colIdx) => {
+        const dayEntries = Array.from(calendarGrid.get(colIdx)?.entries() ?? [])
+          .sort(([hourA], [hourB]) => hourA - hourB)
+          .flatMap(([, entries]) => entries);
+        const isToday = d.toDateString() === new Date().toDateString();
+
+        return (
+          <div key={colIdx} className="p-3">
+            <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${isToday ? "text-primary" : "text-gray-400"}`}>
+              {DAY_NAMES[d.getDay()]} {d.getDate()}
+            </p>
+            {dayEntries.length === 0 ? (
+              <p className="text-xs text-gray-600">Sin torneos</p>
+            ) : (
+              <div className="space-y-1.5">
+                {dayEntries.map((entry) => (
+                  <CalendarEntry
+                    key={entry.id}
+                    entry={entry}
+                    attended={attendedIds.has(entry.id)}
+                    onClick={() => onSelectEntry(entry)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

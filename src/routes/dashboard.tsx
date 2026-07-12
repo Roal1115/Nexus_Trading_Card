@@ -730,7 +730,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={closeModal}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6"
+              className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6"
             >
               <motion.div
                 key="tournament-modal-content"
@@ -739,7 +739,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                 exit={{ opacity: 0, y: 16, scale: 0.98 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 onClick={(e) => e.stopPropagation()}
-                className="glass relative w-full max-w-6xl max-h-[calc(100vh-4rem)] sm:max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
+                className="glass relative w-full max-w-6xl max-h-[calc(100vh-4rem-env(safe-area-inset-bottom))] lg:max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
               >
                 <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
                   <div>
