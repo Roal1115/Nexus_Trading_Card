@@ -13,10 +13,11 @@ export function failDb(error: { message?: string } | null | undefined): never {
 }
 
 export function getNexusAdmin() {
-  const key = process.env.NEXUS_SERVICE_ROLE_KEY;
+  const key =
+    process.env.NEXUS_SERVICE_ROLE_KEY ?? process.env.GEEKARENA_SERVICE_ROLE_KEY;
   if (!key) {
     throw new Error(
-      "NEXUS_SERVICE_ROLE_KEY no está configurada en el server.",
+      "NEXUS_SERVICE_ROLE_KEY / GEEKARENA_SERVICE_ROLE_KEY no está configurada en el server.",
     );
   }
   return createClient(NEXUS_URL, key, {
