@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { getStoreProfile, getPublicCalendar } from "@/lib/nexus-public.functions";
 import { useWeekNav, useCalendarGrid, WeeklyGrid, dotColorForGame } from "@/components/calendar/weekly-grid";
+import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+import { AdHorizontal } from "@/components/ads/AdHorizontal";
 
 export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Nexus" }] }),
@@ -22,6 +25,21 @@ function StoreProfilePage() {
   const [events, setEvents] = useState<any[]>([]);
   const [calLoading, setCalLoading] = useState(true);
   const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
+
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const registerView = useServerFn(registerAdView);
+  const [sponsor, setSponsor] = useState<any>(null);
+
+  useEffect(() => {
+    registerView()
+      .then(setSponsor)
+      .catch(() => {
+        fetchActiveSponsor()
+          .then(setSponsor)
+          .catch(() => {});
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchProfile({ data: { slug } })
@@ -68,10 +86,18 @@ function StoreProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+
+      <main className="min-w-0 max-w-4xl space-y-6 py-10">
       <Link to="/stores" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary">
         <ArrowLeft size={12} /> Volver al directorio
       </Link>
+
+      {/* Ad horizontal mobile */}
+      <AdHorizontal sponsor={sponsor} />
 
       <header className="glass space-y-4 rounded-2xl p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">{store.zone ?? "—"}</p>
@@ -196,11 +222,11 @@ function StoreProfilePage() {
 
       {selectedEntry && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="animate-in fade-in-0 duration-200 fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="glass w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
+            className="animate-in fade-in-0 zoom-in-95 duration-200 glass w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
@@ -227,6 +253,11 @@ function StoreProfilePage() {
           </div>
         </div>
       )}
+      </main>
+
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
     </div>
   );
 }

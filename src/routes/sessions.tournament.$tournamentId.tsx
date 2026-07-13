@@ -18,6 +18,7 @@ import {
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { getTournamentSessionDetail } from "@/lib/nexus-standalone.functions";
 import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
+import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -133,7 +134,7 @@ function LeaderSelect({
       </button>
 
       {open && (
-        <div className="absolute z-40 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+        <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-40 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
           <div className="relative p-2">
             <Search
               size={13}
@@ -143,7 +144,7 @@ function LeaderSelect({
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader…"
+              placeholder="Buscar leader o ID (ej. OP10-010)…"
               className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>
@@ -166,6 +167,7 @@ function LeaderSelect({
                     {opt.card_set_id}
                   </span>
                   <span className="flex-1 truncate">{cleanName(opt.base_name)}</span>
+                  <ColorDots colors={opt.colors} />
                 </button>
               ))
             )}

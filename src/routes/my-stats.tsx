@@ -63,7 +63,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 
       {/* Tooltip */}
       {show && tooltip && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-56 rounded-xl border border-primary/30 bg-[#0f1117] p-3 text-xs text-gray-300 leading-relaxed shadow-2xl">
+        <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute bottom-full left-0 z-50 mb-2 w-56 rounded-xl border border-primary/30 bg-[#0f1117] p-3 text-xs text-gray-300 leading-relaxed shadow-2xl">
           {tooltip}
           <div className="absolute -bottom-1.5 left-4 h-3 w-3 rotate-45 border-b border-r border-primary/30 bg-[#0f1117]" />
         </div>

@@ -1050,7 +1050,7 @@ function TooltipInfo({ text }: { text: string }) {
             onMouseEnter={() => setShow(true)}
             onMouseLeave={() => setShow(false)}
           >
-            <div className="rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
+            <div className="animate-in fade-in-0 zoom-in-95 duration-150 rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-gray-200 leading-7 shadow-2xl whitespace-pre-line">
               {text}
             </div>
           </div>,

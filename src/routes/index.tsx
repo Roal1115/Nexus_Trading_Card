@@ -827,7 +827,7 @@ function FilterSelect({
               minWidth: pos.width,
               zIndex: 99999,
             }}
-            className="rounded-md border border-white/10 bg-[#0f1117] shadow-xl"
+            className="animate-in fade-in-0 zoom-in-95 duration-150 rounded-md border border-white/10 bg-[#0f1117] shadow-xl"
           >
             <div className="max-h-60 overflow-y-auto">
               {options.map((o) => (

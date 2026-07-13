@@ -11,6 +11,7 @@ import {
   clearTournamentRounds,
   deleteRoundResult,
 } from "@/lib/nexus-tournament-tracker.functions";
+import { ColorDots } from "./color-dots";
 
 type DeckIdentifier = {
   id: string;
@@ -39,32 +40,8 @@ type RoundRow = {
   status?: string;
 };
 
-const COLOR_HEX: Record<string, string> = {
-  Red: "#ef4444",
-  Blue: "#3b82f6",
-  Green: "#22c55e",
-  Purple: "#a855f7",
-  Black: "#374151",
-  Yellow: "#eab308",
-};
-
 function cleanDisplayName(name: string): string {
   return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
-}
-
-function ColorDots({ colors }: { colors: string[] | null }) {
-  if (!colors || colors.length === 0) return null;
-  return (
-    <span className="ml-2 inline-flex items-center gap-0.5">
-      {colors.map((c) => (
-        <span
-          key={c}
-          className="h-2 w-2 rounded-full border border-white/20"
-          style={{ backgroundColor: COLOR_HEX[c] ?? "#666" }}
-        />
-      ))}
-    </span>
-  );
 }
 
 function LeaderSelect({
@@ -141,7 +118,7 @@ function LeaderSelect({
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader…"
+              placeholder="Buscar leader o ID (ej. OP10-010)…"
               className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>
@@ -271,7 +248,7 @@ function OpponentLeaderSelect({
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader…"
+              placeholder="Buscar leader o ID (ej. OP10-010)…"
               className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>

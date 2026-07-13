@@ -162,6 +162,7 @@ function LoginPage() {
             </Field>
 
             {!forgotMode && (
+              <div className="animate-in fade-in-0 slide-in-from-top-1 duration-200">
               <Field label="Contraseña">
                 <div className="relative">
                   <input
@@ -182,6 +183,7 @@ function LoginPage() {
                   </button>
                 </div>
               </Field>
+              </div>
             )}
 
             <motion.button

@@ -19,6 +19,9 @@ import { getMyAttendedTournamentIds } from "@/lib/nexus-standalone.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
 import { useWeekNav, useCalendarGrid, WeeklyGrid } from "@/components/calendar/weekly-grid";
+import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+import { AdHorizontal } from "@/components/ads/AdHorizontal";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -31,6 +34,10 @@ function CalendarPage() {
   const { player } = useNexusRole();
   const { activeTcg } = useTCG();
 
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const registerView = useServerFn(registerAdView);
+  const [sponsor, setSponsor] = useState<any>(null);
+
   const { weekDates, weekStartStr, goToPrevWeek, goToNextWeek, goToToday, weekLabel } = useWeekNav();
   const [events, setEvents] = useState<any[]>([]);
   const [stores, setStores] = useState<any[]>([]);
@@ -40,6 +47,17 @@ function CalendarPage() {
   const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [attendedIds, setAttendedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    registerView()
+      .then(setSponsor)
+      .catch(() => {
+        fetchActiveSponsor()
+          .then(setSponsor)
+          .catch(() => {});
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -75,7 +93,12 @@ function CalendarPage() {
   const calendarGrid = useCalendarGrid(events, weekDates);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 pb-24 sm:px-6">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
+
+      <main className="min-w-0 max-w-6xl py-8 pb-24">
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Torneos</p>
         <h1 className="mt-1 text-3xl font-bold text-white">Calendario</h1>
@@ -83,6 +106,9 @@ function CalendarPage() {
           Torneos programados — {activeTcg?.name ?? "Todos los TCGs"}
         </p>
       </div>
+
+      {/* Ad horizontal mobile */}
+      <AdHorizontal sponsor={sponsor} />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -157,11 +183,11 @@ function CalendarPage() {
 
       {selectedEntry && (
         <div
-          className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pb-24 lg:items-center lg:pb-4"
+          className="animate-in fade-in-0 duration-200 fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pb-24 lg:items-center lg:pb-4"
           onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="glass my-auto w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
+            className="animate-in fade-in-0 zoom-in-95 duration-200 glass my-auto w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
@@ -278,6 +304,11 @@ function CalendarPage() {
           </div>
         </div>
       )}
+      </main>
+
+      <aside className="hidden xl:block">
+        <AdVertical sponsor={sponsor} />
+      </aside>
     </div>
   );
 }

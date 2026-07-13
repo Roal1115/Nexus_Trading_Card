@@ -39,7 +39,8 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
     if (data.card_set_id) {
       q = q.eq("card_set_id", data.card_set_id);
     } else if (data.search && data.search.trim().length > 0) {
-      q = q.ilike("base_name", `%${data.search.trim()}%`);
+      const s = data.search.trim().replace(/[%,]/g, "");
+      q = q.or(`base_name.ilike.%${s}%,card_set_id.ilike.%${s}%`);
     }
 
     const limit = data.search && data.search.trim().length > 0 ? 100 : 800;
@@ -51,7 +52,12 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
       ? (rows ?? []).filter((r: any) => r.card_image_id === r.card_set_id)
       : (rows ?? []);
 
-    return filtered.sort((a: any, b: any) => {
+    // ponytail: sync can leave duplicate rows sharing a card_set_id; keep one per id
+    const deduped = basicOnly
+      ? Array.from(new Map(filtered.map((r: any) => [r.card_set_id, r])).values())
+      : filtered;
+
+    return deduped.sort((a: any, b: any) => {
       const groupDiff = groupOrder(a.card_set_id) - groupOrder(b.card_set_id);
       if (groupDiff !== 0) return groupDiff;
       return b.card_set_id.localeCompare(a.card_set_id);

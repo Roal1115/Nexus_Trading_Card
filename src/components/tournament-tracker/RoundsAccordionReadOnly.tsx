@@ -250,7 +250,7 @@ function RoundAccordionItem({
 
       {/* Contenido expandido */}
       {open && (
-        <div className="border-t border-white/10 px-3 pb-3 pt-3">
+        <div className="animate-in fade-in-0 slide-in-from-top-1 duration-200 border-t border-white/10 px-3 pb-3 pt-3">
           {!round.is_bye ? (
             <div className="flex items-center justify-center gap-4">
               <div className="flex flex-col items-center gap-1.5">
