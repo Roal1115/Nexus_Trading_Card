@@ -244,6 +244,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
       logo_url?: string;
       vertical_url?: string;
       horizontal_url?: string;
+      carousel_url?: string;
     }) =>
       z
         .object({
@@ -251,6 +252,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
           logo_url: z.string().url().optional(),
           vertical_url: z.string().url().optional(),
           horizontal_url: z.string().url().optional(),
+          carousel_url: z.string().url().optional(),
         })
         .parse(d),
   )
@@ -259,6 +261,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
     if (data.logo_url) update.logo_url = data.logo_url;
     if (data.vertical_url) update.vertical_url = data.vertical_url;
     if (data.horizontal_url) update.horizontal_url = data.horizontal_url;
+    if (data.carousel_url) update.carousel_url = data.carousel_url;
     if (Object.keys(update).length === 0) return { success: true };
     const { error } = await context.admin.from("sponsors").update(update).eq("id", data.sponsor_id);
     if (error) failDb(error);
