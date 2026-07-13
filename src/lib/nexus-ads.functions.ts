@@ -4,6 +4,7 @@ import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { requireNexusAdmin } from "./nexus-auth.middleware";
 import { getClientIp } from "./rate-limit.server";
 import { logAction } from "./nexus-admin.functions";
+import type { TablesUpdate } from "./database.types";
 
 // ─── Dedupe de vistas por IP ──────────────────────────────────────────────
 // Los ads viven en páginas públicas, así que no podemos exigir login para
@@ -257,7 +258,7 @@ export const updateSponsorImages = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const update: Record<string, string> = {};
+    const update: TablesUpdate<"sponsors"> = {};
     if (data.logo_url) update.logo_url = data.logo_url;
     if (data.vertical_url) update.vertical_url = data.vertical_url;
     if (data.horizontal_url) update.horizontal_url = data.horizontal_url;
@@ -365,7 +366,7 @@ export const getActiveBanner = createServerFn({ method: "POST" }).handler(async 
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) return { sponsor: null };
+  if (error || !data?.id) return { sponsor: null };
 
   const { data: sponsor } = await admin
     .from("sponsors")

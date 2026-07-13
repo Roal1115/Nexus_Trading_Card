@@ -1,6 +1,7 @@
 // Server-only admin client for the Nexus Supabase project.
 // Uses the service role key (NEVER ship to client).
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 const NEXUS_URL = "https://tbtyxtigbsljyrwyelqr.supabase.co";
 
@@ -20,7 +21,7 @@ export function getNexusAdmin() {
       "NEXUS_SERVICE_ROLE_KEY / GEEKARENA_SERVICE_ROLE_KEY no está configurada en el server.",
     );
   }
-  return createClient(NEXUS_URL, key, {
+  return createClient<Database>(NEXUS_URL, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

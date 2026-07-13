@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
-import { todayInMexicoStr } from "./utils";
+import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
+import type { TablesInsert } from "./database.types";
+import type { TournamentStatus } from "./nexus-admin-shared";
 
 function normalizeId(id: string): string {
   const stripped = id.replace(/^0+/, "");
@@ -217,9 +219,9 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       let q = admin
         .from("tournaments")
         .select(baseCols + extraCols)
-        .eq("store_id", player.home_store_id)
+.eq("store_id", player.home_store_id as string)
         .order("tournament_date", { ascending: false });
-      if (data.status) q = q.eq("status", data.status);
+      if (data.status) q = q.eq("status", data.status as TournamentStatus);
       if (data.game_id) q = q.eq("game_id", data.game_id);
       if (data.date_from) q = q.gte("tournament_date", data.date_from);
       if (data.date_to) q = q.lte("tournament_date", data.date_to);
@@ -231,9 +233,9 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       let q = admin
         .from("tournaments")
         .select(baseCols)
-        .eq("store_id", player.home_store_id)
+.eq("store_id", player.home_store_id as string)
         .order("tournament_date", { ascending: false });
-      if (data.status) q = q.eq("status", data.status);
+      if (data.status) q = q.eq("status", data.status as TournamentStatus);
       if (data.game_id) q = q.eq("game_id", data.game_id);
       if (data.date_from) q = q.gte("tournament_date", data.date_from);
       if (data.date_to) q = q.lte("tournament_date", data.date_to);
@@ -403,11 +405,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       const todayStr = todayInMexicoStr();
       const today = new Date(todayStr + "T12:00:00");
 
-      const dayOfWeek = today.getDay();
-      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const monday = new Date(today);
-      monday.setDate(today.getDate() - daysSinceMonday);
-      monday.setHours(0, 0, 0, 0);
+      const monday = mondayOfWeek(today);
 
       const tDate = new Date(data.tournament_date + "T12:00:00");
       if (tDate > today) {
@@ -451,7 +449,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     }
 
     const q = computeQualifying(data.tournament_date);
-    const insertPayload: Record<string, unknown> = {
+    const insertPayload: TablesInsert<"tournaments"> = {
       store_id: data.store_id,
       game_id: data.game_id,
       tournament_date: data.tournament_date,
@@ -470,17 +468,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       throw new Error(msg);
     };
 
-    const baseRows: Array<{
-      tournament_id: string;
-      player_id: string;
-      rank: number;
-      wins: number | null;
-      losses: number | null;
-      draws: number;
-      points_earned: number;
-      match_points: number | null;
-      omw_percentage: number | null;
-    }> = [];
+    const baseRows: Array<TablesInsert<"tournament_results">> = [];
     let createdPlayers = 0;
 
     try {
@@ -496,12 +484,12 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
           tournament_id: tournamentId,
           player_id: playerId,
           rank: r.rank,
-          wins: r.wins,
-          losses: r.losses,
+          wins: r.wins ?? undefined,
+          losses: r.losses ?? undefined,
           draws: r.draws ?? 0,
           points_earned: r.points_earned,
-          match_points: r.match_points,
-          omw_percentage: r.omw_percentage,
+          match_points: r.match_points ?? undefined,
+          omw_percentage: r.omw_percentage ?? undefined,
         });
       }
     } catch (e) {
@@ -563,17 +551,17 @@ export const getOrganizerBadgeCounts = createServerFn({ method: "POST" })
       admin
         .from("tournaments")
         .select("*", { count: "exact", head: true })
-        .eq("store_id", player.home_store_id)
+.eq("store_id", player.home_store_id as string)
         .eq("status", "DRAFT"),
       admin
         .from("tournaments")
         .select("*", { count: "exact", head: true })
-        .eq("store_id", player.home_store_id)
+.eq("store_id", player.home_store_id as string)
         .eq("status", "APPROVED"),
       admin
         .from("round_appeals")
         .select("*", { count: "exact", head: true })
-        .eq("store_id", player.home_store_id)
+.eq("store_id", player.home_store_id as string)
         .eq("status", "pending"),
     ]);
 
@@ -596,17 +584,13 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
     if (data.week_start) {
       monday = new Date(data.week_start + "T00:00:00");
     } else {
-      const day = today.getDay();
-      const diff = day === 0 ? -6 : 1 - day;
-      monday = new Date(today);
-      monday.setDate(today.getDate() + diff);
-      monday.setHours(0, 0, 0, 0);
+      monday = mondayOfWeek(today);
     }
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
-    const mondayStr = monday.toISOString().split("T")[0];
-    const sundayStr = sunday.toISOString().split("T")[0];
+    const mondayStr = toLocalDateStr(monday);
+    const sundayStr = toLocalDateStr(sunday);
 
     const emptyStats = {
       total_overdue: 0,
@@ -653,7 +637,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       const offset = s.day_of_week === 0 ? 6 : s.day_of_week - 1;
       const entryDate = new Date(monday);
       entryDate.setDate(monday.getDate() + offset);
-      const entryDateStr = entryDate.toISOString().split("T")[0];
+      const entryDateStr = toLocalDateStr(entryDate);
       const [h, m] = String(s.start_time).split(":").map(Number);
       const tStart = new Date(entryDate);
       tStart.setHours(h, m, 0, 0);
@@ -725,18 +709,9 @@ const CATEGORY_RANK: Record<PlayerCategory, number> = {
   inactivo: 0,
 };
 
-function getMondayOf(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 function getWeekRanges(start: Date, end: Date): Array<{ start: Date; end: Date }> {
   const weeks: Array<{ start: Date; end: Date }> = [];
-  let cur = getMondayOf(start);
+  let cur = mondayOfWeek(start);
   while (cur <= end) {
     const weekEnd = new Date(cur);
     weekEnd.setDate(weekEnd.getDate() + 6);
@@ -1076,10 +1051,10 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
       let q = admin
         .from("tournaments")
         .select(cols, { count: "exact" })
-        .eq("store_id", player.home_store_id)
+.eq("store_id", player.home_store_id as string)
         .order("tournament_date", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
-      if (data.status) q = q.eq("status", data.status);
+      if (data.status) q = q.eq("status", data.status as TournamentStatus);
       if (data.game_id) q = q.eq("game_id", data.game_id);
       if (data.date_from) q = q.gte("tournament_date", data.date_from);
       if (data.date_to) q = q.lte("tournament_date", data.date_to);

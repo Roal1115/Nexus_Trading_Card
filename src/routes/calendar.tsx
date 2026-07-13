@@ -14,6 +14,7 @@ import {
   Twitch,
   Twitter,
 } from "lucide-react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { getPublicCalendar } from "@/lib/nexus-public.functions";
 import { getMyAttendedTournamentIds } from "@/lib/nexus-standalone.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
@@ -181,15 +182,21 @@ function CalendarPage() {
         />
       </div>
 
-      {selectedEntry && (
-        <div
-          className="animate-in fade-in-0 duration-200 fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pb-24 lg:items-center lg:pb-4"
-          onClick={() => setSelectedEntry(null)}
-        >
-          <div
-            className="animate-in fade-in-0 zoom-in-95 duration-200 glass my-auto w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <DialogPrimitive.Root
+        open={!!selectedEntry}
+        onOpenChange={(o) => !o && setSelectedEntry(null)}
+      >
+        {selectedEntry && (
+          <DialogPrimitive.Portal forceMount>
+            <DialogPrimitive.Overlay asChild forceMount>
+              <div className="animate-in fade-in-0 duration-200 fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pb-24 lg:items-center lg:pb-4">
+                <DialogPrimitive.Content
+                  asChild
+                  forceMount
+                  onClick={(e) => e.stopPropagation()}
+                  aria-describedby={undefined}
+                >
+                  <div className="animate-in fade-in-0 zoom-in-95 duration-200 glass my-auto w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6">
             <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
               {selectedEntry.game_name}
             </span>
@@ -200,7 +207,9 @@ function CalendarPage() {
               </span>
             )}
 
-            <h3 className="text-lg font-bold text-white">{selectedEntry.store_name}</h3>
+            <DialogPrimitive.Title asChild>
+              <h3 className="text-lg font-bold text-white">{selectedEntry.store_name}</h3>
+            </DialogPrimitive.Title>
 
             <div className="mt-3 space-y-2 text-sm text-[#AAB6D1]">
               <p className="flex items-center gap-2">
@@ -301,9 +310,13 @@ function CalendarPage() {
             >
               Cerrar
             </button>
-          </div>
-        </div>
-      )}
+                  </div>
+                </DialogPrimitive.Content>
+              </div>
+            </DialogPrimitive.Overlay>
+          </DialogPrimitive.Portal>
+        )}
+      </DialogPrimitive.Root>
       </main>
 
       <aside className="hidden xl:block">

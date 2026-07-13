@@ -1,38 +1,30 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
-import { toLocalDateStr } from "@/lib/utils";
+import { toLocalDateStr, sundayOfWeek } from "@/lib/utils";
+
+import {
+  GAME_COLORS,
+  GAME_DOT_COLORS,
+  DEFAULT_COLOR_CLASS,
+  DEFAULT_DOT_COLOR,
+  colorClassForGame,
+  dotColorForGame,
+} from "@/lib/game-colors";
+export {
+  GAME_COLORS,
+  GAME_DOT_COLORS,
+  DEFAULT_COLOR_CLASS,
+  DEFAULT_DOT_COLOR,
+  colorClassForGame,
+  dotColorForGame,
+};
 
 export const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 export const HOURS = Array.from({ length: 10 }, (_, i) => i + 16); // 2pm a 10pm
 
-export const GAME_COLORS: Record<string, string> = {
-  "one-piece": "bg-orange-500/20 border-orange-500/40 text-orange-300",
-  "magic-the-gathering": "bg-blue-500/20 border-blue-500/40 text-blue-300",
-  pokemon: "bg-yellow-500/20 border-yellow-500/40 text-yellow-300",
-};
-export const GAME_DOT_COLORS: Record<string, string> = {
-  "one-piece": "bg-orange-400",
-  "magic-the-gathering": "bg-blue-400",
-  pokemon: "bg-yellow-400",
-};
-export const DEFAULT_COLOR_CLASS = "bg-[#32D9FF]/20 border-[#32D9FF]/40 text-[#32D9FF]";
-export const DEFAULT_DOT_COLOR = "bg-[#32D9FF]";
-
-export function colorClassForGame(slug: string) {
-  return GAME_COLORS[slug] ?? DEFAULT_COLOR_CLASS;
-}
-export function dotColorForGame(slug: string) {
-  return GAME_DOT_COLORS[slug] ?? DEFAULT_DOT_COLOR;
-}
-
 export function useWeekNav() {
-  const [weekStart, setWeekStart] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay()); // domingo de la semana actual
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
+  const [weekStart, setWeekStart] = useState<Date>(() => sundayOfWeek(new Date()));
 
   const weekDates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -54,12 +46,7 @@ export function useWeekNav() {
     d.setDate(d.getDate() + 7);
     setWeekStart(d);
   };
-  const goToToday = () => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay());
-    d.setHours(0, 0, 0, 0);
-    setWeekStart(d);
-  };
+  const goToToday = () => setWeekStart(sundayOfWeek(new Date()));
 
   const weekLabel = `${weekDates[0].getDate()} ${weekDates[0].toLocaleString("es-MX", { month: "short" })} — ${weekDates[6].getDate()} ${weekDates[6].toLocaleString("es-MX", { month: "short", year: "numeric" })}`;
 

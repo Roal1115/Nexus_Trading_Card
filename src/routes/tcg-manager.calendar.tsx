@@ -17,46 +17,13 @@ import {
 import {
   getManagerCalendar,
 } from "@/lib/nexus-manager.functions";
+import { ZONE_COLORS } from "@/lib/game-colors";
 
 
 export const Route = createFileRoute("/tcg-manager/calendar")({
   head: () => ({ meta: [{ title: "Calendario de Torneos — Nexus" }] }),
   component: ManagerCalendarPage,
 });
-
-type ZoneColor = {
-  bg: string;
-  text: string;
-  border: string;
-  dot: string;
-};
-
-const ZONE_COLORS: Record<string, ZoneColor> = {
-  "Zona Monterrey": {
-    bg: "bg-orange-500/15",
-    text: "text-orange-300",
-    border: "border-orange-500/30",
-    dot: "bg-orange-400",
-  },
-  "Zona Guadalajara": {
-    bg: "bg-blue-500/15",
-    text: "text-blue-300",
-    border: "border-blue-500/30",
-    dot: "bg-blue-400",
-  },
-  "Zona Centro": {
-    bg: "bg-green-500/15",
-    text: "text-green-300",
-    border: "border-green-500/30",
-    dot: "bg-green-400",
-  },
-  "Zona Extendida": {
-    bg: "bg-gray-500/15",
-    text: "text-gray-300",
-    border: "border-gray-500/30",
-    dot: "bg-gray-400",
-  },
-};
 
 const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const HOURS = [17, 18, 19, 20, 21, 22, 23];

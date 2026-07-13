@@ -102,7 +102,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       game_id?: string | null;
       zone?: string | null;
       store_id?: string | null;
-      week_start: string; // "YYYY-MM-DD" — lunes de la semana
+      week_start: string; // "YYYY-MM-DD" — domingo (el grid público es Dom–Sáb, ver sundayOfWeek en utils)
     }) =>
       z
         .object({

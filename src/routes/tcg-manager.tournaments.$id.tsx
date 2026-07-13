@@ -60,14 +60,14 @@ function formatDateTime(iso: string) {
   return `${dt.getDate()} ${MESES[dt.getMonth()]} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string | null) {
   const map: Record<string, { label: string; cls: string }> = {
     DRAFT: { label: "Borrador", cls: "bg-gray-500/20 text-gray-200 border-gray-400/30" },
     APPROVED: { label: "Aprobado", cls: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40" },
     PUBLISHED: { label: "Publicado", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40" },
     UNPUBLISHED: { label: "Despublicado", cls: "bg-amber-500/20 text-amber-200 border-amber-400/40" },
   };
-  const v = map[status] ?? { label: status, cls: "bg-white/10 text-white border-white/20" };
+  const v = map[status ?? ""] ?? { label: status ?? "—", cls: "bg-white/10 text-white border-white/20" };
   return (
     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${v.cls}`}>
       {v.label}

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
+import { mondayOfWeek, toLocalDateStr } from "@/lib/utils";
 import { nexus } from "@/integrations/nexus/client";
 import {
   getOrganizerOverview,
@@ -320,13 +321,7 @@ async function uploadFileToStorage(file: File, tournamentId: string): Promise<st
 
 function getWeekDateRange(): { min: string; max: string } {
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Dom, 1=Lun ... 6=Sab
-  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - daysSinceMonday);
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { min: fmt(monday), max: fmt(today) };
+  return { min: toLocalDateStr(mondayOfWeek(today)), max: toLocalDateStr(today) };
 }
 
 export function TournamentUploadForm({

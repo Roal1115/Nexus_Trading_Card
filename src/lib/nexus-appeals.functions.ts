@@ -1,4 +1,5 @@
 import { failDb } from "./nexus-admin.server";
+import type { TablesUpdate } from "./database.types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser } from "./nexus-auth.middleware";
@@ -54,7 +55,7 @@ export const createAppeal = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (lastAppeal) {
-      const hoursSince = (Date.now() - new Date(lastAppeal.created_at).getTime()) / (1000 * 60 * 60);
+      const hoursSince = (Date.now() - new Date(lastAppeal.created_at ?? 0).getTime()) / (1000 * 60 * 60);
       if (hoursSince < 24) {
         const hoursLeft = Math.ceil(24 - hoursSince);
         throw new Error(`Debes esperar ${hoursLeft} hora(s) más antes de volver a apelar esta ronda`);
@@ -233,7 +234,7 @@ export const resolveAppeal = createServerFn({ method: "POST" })
       throw new Error("Esta apelación no corresponde a tu tienda");
     }
 
-    const updatePayload: Record<string, unknown> = { status: "confirmed" };
+    const updatePayload: TablesUpdate<"tournament_round_results"> = { status: "confirmed" };
     if (data.resolution === "accepted_proposed") {
       updatePayload.player_leader_id = appeal.proposed_player_leader_id;
       updatePayload.opponent_leader_id = appeal.proposed_opponent_leader_id;

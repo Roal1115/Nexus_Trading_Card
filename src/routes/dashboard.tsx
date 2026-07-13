@@ -31,6 +31,7 @@ import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
 import { RoundsAccordionReadOnly } from "@/components/tournament-tracker/RoundsAccordionReadOnly";
 import { motion, AnimatePresence } from "framer-motion";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   TcgRankCardSkeleton,
   TournamentRowSkeleton,
@@ -721,34 +722,46 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
           </div>
         </section>
 
-        <AnimatePresence>
-          {selectedTournamentId && (
-            <motion.div
-              key="tournament-modal-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={closeModal}
-              className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6"
-            >
-              <motion.div
-                key="tournament-modal-content"
-                initial={{ opacity: 0, y: 24, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 16, scale: 0.98 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                onClick={(e) => e.stopPropagation()}
-                className="glass relative w-full max-w-6xl max-h-[calc(100vh-4rem-env(safe-area-inset-bottom))] lg:max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
-              >
+        <DialogPrimitive.Root
+          open={!!selectedTournamentId}
+          onOpenChange={(o) => !o && closeModal()}
+        >
+          <AnimatePresence>
+            {selectedTournamentId && (
+              <DialogPrimitive.Portal forceMount>
+                <DialogPrimitive.Overlay asChild forceMount>
+                  <motion.div
+                    key="tournament-modal-backdrop"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6"
+                  >
+                    <DialogPrimitive.Content
+                      asChild
+                      forceMount
+                      onClick={(e) => e.stopPropagation()}
+                      aria-describedby={undefined}
+                    >
+                      <motion.div
+                        key="tournament-modal-content"
+                        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 16, scale: 0.98 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                        className="glass relative w-full max-w-6xl max-h-[calc(100vh-4rem-env(safe-area-inset-bottom))] lg:max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
+                      >
                 <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                       Detalle del Torneo
                     </p>
-                    <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
-                      {loadingDetail ? "Cargando…" : (tournamentDetail?.game?.name ?? "—")}
-                    </h2>
+                    <DialogPrimitive.Title asChild>
+                      <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
+                        {loadingDetail ? "Cargando…" : (tournamentDetail?.game?.name ?? "—")}
+                      </h2>
+                    </DialogPrimitive.Title>
                   </div>
                   <button
                     onClick={closeModal}
@@ -985,10 +998,14 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                     </div>
                   )}
                 </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      </motion.div>
+                    </DialogPrimitive.Content>
+                  </motion.div>
+                </DialogPrimitive.Overlay>
+              </DialogPrimitive.Portal>
+            )}
+          </AnimatePresence>
+        </DialogPrimitive.Root>
 
         <AnimatePresence>
           {trackerTournament && (

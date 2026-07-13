@@ -3,7 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusManager, requireNexusAdmin } from "./nexus-auth.middleware";
 import { loadTournamentDetail } from "./nexus-tournament-detail.server";
-import { logAction, recomputeSnapshot, tfMonth } from "./nexus-admin.functions";
+import { logAction, recomputeSnapshot, tfMonth, type TournamentStatus } from "./nexus-admin.functions";
+import { mondayOfWeek, toLocalDateStr } from "./utils";
 
 async function getManagerGameIds(
   admin: any,
@@ -427,18 +428,14 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     if (data.week_start) {
       monday = new Date(data.week_start + "T00:00:00");
     } else {
-      const day = today.getDay();
-      const diff = day === 0 ? -6 : 1 - day;
-      monday = new Date(today);
-      monday.setDate(today.getDate() + diff);
-      monday.setHours(0, 0, 0, 0);
+      monday = mondayOfWeek(today);
     }
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
 
-    const mondayStr = monday.toISOString().split("T")[0];
-    const sundayStr = sunday.toISOString().split("T")[0];
+    const mondayStr = toLocalDateStr(monday);
+    const sundayStr = toLocalDateStr(sunday);
 
     if (gameIds.length === 0) {
       return {
@@ -510,7 +507,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       const offset = s.day_of_week === 0 ? 6 : s.day_of_week - 1;
       const entryDate = new Date(monday);
       entryDate.setDate(monday.getDate() + offset);
-      const entryDateStr = entryDate.toISOString().split("T")[0];
+      const entryDateStr = toLocalDateStr(entryDate);
 
       // Tournament timing
       const [h, m] = String(s.start_time).split(":").map(Number);
@@ -1017,7 +1014,7 @@ export const getManagerTournamentHistory = createServerFn({ method: "POST" })
         .in("game_id", gameIdsFilter)
         .order("tournament_date", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
-      if (data.status) q = q.eq("status", data.status);
+      if (data.status) q = q.eq("status", data.status as TournamentStatus);
       if (data.store_id) q = q.eq("store_id", data.store_id);
       if (data.date_from) q = q.gte("tournament_date", data.date_from);
       if (data.date_to) q = q.lte("tournament_date", data.date_to);

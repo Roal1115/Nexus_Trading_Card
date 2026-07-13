@@ -5,13 +5,14 @@
 // Supabase project. Publishable (anon) keys are safe to ship in code.
 
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 
 export const NEXUS_URL = "https://tbtyxtigbsljyrwyelqr.supabase.co";
 export const NEXUS_PUBLISHABLE_KEY = "sb_publishable_Td7bOB5_MLT1Y5MHbO35qw_y-jeLHCw";
 
 const isBrowser = typeof window !== "undefined";
 
-export const nexus = createClient(NEXUS_URL, NEXUS_PUBLISHABLE_KEY, {
+export const nexus = createClient<Database>(NEXUS_URL, NEXUS_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

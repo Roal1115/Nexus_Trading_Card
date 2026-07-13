@@ -4,6 +4,7 @@
 // enumerar emails públicamente — ver AUDIT.md 1.2).
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 import { z } from "zod";
 import { getNexusAdmin } from "./nexus-admin.server";
 import { checkRateLimit, getClientIp } from "./rate-limit.server";
@@ -11,7 +12,7 @@ import { NEXUS_URL, NEXUS_PUBLISHABLE_KEY } from "@/integrations/nexus/client";
 
 // Cliente anónimo efímero para operaciones de auth server-side.
 function getAuthClient() {
-  return createClient(NEXUS_URL, NEXUS_PUBLISHABLE_KEY, {
+  return createClient<Database>(NEXUS_URL, NEXUS_PUBLISHABLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

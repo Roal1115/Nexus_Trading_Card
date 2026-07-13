@@ -15,6 +15,16 @@ type PlayerCtx = {
   home_store_id: string | null;
 };
 
+// ponytail: cache en memoria del worker, por token — evita repetir
+// admin.auth.getUser() + el SELECT a `players` en cada server function call
+// (eran 2 round-trips a Supabase por request). Se resetea si el isolate se
+// recicla; no se comparte entre isolates. TTL corto porque un hit de cache
+// también salta la validación de revocación/expiración del token, no solo
+// el lookup de datos — si el rol o el token cambian, tarda hasta el TTL en
+// reflejarse. Mismo patrón que rate-limit.server.ts.
+const PLAYER_CACHE_TTL_MS = 30_000;
+const playerCache = new Map<string, { player: PlayerCtx; expiresAt: number }>();
+
 async function resolveCaller(): Promise<{
   admin: ReturnType<typeof getNexusAdmin>;
   player: PlayerCtx;
@@ -31,6 +41,12 @@ async function resolveCaller(): Promise<{
   if (!token) throw new Error("Unauthorized: Empty token");
 
   const admin = getNexusAdmin();
+
+  const cached = playerCache.get(token);
+  if (cached && cached.expiresAt > Date.now()) {
+    return { admin, player: cached.player };
+  }
+
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data?.user?.email) {
     throw new Error("Unauthorized: Invalid token");
@@ -47,6 +63,17 @@ async function resolveCaller(): Promise<{
     .maybeSingle();
   if (pe) failDb(pe);
   if (!player) throw new Error("No autorizado: jugador no encontrado");
+
+  if (playerCache.size > 5000) {
+    const now = Date.now();
+    for (const [k, v] of playerCache) {
+      if (v.expiresAt <= now) playerCache.delete(k);
+    }
+  }
+  playerCache.set(token, {
+    player: player as PlayerCtx,
+    expiresAt: Date.now() + PLAYER_CACHE_TTL_MS,
+  });
 
   return { admin, player: player as PlayerCtx };
 }

@@ -49,6 +49,10 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
             className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
           />
           <motion.aside
+            id="profile-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú de perfil"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
