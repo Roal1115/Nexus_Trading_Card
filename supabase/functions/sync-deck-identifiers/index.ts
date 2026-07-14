@@ -25,7 +25,18 @@ function parseColors(cardColor: string | null | undefined): string[] {
   return cardColor.split(/\s+/).filter(Boolean);
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  // Gate: solo invocable con el secret compartido (job programado/manual),
+  // nunca por un usuario final. Sin esto cualquiera con la URL dispara un
+  // scrape externo pesado + escrituras con service role.
+  const expected = Deno.env.get("SYNC_SECRET");
+  if (!expected || req.headers.get("x-sync-secret") !== expected) {
+    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const admin = createClient(supabaseUrl, serviceRoleKey);

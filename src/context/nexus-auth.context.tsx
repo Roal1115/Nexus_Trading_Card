@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { nexus } from "@/integrations/nexus/client";
 
@@ -86,13 +86,12 @@ export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{ session, player, role: player?.role ?? null, loading }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextValue>(
+    () => ({ session, player, role: player?.role ?? null, loading }),
+    [session, player, loading],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useNexusRole() {

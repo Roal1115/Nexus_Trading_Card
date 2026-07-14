@@ -311,6 +311,10 @@ async function uploadFileToStorage(file: File, tournamentId: string): Promise<st
       console.error("Storage upload error:", error.message);
       return null;
     }
+    // ponytail: URL firmado de 1 año a propósito — se persiste en tournaments.csv_url
+    // y debe sobrevivir a que se vea el torneo semanas después. Contenido = standings
+    // (datos ya públicos en el leaderboard), riesgo de fuga aceptado. Upgrade path:
+    // guardar solo el path y firmar on-demand (1h) en una server function.
     const { data } = await nexus.storage.from("tournament-files").createSignedUrl(path, 60 * 60 * 24 * 365);
     return data?.signedUrl ?? null;
   } catch (e) {

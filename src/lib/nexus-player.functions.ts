@@ -846,3 +846,277 @@ export const getMyStatsGames = createServerFn({ method: "POST" })
 
     return { games: games ?? [] };
   });
+
+export const getMyCasualStats = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    // Info del juego
+    const { data: game } = await admin
+      .from("games")
+      .select("id, name, slug")
+      .eq("id", data.game_id)
+      .maybeSingle();
+
+    // 1. Sesiones casuales del player para este TCG
+    const { data: sessions } = await admin
+      .from("standalone_sessions")
+      .select("id, session_date, store_id")
+      .eq("player_id", player.id)
+      .eq("game_id", data.game_id)
+      .eq("session_type", "casual");
+
+    const sessionList = sessions ?? [];
+    const sessionIds = sessionList.map((s: any) => s.id);
+
+    if (sessionIds.length === 0) {
+      return {
+        game_id: data.game_id,
+        game_name: (game as any)?.name ?? "—",
+        game_slug: (game as any)?.slug ?? "",
+        total_rounds_in_meta: 0,
+        leaders: [],
+      };
+    }
+
+    // Mapa session_id → info de sesión (para round_history)
+    const sessionMap = new Map(sessionList.map((s: any) => [s.id, s]));
+
+    // Store names para las sesiones que tienen store_id
+    const storeIds = Array.from(new Set(sessionList.map((s: any) => s.store_id).filter(Boolean)));
+    const { data: stores } = storeIds.length
+      ? await admin.from("stores").select("id, name").in("id", storeIds)
+      : { data: [] as any[] };
+    const storeNameMap = new Map(((stores ?? []) as any[]).map((s: any) => [s.id, s.name]));
+
+    // 2. Rondas de esas sesiones
+    const { data: rounds } = await admin
+      .from("standalone_round_results")
+      .select(
+        "id, session_id, round_number, is_bye, player_leader_id, opponent_leader_id, opponent_player_id, won_match, turn_order, won_die_roll, status, notes",
+      )
+      .in("session_id", sessionIds)
+      .eq("is_bye", false)
+      .not("won_match", "is", null);
+
+    const allRounds = rounds ?? [];
+
+    if (allRounds.length === 0) {
+      return {
+        game_id: data.game_id,
+        game_name: (game as any)?.name ?? "—",
+        game_slug: (game as any)?.slug ?? "",
+        total_rounds_in_meta: 0,
+        leaders: [],
+      };
+    }
+
+    // 3. Opponent tags (si hay opponent_player_id)
+    const opponentIds = Array.from(
+      new Set(allRounds.map((r: any) => r.opponent_player_id).filter(Boolean)),
+    );
+    const { data: opponents } = opponentIds.length
+      ? await admin.from("players").select("id, geek_tag").in("id", opponentIds)
+      : { data: [] as any[] };
+    const opponentTagMap = new Map(
+      ((opponents ?? []) as any[]).map((p: any) => [p.id, p.geek_tag]),
+    );
+
+    // 4. Resolución canónica de leaders (idéntico a getMyStats pasos 5-8)
+    const rawLeaderIds = Array.from(
+      new Set(
+        [
+          ...allRounds.map((r: any) => r.player_leader_id),
+          ...allRounds.map((r: any) => r.opponent_leader_id),
+        ].filter((id): id is string => !!id),
+      ),
+    );
+    const { data: rawLeaders } = rawLeaderIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .in("id", rawLeaderIds)
+      : { data: [] as any[] };
+
+    const variantToCanonical = new Map<string, string>();
+    for (const l of rawLeaders ?? []) {
+      if (l.canonical_leader_id) variantToCanonical.set(l.id, l.canonical_leader_id);
+    }
+
+    const existingIds = new Set((rawLeaders ?? []).map((l: any) => l.id));
+    const missingCanonicalIds = Array.from(new Set(Array.from(variantToCanonical.values()))).filter(
+      (id) => !existingIds.has(id),
+    );
+
+    const { data: canonicalLeaders } = missingCanonicalIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .in("id", missingCanonicalIds)
+      : { data: [] as any[] };
+
+    const leaderMap = new Map(
+      [...(rawLeaders ?? []), ...(canonicalLeaders ?? [])].map((l: any) => [l.id, l]),
+    );
+    const resolveId = (id: string): string => variantToCanonical.get(id) ?? id;
+
+    // 5. Agregación por leader canónico — MISMA lógica que getMyStats
+    //    pero con round_history usando session_date + store fallback
+    type LeaderAgg = {
+      leader_id: string;
+      total_games: number;
+      wins: number;
+      confirmed_total: number;
+      confirmed_wins: number;
+      first_games: number;
+      first_wins: number;
+      second_games: number;
+      second_wins: number;
+      matchups: Map<string, any>;
+    };
+
+    const leaderAggs = new Map<string, LeaderAgg>();
+
+    for (const r of allRounds as any[]) {
+      if (!r.player_leader_id) continue;
+      const canonicalLeaderId = resolveId(r.player_leader_id);
+
+      let agg = leaderAggs.get(canonicalLeaderId);
+      if (!agg) {
+        agg = {
+          leader_id: canonicalLeaderId,
+          total_games: 0,
+          wins: 0,
+          confirmed_total: 0,
+          confirmed_wins: 0,
+          first_games: 0,
+          first_wins: 0,
+          second_games: 0,
+          second_wins: 0,
+          matchups: new Map(),
+        };
+        leaderAggs.set(canonicalLeaderId, agg);
+      }
+
+      agg.total_games++;
+      if (r.won_match) agg.wins++;
+      if (r.status === "confirmed") {
+        agg.confirmed_total++;
+        if (r.won_match) agg.confirmed_wins++;
+      }
+      if (r.turn_order === "first") {
+        agg.first_games++;
+        if (r.won_match) agg.first_wins++;
+      } else if (r.turn_order === "second") {
+        agg.second_games++;
+        if (r.won_match) agg.second_wins++;
+      }
+
+      // Matchup
+      const oppCanonical = r.opponent_leader_id ? resolveId(r.opponent_leader_id) : "unknown";
+      let mu = agg.matchups.get(oppCanonical);
+      if (!mu) {
+        mu = {
+          opponent_leader_id: oppCanonical,
+          total: 0,
+          wins: 0,
+          first_total: 0,
+          first_wins: 0,
+          second_total: 0,
+          second_wins: 0,
+          round_history: [],
+        };
+        agg.matchups.set(oppCanonical, mu);
+      }
+      mu.total++;
+      if (r.won_match) mu.wins++;
+      if (r.turn_order === "first") {
+        mu.first_total++;
+        if (r.won_match) mu.first_wins++;
+      } else if (r.turn_order === "second") {
+        mu.second_total++;
+        if (r.won_match) mu.second_wins++;
+      }
+
+      const session = sessionMap.get(r.session_id);
+      mu.round_history.push({
+        round_number: r.round_number,
+        tournament_date: (session as any)?.session_date ?? null,
+        store_name: (session as any)?.store_id
+          ? (storeNameMap.get((session as any).store_id) ?? "Casual / sin tienda")
+          : "Casual / sin tienda",
+        opponent_tag: r.opponent_player_id
+          ? (opponentTagMap.get(r.opponent_player_id) ?? "Sin registrar")
+          : "Sin registrar",
+        won_match: r.won_match,
+        turn_order: r.turn_order,
+        won_die_roll: r.won_die_roll,
+        notes: r.notes,
+        status: r.status,
+      });
+    }
+
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+
+    // 6. Construir shape final
+    const leaders = Array.from(leaderAggs.values())
+      .map((agg) => {
+        const leader = leaderMap.get(agg.leader_id);
+        const matchups = Array.from(agg.matchups.values())
+          .map((mu: any) => {
+            const oppLeader = leaderMap.get(mu.opponent_leader_id);
+            return {
+              opponent_leader_id: mu.opponent_leader_id,
+              opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
+              opponent_leader_image: oppLeader?.card_image ?? null,
+              total: mu.total,
+              wins: mu.wins,
+              overall_win_rate: mu.total > 0 ? round1((mu.wins / mu.total) * 100) : 0,
+              first_total: mu.first_total,
+              first_wins: mu.first_wins,
+              first_win_rate:
+                mu.first_total > 0 ? round1((mu.first_wins / mu.first_total) * 100) : null,
+              second_total: mu.second_total,
+              second_wins: mu.second_wins,
+              second_win_rate:
+                mu.second_total > 0 ? round1((mu.second_wins / mu.second_total) * 100) : null,
+              has_uncertain_data: mu.round_history.some((h: any) => h.status !== "confirmed"),
+              round_history: mu.round_history.sort((a: any, b: any) =>
+                (b.tournament_date ?? "").localeCompare(a.tournament_date ?? ""),
+              ),
+            };
+          })
+          .sort((a: any, b: any) => b.total - a.total);
+
+        return {
+          leader_id: agg.leader_id,
+          leader_name: leader?.base_name ?? "Desconocido",
+          leader_image: leader?.card_image ?? null,
+          total_games: agg.total_games,
+          wins: agg.wins,
+          losses: agg.total_games - agg.wins,
+          raw_win_rate: agg.total_games > 0 ? round1((agg.wins / agg.total_games) * 100) : 0,
+          wtd_win_rate:
+            agg.confirmed_total > 0 ? round1((agg.confirmed_wins / agg.confirmed_total) * 100) : 0,
+          play_rate: 0, // sin meta en casual
+          first_games: agg.first_games,
+          first_win_rate:
+            agg.first_games > 0 ? round1((agg.first_wins / agg.first_games) * 100) : null,
+          second_games: agg.second_games,
+          second_win_rate:
+            agg.second_games > 0 ? round1((agg.second_wins / agg.second_games) * 100) : null,
+          matchups,
+        };
+      })
+      .sort((a, b) => b.total_games - a.total_games);
+
+    return {
+      game_id: data.game_id,
+      game_name: (game as any)?.name ?? "—",
+      game_slug: (game as any)?.slug ?? "",
+      total_rounds_in_meta: 0,
+      leaders,
+    };
+  });
