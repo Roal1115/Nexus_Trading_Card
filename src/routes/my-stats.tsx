@@ -239,9 +239,9 @@ function MatchupRow({ matchup, statsSource }: { matchup: Matchup; statsSource: "
                           {r.won_match ? "Victoria" : "Derrota"}
                         </span>
                         <span className="text-xs text-gray-400">vs {r.opponent_tag}</span>
-                        {r.status !== "confirmed" && (
+                        {r.status !== "confirmed" && statsSource === "official" && (
                           <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
-                            pendiente
+                            En proceso de vinculación
                           </span>
                         )}
                       </div>
