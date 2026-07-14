@@ -316,17 +316,28 @@ function StatsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.id, authLoading]);
 
-  // Cargar stats cuando cambia el TCG
+  // Cargar stats cuando cambia el TCG o la fuente
   useEffect(() => {
     if (!selectedGameId) return;
     setLoadingStats(true);
     setSelectedLeaderIdx(0);
-    fetchStats({ data: { game_id: selectedGameId } })
-      .then(setStats)
+
+    const loader = async () => {
+      if (statsSource === "official") return await fetchStats({ data: { game_id: selectedGameId } });
+      if (statsSource === "casual") return await fetchCasual({ data: { game_id: selectedGameId } });
+      const [official, casual] = await Promise.all([
+        fetchStats({ data: { game_id: selectedGameId } }),
+        fetchCasual({ data: { game_id: selectedGameId } }),
+      ]);
+      return mergeStats(official, casual);
+    };
+
+    loader()
+      .then((res) => setStats(res as StatsData))
       .catch(() => setStats(null))
       .finally(() => setLoadingStats(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGameId]);
+  }, [selectedGameId, statsSource]);
 
   if (!authLoading && !player) {
     return (
