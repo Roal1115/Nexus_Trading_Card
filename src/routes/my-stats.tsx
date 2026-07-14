@@ -293,10 +293,12 @@ function StatsPage() {
   const { player, loading: authLoading } = useNexusRole();
   const fetchGames = useServerFn(getMyStatsGames);
   const fetchStats = useServerFn(getMyStats);
+  const fetchCasual = useServerFn(getMyCasualStats);
 
   const [games, setGames] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [statsSource, setStatsSource] = useState<"official" | "casual" | "all">("official");
   const [selectedLeaderIdx, setSelectedLeaderIdx] = useState(0);
   const [loadingGames, setLoadingGames] = useState(true);
   const [loadingStats, setLoadingStats] = useState(false);
