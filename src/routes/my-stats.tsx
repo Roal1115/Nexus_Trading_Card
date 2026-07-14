@@ -50,11 +50,13 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
         {tooltip && (
           <button
             type="button"
-            className="text-gray-700 hover:text-gray-400 transition flex-shrink-0"
+            className="flex-shrink-0 p-1 -m-1 text-gray-600 hover:text-gray-300 transition"
+            aria-label={`Qué significa ${label}`}
             onMouseEnter={() => setShow(true)}
             onMouseLeave={() => setShow(false)}
+            onClick={() => setShow((s) => !s)}
           >
-            <HelpCircle size={10} />
+            <HelpCircle size={12} />
           </button>
         )}
       </div>
@@ -105,9 +107,9 @@ function LeaderCard({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition w-full ${
+      className={`flex w-full min-w-[230px] flex-shrink-0 items-center gap-3 rounded-xl border px-4 py-3 text-left transition lg:min-w-0 lg:flex-shrink ${
         selected
-          ? "border-primary bg-primary/10"
+          ? "border-primary bg-primary/10 ring-1 ring-primary/40"
           : "border-white/10 bg-white/[0.02] hover:border-white/20"
       }`}
     >
@@ -373,6 +375,7 @@ function StatsPage() {
   const [selectedLeaderIdx, setSelectedLeaderIdx] = useState(0);
   const [loadingGames, setLoadingGames] = useState(true);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [matchupSort, setMatchupSort] = useState<"games" | "best" | "worst">("games");
 
   // Cargar TCGs disponibles
   useEffect(() => {
@@ -426,6 +429,30 @@ function StatsPage() {
 
   const selectedLeader = stats?.leaders[selectedLeaderIdx] ?? null;
 
+  // Resumen global del dataset actual (todos los leaders)
+  const overview = stats
+    ? stats.leaders.reduce(
+        (a, l) => ({
+          games: a.games + l.total_games,
+          wins: a.wins + l.wins,
+          losses: a.losses + l.losses,
+        }),
+        { games: 0, wins: 0, losses: 0 },
+      )
+    : null;
+  const overviewWr =
+    overview && overview.games > 0 ? Math.round((overview.wins / overview.games) * 1000) / 10 : null;
+
+  const sortedMatchups = selectedLeader
+    ? [...selectedLeader.matchups].sort((a, b) =>
+        matchupSort === "best"
+          ? b.overall_win_rate - a.overall_win_rate
+          : matchupSort === "worst"
+            ? a.overall_win_rate - b.overall_win_rate
+            : b.total - a.total,
+      )
+    : [];
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 pb-20">
       {/* Breadcrumb */}
@@ -460,8 +487,8 @@ function StatsPage() {
             onClick={() => setStatsSource(tab.key)}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
               statsSource === tab.key
-                ? "bg-[#32D9FF] text-[#08111F]"
-                : "text-[#AAB6D1] hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                : "text-gray-400 hover:text-white"
             }`}
           >
             {tab.label}
@@ -540,21 +567,57 @@ function StatsPage() {
             </div>
 
           ) : (
-            <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-              {/* Sidebar — lista de leaders */}
-              <div className="space-y-2">
-                <p className="mb-3 text-[10px] uppercase tracking-widest text-gray-500">
-                  Tus leaders
-                </p>
-                {stats.leaders.map((l, i) => (
-                  <LeaderCard
-                    key={l.leader_id}
-                    stat={l}
-                    selected={selectedLeaderIdx === i}
-                    onClick={() => setSelectedLeaderIdx(i)}
-                  />
-                ))}
-              </div>
+            <>
+              {/* Resumen global del dataset */}
+              {overview && overview.games > 0 && (
+                <div className="glass mb-6 grid grid-cols-3 divide-x divide-white/5 rounded-2xl border border-white/10">
+                  <div className="px-4 py-3 text-center sm:py-4">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Récord</p>
+                    <p className="mt-1 font-mono text-xl font-bold text-white sm:text-2xl">
+                      {overview.wins}W<span className="text-gray-600"> — </span>
+                      {overview.losses}L
+                    </p>
+                  </div>
+                  <div className="px-4 py-3 text-center sm:py-4">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Win Rate</p>
+                    <p
+                      className={`mt-1 font-mono text-xl font-bold sm:text-2xl ${
+                        (overviewWr ?? 0) >= 55
+                          ? "text-emerald-400"
+                          : (overviewWr ?? 0) >= 45
+                            ? "text-white"
+                            : "text-red-400"
+                      }`}
+                    >
+                      {overviewWr}%
+                    </p>
+                  </div>
+                  <div className="px-4 py-3 text-center sm:py-4">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Leaders</p>
+                    <p className="mt-1 font-mono text-xl font-bold text-white sm:text-2xl">
+                      {stats.leaders.length}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+                {/* Leaders: carrusel horizontal en móvil, sidebar en desktop */}
+                <div>
+                  <p className="mb-3 text-[10px] uppercase tracking-widest text-gray-500">
+                    Tus leaders
+                  </p>
+                  <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0 lg:space-y-0">
+                    {stats.leaders.map((l, i) => (
+                      <LeaderCard
+                        key={l.leader_id}
+                        stat={l}
+                        selected={selectedLeaderIdx === i}
+                        onClick={() => setSelectedLeaderIdx(i)}
+                      />
+                    ))}
+                  </div>
+                </div>
 
               {/* Main — stats del leader seleccionado */}
               {selectedLeader && (
@@ -651,18 +714,43 @@ function StatsPage() {
                   </div>
 
                   {/* Matchup Breakdown */}
-                  <div className="glass rounded-2xl p-6">
-                    <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-                      <span className="text-primary">⚔</span> Matchup Breakdown
-                    </h3>
+                  <div className="glass rounded-2xl p-4 sm:p-6">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+                        <span className="text-primary">⚔</span> Matchups
+                      </h3>
+                      {selectedLeader.matchups.length > 1 && (
+                        <div className="inline-flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
+                          {(
+                            [
+                              { key: "games", label: "Más jugados" },
+                              { key: "best", label: "Mejores" },
+                              { key: "worst", label: "Peores" },
+                            ] as const
+                          ).map((s) => (
+                            <button
+                              key={s.key}
+                              onClick={() => setMatchupSort(s.key)}
+                              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+                                matchupSort === s.key
+                                  ? "bg-primary/20 text-primary"
+                                  : "text-gray-500 hover:text-white"
+                              }`}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {selectedLeader.matchups.length === 0 ? (
                       <p className="py-8 text-center text-sm text-gray-500">
                         Aún no tienes matchups registrados con este leader.
                       </p>
                     ) : (
-                      <div key={selectedLeaderIdx} className="space-y-2">
-                        {selectedLeader.matchups.map((m) => (
+                      <div key={`${selectedLeaderIdx}-${matchupSort}`} className="space-y-2">
+                        {sortedMatchups.map((m) => (
                           <MatchupRow key={m.opponent_leader_id} matchup={m} statsSource={statsSource} />
                         ))}
                       </div>
@@ -670,7 +758,8 @@ function StatsPage() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           )}
         </>
       )}

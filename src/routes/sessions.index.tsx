@@ -140,7 +140,7 @@ function SessionCard({
   return (
     <div
       onClick={goToDetail}
-      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
+      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 sm:px-5 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
     >
       <div className="flex-shrink-0">
         {session.leader?.card_image ? (
@@ -248,27 +248,108 @@ function SessionCard({
 }
 
 function TrackedTournamentCard({ tournament }: { tournament: TrackedTournament }) {
+  const total = tournament.wins + tournament.losses;
+  const wr = total > 0 ? Math.round((tournament.wins / total) * 100) : null;
+  const tint = getRecordTint(wr, tournament.wins);
   return (
     <Link
       to="/sessions/tournament/$tournamentId"
       params={{ tournamentId: tournament.id }}
-      className="glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-white/10 p-4 transition hover:border-primary/40 hover:bg-white/[0.04]"
+      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 sm:px-5 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
     >
-      <Trophy size={16} className="text-primary flex-shrink-0" />
+      <div className="flex h-10 w-7 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-primary/10">
+        <Trophy size={14} className="text-primary" />
+      </div>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-white">{tournament.store_name}</div>
-        <div className="mt-0.5 text-xs text-gray-500">
-          {tournament.game_name} · {formatTournamentDate(tournament.tournament_date)}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-400">
+            <CheckCircle2 size={12} />
+            Oficial
+          </span>
+          {wr !== null && (
+            <span
+              className={`text-[10px] font-bold ${
+                wr === 100 ? "text-yellow-400" : wr >= 50 ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {wr}% WR
+            </span>
+          )}
+          <span className="truncate text-sm font-semibold text-white">{tournament.store_name}</span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+          <span>{tournament.game_name}</span>
+          <span className="text-gray-700">·</span>
+          <span>
+            {tournament.total_rounds} rondas · {tournament.wins}W {tournament.losses}L
+          </span>
         </div>
       </div>
 
-      <div className="hidden sm:block text-xs text-gray-400 flex-shrink-0">
-        {tournament.total_rounds} rondas · {tournament.wins}W {tournament.losses}L
+      <div className="hidden sm:block flex-shrink-0 text-right">
+        <div className="text-xs text-gray-300">{formatTournamentDate(tournament.tournament_date)}</div>
+        <div className="mt-0.5 text-[11px] text-gray-500">Performance Tracker</div>
       </div>
 
-      <ChevronRight size={14} className="text-gray-500 flex-shrink-0" />
+      <ChevronRight size={16} className="flex-shrink-0 text-gray-600 transition group-hover:text-primary" />
     </Link>
+  );
+}
+
+// ============================================================
+// Section — bloque agrupador con header (ícono + título + contador)
+// ============================================================
+function Section({
+  icon,
+  title,
+  count,
+  tone = "default",
+  subtitle,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  tone?: "default" | "amber";
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  if (count === 0) return null;
+  return (
+    <section className="mt-8 first:mt-6">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={
+            tone === "amber"
+              ? "inline-flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400"
+              : "inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-gray-300"
+          }
+        >
+          {icon}
+        </span>
+        <h2
+          className={
+            tone === "amber"
+              ? "text-sm font-bold uppercase tracking-wider text-amber-300"
+              : "text-sm font-bold uppercase tracking-wider text-white"
+          }
+        >
+          {title}
+        </h2>
+        <span
+          className={
+            tone === "amber"
+              ? "rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"
+              : "rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold text-gray-300"
+          }
+        >
+          {count}
+        </span>
+      </div>
+      {subtitle && <p className="mt-1 pl-[38px] text-xs text-gray-500">{subtitle}</p>}
+      <div className="mt-3 space-y-3">{children}</div>
+    </section>
   );
 }
 
@@ -350,7 +431,12 @@ function SessionsPage() {
     );
   }
 
-  const unlinkedCount = sessions.filter((s) => s.status === "unlinked").length;
+  const pendingSessions = sessions.filter((s) => s.status === "unlinked");
+  const matchedSessions = sessions.filter((s) => s.status === "matched");
+  const casualSessions = sessions.filter((s) => s.status === "casual");
+  const officialCount = matchedSessions.length + trackedTournaments.length;
+  const isEmpty =
+    !loading && !loadingTournaments && sessions.length === 0 && trackedTournaments.length === 0;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 pb-28 sm:px-6 sm:pb-8">
@@ -374,77 +460,90 @@ function SessionsPage() {
         </button>
       </div>
 
-      {/* Amber banner */}
-      {unlinkedCount > 0 && !loading && (
-        <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
-          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-          <span>
-            Tienes {unlinkedCount}{" "}
-            {unlinkedCount === 1
-              ? "sesión pendiente de vinculación"
-              : "sesiones pendientes de vinculación"}
-            .
-          </span>
-        </div>
-      )}
-
       {/* Content */}
-      <div className="mt-6 space-y-3">
-        {loading ? (
-          <>
-            <SkeletonBlock className="h-20 w-full" />
-            <SkeletonBlock className="h-20 w-full" />
-            <SkeletonBlock className="h-20 w-full" />
-          </>
-        ) : sessions.length === 0 ? (
-          <div className="glass flex flex-col items-center justify-center rounded-2xl border border-white/10 px-6 py-14 text-center">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Layers size={22} />
-            </div>
-            <h2 className="mt-4 text-lg font-semibold text-white">Sin sesiones registradas</h2>
-            <p className="mt-1 max-w-sm text-sm text-gray-400">
-              Crea tu primera sesión para empezar a registrar tus partidas.
-            </p>
-            <button
-              onClick={() => setShowCreateSheet(true)}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-            >
-              <Plus size={14} />
-              Nueva Sesión
-            </button>
-          </div>
-        ) : (
-          sessions.map((s) => (
-            <SessionCard
-              key={s.id}
-              session={s}
-              onDelete={handleDelete}
-              isDeleting={deletingId === s.id}
-            />
-          ))
-        )}
-      </div>
-
-      {/* Torneos con Performance Tracker */}
-      {loadingTournaments ? (
-        <div className="mt-8 space-y-3">
-          <SkeletonBlock className="h-5 w-64" />
-          <SkeletonBlock className="h-16 w-full" />
-          <SkeletonBlock className="h-16 w-full" />
+      {loading || loadingTournaments ? (
+        <div className="mt-6 space-y-3">
+          <SkeletonBlock className="h-6 w-56" />
+          <SkeletonBlock className="h-20 w-full" />
+          <SkeletonBlock className="h-20 w-full" />
+          <SkeletonBlock className="h-6 w-40" />
+          <SkeletonBlock className="h-20 w-full" />
         </div>
-      ) : trackedTournaments.length > 0 ? (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-white">Torneos con Performance Tracker</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
-            Torneos oficiales donde registraste rondas directamente
+      ) : isEmpty ? (
+        <div className="glass mt-6 flex flex-col items-center justify-center rounded-2xl border border-white/10 px-6 py-14 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Layers size={22} />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-white">Sin sesiones registradas</h2>
+          <p className="mt-1 max-w-sm text-sm text-gray-400">
+            Crea tu primera sesión para empezar a registrar tus partidas.
           </p>
-          <div className="mt-3 space-y-3">
+          <button
+            onClick={() => setShowCreateSheet(true)}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
+          >
+            <Plus size={14} />
+            Nueva Sesión
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* 1. Pendientes de vincular */}
+          <Section
+            icon={<AlertTriangle size={14} />}
+            title="Pendientes de vincular"
+            count={pendingSessions.length}
+            tone="amber"
+            subtitle="Se vincularán automáticamente cuando el organizador suba los resultados."
+          >
+            {pendingSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                onDelete={handleDelete}
+                isDeleting={deletingId === s.id}
+              />
+            ))}
+          </Section>
+
+          {/* 2. Torneos oficiales: sesiones matched + performance tracker, una sola lista */}
+          <Section
+            icon={<Trophy size={14} />}
+            title="Torneos Oficiales"
+            count={officialCount}
+            subtitle="Resultados verificados — cuentan para tu ranking."
+          >
+            {matchedSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                onDelete={handleDelete}
+                isDeleting={deletingId === s.id}
+              />
+            ))}
             {trackedTournaments.map((t) => (
               <TrackedTournamentCard key={t.id} tournament={t} />
             ))}
-          </div>
-        </div>
-      ) : null}
+          </Section>
+
+          {/* 3. Casual */}
+          <Section
+            icon={<Swords size={14} />}
+            title="Casual"
+            count={casualSessions.length}
+            subtitle="Prácticas y partidas fuera de torneo — no afectan tu ranking."
+          >
+            {casualSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                onDelete={handleDelete}
+                isDeleting={deletingId === s.id}
+              />
+            ))}
+          </Section>
+        </>
+      )}
 
       {/* Create button (mobile sticky) */}
       <div className="fixed bottom-20 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">
