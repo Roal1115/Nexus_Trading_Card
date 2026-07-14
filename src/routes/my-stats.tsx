@@ -137,7 +137,7 @@ function LeaderCard({
   );
 }
 
-function MatchupRow({ matchup }: { matchup: Matchup }) {
+function MatchupRow({ matchup, statsSource }: { matchup: Matchup; statsSource: "official" | "casual" | "all" }) {
   const [open, setOpen] = useState(false);
 
   return (
