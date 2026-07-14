@@ -626,7 +626,7 @@ function StatsPage() {
                     ) : (
                       <div key={selectedLeaderIdx} className="space-y-2">
                         {selectedLeader.matchups.map((m) => (
-                          <MatchupRow key={m.opponent_leader_id} matchup={m} />
+                          <MatchupRow key={m.opponent_leader_id} matchup={m} statsSource={statsSource} />
                         ))}
                       </div>
                     )}
