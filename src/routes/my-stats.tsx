@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ShieldQuestion, AlertTriangle, BarChart3, HelpCircle } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import { getMyStats, getMyStatsGames } from "@/lib/nexus-player.functions";
+import { getMyStats, getMyStatsGames, getMyCasualStats } from "@/lib/nexus-player.functions";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/my-stats")({
