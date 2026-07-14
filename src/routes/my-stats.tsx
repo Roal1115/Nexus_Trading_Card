@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ShieldQuestion, AlertTriangle, BarChart3, HelpCircle } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import { getMyStats, getMyStatsGames } from "@/lib/nexus-player.functions";
+import { getMyStats, getMyStatsGames, getMyCasualStats } from "@/lib/nexus-player.functions";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/my-stats")({
@@ -137,7 +137,7 @@ function LeaderCard({
   );
 }
 
-function MatchupRow({ matchup }: { matchup: Matchup }) {
+function MatchupRow({ matchup, statsSource }: { matchup: Matchup; statsSource: "official" | "casual" | "all" }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -239,9 +239,9 @@ function MatchupRow({ matchup }: { matchup: Matchup }) {
                           {r.won_match ? "Victoria" : "Derrota"}
                         </span>
                         <span className="text-xs text-gray-400">vs {r.opponent_tag}</span>
-                        {r.status !== "confirmed" && (
+                        {r.status !== "confirmed" && statsSource === "official" && (
                           <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
-                            pendiente
+                            En proceso de vinculación
                           </span>
                         )}
                       </div>
@@ -289,14 +289,87 @@ function MatchupRow({ matchup }: { matchup: Matchup }) {
   );
 }
 
+function mergeStats(official: StatsData, casual: any): StatsData {
+  type L = LeaderStat;
+  const map = new Map<string, L>();
+
+  const add = (src: L[]) => {
+    for (const l of src) {
+      const existing = map.get(l.leader_id);
+      if (!existing) {
+        map.set(l.leader_id, { ...l, matchups: l.matchups.map((m) => ({ ...m })) });
+        continue;
+      }
+      existing.total_games += l.total_games;
+      existing.wins += l.wins;
+      existing.losses += l.losses;
+      existing.first_games += l.first_games;
+      existing.second_games += l.second_games;
+      existing.has_uncertain_data = existing.has_uncertain_data || l.has_uncertain_data;
+
+      // reset accumulators for recompute
+      const firstWins = Math.round(((existing.first_win_rate ?? 0) / 100) * (existing.first_games - l.first_games)) +
+        Math.round(((l.first_win_rate ?? 0) / 100) * l.first_games);
+      const secondWins = Math.round(((existing.second_win_rate ?? 0) / 100) * (existing.second_games - l.second_games)) +
+        Math.round(((l.second_win_rate ?? 0) / 100) * l.second_games);
+
+      existing.first_win_rate = existing.first_games > 0 ? Math.round((firstWins / existing.first_games) * 1000) / 10 : null;
+      existing.second_win_rate = existing.second_games > 0 ? Math.round((secondWins / existing.second_games) * 1000) / 10 : null;
+
+      // matchups: merge by opponent_leader_id
+      const mMap = new Map(existing.matchups.map((m) => [m.opponent_leader_id, m]));
+      for (const m of l.matchups) {
+        const ex = mMap.get(m.opponent_leader_id);
+        if (!ex) {
+          mMap.set(m.opponent_leader_id, { ...m });
+        } else {
+          ex.total += m.total;
+          ex.wins += m.wins;
+          ex.first_total += m.first_total;
+          ex.first_wins += m.first_wins;
+          ex.second_total += m.second_total;
+          ex.second_wins += m.second_wins;
+          ex.overall_win_rate = ex.total > 0 ? Math.round((ex.wins / ex.total) * 1000) / 10 : 0;
+          ex.first_win_rate = ex.first_total > 0 ? Math.round((ex.first_wins / ex.first_total) * 1000) / 10 : null;
+          ex.second_win_rate = ex.second_total > 0 ? Math.round((ex.second_wins / ex.second_total) * 1000) / 10 : null;
+          ex.has_uncertain_data = ex.has_uncertain_data || m.has_uncertain_data;
+          (ex as any).round_history = [
+            ...((ex as any).round_history ?? []),
+            ...(((m as any).round_history) ?? []),
+          ];
+        }
+      }
+      existing.matchups = Array.from(mMap.values()).sort((a, b) => b.total - a.total);
+    }
+  };
+
+  add(official.leaders as L[]);
+  add((casual?.leaders ?? []) as L[]);
+
+  const leaders = Array.from(map.values()).map((l) => ({
+    ...l,
+    raw_win_rate: l.total_games > 0 ? Math.round((l.wins / l.total_games) * 1000) / 10 : 0,
+    wtd_win_rate: l.total_games > 0 ? Math.round((l.wins / l.total_games) * 1000) / 10 : 0,
+    play_rate: 0,
+  })).sort((a, b) => b.total_games - a.total_games);
+
+  return {
+    ...official,
+    total_rounds_in_meta: 0,
+    leaders,
+  };
+}
+
 function StatsPage() {
   const { player, loading: authLoading } = useNexusRole();
   const fetchGames = useServerFn(getMyStatsGames);
   const fetchStats = useServerFn(getMyStats);
+  const fetchCasual = useServerFn(getMyCasualStats);
 
   const [games, setGames] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [statsSource, setStatsSource] = useState<"official" | "casual" | "all">("official");
   const [selectedLeaderIdx, setSelectedLeaderIdx] = useState(0);
   const [loadingGames, setLoadingGames] = useState(true);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -314,17 +387,28 @@ function StatsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.id, authLoading]);
 
-  // Cargar stats cuando cambia el TCG
+  // Cargar stats cuando cambia el TCG o la fuente
   useEffect(() => {
     if (!selectedGameId) return;
     setLoadingStats(true);
     setSelectedLeaderIdx(0);
-    fetchStats({ data: { game_id: selectedGameId } })
-      .then(setStats)
+
+    const loader = async () => {
+      if (statsSource === "official") return await fetchStats({ data: { game_id: selectedGameId } });
+      if (statsSource === "casual") return await fetchCasual({ data: { game_id: selectedGameId } });
+      const [official, casual] = await Promise.all([
+        fetchStats({ data: { game_id: selectedGameId } }),
+        fetchCasual({ data: { game_id: selectedGameId } }),
+      ]);
+      return mergeStats(official, casual);
+    };
+
+    loader()
+      .then((res) => setStats(res as StatsData))
       .catch(() => setStats(null))
       .finally(() => setLoadingStats(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGameId]);
+  }, [selectedGameId, statsSource]);
 
   if (!authLoading && !player) {
     return (
@@ -363,6 +447,34 @@ function StatsPage() {
           Estadísticas calculadas desde tus rondas registradas en el Performance Tracker.
         </p>
       </header>
+
+      {/* Source tab switcher */}
+      <div className="mb-3 inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+        {[
+          { key: "official" as const, label: "Oficial" },
+          { key: "casual" as const, label: "Casual" },
+          { key: "all" as const, label: "Todo" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatsSource(tab.key)}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              statsSource === tab.key
+                ? "bg-[#32D9FF] text-[#08111F]"
+                : "text-[#AAB6D1] hover:text-white"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <p className="mb-6 text-xs text-gray-500">
+        {statsSource === "official" && "Datos de torneos oficiales publicados."}
+        {statsSource === "casual" &&
+          "Partidas casuales y de práctica. No afectan tu ranking competitivo."}
+        {statsSource === "all" &&
+          "Todas tus partidas combinadas. El play rate no aplica en esta vista."}
+      </p>
 
       {/* TCG Tab switcher */}
       {loadingGames ? (
@@ -418,8 +530,15 @@ function StatsPage() {
             </div>
           ) : !stats || stats.leaders.length === 0 ? (
             <div className="glass rounded-2xl p-12 text-center">
-              <p className="text-sm text-gray-500">Sin rondas registradas para este TCG todavía.</p>
+              <p className="text-sm text-gray-500">
+                {statsSource === "casual"
+                  ? "Sin partidas casuales registradas. Crea una sesión casual para empezar."
+                  : statsSource === "all"
+                    ? "Sin partidas registradas."
+                    : "Sin rondas registradas para este TCG todavía."}
+              </p>
             </div>
+
           ) : (
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               {/* Sidebar — lista de leaders */}
@@ -490,11 +609,13 @@ function StatsPage() {
                         value={`${selectedLeader.raw_win_rate}%`}
                         sub="Todas las rondas"
                       />
-                      <StatCard
-                        label="Play Rate"
-                        value={`${selectedLeader.play_rate}%`}
-                        sub="Del total de rondas en el meta"
-                      />
+                      {statsSource === "official" && (
+                        <StatCard
+                          label="Play Rate"
+                          value={`${selectedLeader.play_rate}%`}
+                          sub="Del total de rondas en el meta"
+                        />
+                      )}
                       <StatCard
                         label="Total Games"
                         value={String(selectedLeader.total_games)}
@@ -542,7 +663,7 @@ function StatsPage() {
                     ) : (
                       <div key={selectedLeaderIdx} className="space-y-2">
                         {selectedLeader.matchups.map((m) => (
-                          <MatchupRow key={m.opponent_leader_id} matchup={m} />
+                          <MatchupRow key={m.opponent_leader_id} matchup={m} statsSource={statsSource} />
                         ))}
                       </div>
                     )}
