@@ -502,8 +502,15 @@ function StatsPage() {
             </div>
           ) : !stats || stats.leaders.length === 0 ? (
             <div className="glass rounded-2xl p-12 text-center">
-              <p className="text-sm text-gray-500">Sin rondas registradas para este TCG todavía.</p>
+              <p className="text-sm text-gray-500">
+                {statsSource === "casual"
+                  ? "Sin partidas casuales registradas. Crea una sesión casual para empezar."
+                  : statsSource === "all"
+                    ? "Sin partidas registradas."
+                    : "Sin rondas registradas para este TCG todavía."}
+              </p>
             </div>
+
           ) : (
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               {/* Sidebar — lista de leaders */}
