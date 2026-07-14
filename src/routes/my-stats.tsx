@@ -289,6 +289,77 @@ function MatchupRow({ matchup, statsSource }: { matchup: Matchup; statsSource: "
   );
 }
 
+function mergeStats(official: StatsData, casual: any): StatsData {
+  type L = LeaderStat;
+  const map = new Map<string, L>();
+
+  const add = (src: L[]) => {
+    for (const l of src) {
+      const existing = map.get(l.leader_id);
+      if (!existing) {
+        map.set(l.leader_id, { ...l, matchups: l.matchups.map((m) => ({ ...m })) });
+        continue;
+      }
+      existing.total_games += l.total_games;
+      existing.wins += l.wins;
+      existing.losses += l.losses;
+      existing.first_games += l.first_games;
+      existing.second_games += l.second_games;
+      existing.has_uncertain_data = existing.has_uncertain_data || l.has_uncertain_data;
+
+      // reset accumulators for recompute
+      const firstWins = Math.round(((existing.first_win_rate ?? 0) / 100) * (existing.first_games - l.first_games)) +
+        Math.round(((l.first_win_rate ?? 0) / 100) * l.first_games);
+      const secondWins = Math.round(((existing.second_win_rate ?? 0) / 100) * (existing.second_games - l.second_games)) +
+        Math.round(((l.second_win_rate ?? 0) / 100) * l.second_games);
+
+      existing.first_win_rate = existing.first_games > 0 ? Math.round((firstWins / existing.first_games) * 1000) / 10 : null;
+      existing.second_win_rate = existing.second_games > 0 ? Math.round((secondWins / existing.second_games) * 1000) / 10 : null;
+
+      // matchups: merge by opponent_leader_id
+      const mMap = new Map(existing.matchups.map((m) => [m.opponent_leader_id, m]));
+      for (const m of l.matchups) {
+        const ex = mMap.get(m.opponent_leader_id);
+        if (!ex) {
+          mMap.set(m.opponent_leader_id, { ...m });
+        } else {
+          ex.total += m.total;
+          ex.wins += m.wins;
+          ex.first_total += m.first_total;
+          ex.first_wins += m.first_wins;
+          ex.second_total += m.second_total;
+          ex.second_wins += m.second_wins;
+          ex.overall_win_rate = ex.total > 0 ? Math.round((ex.wins / ex.total) * 1000) / 10 : 0;
+          ex.first_win_rate = ex.first_total > 0 ? Math.round((ex.first_wins / ex.first_total) * 1000) / 10 : null;
+          ex.second_win_rate = ex.second_total > 0 ? Math.round((ex.second_wins / ex.second_total) * 1000) / 10 : null;
+          ex.has_uncertain_data = ex.has_uncertain_data || m.has_uncertain_data;
+          (ex as any).round_history = [
+            ...((ex as any).round_history ?? []),
+            ...(((m as any).round_history) ?? []),
+          ];
+        }
+      }
+      existing.matchups = Array.from(mMap.values()).sort((a, b) => b.total - a.total);
+    }
+  };
+
+  add(official.leaders as L[]);
+  add((casual?.leaders ?? []) as L[]);
+
+  const leaders = Array.from(map.values()).map((l) => ({
+    ...l,
+    raw_win_rate: l.total_games > 0 ? Math.round((l.wins / l.total_games) * 1000) / 10 : 0,
+    wtd_win_rate: l.total_games > 0 ? Math.round((l.wins / l.total_games) * 1000) / 10 : 0,
+    play_rate: 0,
+  })).sort((a, b) => b.total_games - a.total_games);
+
+  return {
+    ...official,
+    total_rounds_in_meta: 0,
+    leaders,
+  };
+}
+
 function StatsPage() {
   const { player, loading: authLoading } = useNexusRole();
   const fetchGames = useServerFn(getMyStatsGames);
