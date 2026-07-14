@@ -448,6 +448,34 @@ function StatsPage() {
         </p>
       </header>
 
+      {/* Source tab switcher */}
+      <div className="mb-3 inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+        {[
+          { key: "official" as const, label: "Oficial" },
+          { key: "casual" as const, label: "Casual" },
+          { key: "all" as const, label: "Todo" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatsSource(tab.key)}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              statsSource === tab.key
+                ? "bg-[#32D9FF] text-[#08111F]"
+                : "text-[#AAB6D1] hover:text-white"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <p className="mb-6 text-xs text-gray-500">
+        {statsSource === "official" && "Datos de torneos oficiales publicados."}
+        {statsSource === "casual" &&
+          "Partidas casuales y de práctica. No afectan tu ranking competitivo."}
+        {statsSource === "all" &&
+          "Todas tus partidas combinadas. El play rate no aplica en esta vista."}
+      </p>
+
       {/* TCG Tab switcher */}
       {loadingGames ? (
         <div className="mb-6 flex gap-2">
