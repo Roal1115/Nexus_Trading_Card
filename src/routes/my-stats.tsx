@@ -574,11 +574,13 @@ function StatsPage() {
                         value={`${selectedLeader.raw_win_rate}%`}
                         sub="Todas las rondas"
                       />
-                      <StatCard
-                        label="Play Rate"
-                        value={`${selectedLeader.play_rate}%`}
-                        sub="Del total de rondas en el meta"
-                      />
+                      {statsSource === "official" && (
+                        <StatCard
+                          label="Play Rate"
+                          value={`${selectedLeader.play_rate}%`}
+                          sub="Del total de rondas en el meta"
+                        />
+                      )}
                       <StatCard
                         label="Total Games"
                         value={String(selectedLeader.total_games)}
