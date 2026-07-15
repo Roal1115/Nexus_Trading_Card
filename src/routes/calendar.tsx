@@ -95,6 +95,31 @@ function CalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.id, events]);
 
+  useEffect(() => {
+    if (!hasHomeStore) return;
+    const saved = window.localStorage.getItem("calendar:only-my-store");
+    if (saved === "1") setOnlyMyStore(true);
+  }, [hasHomeStore]);
+
+  useEffect(() => {
+    if (!hasHomeStore) return;
+    if (onlyMyStore) {
+      setFilterStore(player!.home_store_id!);
+    } else if (filterStore === player?.home_store_id) {
+      setFilterStore(null);
+    }
+  }, [onlyMyStore, hasHomeStore]);
+
+  const toggleOnlyMyStore = () => {
+    const next = !onlyMyStore;
+    setOnlyMyStore(next);
+    if (next) {
+      window.localStorage.setItem("calendar:only-my-store", "1");
+    } else {
+      window.localStorage.removeItem("calendar:only-my-store");
+    }
+  };
+
   const calendarGrid = useCalendarGrid(events, weekDates);
 
   const buildEventIcs = (entry: any) => {
