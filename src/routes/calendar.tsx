@@ -19,6 +19,8 @@ import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { getPublicCalendar } from "@/lib/nexus-public.functions";
 import { getMyAttendedTournamentIds } from "@/lib/nexus-standalone.functions";
+import { getMyFavoriteStores } from "@/lib/nexus-player.functions";
+import { Star } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
 import { useWeekNav, useCalendarGrid, WeeklyGrid } from "@/components/calendar/weekly-grid";
