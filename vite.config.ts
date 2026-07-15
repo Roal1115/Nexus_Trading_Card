@@ -12,4 +12,19 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    plugins: [
+      {
+        // ponytail: lovable config hardcodes injectSource:true with no option;
+        // strip the plugin post-resolve to kill data-tsd-source hydration noise
+        name: "disable-tsd-inject-source",
+        configResolved(config) {
+          const i = config.plugins.findIndex(
+            (p) => p.name === "@tanstack/devtools:inject-source",
+          );
+          if (i !== -1) (config.plugins as unknown[]).splice(i, 1);
+        },
+      },
+    ],
+  },
 });

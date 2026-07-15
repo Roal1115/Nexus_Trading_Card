@@ -251,3 +251,151 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       zones,
     };
   });
+
+export const getPublicTournament = createServerFn({ method: "POST" })
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const admin = getNexusAdmin();
+
+    // 1. Torneo — solo PUBLISHED
+    const { data: t } = await admin
+      .from("tournaments")
+      .select(
+        `id, tournament_date, tournament_time, status, game_id, store_id,
+         stores!inner(id, slug, name, city, state, zone),
+         games!inner(id, name, slug)`,
+      )
+      .eq("id", data.tournament_id)
+      .eq("status", "PUBLISHED")
+      .maybeSingle();
+
+    if (!t) throw new Error("Torneo no encontrado o no publicado");
+    const tournament = t as any;
+
+    // 2. Standings
+    const { data: results } = await admin
+      .from("tournament_results")
+      .select("player_id, rank, wins, losses, draws, points_earned, omw_percentage")
+      .eq("tournament_id", data.tournament_id)
+      .order("rank", { ascending: true });
+
+    const resultList = (results ?? []) as any[];
+    const playerIds = resultList.map((r) => r.player_id);
+
+    if (playerIds.length === 0) {
+      return {
+        tournament: {
+          id: tournament.id,
+          date: tournament.tournament_date,
+          time: tournament.tournament_time,
+          game_name: tournament.games?.name ?? "—",
+          game_slug: tournament.games?.slug ?? "",
+          store_name: tournament.stores?.name ?? "—",
+          store_slug: tournament.stores?.slug ?? "",
+          store_city: tournament.stores?.city ?? "—",
+          store_state: tournament.stores?.state ?? "—",
+          zone: tournament.stores?.zone ?? "—",
+        },
+        standings: [],
+        total_participants: 0,
+      };
+    }
+
+    const { data: players } = await admin
+      .from("players")
+      .select("id, geek_tag, is_profile_public")
+      .in("id", playerIds);
+    const playerMap = new Map(((players ?? []) as any[]).map((p) => [p.id, p]));
+
+    // 3. Leader más jugado por cada player en este torneo
+    const { data: rounds } = await admin
+      .from("tournament_round_results")
+      .select("player_id, player_leader_id")
+      .eq("tournament_id", data.tournament_id)
+      .not("player_leader_id", "is", null);
+
+    const leaderCount = new Map<string, Map<string, number>>();
+    for (const r of (rounds ?? []) as any[]) {
+      if (!leaderCount.has(r.player_id)) leaderCount.set(r.player_id, new Map());
+      const m = leaderCount.get(r.player_id)!;
+      m.set(r.player_leader_id, (m.get(r.player_leader_id) ?? 0) + 1);
+    }
+
+    const topLeaderByPlayer = new Map<string, string>();
+    for (const [pid, counts] of leaderCount.entries()) {
+      const best = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0];
+      if (best) topLeaderByPlayer.set(pid, best[0]);
+    }
+
+    // 4. Resolver leaders a canónico
+    const rawLeaderIds = Array.from(new Set(topLeaderByPlayer.values()));
+    const { data: rawLeaders } = rawLeaderIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, canonical_leader_id")
+          .in("id", rawLeaderIds)
+      : { data: [] as any[] };
+
+    const variantToCanonical = new Map<string, string>();
+    for (const l of (rawLeaders ?? []) as any[]) {
+      if (l.canonical_leader_id) variantToCanonical.set(l.id, l.canonical_leader_id);
+    }
+
+    const existingIds = new Set(((rawLeaders ?? []) as any[]).map((l) => l.id));
+    const missingCanonicalIds = Array.from(new Set(Array.from(variantToCanonical.values()))).filter(
+      (id) => !existingIds.has(id),
+    );
+
+    const { data: canonicalLeaders } = missingCanonicalIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, canonical_leader_id")
+          .in("id", missingCanonicalIds)
+      : { data: [] as any[] };
+
+    const leaderMap = new Map(
+      [...((rawLeaders ?? []) as any[]), ...((canonicalLeaders ?? []) as any[])].map((l) => [
+        l.id,
+        l,
+      ]),
+    );
+    const resolveId = (id: string): string => variantToCanonical.get(id) ?? id;
+
+    // 5. Standings finales
+    const standings = resultList.map((r) => {
+      const p = playerMap.get(r.player_id) as any;
+      const rawLeaderId = topLeaderByPlayer.get(r.player_id);
+      const leader = rawLeaderId ? leaderMap.get(resolveId(rawLeaderId)) : null;
+      return {
+        rank: r.rank as number,
+        geek_tag: p?.geek_tag ?? "—",
+        is_profile_public: Boolean(p?.is_profile_public),
+        wins: r.wins as number | null,
+        losses: r.losses as number | null,
+        draws: r.draws as number | null,
+        points_earned: r.points_earned as number | null,
+        omw_percentage: r.omw_percentage as number | null,
+        leader_name: (leader as any)?.base_name ?? null,
+        leader_image: (leader as any)?.card_image ?? null,
+      };
+    });
+
+    return {
+      tournament: {
+        id: tournament.id,
+        date: tournament.tournament_date,
+        time: tournament.tournament_time,
+        game_name: tournament.games?.name ?? "—",
+        game_slug: tournament.games?.slug ?? "",
+        store_name: tournament.stores?.name ?? "—",
+        store_slug: tournament.stores?.slug ?? "",
+        store_city: tournament.stores?.city ?? "—",
+        store_state: tournament.stores?.state ?? "—",
+        zone: tournament.stores?.zone ?? "—",
+      },
+      standings,
+      total_participants: standings.length,
+    };
+  });
