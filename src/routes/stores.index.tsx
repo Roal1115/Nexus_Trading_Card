@@ -43,17 +43,67 @@ type StoreCard = {
   games: Array<{ id: string; name: string }>;
 };
 
-function StoreCardItem({ store }: { store: StoreCard }) {
+function FavoriteStar({
+  storeId,
+  storeName,
+  isFavorite,
+  isToggling,
+  onToggle,
+}: {
+  storeId: string;
+  storeName: string;
+  isFavorite: boolean;
+  isToggling: boolean;
+  onToggle: (id: string, name: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggle(storeId, storeName);
+      }}
+      disabled={isToggling}
+      aria-label={
+        isFavorite
+          ? `Quitar ${storeName} de favoritas`
+          : `Marcar ${storeName} como favorita`
+      }
+      aria-pressed={isFavorite}
+      className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+        isFavorite
+          ? "text-[#FFD54A] hover:bg-[#FFD54A]/10"
+          : "text-[#72819D] hover:bg-white/5 hover:text-[#FFD54A]"
+      }`}
+    >
+      <Star size={16} fill={isFavorite ? "currentColor" : "none"} />
+    </button>
+  );
+}
+
+function StoreCardItem({
+  store,
+  favoriteSlot,
+}: {
+  store: StoreCard;
+  favoriteSlot?: React.ReactNode;
+}) {
   return (
     <Link
       to="/stores/$slug"
       params={{ slug: store.slug }}
       className="glass block rounded-2xl p-5 transition hover:border-primary/40 hover:bg-white/[0.04]"
     >
-      <h3 className="text-lg font-bold text-white">{store.name}</h3>
-      <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-400">
-        <MapPin size={12} /> {store.city ?? "—"}
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-bold text-white">{store.name}</h3>
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-400">
+            <MapPin size={12} /> {store.city ?? "—"}
+          </p>
+        </div>
+        {favoriteSlot}
+      </div>
 
       {store.games.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -98,6 +148,7 @@ function StoreCardItem({ store }: { store: StoreCard }) {
     </Link>
   );
 }
+
 
 const cardVariants = {
   hidden: { opacity: 0, y: 16 },
