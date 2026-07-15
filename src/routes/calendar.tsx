@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
+  CalendarPlus,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +15,7 @@ import {
   Twitch,
   Twitter,
 } from "lucide-react";
+import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { getPublicCalendar } from "@/lib/nexus-public.functions";
 import { getMyAttendedTournamentIds } from "@/lib/nexus-standalone.functions";
