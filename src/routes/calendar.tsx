@@ -95,6 +95,28 @@ function CalendarPage() {
 
   const calendarGrid = useCalendarGrid(events, weekDates);
 
+  const buildEventIcs = (entry: any) => {
+    const isProjected = Boolean(entry.is_scheduled);
+    const title = isProjected
+      ? `${entry.game_name} — ${entry.store_name} (por confirmar)`
+      : `${entry.game_name} — ${entry.store_name}`;
+    const description = isProjected
+      ? "Horario regular de la tienda, sujeto a cambios. Trading Card Nexus."
+      : "Torneo publicado en Trading Card Nexus.";
+    const location = [entry.store_name, entry.store_city, entry.store_state]
+      .filter(Boolean)
+      .join(", ");
+    return buildIcs({
+      title,
+      description,
+      location,
+      date: entry.date,
+      time: entry.time,
+      durationHours: 4,
+      uid: `${entry.id}-${entry.date}`,
+    });
+  };
+
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
       <aside className="hidden xl:block">
@@ -305,6 +327,15 @@ function CalendarPage() {
                 Ver perfil de la tienda →
               </Link>
             )}
+
+            <a
+              href={icsDataUri(buildEventIcs(selectedEntry))}
+              download={icsFileName(`${selectedEntry.game_name}-${selectedEntry.store_name}-${selectedEntry.date}`)}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#32D9FF]/40 bg-[#32D9FF]/10 py-2.5 text-sm font-semibold text-[#32D9FF] transition hover:bg-[#32D9FF]/20"
+            >
+              <CalendarPlus size={15} />
+              Agregar a mi calendario
+            </a>
 
             <button
               onClick={() => setSelectedEntry(null)}
