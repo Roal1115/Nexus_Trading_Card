@@ -36,6 +36,7 @@ export const Route = createFileRoute("/calendar")({
 function CalendarPage() {
   const fetchCalendar = useServerFn(getPublicCalendar);
   const fetchAttended = useServerFn(getMyAttendedTournamentIds);
+  const fetchFavorites = useServerFn(getMyFavoriteStores);
   const { player } = useNexusRole();
   const { activeTcg } = useTCG();
 
@@ -49,8 +50,9 @@ function CalendarPage() {
   const [zones, setZones] = useState<string[]>([]);
   const [filterZone, setFilterZone] = useState<string | null>(null);
   const [filterStore, setFilterStore] = useState<string | null>(null);
-  const [onlyMyStore, setOnlyMyStore] = useState(false);
-  const hasHomeStore = Boolean(player?.home_store_id);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const hasFavorites = favoriteIds.length > 0;
   const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [attendedIds, setAttendedIds] = useState<Set<string>>(new Set());
