@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { StoreCardSkeleton } from "@/components/ui/skeleton-loader";
 import {
@@ -12,8 +12,13 @@ import {
   Globe,
   Twitter,
   Twitch,
+  Star,
 } from "lucide-react";
+import { toast } from "sonner";
 import { getPublicStoresList } from "@/lib/nexus-public.functions";
+import { getMyFavoriteStores, toggleFavoriteStore } from "@/lib/nexus-player.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+
 
 export const Route = createFileRoute("/stores/")({
   head: () => ({ meta: [{ title: "Tiendas — Nexus" }] }),
