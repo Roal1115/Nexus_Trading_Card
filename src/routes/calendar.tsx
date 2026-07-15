@@ -272,6 +272,14 @@ function CalendarPage() {
         />
       </div>
 
+      {onlyFavorites && !loading && events.length === 0 && (
+        <p className="mt-3 text-center text-xs text-[#AAB6D1]">
+          Estás filtrando por tus tiendas favoritas. Desactiva el filtro para ver todos los torneos.
+        </p>
+      )}
+
+
+
       <DialogPrimitive.Root
         open={!!selectedEntry}
         onOpenChange={(o) => !o && setSelectedEntry(null)}
