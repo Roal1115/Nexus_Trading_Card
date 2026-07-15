@@ -196,7 +196,7 @@ function PublicTournamentPage() {
             <div>OMW%</div>
             <div>PTS</div>
           </div>
-          {data.standings.map((s) => {
+          {data.standings.map((s: typeof data.standings[number]) => {
             const isTop3 = s.rank <= 3;
             const vde = s.wins == null ? "—" : `${s.wins}/${s.losses ?? 0}/${s.draws ?? 0}`;
             const omw = typeof s.omw_percentage === "number" ? `${s.omw_percentage.toFixed(1)}%` : "—";
