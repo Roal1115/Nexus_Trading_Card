@@ -55,21 +55,16 @@ function NavIcon({ isActive, children }: { isActive: boolean; children: React.Re
 }
 
 function NavLabel({ isActive, children }: { isActive: boolean; children: React.ReactNode }) {
+  // Siempre renderizado con espacio reservado: animar solo opacity (composited)
+  // evita reflows por frame que hacían tartamudear al pill durante la navegación.
   return (
-    <AnimatePresence mode="wait">
-      {isActive && (
-        <motion.span
-          key="label"
-          initial={{ opacity: 0, y: -2, height: 0 }}
-          animate={{ opacity: 1, y: 0, height: "auto" }}
-          exit={{ opacity: 0, y: -2, height: 0 }}
-          transition={{ duration: 0.15 }}
-          className="relative z-10 overflow-hidden text-[10px] font-semibold leading-none text-primary"
-        >
-          {children}
-        </motion.span>
-      )}
-    </AnimatePresence>
+    <span
+      className={`relative z-10 text-[10px] font-semibold leading-none text-primary transition-opacity duration-150 ${
+        isActive ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -108,7 +103,7 @@ export function BottomNav() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-white/10 bg-gradient-to-b from-white/[0.04] to-[#08111f]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-2xl lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-white/10 bg-gradient-to-b from-white/[0.04] to-[#08111f]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl lg:hidden">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
       </div>
       <nav

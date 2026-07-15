@@ -631,7 +631,7 @@ export const getMyStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -652,7 +652,7 @@ export const getMyStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
@@ -735,6 +735,7 @@ export const getMyStats = createServerFn({ method: "POST" })
               opponent_leader_id: oppLeaderId,
               opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
               opponent_leader_image: oppLeader?.card_image ?? null,
+              opponent_leader_colors: (oppLeader?.colors as string[] | null) ?? null,
               total: oppTotal,
               wins: oppWins,
               overall_win_rate: oppTotal > 0 ? Math.round((oppWins / oppTotal) * 100) : 0,
@@ -936,7 +937,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -953,7 +954,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
@@ -1071,6 +1072,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
               opponent_leader_id: mu.opponent_leader_id,
               opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
               opponent_leader_image: oppLeader?.card_image ?? null,
+              opponent_leader_colors: (oppLeader?.colors as string[] | null) ?? null,
               total: mu.total,
               wins: mu.wins,
               overall_win_rate: mu.total > 0 ? round1((mu.wins / mu.total) * 100) : 0,
@@ -1205,7 +1207,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -1222,7 +1224,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
@@ -1324,6 +1326,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
               opponent_leader_id: mu.opponent_leader_id,
               opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
               opponent_leader_image: oppLeader?.card_image ?? null,
+              opponent_leader_colors: (oppLeader?.colors as string[] | null) ?? null,
               total: mu.total,
               wins: mu.wins,
               overall_win_rate: mu.total > 0 ? round1((mu.wins / mu.total) * 100) : 0,
