@@ -273,8 +273,40 @@ function TiendasPage() {
         <p className="max-w-2xl text-sm text-gray-400">Encuentra dónde jugar en cada región.</p>
       </header>
 
+      {player && favoriteStores.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Star size={18} className="text-[#FFD54A]" fill="currentColor" />
+            <h2 className="text-xl font-bold uppercase tracking-wider text-white">
+              Mis tiendas favoritas
+            </h2>
+            <span className="text-xs text-gray-400">
+              {favoriteStores.length}/5
+            </span>
+          </div>
+          <motion.div
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            variants={gridVariants}
+            initial="hidden"
+            animate="show"
+          >
+            {favoriteStores.map((s) => (
+              <motion.div key={s.id} variants={cardVariants}>
+                <StoreCardItem store={s} favoriteSlot={renderStar(s)} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </section>
+      )}
+
+      {player && favoriteStores.length > 0 && (
+        <h2 className="text-xl font-bold uppercase tracking-wider text-white">
+          Todas las tiendas
+        </h2>
+      )}
+
       {ZONES.map((zone) => {
-        const zoneStores = stores.filter((s) => s.zone === zone);
+        const zoneStores = otherStores.filter((s) => s.zone === zone);
         if (zoneStores.length === 0) return null;
         return (
           <section key={zone} className="space-y-4">
@@ -287,13 +319,14 @@ function TiendasPage() {
             >
               {zoneStores.map((s) => (
                 <motion.div key={s.id} variants={cardVariants}>
-                  <StoreCardItem store={s} />
+                  <StoreCardItem store={s} favoriteSlot={renderStar(s)} />
                 </motion.div>
               ))}
             </motion.div>
           </section>
         );
       })}
+
 
       {stores.length === 0 && (
         <p className="text-sm text-gray-400">Aún no hay tiendas registradas.</p>
