@@ -162,8 +162,14 @@ const gridVariants = {
 
 function TiendasPage() {
   const fetchStores = useServerFn(getPublicStoresList);
+  const fetchFavorites = useServerFn(getMyFavoriteStores);
+  const toggleFav = useServerFn(toggleFavoriteStore);
+  const { player } = useNexusRole();
+
   const [loading, setLoading] = useState(true);
   const [stores, setStores] = useState<StoreCard[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStores()
@@ -172,6 +178,67 @@ function TiendasPage() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!player?.id) {
+      setFavoriteIds(new Set());
+      return;
+    }
+    fetchFavorites()
+      .then((res: any) => setFavoriteIds(new Set(res.store_ids ?? [])))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player?.id]);
+
+  const handleToggleFavorite = async (storeId: string, storeName: string) => {
+    const wasFavorite = favoriteIds.has(storeId);
+    setTogglingId(storeId);
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (wasFavorite) next.delete(storeId);
+      else next.add(storeId);
+      return next;
+    });
+    try {
+      await toggleFav({ data: { store_id: storeId } });
+      toast.success(
+        wasFavorite
+          ? `${storeName} quitada de favoritas`
+          : `${storeName} agregada a favoritas`,
+      );
+    } catch (e: any) {
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (wasFavorite) next.add(storeId);
+        else next.delete(storeId);
+        return next;
+      });
+      toast.error(e?.message ?? "No se pudo actualizar favoritas");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const favoriteStores = useMemo(
+    () => stores.filter((s) => favoriteIds.has(s.id)),
+    [stores, favoriteIds],
+  );
+  const otherStores = useMemo(
+    () => stores.filter((s) => !favoriteIds.has(s.id)),
+    [stores, favoriteIds],
+  );
+
+  const renderStar = (s: StoreCard) =>
+    player ? (
+      <FavoriteStar
+        storeId={s.id}
+        storeName={s.name}
+        isFavorite={favoriteIds.has(s.id)}
+        isToggling={togglingId === s.id}
+        onToggle={handleToggleFavorite}
+      />
+    ) : undefined;
+
 
   if (loading) {
     return (
