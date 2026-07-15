@@ -1382,7 +1382,7 @@ export const getMyFavoriteStores = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
-    const { data: favs } = await admin
+    const { data: favs } = await (admin as any)
       .from("player_favorite_stores")
       .select("store_id, created_at")
       .eq("player_id", player.id)
@@ -1419,7 +1419,7 @@ export const toggleFavoriteStore = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
-    const { data: existing } = await admin
+    const { data: existing } = await (admin as any)
       .from("player_favorite_stores")
       .select("id")
       .eq("player_id", player.id)
@@ -1427,7 +1427,7 @@ export const toggleFavoriteStore = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (existing) {
-      const { error } = await admin
+      const { error } = await (admin as any)
         .from("player_favorite_stores")
         .delete()
         .eq("id", (existing as any).id);
@@ -1435,7 +1435,7 @@ export const toggleFavoriteStore = createServerFn({ method: "POST" })
       return { is_favorite: false };
     }
 
-    const { count } = await admin
+    const { count } = await (admin as any)
       .from("player_favorite_stores")
       .select("id", { count: "exact", head: true })
       .eq("player_id", player.id);
@@ -1444,7 +1444,7 @@ export const toggleFavoriteStore = createServerFn({ method: "POST" })
       throw new Error("Ya tienes 5 tiendas favoritas. Quita una para agregar otra.");
     }
 
-    const { error } = await admin
+    const { error } = await (admin as any)
       .from("player_favorite_stores")
       .insert({ player_id: player.id, store_id: data.store_id });
 
@@ -1457,3 +1457,4 @@ export const toggleFavoriteStore = createServerFn({ method: "POST" })
 
     return { is_favorite: true };
   });
+
