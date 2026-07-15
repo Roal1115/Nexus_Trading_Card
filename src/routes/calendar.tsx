@@ -196,29 +196,29 @@ function CalendarPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {hasHomeStore && (
+          {hasFavorites && (
             <button
               type="button"
-              onClick={toggleOnlyMyStore}
-              aria-pressed={onlyMyStore}
+              onClick={toggleOnlyFavorites}
+              aria-pressed={onlyFavorites}
               className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-                onlyMyStore
-                  ? "border-[#32D9FF]/50 bg-[#32D9FF]/10 text-[#32D9FF]"
+                onlyFavorites
+                  ? "border-primary/50 bg-primary/10 text-primary"
                   : "border-[#2A3A57] bg-[#111A2E] text-[#AAB6D1] hover:text-white"
               }`}
             >
+              <Star
+                size={13}
+                className={onlyFavorites ? "fill-primary text-primary" : ""}
+              />
+              Mis favoritas
               <span
-                className={`h-4 w-7 shrink-0 rounded-full transition-colors relative ${
-                  onlyMyStore ? "bg-[#32D9FF]" : "bg-[#2A3A57]"
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  onlyFavorites ? "bg-primary/20 text-primary" : "bg-white/10 text-[#AAB6D1]"
                 }`}
               >
-                <span
-                  className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform ${
-                    onlyMyStore ? "translate-x-3.5" : "translate-x-0.5"
-                  }`}
-                />
+                {favoriteIds.length}
               </span>
-              Solo mi tienda
             </button>
           )}
 
@@ -238,9 +238,9 @@ function CalendarPage() {
           <select
             value={filterStore ?? ""}
             onChange={(e) => setFilterStore(e.target.value || null)}
-            disabled={onlyMyStore}
+            disabled={onlyFavorites}
             className={`rounded-lg border border-[#2A3A57] bg-[#111A2E] px-3 py-1.5 text-xs text-white outline-none focus:border-[#32D9FF] ${
-              onlyMyStore ? "opacity-40 cursor-not-allowed" : ""
+              onlyFavorites ? "opacity-40 cursor-not-allowed" : ""
             }`}
           >
             <option value="">Todas las tiendas</option>
