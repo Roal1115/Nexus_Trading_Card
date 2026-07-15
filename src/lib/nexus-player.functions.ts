@@ -1376,3 +1376,84 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
       leaders,
     };
   });
+
+export const getMyFavoriteStores = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    const { data: favs } = await admin
+      .from("player_favorite_stores")
+      .select("store_id, created_at")
+      .eq("player_id", player.id)
+      .order("created_at", { ascending: true });
+
+    const favList = (favs ?? []) as any[];
+    const storeIds = favList.map((f) => f.store_id);
+
+    if (storeIds.length === 0) return { stores: [], store_ids: [] };
+
+    const { data: stores } = await admin
+      .from("stores")
+      .select("id, slug, name, city, state, zone")
+      .in("id", storeIds);
+
+    const storeMap = new Map(((stores ?? []) as any[]).map((s) => [s.id, s]));
+
+    return {
+      stores: favList.map((f) => storeMap.get(f.store_id)).filter(Boolean) as Array<{
+        id: string;
+        slug: string;
+        name: string;
+        city: string | null;
+        state: string | null;
+        zone: string | null;
+      }>,
+      store_ids: storeIds as string[],
+    };
+  });
+
+export const toggleFavoriteStore = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { data: existing } = await admin
+      .from("player_favorite_stores")
+      .select("id")
+      .eq("player_id", player.id)
+      .eq("store_id", data.store_id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await admin
+        .from("player_favorite_stores")
+        .delete()
+        .eq("id", (existing as any).id);
+      if (error) throw new Error(error.message);
+      return { is_favorite: false };
+    }
+
+    const { count } = await admin
+      .from("player_favorite_stores")
+      .select("id", { count: "exact", head: true })
+      .eq("player_id", player.id);
+
+    if ((count ?? 0) >= 5) {
+      throw new Error("Ya tienes 5 tiendas favoritas. Quita una para agregar otra.");
+    }
+
+    const { error } = await admin
+      .from("player_favorite_stores")
+      .insert({ player_id: player.id, store_id: data.store_id });
+
+    if (error) {
+      if (error.message.includes("Máximo 5 tiendas favoritas")) {
+        throw new Error("Ya tienes 5 tiendas favoritas. Quita una para agregar otra.");
+      }
+      throw new Error(error.message);
+    }
+
+    return { is_favorite: true };
+  });
