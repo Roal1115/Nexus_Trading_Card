@@ -74,7 +74,8 @@ function CalendarPage() {
       data: {
         game_id: activeTcg?.id ?? null,
         zone: filterZone,
-        store_id: filterStore,
+        store_id: onlyFavorites ? null : filterStore,
+        store_ids: onlyFavorites && favoriteIds.length > 0 ? favoriteIds : null,
         week_start: weekStartStr,
       },
     } as any)
@@ -85,7 +86,7 @@ function CalendarPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [weekStartStr, activeTcg?.id, filterZone, filterStore]);
+  }, [weekStartStr, activeTcg?.id, filterZone, filterStore, onlyFavorites, favoriteIds]);
 
   useEffect(() => {
     const realTournamentIds = events.filter((e) => !e.is_scheduled).map((e) => e.id);
@@ -100,29 +101,34 @@ function CalendarPage() {
   }, [player?.id, events]);
 
   useEffect(() => {
-    if (!hasHomeStore) return;
-    const saved = window.localStorage.getItem("calendar:only-my-store");
-    if (saved === "1") setOnlyMyStore(true);
-  }, [hasHomeStore]);
+    if (!player?.id) {
+      setFavoriteIds([]);
+      setOnlyFavorites(false);
+      return;
+    }
+    fetchFavorites()
+      .then((res: any) => setFavoriteIds(res.store_ids ?? []))
+      .catch(() => setFavoriteIds([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player?.id]);
 
   useEffect(() => {
-    if (!hasHomeStore) return;
-    if (onlyMyStore) {
-      setFilterStore(player!.home_store_id!);
-    } else if (filterStore === player?.home_store_id) {
-      setFilterStore(null);
-    }
-  }, [onlyMyStore, hasHomeStore]);
+    if (!hasFavorites) return;
+    const saved = window.localStorage.getItem("calendar:only-favorites");
+    if (saved === "1") setOnlyFavorites(true);
+  }, [hasFavorites]);
 
-  const toggleOnlyMyStore = () => {
-    const next = !onlyMyStore;
-    setOnlyMyStore(next);
+  const toggleOnlyFavorites = () => {
+    const next = !onlyFavorites;
+    setOnlyFavorites(next);
     if (next) {
-      window.localStorage.setItem("calendar:only-my-store", "1");
+      setFilterStore(null);
+      window.localStorage.setItem("calendar:only-favorites", "1");
     } else {
-      window.localStorage.removeItem("calendar:only-my-store");
+      window.localStorage.removeItem("calendar:only-favorites");
     }
   };
+
 
   const calendarGrid = useCalendarGrid(events, weekDates);
 
