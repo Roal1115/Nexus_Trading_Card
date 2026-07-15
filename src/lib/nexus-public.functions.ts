@@ -102,6 +102,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       game_id?: string | null;
       zone?: string | null;
       store_id?: string | null;
+      store_ids?: string[] | null;
       week_start: string; // "YYYY-MM-DD" — domingo (el grid público es Dom–Sáb, ver sundayOfWeek en utils)
     }) =>
       z
@@ -109,6 +110,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
           game_id: z.string().uuid().nullable().optional(),
           zone: z.string().nullable().optional(),
           store_id: z.string().uuid().nullable().optional(),
+          store_ids: z.array(z.string().uuid()).max(5).nullable().optional(),
           week_start: z.string(),
         })
         .parse(d),
@@ -143,7 +145,11 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       .lte("tournament_date", weekEndStr);
 
     if (data.game_id) tournamentQuery = tournamentQuery.eq("game_id", data.game_id);
-    if (data.store_id) tournamentQuery = tournamentQuery.eq("store_id", data.store_id);
+    if (data.store_ids?.length) {
+      tournamentQuery = tournamentQuery.in("store_id", data.store_ids);
+    } else if (data.store_id) {
+      tournamentQuery = tournamentQuery.eq("store_id", data.store_id);
+    }
     if (data.zone) tournamentQuery = tournamentQuery.eq("stores.zone", data.zone);
 
     const { data: tournaments, error } = await tournamentQuery;
@@ -159,7 +165,11 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     );
 
     if (data.game_id) scheduleQuery = scheduleQuery.eq("game_id", data.game_id);
-    if (data.store_id) scheduleQuery = scheduleQuery.eq("store_id", data.store_id);
+    if (data.store_ids?.length) {
+      scheduleQuery = scheduleQuery.in("store_id", data.store_ids);
+    } else if (data.store_id) {
+      scheduleQuery = scheduleQuery.eq("store_id", data.store_id);
+    }
     if (data.zone) scheduleQuery = scheduleQuery.eq("stores.zone", data.zone);
 
     const { data: schedules, error: scheduleError } = await scheduleQuery;

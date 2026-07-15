@@ -1457,4 +1457,3 @@ export const toggleFavoriteStore = createServerFn({ method: "POST" })
 
     return { is_favorite: true };
   });
-
