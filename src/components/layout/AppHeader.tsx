@@ -1,17 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, Trophy } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Trophy } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
 import { nexus } from "@/integrations/nexus/client";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
+import { TcgSwitcher } from "@/components/layout/TcgSwitcher";
 
 export function AppHeader() {
   const { player, loading } = useNexusRole();
-  const { activeTcg, setActiveTcg, tcgs, setTcgs } = useTCG();
-  const [tcgOpen, setTcgOpen] = useState(false);
+  const { setTcgs } = useTCG();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const tcgRef = useRef<HTMLDivElement>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const isStaffRoute =
@@ -31,22 +30,16 @@ export function AppHeader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!tcgOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (tcgRef.current && !tcgRef.current.contains(e.target as Node)) {
-        setTcgOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [tcgOpen]);
-
   if (isStaffRoute) return null;
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl">
+      {/* En lg+ el jugador logueado navega por el sidebar: el header desaparece completo */}
+      <header
+        className={`sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl ${
+          player ? "lg:hidden" : ""
+        }`}
+      >
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-3 items-center px-4 sm:px-6">
           {/* LEFT — Logo */}
           <div className="flex items-center">
@@ -64,41 +57,7 @@ export function AppHeader() {
 
           {/* CENTER — TCG Switcher */}
           <div className="flex justify-center">
-            {tcgs.length > 0 && (
-              <div className="relative" ref={tcgRef}>
-                <button
-                  type="button"
-                  onClick={() => setTcgOpen((o) => !o)}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#2A3A57] bg-[#111A2E] px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[#32D9FF]/40"
-                >
-                  {activeTcg?.name ?? "TCG"}
-                  <ChevronDown
-                    size={14}
-                    className={tcgOpen ? "rotate-180 transition" : "transition"}
-                  />
-                </button>
-
-                {tcgOpen && (
-                  <div className="absolute left-1/2 top-full mt-2 w-52 -translate-x-1/2 overflow-hidden rounded-xl border border-white/10 bg-[#0B1220]/95 shadow-2xl backdrop-blur-xl z-50">
-                    {tcgs.map((tcg) => (
-                      <button
-                        key={tcg.id}
-                        type="button"
-                        onClick={() => {
-                          setActiveTcg(tcg);
-                          setTcgOpen(false);
-                        }}
-                        className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition hover:bg-white/5 ${
-                          activeTcg?.id === tcg.id ? "text-[#32D9FF] font-semibold" : "text-white"
-                        }`}
-                      >
-                        {tcg.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            <TcgSwitcher />
           </div>
 
           {/* RIGHT — Avatar / Login */}

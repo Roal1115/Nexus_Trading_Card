@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, X } from "lucide-react";
 import { nexus } from "@/integrations/nexus/client";
+import { playerNavSections } from "@/components/layout/player-nav";
 
 // 1. El prop player ya tiene role — confirma que el tipo lo incluye:
 type ProfileDrawerProps = {
@@ -17,19 +18,6 @@ type ProfileDrawerProps = {
 
 export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
   const initials = player.geek_tag?.slice(0, 2).toUpperCase() ?? "GA";
-  const isStaff = ["organizer", "tcg_manager", "admin"].includes(player.role);
-  const staffRoute =
-    player.role === "admin"
-      ? "/admin"
-      : player.role === "tcg_manager"
-        ? "/tcg-manager"
-        : "/organizer";
-  const staffLabel =
-    player.role === "admin"
-      ? "Panel Admin"
-      : player.role === "tcg_manager"
-        ? "Panel Manager"
-        : "Panel Organizador";
 
   const handleLogout = async () => {
     await nexus.auth.signOut();
@@ -94,36 +82,18 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
               </button>
             </div>
 
-            {/* Nav sections */}
+            {/* Nav sections — misma fuente de verdad que PlayerSidebar */}
             <div className="flex-1 overflow-y-auto p-4">
-              {isStaff && (
-                <Section title="Administración">
-                  <DrawerLink to={staffRoute} onClose={onClose}>
-                    {staffLabel}
-                  </DrawerLink>
+              {playerNavSections(player.role, player.geek_tag).map((sec) => (
+                <Section key={sec.title} title={sec.title}>
+                  {sec.items.map((item) => (
+                    <DrawerLink key={item.to} to={item.to} onClose={onClose}>
+                      <span className="flex items-center gap-2.5 text-gray-400">{item.icon}</span>
+                      {item.label}
+                    </DrawerLink>
+                  ))}
                 </Section>
-              )}
-
-              <Section title="Mi Carrera">
-                {[
-                  { to: "/dashboard", label: "Mi Panel" },
-                  { to: "/meta", label: "Meta" },
-                  { to: "/my-stats", label: "Mis Stats" },
-                  { to: "/sessions", label: "Sesiones" },
-                  { to: "/stores", label: "Tiendas" },
-                  { to: "/calendar", label: "Calendario" },
-                ].map((item) => (
-                  <DrawerLink key={item.to} to={item.to} onClose={onClose}>
-                    {item.label}
-                  </DrawerLink>
-                ))}
-              </Section>
-
-              <Section title="Cuenta">
-                <DrawerLink to="/settings" onClose={onClose}>
-                  Configuración
-                </DrawerLink>
-              </Section>
+              ))}
             </div>
 
             {/* Logout */}
@@ -167,7 +137,7 @@ function DrawerLink({
     <Link
       to={to}
       onClick={onClose}
-      className="rounded-lg px-3 py-2.5 text-sm text-white transition hover:bg-white/5"
+      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-white transition hover:bg-white/5"
     >
       {children}
     </Link>

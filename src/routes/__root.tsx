@@ -12,6 +12,7 @@ import { NexusAuthProvider } from "../context/nexus-auth.context";
 import { TCGProvider } from "@/context/tcg.context";
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { PlayerSidebar } from "@/components/layout/PlayerSidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { Toaster } from "sonner";
@@ -258,20 +259,23 @@ function RootComponent() {
   return (
     <TCGProvider>
       <NexusAuthProvider>
-        <div className="min-h-dvh bg-radial-nexus">
-          {!isPanel && <AppHeader />}
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: "easeInOut" }}
-              className="pb-16 lg:pb-0"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+        <div className="min-h-dvh bg-radial-nexus lg:flex">
+          {!isPanel && <PlayerSidebar />}
+          <div className="min-w-0 flex-1">
+            {!isPanel && <AppHeader />}
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: "easeInOut" }}
+                className="pb-16 lg:pb-0"
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </div>
           <Toaster
             position="bottom-right"
             toastOptions={{
