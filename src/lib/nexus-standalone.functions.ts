@@ -450,14 +450,21 @@ export const deleteStandaloneSession = createServerFn({ method: "POST" })
 // ============================================================
 export const updateStandaloneSessionDetails = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
-  .inputValidator((d: { session_id: string; name?: string; session_date?: string | null }) =>
-    z
-      .object({
-        session_id: z.string().uuid(),
-        name: z.string().trim().min(1).max(100).optional(),
-        session_date: z.string().nullable().optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: {
+      session_id: string;
+      name?: string;
+      session_date?: string | null;
+      player_leader_id?: string | null;
+    }) =>
+      z
+        .object({
+          session_id: z.string().uuid(),
+          name: z.string().trim().min(1).max(100).optional(),
+          session_date: z.string().nullable().optional(),
+          player_leader_id: z.string().uuid().nullable().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -474,6 +481,7 @@ export const updateStandaloneSessionDetails = createServerFn({ method: "POST" })
     const patch: TablesUpdate<"standalone_sessions"> = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.session_date !== undefined) patch.session_date = data.session_date;
+    if (data.player_leader_id !== undefined) patch.player_leader_id = data.player_leader_id;
     if (Object.keys(patch).length === 0) return { success: true };
 
     const { error } = await admin

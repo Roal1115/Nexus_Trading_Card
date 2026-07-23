@@ -52,9 +52,15 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
       ? (rows ?? []).filter((r: any) => r.card_image_id === r.card_set_id)
       : (rows ?? []);
 
-    // ponytail: sync can leave duplicate rows sharing a card_set_id; keep one per id
+    // ponytail: sync can leave duplicate rows sharing a card_set_id; keep the one with an image
     const deduped = basicOnly
-      ? Array.from(new Map(filtered.map((r: any) => [r.card_set_id, r])).values())
+      ? Array.from(
+          filtered.reduce((map: Map<string, any>, r: any) => {
+            const existing = map.get(r.card_set_id);
+            if (!existing || (!existing.card_image && r.card_image)) map.set(r.card_set_id, r);
+            return map;
+          }, new Map<string, any>()).values(),
+        )
       : filtered;
 
     return deduped.sort((a: any, b: any) => {

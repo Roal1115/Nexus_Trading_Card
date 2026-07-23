@@ -17,6 +17,7 @@ import {
   X,
   Search,
   Loader2,
+  Images,
 } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
@@ -569,6 +570,96 @@ function SessionsPage() {
 }
 
 // ============================================================
+// LeaderArtSwitcher — pick a different art/printing for the same card_set_id
+// ============================================================
+function LeaderArtSwitcher({
+  gameId,
+  value,
+  onChange,
+}: {
+  gameId: string;
+  value: DeckIdentifier;
+  onChange: (d: DeckIdentifier) => void;
+}) {
+  const fetchLeaders = useServerFn(getDeckIdentifiers);
+  const [open, setOpen] = useState(false);
+  const [variants, setVariants] = useState<DeckIdentifier[]>([]);
+
+  useEffect(() => {
+    if (!open || !value.card_set_id) return;
+    fetchLeaders({ data: { game_id: gameId, card_set_id: value.card_set_id } })
+      .then((rows) => setVariants(rows as DeckIdentifier[]))
+      .catch(() => setVariants([]));
+  }, [open, value.card_set_id, gameId, fetchLeaders]);
+
+  return (
+    <div className="mt-2">
+      <div className="relative inline-block">
+        <img
+          src={value.card_image ?? undefined}
+          alt={value.base_name}
+          className="h-20 max-w-full rounded-md border border-white/10 object-contain"
+        />
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          title="Cambiar arte"
+          className="absolute bottom-1 right-1 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-white backdrop-blur-sm transition hover:bg-black/90"
+        >
+          <Images size={11} />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+              {variants.length === 0 ? (
+                <p className="text-[10px] text-gray-500">Buscando artes…</p>
+              ) : (
+                variants.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(v);
+                      setOpen(false);
+                    }}
+                    className={`flex-shrink-0 overflow-hidden rounded-md border transition ${
+                      v.id === value.id
+                        ? "border-primary ring-1 ring-primary"
+                        : "border-white/10 hover:border-white/30"
+                    }`}
+                  >
+                    {v.card_image ? (
+                      <img
+                        src={v.card_image}
+                        alt={v.base_name}
+                        className="h-16 w-11 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-11 items-center justify-center bg-black/30 text-[8px] text-gray-600">
+                        ?
+                      </div>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ============================================================
 // LeaderSelect — selecciona el leader/deck propio de la sesión
 // ============================================================
 function LeaderSelect({
@@ -657,14 +748,8 @@ function LeaderSelect({
         </div>
       )}
 
-      {value?.card_image && (
-        <div className="mt-2">
-          <img
-            src={value.card_image}
-            alt={value.base_name}
-            className="h-20 max-w-full rounded-md border border-white/10 object-contain"
-          />
-        </div>
+      {value?.card_image && gameId && (
+        <LeaderArtSwitcher gameId={gameId} value={value} onChange={onChange} />
       )}
       {!value && (
         <div className="mt-2 flex h-20 w-14 items-center justify-center rounded-md border border-white/10 bg-black/30">
