@@ -62,9 +62,12 @@ export function AppHeader() {
           </div>
 
           {/* RIGHT — Avatar / Login */}
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-2">
             {!loading && player ? (
-              <AvatarButton player={player} onClick={() => setDrawerOpen(true)} />
+              <>
+                <NotificationBell />
+                <AvatarButton player={player} onClick={() => setDrawerOpen(true)} />
+              </>
             ) : !loading ? (
               <Link
                 to="/login"
