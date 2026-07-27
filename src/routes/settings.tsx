@@ -5,6 +5,7 @@ import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown, LogOut } f
 import { toast } from "sonner";
 import { nexus } from "@/integrations/nexus/client";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
+import { PushNotificationsToggle } from "@/components/PushNotificationsToggle";
 import {
   SkeletonLine,
   SkeletonBlock,
@@ -525,6 +526,8 @@ function SettingsPage() {
           ) : null}
         </section>
       )}
+
+      <PushNotificationsToggle />
 
       {/* Zona de cuenta */}
       <section className="mt-8 border-t border-[#2A3A57] pt-6">

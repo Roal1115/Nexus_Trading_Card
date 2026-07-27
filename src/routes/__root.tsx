@@ -67,6 +67,9 @@ if (typeof window !== "undefined") {
   window.addEventListener("unhandledrejection", (e) =>
     tryReload((e as PromiseRejectionEvent).reason),
   );
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
@@ -122,6 +125,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#0f1117" },
 
       {
         title: "Trading Card Nexus | Meta, Torneos y Estadísticas de TCG",
@@ -189,7 +193,11 @@ export const Route = createRootRoute({
       },
       {
         rel: "apple-touch-icon",
-        href: "/favicon.ico",
+        href: "/icons/icon-192.png",
+      },
+      {
+        rel: "manifest",
+        href: "/manifest.webmanifest",
       },
       {
         rel: "stylesheet",
