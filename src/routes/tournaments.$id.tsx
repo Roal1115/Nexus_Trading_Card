@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { getPublicTournament } from "@/lib/nexus-public.functions";
+import {
+  getTournamentRsvpCount,
+  getPlayerRsvpStatus,
+  createRsvp,
+  cancelRsvp,
+} from "@/lib/nexus-rsvp.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
-import { Trophy, MapPin, Clock, CalendarPlus, Share2, Check, ShieldQuestion } from "lucide-react";
+import { Trophy, MapPin, Clock, CalendarPlus, Share2, Check, ShieldQuestion, Heart, Users } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/tournaments/$id")({
