@@ -19,8 +19,11 @@ export function PlayerSidebar() {
         sections={playerNavSections(player.role, player.geek_tag)}
         userLabel={player.geek_tag}
         topSlot={(collapsed) => (
-          <div className="mb-4 px-2">
+          <div className="mb-4 space-y-3 px-2">
             <TcgSwitcher collapsed={collapsed} />
+            <div className={collapsed ? "flex justify-center" : "flex justify-end"}>
+              <NotificationBell />
+            </div>
           </div>
         )}
       />
