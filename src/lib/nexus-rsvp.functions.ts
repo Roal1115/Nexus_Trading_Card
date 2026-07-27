@@ -30,7 +30,7 @@ export const getTournamentRsvpCount = createServerFn({ method: "POST" })
   .inputValidator((d: { tournament_id: string }) => tournamentIdSchema.parse(d))
   .handler(async ({ data }) => {
     const admin = getNexusAdmin();
-    const { count, error } = await admin
+    const { count, error } = await (admin as any)
       .from("tournament_rsvps")
       .select("id", { count: "exact", head: true })
       .eq("tournament_id", data.tournament_id)
@@ -45,7 +45,7 @@ export const getPlayerRsvpStatus = createServerFn({ method: "POST" })
   .inputValidator((d: { tournament_id: string }) => tournamentIdSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    const { data: row, error } = await admin
+    const { data: row, error } = await (admin as any)
       .from("tournament_rsvps")
       .select("status")
       .eq("tournament_id", data.tournament_id)
@@ -63,7 +63,7 @@ export const createRsvp = createServerFn({ method: "POST" })
     const { admin, player } = context;
 
     // Validar torneo existente y futuro
-    const { data: t, error: te } = await admin
+    const { data: t, error: te } = await (admin as any)
       .from("tournaments")
       .select("id, status, tournament_date")
       .eq("id", data.tournament_id)
@@ -74,7 +74,7 @@ export const createRsvp = createServerFn({ method: "POST" })
       throw new Error("Este torneo ya fue jugado");
     }
 
-    const { data: row, error } = await admin
+    const { data: row, error } = await (admin as any)
       .from("tournament_rsvps")
       .upsert(
         {
@@ -97,7 +97,7 @@ export const cancelRsvp = createServerFn({ method: "POST" })
   .inputValidator((d: { tournament_id: string }) => tournamentIdSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    const { error } = await admin
+    const { error } = await (admin as any)
       .from("tournament_rsvps")
       .update({ status: "cancelled", updated_at: new Date().toISOString() })
       .eq("tournament_id", data.tournament_id)
