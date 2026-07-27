@@ -21,9 +21,7 @@ export function PlayerSidebar() {
         topSlot={(collapsed) => (
           <div className="mb-4 space-y-3 px-2">
             <TcgSwitcher collapsed={collapsed} />
-            <div className={collapsed ? "flex justify-center" : "flex justify-end"}>
-              <NotificationBell />
-            </div>
+            <NotificationBell variant="sidebar" collapsed={collapsed} />
           </div>
         )}
       />

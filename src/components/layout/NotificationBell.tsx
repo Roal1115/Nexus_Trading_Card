@@ -24,7 +24,16 @@ const db = nexus as unknown as {
   removeChannel: (channel: any) => void;
 };
 
-export function NotificationBell({ className = "" }: { className?: string }) {
+export function NotificationBell({
+  className = "",
+  variant = "icon",
+  collapsed = false,
+}: {
+  className?: string;
+  /** "icon": botón redondo (header). "sidebar": fila de navegación de ancho completo. */
+  variant?: "icon" | "sidebar";
+  collapsed?: boolean;
+}) {
   const { player } = useNexusRole();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -59,8 +68,11 @@ export function NotificationBell({ className = "" }: { className?: string }) {
     };
     load();
 
+    // Nombre único por montaje: en StrictMode el efecto corre dos veces y un
+    // nombre fijo hace que supabase-js reutilice el canal ya suscrito del
+    // primer montaje, provocando "cannot add callbacks after subscribe()".
     const channel = db
-      .channel(`notifications:${playerId}`)
+      .channel(`notifications:${playerId}:${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         {
@@ -154,35 +166,83 @@ export function NotificationBell({ className = "" }: { className?: string }) {
 
   if (!player) return null;
 
+  // Siempre dentro del viewport. En sidebar abre a la derecha del botón;
+  // en header abre debajo, alineado a su borde derecho.
+  const panelWidth = anchorRect ? Math.min(380, window.innerWidth - 16) : 380;
+  const clampLeft = (left: number) =>
+    Math.min(Math.max(left, 8), window.innerWidth - panelWidth - 8);
   const panelStyle: React.CSSProperties | undefined = anchorRect
-    ? {
-        position: "fixed",
-        top: Math.min(anchorRect.bottom + 8, window.innerHeight - 20),
-        right: Math.max(window.innerWidth - anchorRect.right, 8),
-        maxWidth: "calc(100vw - 16px)",
-        width: 380,
-        zIndex: 100,
-      }
+    ? variant === "sidebar"
+      ? {
+          position: "fixed",
+          top: Math.max(Math.min(anchorRect.top, window.innerHeight - 440), 8),
+          left: clampLeft(anchorRect.right + 12),
+          width: panelWidth,
+          zIndex: 100,
+        }
+      : {
+          position: "fixed",
+          top: Math.min(anchorRect.bottom + 8, window.innerHeight - 20),
+          left: clampLeft(anchorRect.right - panelWidth),
+          width: panelWidth,
+          zIndex: 100,
+        }
     : undefined;
 
   return (
     <>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={openPanel}
-        aria-label="Notificaciones"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[#C5D1E4] transition hover:border-primary/40 hover:text-primary ${className}`}
-      >
-        <Bell size={17} />
-        {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#0f1117]">
-            {unreadCount > 9 ? "9+" : unreadCount}
+      {variant === "sidebar" ? (
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={openPanel}
+          title={collapsed ? "Notificaciones" : undefined}
+          aria-label="Notificaciones"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className={`flex w-full items-center overflow-hidden rounded-md py-2 text-sm transition ${
+            collapsed ? "justify-center px-0" : "gap-2.5 px-3"
+          } ${
+            open ? "bg-primary/15 text-primary" : "text-gray-300 hover:bg-white/5 hover:text-white"
+          } ${className}`}
+        >
+          <span className="relative shrink-0">
+            <Bell size={16} />
+            {collapsed && unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+            )}
           </span>
-        )}
-      </button>
+          <span
+            className={`whitespace-nowrap transition-opacity duration-200 ${
+              collapsed ? "w-0 opacity-0" : "flex-1 text-left opacity-100"
+            }`}
+          >
+            Notificaciones
+          </span>
+          {!collapsed && unreadCount > 0 && (
+            <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      ) : (
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={openPanel}
+          aria-label="Notificaciones"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[#C5D1E4] transition hover:border-primary/40 hover:text-primary ${className}`}
+        >
+          <Bell size={17} />
+          {unreadCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#0f1117]">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {open && typeof document !== "undefined" &&
         createPortal(
