@@ -75,11 +75,42 @@ function formatLongDate(d: string) {
 function PublicTournamentPage() {
   const data = Route.useLoaderData();
   const [copied, setCopied] = useState(false);
+  const { player } = useNexusRole();
+  const qc = useQueryClient();
 
   const t = data.tournament;
   const winner = data.standings[0];
   const today = new Date().toISOString().split("T")[0];
   const isFuture = t.date >= today;
+
+  const rsvpCountQuery = useQuery({
+    queryKey: ["rsvp-count", t.id],
+    queryFn: () => getTournamentRsvpCount({ data: { tournament_id: t.id } }),
+  });
+  const rsvpStatusQuery = useQuery({
+    queryKey: ["rsvp-status", t.id, player?.id],
+    queryFn: () => getPlayerRsvpStatus({ data: { tournament_id: t.id } }),
+    enabled: !!player && isFuture,
+  });
+  const isRsvped = !!rsvpStatusQuery.data?.attending;
+
+  const createFn = useServerFn(createRsvp);
+  const cancelFn = useServerFn(cancelRsvp);
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["rsvp-count", t.id] });
+    qc.invalidateQueries({ queryKey: ["rsvp-status", t.id, player?.id] });
+  };
+  const createMut = useMutation({
+    mutationFn: () => createFn({ data: { tournament_id: t.id } }),
+    onSuccess: () => { toast.success("¡Te anotaste!"); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo confirmar asistencia"),
+  });
+  const cancelMut = useMutation({
+    mutationFn: () => cancelFn({ data: { tournament_id: t.id } }),
+    onSuccess: () => { toast.success("Asistencia cancelada"); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo cancelar"),
+  });
+  const rsvpBusy = createMut.isPending || cancelMut.isPending;
 
   const handleShare = async () => {
     const shareData = {
