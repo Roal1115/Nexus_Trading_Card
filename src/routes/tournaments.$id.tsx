@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { getPublicTournament } from "@/lib/nexus-public.functions";
+import {
+  getTournamentRsvpCount,
+  getPlayerRsvpStatus,
+  createRsvp,
+  cancelRsvp,
+} from "@/lib/nexus-rsvp.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
-import { Trophy, MapPin, Clock, CalendarPlus, Share2, Check, ShieldQuestion } from "lucide-react";
+import { Trophy, MapPin, Clock, CalendarPlus, Share2, Check, ShieldQuestion, Heart, Users } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/tournaments/$id")({
@@ -65,11 +75,42 @@ function formatLongDate(d: string) {
 function PublicTournamentPage() {
   const data = Route.useLoaderData();
   const [copied, setCopied] = useState(false);
+  const { player } = useNexusRole();
+  const qc = useQueryClient();
 
   const t = data.tournament;
   const winner = data.standings[0];
   const today = new Date().toISOString().split("T")[0];
   const isFuture = t.date >= today;
+
+  const rsvpCountQuery = useQuery({
+    queryKey: ["rsvp-count", t.id],
+    queryFn: () => getTournamentRsvpCount({ data: { tournament_id: t.id } }),
+  });
+  const rsvpStatusQuery = useQuery({
+    queryKey: ["rsvp-status", t.id, player?.id],
+    queryFn: () => getPlayerRsvpStatus({ data: { tournament_id: t.id } }),
+    enabled: !!player && isFuture,
+  });
+  const isRsvped = !!rsvpStatusQuery.data?.attending;
+
+  const createFn = useServerFn(createRsvp);
+  const cancelFn = useServerFn(cancelRsvp);
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["rsvp-count", t.id] });
+    qc.invalidateQueries({ queryKey: ["rsvp-status", t.id, player?.id] });
+  };
+  const createMut = useMutation({
+    mutationFn: () => createFn({ data: { tournament_id: t.id } }),
+    onSuccess: () => { toast.success("¡Te anotaste!"); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo confirmar asistencia"),
+  });
+  const cancelMut = useMutation({
+    mutationFn: () => cancelFn({ data: { tournament_id: t.id } }),
+    onSuccess: () => { toast.success("Asistencia cancelada"); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo cancelar"),
+  });
+  const rsvpBusy = createMut.isPending || cancelMut.isPending;
 
   const handleShare = async () => {
     const shareData = {
@@ -111,11 +152,30 @@ function PublicTournamentPage() {
           </span>
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{t.zone}</span>
         </div>
-        <div className="mt-2 text-xs text-[#72819D]">
-          {data.total_participants} participantes
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#72819D]">
+          <span>{data.total_participants} participantes</span>
+          {isFuture ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[#AAB6D1]">
+              <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} confirmados
+            </span>
+          ) : null}
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
+          {isFuture && player ? (
+            <button
+              onClick={() => (isRsvped ? cancelMut.mutate() : createMut.mutate())}
+              disabled={rsvpBusy || rsvpStatusQuery.isLoading}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
+                isRsvped
+                  ? "border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                  : "bg-[#F97316] text-white hover:bg-[#F97316]/90"
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${isRsvped ? "fill-current" : ""}`} />
+              {isRsvped ? "Cancelar asistencia" : "Voy a ir"}
+            </button>
+          ) : null}
           {isFuture ? (
             <a
               href={icsDataUri(
