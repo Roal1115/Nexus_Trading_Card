@@ -1,5 +1,6 @@
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { TcgSwitcher } from "@/components/layout/TcgSwitcher";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { playerNavSections } from "@/components/layout/player-nav";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 
