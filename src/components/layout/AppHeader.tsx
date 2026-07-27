@@ -6,6 +6,7 @@ import { useTCG } from "@/context/tcg.context";
 import { nexus } from "@/integrations/nexus/client";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 import { TcgSwitcher } from "@/components/layout/TcgSwitcher";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export function AppHeader() {
   const { player, loading } = useNexusRole();
