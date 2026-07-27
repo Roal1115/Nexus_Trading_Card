@@ -18,7 +18,7 @@ export const Route = createFileRoute("/tournaments/$id")({
   loader: async ({ params }) => {
     return await getPublicTournament({ data: { tournament_id: params.id } });
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const t = loaderData?.tournament;
     const title = t
       ? `${t.game_name} — ${t.store_name} · ${t.date}`
@@ -26,6 +26,8 @@ export const Route = createFileRoute("/tournaments/$id")({
     const desc = t
       ? `Resultados del torneo de ${t.game_name} en ${t.store_name}, ${t.store_city}. ${loaderData?.total_participants ?? 0} participantes.`
       : "Resultados de torneo en Trading Card Nexus";
+    const url = `https://mxntcg.lovable.app/tournaments/${params.id}`;
+    const image = `https://mxntcg.lovable.app/og/tournament-${params.id}.png`;
     return {
       meta: [
         { title },
@@ -33,11 +35,14 @@ export const Route = createFileRoute("/tournaments/$id")({
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
         { property: "og:type", content: "website" },
-        { property: "og:image", content: "https://mxntcg.lovable.app/favicon.ico" },
-        { name: "twitter:card", content: "summary" },
+        { property: "og:url", content: url },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: desc },
+        { name: "twitter:image", content: image },
       ],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   errorComponent: TournamentNotFound,
