@@ -1,10 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { TrendingUp, Shield, Calendar } from "lucide-react";
-import { useNexusRole } from "@/hooks/use-nexus-role";
+import { TrendingUp, Shield, Calendar, Swords } from "lucide-react";
 import { useTCG } from "@/context/tcg.context";
-import { getMetaStats, getMetaFilterOptions } from "@/lib/nexus-meta.functions";
+import { getMetaStats, getMetaMatchups, getMetaFilterOptions } from "@/lib/nexus-meta.functions";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/meta")({
@@ -84,10 +83,12 @@ function SimpleSelect({
   );
 }
 
+type MatchupData = Awaited<ReturnType<typeof getMetaMatchups>>;
+
 function MetaPage() {
-  const { player, loading: authLoading } = useNexusRole();
   const { activeTcg } = useTCG();
   const fetchMeta = useServerFn(getMetaStats);
+  const fetchMatchups = useServerFn(getMetaMatchups);
   const fetchOptions = useServerFn(getMetaFilterOptions);
 
   const [filters, setFilters] = useState<Filters>({
@@ -98,25 +99,31 @@ function MetaPage() {
     date_to: null,
   });
   const [metaData, setMetaData] = useState<MetaData | null>(null);
+  const [matchupData, setMatchupData] = useState<MatchupData | null>(null);
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadMeta = (f: Filters) => {
     setLoading(true);
-    fetchMeta({ data: f })
-      .then(setMetaData)
-      .catch(() => setMetaData(null))
+    Promise.all([fetchMeta({ data: f }), fetchMatchups({ data: f })])
+      .then(([stats, matchups]) => {
+        setMetaData(stats);
+        setMatchupData(matchups);
+      })
+      .catch(() => {
+        setMetaData(null);
+        setMatchupData(null);
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    if (authLoading || !player) return;
     fetchOptions({ data: { game_id: filters.game_id } })
       .then(setFilterOptions)
       .catch(() => setFilterOptions(null));
     loadMeta(filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [player?.id, authLoading]);
+  }, []);
 
   const handleGameChange = (gameId: string) => {
     const next = { ...filters, game_id: gameId };
@@ -132,20 +139,6 @@ function MetaPage() {
     handleGameChange(activeTcg.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTcg?.id]);
-
-  if (!authLoading && !player) {
-    return (
-      <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <h2 className="text-2xl font-bold text-white">Debes iniciar sesión</h2>
-        <Link
-          to="/login"
-          className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
-        >
-          Iniciar sesión
-        </Link>
-      </main>
-    );
-  }
 
   const leaders = metaData?.leaders ?? [];
 
@@ -341,10 +334,126 @@ function MetaPage() {
       </div>
 
       <p className="mt-4 text-center text-[11px] text-gray-600">
-        Solo se muestran leaders con mínimo 5 rondas registradas en torneos oficiales.
+        Solo se muestran leaders con mínimo 5 rondas registradas (torneos oficiales + sessions).
         {" · "}
         {metaData?.total_rounds ?? 0} rondas totales en el meta.
       </p>
+
+      {/* Matchups heatmap */}
+      {!loading && matchupData && matchupData.leaders.length >= 2 && (
+        <MatchupHeatmap data={matchupData} />
+      )}
     </div>
+  );
+}
+
+function heatColor(wr: number): string {
+  // rojo (0%) → gris (50%) → verde (100%), con alpha según distancia al 50
+  const dist = Math.abs(wr - 50) / 50;
+  const alpha = 0.12 + dist * 0.55;
+  return wr >= 50 ? `rgba(52,211,153,${alpha})` : `rgba(248,113,113,${alpha})`;
+}
+
+function MatchupHeatmap({ data }: { data: MatchupData }) {
+  const { leaders, matchups } = data;
+  return (
+    <section className="mt-10">
+      <header className="mb-4">
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+          <Swords size={12} /> Matchups
+        </p>
+        <h2 className="mt-1 text-xl font-bold text-white">Matriz de enfrentamientos</h2>
+        <p className="mt-1 text-sm text-gray-400">
+          Win rate del líder de la fila contra el líder de la columna. Mínimo 3 rondas por
+          matchup.
+        </p>
+      </header>
+      <div className="glass overflow-x-auto rounded-2xl p-4">
+        <table className="border-separate border-spacing-1">
+          <thead>
+            <tr>
+              <th />
+              {leaders.map((l) => (
+                <th key={l.leader_id} className="pb-1 align-bottom" title={l.leader_name}>
+                  {l.leader_image ? (
+                    <img
+                      src={l.leader_image}
+                      alt={l.leader_name}
+                      className="mx-auto h-12 w-9 rounded-md border border-white/10 object-cover"
+                    />
+                  ) : (
+                    <div className="mx-auto flex h-12 w-9 items-center justify-center rounded-md border border-white/10 bg-black/30">
+                      <Shield size={12} className="text-gray-600" />
+                    </div>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {leaders.map((row) => (
+              <tr key={row.leader_id}>
+                <th
+                  className="pr-2 text-right text-xs font-semibold text-white whitespace-nowrap"
+                  title={row.leader_name}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <span className="max-w-[140px] truncate">{row.leader_name}</span>
+                    {row.leader_image ? (
+                      <img
+                        src={row.leader_image}
+                        alt=""
+                        className="h-10 w-7 rounded-md border border-white/10 object-cover"
+                      />
+                    ) : null}
+                  </span>
+                </th>
+                {leaders.map((col) => {
+                  if (row.leader_id === col.leader_id) {
+                    return (
+                      <td
+                        key={col.leader_id}
+                        className="h-12 w-14 rounded-md bg-white/[0.03] text-center text-xs text-gray-700"
+                      >
+                        —
+                      </td>
+                    );
+                  }
+                  const cell = matchups[`${row.leader_id}|${col.leader_id}`];
+                  if (!cell) {
+                    return (
+                      <td
+                        key={col.leader_id}
+                        className="h-12 w-14 rounded-md bg-white/[0.02] text-center text-xs text-gray-700"
+                        title={`${row.leader_name} vs ${col.leader_name}: sin datos suficientes`}
+                      >
+                        ·
+                      </td>
+                    );
+                  }
+                  return (
+                    <td
+                      key={col.leader_id}
+                      className="h-12 w-14 rounded-md text-center align-middle"
+                      style={{ backgroundColor: heatColor(cell.win_rate) }}
+                      title={`${row.leader_name} vs ${col.leader_name}: ${cell.win_rate}% (${cell.wins}-${cell.total - cell.wins}, ${cell.total} rondas)`}
+                    >
+                      <div className="font-mono text-xs font-bold text-white">
+                        {cell.win_rate}%
+                      </div>
+                      <div className="text-[9px] text-white/60">{cell.total}</div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-center text-[11px] text-gray-600">
+        Celdas verdes: favorable para el líder de la fila · rojas: desfavorable · número inferior:
+        rondas del matchup.
+      </p>
+    </section>
   );
 }

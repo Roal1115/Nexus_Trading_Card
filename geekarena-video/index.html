@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #08111f; font-family: "Inter", sans-serif; color: #f5f7fa;
+      }
+      .clip { position: absolute; inset: 0; }
+      .scene { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 36px; }
+      .grad-text {
+        background: linear-gradient(90deg, #32d9ff 0%, #5f8cff 45%, #9c5cff 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .kicker { font-size: 30px; font-weight: 700; letter-spacing: 6px; color: #32d9ff; text-transform: uppercase; }
+      .card { background: #111a2e; border: 1px solid #2a3a57; border-radius: 20px; }
+
+      #bg { z-index: 0; }
+      .orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.35; }
+      #orb1 { width: 700px; height: 700px; background: #32d9ff; top: -200px; left: -150px; }
+      #orb2 { width: 800px; height: 800px; background: #9c5cff; bottom: -250px; right: -200px; }
+      .clip:not(#bg) { z-index: 1; }
+
+      /* S1 hook */
+      #s1 .big { font-size: 110px; font-weight: 900; text-align: center; line-height: 1.15; }
+
+      /* S1b cuenta */
+      #s1b .form { width: 820px; padding: 56px 64px; display: flex; flex-direction: column; gap: 24px; }
+      .field { display: flex; flex-direction: column; gap: 10px; }
+      .field .lbl { font-size: 24px; color: #8b99b5; font-weight: 600; }
+      .field .input { padding: 20px 26px; background: #17233d; border: 1px solid #2a3a57; border-radius: 12px; font-size: 30px; font-weight: 600; }
+      .field .input.accent { color: #32d9ff; }
+      .btn {
+        margin-top: 10px; padding: 22px; border-radius: 14px; text-align: center;
+        background: linear-gradient(90deg, #32d9ff 0%, #5f8cff 45%, #9c5cff 100%);
+        color: #08111f; font-size: 32px; font-weight: 800;
+      }
+      .done { display: flex; align-items: center; gap: 14px; font-size: 28px; color: #4ef0a2; font-weight: 700; justify-content: center; }
+
+      .caption { font-size: 44px; font-weight: 700; text-align: center; }
+      .caption span { color: #32d9ff; }
+
+      /* geek tag */
+      #s2 .profile { width: 900px; padding: 60px 70px; display: flex; flex-direction: column; gap: 26px; transform-style: preserve-3d; position: relative; overflow: hidden; }
+      #s2 .tag { font-size: 96px; font-weight: 900; }
+      #s2 .chips { display: flex; gap: 18px; }
+      .chip { padding: 12px 26px; border-radius: 999px; background: #17233d; border: 1px solid #2a3a57; font-size: 26px; color: #aab6d1; font-weight: 600; }
+      .chip b { color: #4ef0a2; }
+      #s2 .shine { position: absolute; top: -50%; left: -30%; width: 200px; height: 200%; transform: rotate(18deg); background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent); }
+
+      /* tracker */
+      #s3 .tracker { width: 980px; padding: 44px 50px; display: flex; flex-direction: column; gap: 18px; }
+      #s3 .thead { display: flex; justify-content: space-between; font-size: 26px; color: #8b99b5; padding: 0 10px; }
+      .round { display: grid; grid-template-columns: 140px 1fr 130px; align-items: center; padding: 18px 24px; background: #17233d; border-radius: 14px; font-size: 30px; }
+      .round .rn { color: #8b99b5; font-weight: 600; }
+      .round .opp { font-weight: 700; }
+      .res { text-align: center; padding: 8px 0; border-radius: 10px; font-weight: 900; font-size: 26px; }
+      .res.w { background: rgba(78,240,162,0.15); color: #4ef0a2; }
+      .res.l { background: rgba(255,95,109,0.15); color: #ff5f6d; }
+      #s3 .record { font-size: 34px; font-weight: 700; color: #aab6d1; }
+      #s3 .record b { color: #4ef0a2; font-size: 40px; }
+
+      /* leaderboard */
+      .table { width: 1100px; display: flex; flex-direction: column; gap: 14px; position: relative; }
+      .row { display: grid; grid-template-columns: 90px 1fr 210px 160px; align-items: center; padding: 20px 36px; background: #111a2e; border: 1px solid #2a3a57; border-radius: 16px; font-size: 32px; position: relative; }
+      .row .rank { font-weight: 900; color: #32d9ff; }
+      .row.top .rank { color: #ffd54a; }
+      .row .tag { font-weight: 700; }
+      .row .pts { text-align: right; font-weight: 700; color: #4ef0a2; }
+      .row .played { text-align: right; color: #8b99b5; font-size: 26px; }
+      .up { position: absolute; left: 100%; margin-left: 24px; top: 50%; transform: translateY(-50%); color: #4ef0a2; font-size: 34px; font-weight: 900; white-space: nowrap; }
+      .row.hero { border-color: #32d9ff; box-shadow: 0 0 40px rgba(50,217,255,0.25); }
+
+      /* meta */
+      #s5 .wrap { display: flex; gap: 60px; align-items: center; }
+      .decks { width: 640px; display: flex; flex-direction: column; gap: 16px; }
+      .deck { padding: 18px 26px; }
+      .deck .name { display: flex; justify-content: space-between; font-size: 28px; font-weight: 700; margin-bottom: 10px; }
+      .deck .name span { color: #4ef0a2; }
+      .bar { height: 12px; background: #17233d; border-radius: 6px; overflow: hidden; }
+      .fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #32d9ff, #9c5cff); transform-origin: left; }
+      .matrix { display: grid; grid-template-columns: repeat(4, 90px); gap: 10px; }
+      .cell { width: 90px; height: 90px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; }
+      .g1 { background: rgba(78,240,162,0.28); color: #4ef0a2; }
+      .g2 { background: rgba(255,213,74,0.22); color: #ffd54a; }
+      .g3 { background: rgba(255,95,109,0.24); color: #ff5f6d; }
+      .gh { background: #17233d; color: #8b99b5; font-size: 18px; }
+
+      /* stats */
+      #s6 .statwrap { display: flex; gap: 50px; align-items: center; }
+      #s6 .wr { width: 420px; height: 420px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111a2e; border: 10px solid #32d9ff; box-shadow: 0 0 60px rgba(50,217,255,0.3); }
+      #s6 .wr .num { font-size: 110px; font-weight: 900; color: #4ef0a2; }
+      #s6 .wr .lbl { font-size: 30px; color: #aab6d1; }
+      #s6 .side { display: flex; flex-direction: column; gap: 22px; }
+      .stat { padding: 26px 40px; display: flex; flex-direction: column; gap: 6px; min-width: 380px; }
+      .stat .v { font-size: 54px; font-weight: 900; color: #32d9ff; }
+      .stat .k { font-size: 26px; color: #8b99b5; }
+
+      /* outro */
+      #s7 .logo { font-size: 150px; font-weight: 900; letter-spacing: -4px; text-align: center; line-height: 1.05; }
+      #s7 .tagline { font-size: 52px; font-weight: 700; color: #aab6d1; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="42" data-width="1920" data-height="1080">
+
+      <div id="bg" class="clip" data-start="0" data-duration="42" data-track-index="1">
+        <div class="orb" id="orb1"></div>
+        <div class="orb" id="orb2"></div>
+      </div>
+
+      <!-- S1 Hook -->
+      <div id="s1" class="clip scene" data-start="0" data-duration="4.5" data-track-index="2">
+        <div class="kicker">Trading Card Nexus</div>
+        <div class="big">Lleva tu juego<br /><span class="grad-text">al siguiente nivel</span></div>
+      </div>
+
+      <!-- S1b Crear cuenta -->
+      <div id="s1b" class="clip scene" data-start="4" data-duration="6" data-track-index="3">
+        <div class="caption">Crea tu cuenta <span>gratis, en segundos</span></div>
+        <div class="form card">
+          <div class="field"><div class="lbl">Correo</div><div class="input">rodrigo@correo.com</div></div>
+          <div class="field"><div class="lbl">Elige tu Geek Tag</div><div class="input accent">RedLotus</div></div>
+          <div class="btn">Crear mi cuenta</div>
+          <div class="done">✓&nbsp; Listo. Ya eres parte del circuito</div>
+        </div>
+      </div>
+
+      <!-- S2 Geek Tag -->
+      <div id="s2" class="clip scene" data-start="9.5" data-duration="5.5" data-track-index="2">
+        <div class="profile card">
+          <div class="kicker">Geek Tag</div>
+          <div class="tag grad-text">RedLotus</div>
+          <div class="chips">
+            <div class="chip">Rank <b>#4</b></div>
+            <div class="chip"><b>200</b> pts</div>
+            <div class="chip"><b>3</b> torneos</div>
+            <div class="chip">One Piece TCG</div>
+          </div>
+          <div class="shine"></div>
+        </div>
+        <div class="caption">Tu <span>Geek Tag</span>: tu identidad en la comunidad</div>
+      </div>
+
+      <!-- S3 Tracking -->
+      <div id="s3" class="clip scene" data-start="14.5" data-duration="6.5" data-track-index="3">
+        <div class="caption">Trackea tu <span>desempeño en vivo</span>, ronda por ronda</div>
+        <div class="tracker card">
+          <div class="thead"><span>Ronda</span><span>Oponente</span><span>Resultado</span></div>
+          <div class="round"><div class="rn">R1</div><div class="opp">HoracioDC</div><div class="res w">W</div></div>
+          <div class="round"><div class="rn">R2</div><div class="opp">Wololol</div><div class="res w">W</div></div>
+          <div class="round"><div class="rn">R3</div><div class="opp">Ballinaman</div><div class="res l">L</div></div>
+          <div class="round"><div class="rn">R4</div><div class="opp">GALLO D. ORO</div><div class="res w">W</div></div>
+        </div>
+        <div class="record">Récord: <b>3 – 1</b></div>
+      </div>
+
+      <!-- S4 Leaderboard -->
+      <div id="s4" class="clip scene" data-start="20.5" data-duration="7.5" data-track-index="2">
+        <div class="caption">Cada victoria suma. Sube en el <span>ranking</span></div>
+        <div class="table">
+          <div class="row top"><div class="rank">1</div><div class="tag">Wololol</div><div class="pts"><span class="cnt" data-to="225">0</span> pts</div><div class="played">3 torneos</div></div>
+          <div class="row top"><div class="rank">2</div><div class="tag">HoracioDC</div><div class="pts"><span class="cnt" data-to="225">0</span> pts</div><div class="played">4 torneos</div></div>
+          <div class="row"><div class="rank">3</div><div class="tag">GALLO D. ORO</div><div class="pts"><span class="cnt" data-to="217">0</span> pts</div><div class="played">3 torneos</div></div>
+          <div class="row hero" id="heroRow"><div class="rank">4</div><div class="tag">RedLotus</div><div class="pts"><span class="cnt" data-to="200">0</span> pts</div><div class="played">3 torneos</div><div class="up" id="upArrow">▲ +2</div></div>
+          <div class="row"><div class="rank">5</div><div class="tag">Ballinaman</div><div class="pts"><span class="cnt" data-to="150">0</span> pts</div><div class="played">4 torneos</div></div>
+        </div>
+      </div>
+
+      <!-- S5 Meta -->
+      <div id="s5" class="clip scene" data-start="27.5" data-duration="6.5" data-track-index="3">
+        <div class="caption">Descubre <span>qué está dominando</span> en tu región</div>
+        <div class="wrap">
+          <div class="decks">
+            <div class="deck card"><div class="name">Sengoku <span>75% WR</span></div><div class="bar"><div class="fill" data-w="0.75"></div></div></div>
+            <div class="deck card"><div class="name">Monkey.D.Luffy <span>50% WR</span></div><div class="bar"><div class="fill" data-w="0.50"></div></div></div>
+            <div class="deck card"><div class="name">Doflamingo <span>43% WR</span></div><div class="bar"><div class="fill" data-w="0.43"></div></div></div>
+            <div class="deck card"><div class="name">Buggy <span>40% WR</span></div><div class="bar"><div class="fill" data-w="0.40"></div></div></div>
+          </div>
+          <div class="matrix">
+            <div class="cell gh"></div><div class="cell gh">SEN</div><div class="cell gh">LUF</div><div class="cell gh">DOF</div>
+            <div class="cell gh">SEN</div><div class="cell gh">—</div><div class="cell g1">70%</div><div class="cell g1">80%</div>
+            <div class="cell gh">LUF</div><div class="cell g3">30%</div><div class="cell gh">—</div><div class="cell g2">55%</div>
+            <div class="cell gh">DOF</div><div class="cell g3">20%</div><div class="cell g2">45%</div><div class="cell gh">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S6 Stats -->
+      <div id="s6" class="clip scene" data-start="33.5" data-duration="4.5" data-track-index="2">
+        <div class="caption">Tu historial completo. <span>Tus números, tu progreso.</span></div>
+        <div class="statwrap">
+          <div class="wr"><div class="num"><span id="wrNum" data-to="62">0</span>%</div><div class="lbl">Winrate</div></div>
+          <div class="side">
+            <div class="stat card"><div class="v"><span class="cnt" data-to="14">0</span></div><div class="k">Torneos jugados</div></div>
+            <div class="stat card"><div class="v"><span class="cnt" data-to="38">0</span></div><div class="k">Victorias</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S7 Outro -->
+      <div id="s7" class="clip scene" data-start="37.5" data-duration="4.5" data-track-index="3">
+        <div class="logo grad-text">Trading Card<br />Nexus</div>
+        <div class="tagline">Tu plataforma de confianza.</div>
+      </div>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.to("#orb1", { x: 250, y: 140, duration: 42, ease: "none" }, 0);
+      tl.to("#orb2", { x: -220, y: -160, duration: 42, ease: "none" }, 0);
+
+      function countUps(sel, at, dur) {
+        document.querySelectorAll(sel).forEach((el, i) => {
+          const target = { v: 0 };
+          const to = parseInt(el.dataset.to, 10);
+          tl.to(target, {
+            v: to, duration: dur, ease: "power2.out",
+            onUpdate: () => { el.textContent = Math.round(target.v); },
+          }, at + i * 0.1);
+        });
+      }
+
+      // S1 — hook
+      tl.from("#s1 .kicker", { opacity: 0, y: -30, duration: 0.6, ease: "power2.out" }, 0.2);
+      tl.from("#s1 .big", { opacity: 0, y: 70, scale: 0.95, duration: 0.9, ease: "power3.out" }, 0.5);
+      tl.to("#s1", { opacity: 0, y: -50, duration: 0.5, ease: "power2.in" }, 3.9);
+
+      // S1b — crear cuenta
+      tl.from("#s1b .caption", { opacity: 0, y: -30, duration: 0.6 }, 4.3);
+      tl.from("#s1b .form", { opacity: 0, y: 80, duration: 0.8, ease: "power3.out" }, 4.5);
+      tl.from("#s1b .field", { opacity: 0, x: -60, duration: 0.5, stagger: 0.35, ease: "power2.out" }, 5.2);
+      tl.from("#s1b .btn", { opacity: 0, scale: 0.85, duration: 0.5, ease: "back.out(1.8)" }, 6.4);
+      tl.to("#s1b .btn", { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1, ease: "power1.inOut" }, 7.3);
+      tl.from("#s1b .done", { opacity: 0, y: 20, duration: 0.5, ease: "power2.out" }, 7.8);
+      tl.to("#s1b", { opacity: 0, x: -80, duration: 0.5, ease: "power2.in" }, 9.4);
+
+      // S2 — geek tag
+      tl.from("#s2 .profile", { opacity: 0, y: 90, rotateX: 18, scale: 0.92, duration: 0.9, ease: "power3.out" }, 9.8);
+      tl.from("#s2 .chips .chip", { opacity: 0, y: 26, duration: 0.45, stagger: 0.12, ease: "power2.out" }, 10.5);
+      tl.fromTo("#s2 .shine", { x: -300 }, { x: 1300, duration: 1.1, ease: "power2.inOut" }, 10.9);
+      tl.from("#s2 .caption", { opacity: 0, y: 30, duration: 0.6 }, 10.7);
+      tl.to("#s2", { opacity: 0, x: -80, duration: 0.5, ease: "power2.in" }, 14.4);
+
+      // S3 — tracker
+      tl.from("#s3 .caption", { opacity: 0, y: -30, duration: 0.6 }, 14.8);
+      tl.from("#s3 .tracker", { opacity: 0, y: 70, duration: 0.7, ease: "power3.out" }, 15.0);
+      tl.from("#s3 .round", { opacity: 0, x: -100, duration: 0.5, stagger: 0.45, ease: "power3.out" }, 15.5);
+      document.querySelectorAll("#s3 .res").forEach((el, i) => {
+        tl.from(el, { scale: 0, duration: 0.4, ease: "back.out(2.5)" }, 15.85 + i * 0.45);
+      });
+      tl.from("#s3 .record", { opacity: 0, scale: 0.7, duration: 0.5, ease: "back.out(1.8)" }, 17.9);
+      tl.to("#s3", { opacity: 0, y: -60, duration: 0.5, ease: "power2.in" }, 20.4);
+
+      // S4 — leaderboard
+      tl.from("#s4 .caption", { opacity: 0, y: -30, duration: 0.6 }, 20.8);
+      tl.from("#s4 .row", { opacity: 0, x: -140, duration: 0.55, stagger: 0.16, ease: "power3.out" }, 21.2);
+      countUps("#s4 .cnt", 21.7, 1.2);
+      tl.from("#upArrow", { opacity: 0, x: 30, duration: 0.5, ease: "back.out(2)" }, 23.5);
+      tl.fromTo("#heroRow", { boxShadow: "0 0 0px rgba(50,217,255,0)" }, { boxShadow: "0 0 50px rgba(50,217,255,0.4)", duration: 0.7, ease: "power2.out" }, 23.5);
+      tl.to("#s4", { opacity: 0, x: 80, duration: 0.5, ease: "power2.in" }, 27.4);
+
+      // S5 — meta
+      tl.from("#s5 .caption", { opacity: 0, y: -30, duration: 0.6 }, 27.8);
+      tl.from("#s5 .deck", { opacity: 0, y: 50, duration: 0.5, stagger: 0.15, ease: "power3.out" }, 28.1);
+      document.querySelectorAll("#s5 .fill").forEach((el, i) => {
+        tl.fromTo(el, { scaleX: 0 }, { scaleX: parseFloat(el.dataset.w), duration: 0.9, ease: "power2.out" }, 28.8 + i * 0.15);
+      });
+      tl.from("#s5 .cell", { opacity: 0, scale: 0.4, duration: 0.4, stagger: 0.05, ease: "back.out(1.8)" }, 29.1);
+      tl.to("#s5", { opacity: 0, y: -60, duration: 0.5, ease: "power2.in" }, 33.4);
+
+      // S6 — stats
+      tl.from("#s6 .caption", { opacity: 0, y: -30, duration: 0.6 }, 33.8);
+      tl.from("#s6 .wr", { opacity: 0, scale: 0.6, duration: 0.7, ease: "back.out(1.6)" }, 34.0);
+      tl.from("#s6 .stat", { opacity: 0, x: 80, duration: 0.55, stagger: 0.18, ease: "power3.out" }, 34.3);
+      countUps("#wrNum", 34.5, 1.3);
+      countUps("#s6 .cnt", 34.7, 1.2);
+      tl.to("#s6", { opacity: 0, scale: 0.96, duration: 0.5, ease: "power2.in" }, 37.4);
+
+      // S7 — outro
+      tl.from("#s7 .logo", { opacity: 0, y: 60, scale: 0.9, duration: 0.9, ease: "power3.out" }, 37.9);
+      tl.from("#s7 .tagline", { opacity: 0, y: 30, duration: 0.7, ease: "power2.out" }, 38.7);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
