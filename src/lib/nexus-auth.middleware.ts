@@ -116,3 +116,23 @@ export const requireNexusUser = createMiddleware({ type: "function" }).server(
     return next({ context: { admin, player } });
   },
 );
+
+// Para endpoints públicos que se personalizan si hay sesión (p.ej. el perfil
+// de jugador: un visitante anónimo ve la versión pública, el dueño ve la
+// suya). A diferencia de resolveCaller(), nunca lanza por falta/expiración
+// de token — resuelve `player: null` en su lugar.
+export const optionalNexusUser = createMiddleware({ type: "function" }).server(
+  async ({ next }) => {
+    let admin: ReturnType<typeof getNexusAdmin>;
+    let player: PlayerCtx | null;
+    try {
+      const caller = await resolveCaller();
+      admin = caller.admin;
+      player = caller.player;
+    } catch {
+      admin = getNexusAdmin();
+      player = null;
+    }
+    return next({ context: { admin, player } });
+  },
+);

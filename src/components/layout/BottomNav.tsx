@@ -86,7 +86,7 @@ function NavTab({ item, isActive }: { item: NavItem; isActive: boolean }) {
 }
 
 export function BottomNav() {
-  const { player, loading } = useNexusRole();
+  const { player, probablyAuthed } = useNexusRole();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -95,9 +95,11 @@ export function BottomNav() {
     pathname.startsWith("/organizer") ||
     pathname.startsWith("/tcg-manager");
 
-  if (isStaffRoute || loading) return null;
+  // Decide con probablyAuthed (síncrono) en vez de `loading` (espera el
+  // fetch del perfil): evita que la nav aparezca de golpe tras el round-trip.
+  if (isStaffRoute) return null;
 
-  const items = player ? PLAYER_ITEMS : GUEST_ITEMS;
+  const items = probablyAuthed ? PLAYER_ITEMS : GUEST_ITEMS;
   const isProfileActive =
     drawerOpen || DRAWER_ONLY_ROUTES.some((r) => pathname.startsWith(r));
 
@@ -144,7 +146,7 @@ export function BottomNav() {
                           ? "0 0 0 2px rgba(50,217,255,0.7)"
                           : "0 0 0 1px rgba(42,58,87,1)",
                       }}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-[#111A2E]"
+                      className="flex h-6 w-6 items-center justify-center rounded-full bg-card"
                     >
                       <span className="text-[9px] font-bold text-primary">{initials}</span>
                     </motion.span>

@@ -21,6 +21,9 @@ const TCGContext = createContext<TCGContextValue>({
 });
 
 const STORAGE_KEY = "nexus.activeTcg";
+// Default de producto cuando el visitante no tiene un TCG guardado: One Piece
+// es el juego con actividad real. Si no está en la lista, cae al primero.
+const DEFAULT_GAME_ID = "5b608762-d0a3-4a93-9739-e5cd150b01cd";
 
 export function TCGProvider({ children }: { children: React.ReactNode }) {
   const [tcgs, setTcgsState] = useState<TCG[]>([]);
@@ -52,7 +55,7 @@ export function TCGProvider({ children }: { children: React.ReactNode }) {
     setTcgsState(list);
     setActiveTcgState((prev) => {
       if (prev && list.some((x) => x.id === prev.id)) return prev;
-      const next = list[0] ?? null;
+      const next = list.find((x) => x.id === DEFAULT_GAME_ID) ?? list[0] ?? null;
       if (next && typeof window !== "undefined") {
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));

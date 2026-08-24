@@ -1,14 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Check, Crown, Lock, Share2, Target, TrendingUp, Trophy } from "lucide-react";
-import { useNexusRole } from "@/hooks/use-nexus-role";
-import { getPublicProfile } from "@/lib/nexus-player.functions";
+import { playerProfileQuery } from "@/lib/player-profile-queries";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
+import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/players/$playerTag")({
+  // defaultPreload: "intent" (router.tsx) dispara este loader al hover de
+  // cualquier <Link> a este perfil (p. ej. una fila del leaderboard) — para
+  // cuando el usuario suelta el click, el query ya está resuelto en caché.
+  //
+  // Best effort a propósito: si falla (p. ej. "Jugador no encontrado"), NO
+  // se relanza. Un error de loader sin errorComponent tumba toda la ruta
+  // con un 500 genérico — pero "no encontrado" es un estado válido de la
+  // app, no una falla de servidor. El componente ya lo maneja con gracia
+  // vía useQuery().isError sobre la misma query key.
+  loader: async ({ context, params }) => {
+    try {
+      return await context.queryClient.ensureQueryData(playerProfileQuery(params.playerTag));
+    } catch {
+      return undefined;
+    }
+  },
   head: ({ params }) => ({
     meta: [{ title: `Perfil de ${params.playerTag} — Nexus` }],
     links: [{ rel: "canonical", href: `https://mxntcg.lovable.app/players/${params.playerTag}` }],
@@ -31,18 +48,12 @@ export const Route = createFileRoute("/players/$playerTag")({
   component: PublicProfilePage,
 });
 
-type ProfileData = Awaited<ReturnType<typeof getPublicProfile>>;
-
 function PublicProfilePage() {
   const { playerTag } = Route.useParams();
-  const { player: viewer, loading: authLoading } = useNexusRole();
-  const fetchProfile = useServerFn(getPublicProfile);
+  const loaderData = Route.useLoaderData();
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
 
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [sponsor, setSponsor] = useState<any>(null);
   const [copied, setCopied] = useState(false);
 
@@ -61,20 +72,16 @@ function PublicProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!viewer) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setNotFound(false);
-    fetchProfile({ data: { player_tag: playerTag } })
-      .then((p) => setProfile(p))
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerTag, viewer?.id, authLoading]);
+  // initialData del loader: si el usuario llegó por hover/intent (preload)
+  // o por SSR, el primer render ya tiene datos — sin ese "Cargando perfil…"
+  // ni siquiera en la primera visita. Revalida en background según staleTime.
+  const profileQuery = useQuery({
+    ...playerProfileQuery(playerTag),
+    initialData: loaderData,
+  });
+  const profile = profileQuery.data ?? null;
+  const loading = profileQuery.isPending;
+  const notFound = profileQuery.isError;
 
   const tournaments: any[] =
     profile && !profile.is_private ? ((profile as any).tournaments ?? []) : [];
@@ -97,36 +104,23 @@ function PublicProfilePage() {
   const paginatedTournaments = filteredTournaments.slice(0, page * PAGE_SIZE);
   const hasMoreTournaments = filteredTournaments.length > page * PAGE_SIZE;
 
-  if (!authLoading && !viewer) {
+  if (loading) {
     return (
-      <main className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <Lock className="mb-4 text-primary" size={40} />
-        <h2 className="text-2xl font-bold text-white">Contenido restringido</h2>
-        <p className="mt-2 text-sm text-gray-400">
-          Si deseas ver esta información, debes iniciar sesión o crear una cuenta.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link
-            to="/login"
-            className="rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
-          >
-            Iniciar sesión
-          </Link>
-          <Link
-            to="/signup"
-            className="rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white"
-          >
-            Crear cuenta
-          </Link>
+      <main className="mx-auto max-w-3xl px-4 py-16">
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40 p-6 sm:p-10">
+          <div className="flex items-center gap-6">
+            <SkeletonBlock className="h-20 w-20 flex-shrink-0 rounded-full sm:h-24 sm:w-24" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <SkeletonLine width="w-24" height="h-3" />
+              <SkeletonLine width="w-48" height="h-8" />
+              <SkeletonLine width="w-32" height="h-3" />
+            </div>
+          </div>
         </div>
-      </main>
-    );
-  }
-
-  if (loading || authLoading) {
-    return (
-      <main className="mx-auto max-w-3xl px-4 py-16 text-center text-sm text-gray-500">
-        Cargando perfil…
+        <div className="mt-6 flex flex-wrap gap-4">
+          <SkeletonBlock className="h-32 w-full rounded-2xl sm:w-[calc(50%-0.5rem)]" />
+          <SkeletonBlock className="h-32 w-full rounded-2xl sm:w-[calc(50%-0.5rem)]" />
+        </div>
       </main>
     );
   }

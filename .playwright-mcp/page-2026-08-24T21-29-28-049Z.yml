@@ -1,0 +1,339 @@
+- generic [ref=f39e2]:
+  - generic [ref=f39e3]:
+    - banner [ref=f39e4]:
+      - generic [ref=f39e5]:
+        - link "Trading Card Nexus" [ref=f39e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f39e15]: Trading Card
+          - generic [ref=f39e16]: Nexus
+        - button "One Piece Card Game" [ref=f39e143]
+        - link "Iniciar sesión" [ref=f39e147] [cursor=pointer]:
+          - /url: /login
+    - generic [ref=f39e18]:
+      - complementary
+      - main [ref=f39e19]:
+        - generic [ref=f39e20]:
+          - paragraph [ref=f39e22]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+          - heading "Circuito Nacional" [level=1] [ref=f39e23]
+          - paragraph [ref=f39e24]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+        - generic [ref=f39e26]:
+          - generic [ref=f39e27] [cursor=pointer]:
+            - combobox [ref=f39e28]:
+              - generic [ref=f39e29]: TCG
+              - generic: Todos
+            - combobox [ref=f39e33]:
+              - generic [ref=f39e34]: Ciudad
+              - generic: Todas
+            - combobox [ref=f39e38]:
+              - generic [ref=f39e39]: Tienda
+              - generic: Todas las tiendas
+            - combobox [ref=f39e43]:
+              - generic [ref=f39e44]: Mes
+              - generic: Más reciente
+          - textbox "Buscar Geek Tag…" [ref=f39e49]
+        - tablist "Periodo del ranking" [ref=f39e51]:
+          - tab "Mensual" [selected] [ref=f39e52] [cursor=pointer]
+          - tab "Semestral" [ref=f39e53] [cursor=pointer]
+        - generic [ref=f39e54]:
+          - generic [ref=f39e57]:
+            - heading "Ranking Mensual" [level=2] [ref=f39e65]
+            - generic [ref=f39e66]: JUNIO 2026
+          - generic [ref=f39e67]:
+            - generic [ref=f39e68]: "#"
+            - generic [ref=f39e69]: Tag
+            - generic [ref=f39e70]: Ciudad
+            - generic [ref=f39e71]: Pts
+            - generic "Torneos jugados" [ref=f39e72]: Trn
+            - generic "Victorias" [ref=f39e73]: W
+            - generic "Opponent Match Win %" [ref=f39e74]: OMW%
+          - generic [ref=f39e76]:
+            - link "01 10 Wololol Monterrey 225 3 1 58.27%" [ref=f39e148] [cursor=pointer]:
+              - /url: /players/Wololol
+              - generic [ref=f39e149]:
+                - generic [ref=f39e150]:
+                  - generic [ref=f39e151]: "01"
+                  - generic [ref=f39e152]: "10"
+                - generic [ref=f39e156]: Wololol
+                - generic [ref=f39e164]: Monterrey
+                - generic [ref=f39e165]: "225"
+                - generic [ref=f39e166]: "3"
+                - generic [ref=f39e167]: "1"
+                - generic [ref=f39e168]: 58.27%
+            - link "02 13 HoracioDC Monterrey 225 4 1 52.35%" [ref=f39e169] [cursor=pointer]:
+              - /url: /players/HoracioDC
+              - generic [ref=f39e170]:
+                - generic [ref=f39e171]:
+                  - generic [ref=f39e172]: "02"
+                  - generic [ref=f39e173]: "13"
+                - generic [ref=f39e177]: HoracioDC
+                - generic [ref=f39e179]: Monterrey
+                - generic [ref=f39e180]: "225"
+                - generic [ref=f39e181]: "4"
+                - generic [ref=f39e182]: "1"
+                - generic [ref=f39e183]: 52.35%
+            - link "03 13 GALLO D. ORO Monterrey 216.67 3 0 51.13%" [ref=f39e184] [cursor=pointer]:
+              - /url: /players/GALLO%20D.%20ORO
+              - generic [ref=f39e185]:
+                - generic [ref=f39e186]:
+                  - generic [ref=f39e187]: "03"
+                  - generic [ref=f39e188]: "13"
+                - generic [ref=f39e192]: GALLO D. ORO
+                - generic [ref=f39e194]: Monterrey
+                - generic [ref=f39e195]: "216.67"
+                - generic [ref=f39e196]: "3"
+                - generic [ref=f39e197]: "0"
+                - generic [ref=f39e198]: 51.13%
+            - link "04 14 RedLotus Monterrey 200 3 1 59.4%" [ref=f39e199] [cursor=pointer]:
+              - /url: /players/RedLotus
+              - generic [ref=f39e200]:
+                - generic [ref=f39e201]:
+                  - generic [ref=f39e202]: "04"
+                  - generic [ref=f39e203]: "14"
+                - generic [ref=f39e207]: RedLotus
+                - generic [ref=f39e209]: Monterrey
+                - generic [ref=f39e210]: "200"
+                - generic [ref=f39e211]: "3"
+                - generic [ref=f39e212]: "1"
+                - generic [ref=f39e213]: 59.4%
+            - link "05 25 Ballinaman Monterrey 150 4 0 58.25%" [ref=f39e214] [cursor=pointer]:
+              - /url: /players/Ballinaman
+              - generic [ref=f39e215]:
+                - generic [ref=f39e216]:
+                  - generic [ref=f39e217]: "05"
+                  - generic [ref=f39e218]: "25"
+                - generic [ref=f39e222]: Ballinaman
+                - generic [ref=f39e224]: Monterrey
+                - generic [ref=f39e225]: "150"
+                - generic [ref=f39e226]: "4"
+                - generic [ref=f39e227]: "0"
+                - generic [ref=f39e228]: 58.25%
+            - link "06 3 JESUS RIOS /Smile Monterrey 150 2 0 53%" [ref=f39e229] [cursor=pointer]:
+              - /url: /players/JESUS%20RIOS%20%2FSmile
+              - generic [ref=f39e230]:
+                - generic [ref=f39e231]:
+                  - generic [ref=f39e232]: "06"
+                  - generic [ref=f39e233]: "3"
+                - generic [ref=f39e237]: JESUS RIOS /Smile
+                - generic [ref=f39e239]: Monterrey
+                - generic [ref=f39e240]: "150"
+                - generic [ref=f39e241]: "2"
+                - generic [ref=f39e242]: "0"
+                - generic [ref=f39e243]: 53%
+            - link "07 2 AC UDT | Bruno Monterrey 141.67 2 0 49.15%" [ref=f39e244] [cursor=pointer]:
+              - /url: /players/AC%20UDT%20|%20Bruno
+              - generic [ref=f39e245]:
+                - generic [ref=f39e246]:
+                  - generic [ref=f39e247]: "07"
+                  - generic [ref=f39e248]: "2"
+                - generic [ref=f39e252]: AC UDT | Bruno
+                - generic [ref=f39e254]: Monterrey
+                - generic [ref=f39e255]: "141.67"
+                - generic [ref=f39e256]: "2"
+                - generic [ref=f39e257]: "0"
+                - generic [ref=f39e258]: 49.15%
+            - link "08 11 LA | Smile Monterrey 125 3 0 56.2%" [ref=f39e259] [cursor=pointer]:
+              - /url: /players/LA%20|%20Smile
+              - generic [ref=f39e260]:
+                - generic [ref=f39e261]:
+                  - generic [ref=f39e262]: "08"
+                  - generic [ref=f39e263]: "11"
+                - generic [ref=f39e267]: LA | Smile
+                - generic [ref=f39e269]: Monterrey
+                - generic [ref=f39e270]: "125"
+                - generic [ref=f39e271]: "3"
+                - generic [ref=f39e272]: "0"
+                - generic [ref=f39e273]: 56.2%
+            - link "09 3 Capu | Smile Monterrey 125 2 0 63.55%" [ref=f39e274] [cursor=pointer]:
+              - /url: /players/Capu%20|%20Smile
+              - generic [ref=f39e275]:
+                - generic [ref=f39e276]:
+                  - generic [ref=f39e277]: "09"
+                  - generic [ref=f39e278]: "3"
+                - generic [ref=f39e282]: Capu | Smile
+                - generic [ref=f39e284]: Monterrey
+                - generic [ref=f39e285]: "125"
+                - generic [ref=f39e286]: "2"
+                - generic [ref=f39e287]: "0"
+                - generic [ref=f39e288]: 63.55%
+            - link "10 14 Pris D Ferruzca Monterrey 108.33 4 0 58.45%" [ref=f39e289] [cursor=pointer]:
+              - /url: /players/Pris%20D%20Ferruzca
+              - generic [ref=f39e290]:
+                - generic [ref=f39e291]:
+                  - generic [ref=f39e292]: "10"
+                  - generic [ref=f39e293]: "14"
+                - generic [ref=f39e297]: Pris D Ferruzca
+                - generic [ref=f39e299]: Monterrey
+                - generic [ref=f39e300]: "108.33"
+                - generic [ref=f39e301]: "4"
+                - generic [ref=f39e302]: "0"
+                - generic [ref=f39e303]: 58.45%
+            - link "11 NEW Barbie.D.Ferruzca Monterrey 100 3 0 59%" [ref=f39e304] [cursor=pointer]:
+              - /url: /players/Barbie.D.Ferruzca
+              - generic [ref=f39e305]:
+                - generic [ref=f39e306]:
+                  - generic [ref=f39e307]: "11"
+                  - generic [ref=f39e308]: NEW
+                - generic [ref=f39e309]: Barbie.D.Ferruzca
+                - generic [ref=f39e311]: Monterrey
+                - generic [ref=f39e312]: "100"
+                - generic [ref=f39e313]: "3"
+                - generic [ref=f39e314]: "0"
+                - generic [ref=f39e315]: 59%
+            - link "12 NEW Martin Cañez Monterrey 100 2 1 59.65%" [ref=f39e316] [cursor=pointer]:
+              - /url: /players/Martin%20Ca%C3%B1ez
+              - generic [ref=f39e317]:
+                - generic [ref=f39e318]:
+                  - generic [ref=f39e319]: "12"
+                  - generic [ref=f39e320]: NEW
+                - generic [ref=f39e321]: Martin Cañez
+                - generic [ref=f39e323]: Monterrey
+                - generic [ref=f39e324]: "100"
+                - generic [ref=f39e325]: "2"
+                - generic [ref=f39e326]: "1"
+                - generic [ref=f39e327]: 59.65%
+            - link "13 7 Scooby32 Monterrey 75 1 0 64.5%" [ref=f39e328] [cursor=pointer]:
+              - /url: /players/Scooby32
+              - generic [ref=f39e329]:
+                - generic [ref=f39e330]:
+                  - generic [ref=f39e331]: "13"
+                  - generic [ref=f39e332]: "7"
+                - generic [ref=f39e336]: Scooby32
+                - generic [ref=f39e338]: Monterrey
+                - generic [ref=f39e339]: "75"
+                - generic [ref=f39e340]: "1"
+                - generic [ref=f39e341]: "0"
+                - generic [ref=f39e342]: 64.5%
+            - link "14 NEW Chander l Mandarinas Monterrey 75 1 0 47.8%" [ref=f39e343] [cursor=pointer]:
+              - /url: /players/Chander%20l%20Mandarinas
+              - generic [ref=f39e344]:
+                - generic [ref=f39e345]:
+                  - generic [ref=f39e346]: "14"
+                  - generic [ref=f39e347]: NEW
+                - generic [ref=f39e348]: Chander l Mandarinas
+                - generic [ref=f39e350]: Monterrey
+                - generic [ref=f39e351]: "75"
+                - generic [ref=f39e352]: "1"
+                - generic [ref=f39e353]: "0"
+                - generic [ref=f39e354]: 47.8%
+            - link "15 NEW Porras SMILE Monterrey 75 1 0 58.3%" [ref=f39e355] [cursor=pointer]:
+              - /url: /players/Porras%20SMILE
+              - generic [ref=f39e356]:
+                - generic [ref=f39e357]:
+                  - generic [ref=f39e358]: "15"
+                  - generic [ref=f39e359]: NEW
+                - generic [ref=f39e360]: Porras SMILE
+                - generic [ref=f39e362]: Monterrey
+                - generic [ref=f39e363]: "75"
+                - generic [ref=f39e364]: "1"
+                - generic [ref=f39e365]: "0"
+                - generic [ref=f39e366]: 58.3%
+            - link "16 14 Pato | Mandarinas Monterrey 66.67 1 0 66.6%" [ref=f39e367] [cursor=pointer]:
+              - /url: /players/Pato%20|%20Mandarinas
+              - generic [ref=f39e368]:
+                - generic [ref=f39e369]:
+                  - generic [ref=f39e370]: "16"
+                  - generic [ref=f39e371]: "14"
+                - generic [ref=f39e375]: Pato | Mandarinas
+                - generic [ref=f39e377]: Monterrey
+                - generic [ref=f39e378]: "66.67"
+                - generic [ref=f39e379]: "1"
+                - generic [ref=f39e380]: "0"
+                - generic [ref=f39e381]: 66.6%
+            - link "17 NEW ArturoRedGuerra Monterrey 50 1 0 50%" [ref=f39e382] [cursor=pointer]:
+              - /url: /players/ArturoRedGuerra
+              - generic [ref=f39e383]:
+                - generic [ref=f39e384]:
+                  - generic [ref=f39e385]: "17"
+                  - generic [ref=f39e386]: NEW
+                - generic [ref=f39e387]: ArturoRedGuerra
+                - generic [ref=f39e389]: Monterrey
+                - generic [ref=f39e390]: "50"
+                - generic [ref=f39e391]: "1"
+                - generic [ref=f39e392]: "0"
+                - generic [ref=f39e393]: 50%
+            - link "18 9 Alan Monterrey 50 1 0 33%" [ref=f39e394] [cursor=pointer]:
+              - /url: /players/Alan
+              - generic [ref=f39e395]:
+                - generic [ref=f39e396]:
+                  - generic [ref=f39e397]: "18"
+                  - generic [ref=f39e398]: "9"
+                - generic [ref=f39e402]: Alan
+                - generic [ref=f39e404]: Monterrey
+                - generic [ref=f39e405]: "50"
+                - generic [ref=f39e406]: "1"
+                - generic [ref=f39e407]: "0"
+                - generic [ref=f39e408]: 33%
+            - link "19 NEW Adrian Gomez | Noreste Monterrey 50 1 0 58.3%" [ref=f39e409] [cursor=pointer]:
+              - /url: /players/Adrian%20Gomez%20|%20Noreste
+              - generic [ref=f39e410]:
+                - generic [ref=f39e411]:
+                  - generic [ref=f39e412]: "19"
+                  - generic [ref=f39e413]: NEW
+                - generic [ref=f39e414]: Adrian Gomez | Noreste
+                - generic [ref=f39e416]: Monterrey
+                - generic [ref=f39e417]: "50"
+                - generic [ref=f39e418]: "1"
+                - generic [ref=f39e419]: "0"
+                - generic [ref=f39e420]: 58.3%
+            - link "20 2 Luisgabu98 | Mandarinas Monterrey 50 1 0 52%" [ref=f39e421] [cursor=pointer]:
+              - /url: /players/Luisgabu98%20|%20Mandarinas
+              - generic [ref=f39e422]:
+                - generic [ref=f39e423]:
+                  - generic [ref=f39e424]: "20"
+                  - generic [ref=f39e425]: "2"
+                - generic [ref=f39e429]: Luisgabu98 | Mandarinas
+                - generic [ref=f39e431]: Monterrey
+                - generic [ref=f39e432]: "50"
+                - generic [ref=f39e433]: "1"
+                - generic [ref=f39e434]: "0"
+                - generic [ref=f39e435]: 52%
+            - link "21 4 Umichin Monterrey 50 1 0 47.8%" [ref=f39e436] [cursor=pointer]:
+              - /url: /players/Umichin
+              - generic [ref=f39e437]:
+                - generic [ref=f39e438]:
+                  - generic [ref=f39e439]: "21"
+                  - generic [ref=f39e440]: "4"
+                - generic [ref=f39e444]: Umichin
+                - generic [ref=f39e446]: Monterrey
+                - generic [ref=f39e447]: "50"
+                - generic [ref=f39e448]: "1"
+                - generic [ref=f39e449]: "0"
+                - generic [ref=f39e450]: 47.8%
+            - link "22 NEW FonderKROS | Mandarina Monterrey 33.33 1 0 66.6%" [ref=f39e451] [cursor=pointer]:
+              - /url: /players/FonderKROS%20|%20Mandarina
+              - generic [ref=f39e452]:
+                - generic [ref=f39e453]:
+                  - generic [ref=f39e454]: "22"
+                  - generic [ref=f39e455]: NEW
+                - generic [ref=f39e456]: FonderKROS | Mandarina
+                - generic [ref=f39e458]: Monterrey
+                - generic [ref=f39e459]: "33.33"
+                - generic [ref=f39e460]: "1"
+                - generic [ref=f39e461]: "0"
+                - generic [ref=f39e462]: 66.6%
+            - link "23 10 Ab | Mandarinas Monterrey 25 1 0 58.3%" [ref=f39e463] [cursor=pointer]:
+              - /url: /players/Ab%20|%20Mandarinas
+              - generic [ref=f39e464]:
+                - generic [ref=f39e465]:
+                  - generic [ref=f39e466]: "23"
+                  - generic [ref=f39e467]: "10"
+                - generic [ref=f39e471]: Ab | Mandarinas
+                - generic [ref=f39e473]: Monterrey
+                - generic [ref=f39e474]: "25"
+                - generic [ref=f39e475]: "1"
+                - generic [ref=f39e476]: "0"
+                - generic [ref=f39e477]: 58.3%
+            - link "24 NEW Hernan Canavati Monterrey 25 1 0 54%" [ref=f39e478] [cursor=pointer]:
+              - /url: /players/Hernan%20Canavati
+              - generic [ref=f39e479]:
+                - generic [ref=f39e480]:
+                  - generic [ref=f39e481]: "24"
+                  - generic [ref=f39e482]: NEW
+                - generic [ref=f39e483]: Hernan Canavati
+                - generic [ref=f39e485]: Monterrey
+                - generic [ref=f39e486]: "25"
+                - generic [ref=f39e487]: "1"
+                - generic [ref=f39e488]: "0"
+                - generic [ref=f39e489]: 54%
+      - complementary
+  - region "Notifications alt+T"

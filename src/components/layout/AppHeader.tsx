@@ -9,7 +9,7 @@ import { TcgSwitcher } from "@/components/layout/TcgSwitcher";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export function AppHeader() {
-  const { player, loading } = useNexusRole();
+  const { player, loading, probablyAuthed } = useNexusRole();
   const { setTcgs } = useTCG();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -35,10 +35,12 @@ export function AppHeader() {
 
   return (
     <>
-      {/* En lg+ el jugador logueado navega por el sidebar: el header desaparece completo */}
+      {/* En lg+ el jugador logueado navega por el sidebar: el header desaparece completo.
+          Se decide con probablyAuthed (no con `player`) para no mostrar el header de invitado
+          en desktop una fracción de segundo antes de que el sidebar aparezca. */}
       <header
         className={`sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl ${
-          player ? "lg:hidden" : ""
+          probablyAuthed ? "lg:hidden" : ""
         }`}
       >
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-3 items-center px-4 sm:px-6">
@@ -68,7 +70,7 @@ export function AppHeader() {
                 <NotificationBell />
                 <AvatarButton player={player} onClick={() => setDrawerOpen(true)} />
               </>
-            ) : !loading ? (
+            ) : !loading && !probablyAuthed ? (
               <Link
                 to="/login"
                 className="hidden sm:inline-flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
@@ -106,12 +108,12 @@ function AvatarButton({
       type="button"
       onClick={onClick}
       aria-label="Abrir menú de perfil"
-      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#2A3A57] bg-[#111A2E] transition hover:border-[#32D9FF]/40"
+      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border bg-card transition hover:border-primary/40"
     >
       {player.avatar_url ? (
         <img src={player.avatar_url} alt={player.geek_tag} className="h-full w-full object-cover" />
       ) : (
-        <span className="text-xs font-bold text-[#32D9FF]">{initials}</span>
+        <span className="text-xs font-bold text-primary">{initials}</span>
       )}
     </button>
   );

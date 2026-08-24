@@ -1,0 +1,91 @@
+- generic [ref=f4e2]:
+  - generic [ref=f4e3]:
+    - banner [ref=f4e4]:
+      - link "Trading Card Nexus" [ref=f4e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f4e15]: Trading Card
+        - generic [ref=f4e16]: Nexus
+    - generic [ref=f4e18]:
+      - generic [ref=f4e19]:
+        - generic [ref=f4e20]: One Piece Card Game
+        - heading "Geek Collector" [level=1] [ref=f4e21]
+        - generic [ref=f4e22]:
+          - generic [ref=f4e23]: Monterrey, Nuevo Leon
+          - generic [ref=f4e27]: 29 de mayo de 2026
+          - generic [ref=f4e31]: Zona Monterrey
+        - generic [ref=f4e32]: 8 participantes
+        - button "Compartir" [ref=f4e35]
+      - link "Ver perfil de Geek Collector →" [ref=f4e42] [cursor=pointer]:
+        - /url: /stores/geek-collector
+      - generic [ref=f4e51]:
+        - generic [ref=f4e52]: 🏆 Campeón
+        - generic [ref=f4e53]: AC UDT | Bruno
+      - generic [ref=f4e54]:
+        - generic [ref=f4e55]:
+          - generic [ref=f4e56]: "#"
+          - generic [ref=f4e57]: Jugador
+          - generic [ref=f4e58]: V/D/E
+          - generic [ref=f4e59]: OMW%
+          - generic [ref=f4e60]: PTS
+        - generic [ref=f4e61]:
+          - generic [ref=f4e62]: "1"
+          - link "AC UDT | Bruno" [ref=f4e65] [cursor=pointer]:
+            - /url: /players/AC%20UDT%20|%20Bruno
+          - generic [ref=f4e66]: —
+          - generic [ref=f4e67]: 44.3%
+          - generic [ref=f4e68]: "100.00"
+        - generic [ref=f4e69]:
+          - generic [ref=f4e70]: "2"
+          - link "CharlyCharms | Mandarinas" [ref=f4e73] [cursor=pointer]:
+            - /url: /players/CharlyCharms%20|%20Mandarinas
+          - generic [ref=f4e74]: —
+          - generic [ref=f4e75]: 77.8%
+          - generic [ref=f4e76]: "66.67"
+        - generic [ref=f4e77]:
+          - generic [ref=f4e78]: "3"
+          - link "Ascalon" [ref=f4e81] [cursor=pointer]:
+            - /url: /players/Ascalon
+          - generic [ref=f4e82]: —
+          - generic [ref=f4e83]: 44.4%
+          - generic [ref=f4e84]: "66.67"
+        - generic [ref=f4e85]:
+          - generic [ref=f4e86]: "4"
+          - link "Pato | Mandarinas" [ref=f4e89] [cursor=pointer]:
+            - /url: /players/Pato%20|%20Mandarinas
+          - generic [ref=f4e90]: —
+          - generic [ref=f4e91]: 44.4%
+          - generic [ref=f4e92]: "66.67"
+        - generic [ref=f4e93]:
+          - generic [ref=f4e94]: "5"
+          - link "Ab | Mandarinas" [ref=f4e97] [cursor=pointer]:
+            - /url: /players/Ab%20|%20Mandarinas
+          - generic [ref=f4e98]: —
+          - generic [ref=f4e99]: 66.7%
+          - generic [ref=f4e100]: "33.33"
+        - generic [ref=f4e101]:
+          - generic [ref=f4e102]: "6"
+          - link "Rimuru | SKL" [ref=f4e105] [cursor=pointer]:
+            - /url: /players/Rimuru%20|%20SKL
+          - generic [ref=f4e106]: —
+          - generic [ref=f4e107]: 55.5%
+          - generic [ref=f4e108]: "33.33"
+        - generic [ref=f4e109]:
+          - generic [ref=f4e110]: "7"
+          - link "Zemefar | Mandarinas" [ref=f4e113] [cursor=pointer]:
+            - /url: /players/Zemefar%20|%20Mandarinas
+          - generic [ref=f4e114]: —
+          - generic [ref=f4e115]: 44.3%
+          - generic [ref=f4e116]: "33.33"
+        - generic [ref=f4e117]:
+          - generic [ref=f4e118]: "8"
+          - link "CHIDO | SKL | Okama" [ref=f4e121] [cursor=pointer]:
+            - /url: /players/CHIDO%20|%20SKL%20|%20Okama
+          - generic [ref=f4e122]: —
+          - generic [ref=f4e123]: 55.5%
+          - generic [ref=f4e124]: "0.00"
+      - generic [ref=f4e125]:
+        - heading "¿Compites en este circuito?" [level=3] [ref=f4e126]
+        - paragraph [ref=f4e127]: Registra tus partidas, sigue tu ranking nacional y consulta el meta.
+        - link "Crear mi cuenta" [ref=f4e128] [cursor=pointer]:
+          - /url: /signup
+  - region "Notifications alt+T"

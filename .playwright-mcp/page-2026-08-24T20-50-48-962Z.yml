@@ -1,0 +1,42 @@
+- generic [ref=f26e2]:
+  - generic [ref=f26e3]:
+    - banner [ref=f26e4]:
+      - link [ref=f26e7] [cursor=pointer]:
+        - /url: /
+    - main [ref=f26e17]:
+      - generic [ref=f26e18]:
+        - paragraph [ref=f26e20]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+        - heading "Circuito Nacional" [level=1] [ref=f26e21]
+        - paragraph [ref=f26e22]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+      - generic [ref=f26e24]:
+        - generic [ref=f26e25] [cursor=pointer]:
+          - combobox [ref=f26e26]:
+            - generic [ref=f26e27]: TCG
+          - combobox [ref=f26e30]
+          - combobox [ref=f26e31]:
+            - generic [ref=f26e32]: Ciudad
+          - combobox [ref=f26e35]
+          - combobox [ref=f26e36]:
+            - generic [ref=f26e37]: Tienda
+          - combobox [ref=f26e40]
+          - combobox [ref=f26e41]:
+            - generic [ref=f26e42]: Mes
+          - combobox [ref=f26e45]
+        - textbox "Buscar Geek Tag…" [ref=f26e47]
+      - tablist "Periodo del ranking" [ref=f26e49]:
+        - tab "Mensual" [selected] [ref=f26e50] [cursor=pointer]
+        - tab "Semestral" [ref=f26e51] [cursor=pointer]
+      - generic [ref=f26e52]:
+        - generic [ref=f26e55]:
+          - heading "Ranking Mensual" [level=2] [ref=f26e63]
+          - generic [ref=f26e64]: —
+        - generic [ref=f26e65]:
+          - generic [ref=f26e66]: "#"
+          - generic [ref=f26e67]: Geek Tag
+          - generic [ref=f26e68]: Pts
+  - region "Notifications alt+T"
+  - navigation "Navegación principal" [ref=f26e105]:
+    - link "Ranking" [ref=f26e106] [cursor=pointer]:
+      - /url: /
+    - link "Entrar" [ref=f26e116] [cursor=pointer]:
+      - /url: /login

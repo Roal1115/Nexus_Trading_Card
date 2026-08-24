@@ -1,0 +1,58 @@
+- generic [ref=f11e2]:
+  - generic [ref=f11e3]:
+    - banner [ref=f11e4]:
+      - link "Trading Card Nexus" [ref=f11e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f11e15]: Trading Card
+        - generic [ref=f11e16]: Nexus
+    - generic [ref=f11e18]:
+      - complementary
+      - main [ref=f11e19]:
+        - generic [ref=f11e20]:
+          - paragraph [ref=f11e22]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+          - heading "Circuito Nacional" [level=1] [ref=f11e23]
+          - paragraph [ref=f11e24]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+        - generic [ref=f11e26]:
+          - generic [ref=f11e27] [cursor=pointer]:
+            - combobox [ref=f11e28]:
+              - generic [ref=f11e29]: TCG
+            - combobox [ref=f11e32]
+            - combobox [ref=f11e33]:
+              - generic [ref=f11e34]: Ciudad
+            - combobox [ref=f11e37]
+            - combobox [ref=f11e38]:
+              - generic [ref=f11e39]: Tienda
+            - combobox [ref=f11e42]
+            - combobox [ref=f11e43]:
+              - generic [ref=f11e44]: Mes
+            - combobox [ref=f11e47]
+          - textbox "Buscar Geek Tag…" [ref=f11e49]
+        - generic [ref=f11e50]:
+          - generic [ref=f11e51]:
+            - generic [ref=f11e54]:
+              - heading "Ranking Mensual" [level=2] [ref=f11e62]
+              - generic [ref=f11e63]: —
+            - generic [ref=f11e64]:
+              - generic [ref=f11e65]: "#"
+              - generic [ref=f11e66]: Tag
+              - generic [ref=f11e67]: Ciudad
+              - generic [ref=f11e68]: Pts
+              - generic "Torneos jugados" [ref=f11e69]: Trn
+              - generic "Victorias" [ref=f11e70]: W
+              - generic "Opponent Match Win %" [ref=f11e71]: OMW%
+          - generic [ref=f11e138]:
+            - generic [ref=f11e139]:
+              - generic [ref=f11e141]:
+                - heading "General Semestral" [level=2] [ref=f11e149]
+                - generic [ref=f11e150]: —
+              - paragraph [ref=f11e151]: Ranking general · no filtrado por tienda
+            - generic [ref=f11e152]:
+              - generic [ref=f11e153]: "#"
+              - generic [ref=f11e154]: Tag
+              - generic [ref=f11e155]: Ciudad
+              - generic [ref=f11e156]: Pts
+              - generic "Torneos jugados" [ref=f11e157]: Trn
+              - generic "Victorias" [ref=f11e158]: W
+              - generic "Opponent Match Win %" [ref=f11e159]: OMW%
+      - complementary
+  - region "Notifications alt+T"

@@ -1,0 +1,45 @@
+- generic [ref=f4e2]:
+  - generic [ref=f4e3]:
+    - banner [ref=f4e4]:
+      - link "Trading Card Nexus" [ref=f4e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f4e15]: Trading Card
+        - generic [ref=f4e16]: Nexus
+    - generic [ref=f4e18]:
+      - banner [ref=f4e19]:
+        - paragraph [ref=f4e20]: Meta
+        - heading "Meta Leaderboard" [level=1] [ref=f4e24]
+        - paragraph [ref=f4e25]: Win rates y play rates calculados desde torneos oficiales publicados.
+      - generic [ref=f4e26]:
+        - generic [ref=f4e27]:
+          - generic [ref=f4e28]:
+            - generic [ref=f4e29]: Zona
+            - combobox [ref=f4e30]:
+              - option "Todas las zonas" [selected]
+          - generic [ref=f4e31]:
+            - generic [ref=f4e32]: Tienda
+            - combobox [ref=f4e33]:
+              - option "Todas las tiendas" [selected]
+          - generic [ref=f4e34]:
+            - generic [ref=f4e35]: Desde
+            - textbox [ref=f4e37]:
+              - /placeholder: mm/dd/yy
+          - generic [ref=f4e38]:
+            - generic [ref=f4e39]: Hasta
+            - textbox [ref=f4e41]:
+              - /placeholder: mm/dd/yy
+        - generic [ref=f4e42]:
+          - button "Limpiar filtros" [ref=f4e43]
+          - button "Aplicar filtros" [ref=f4e44]
+      - generic [ref=f4e48]:
+        - generic [ref=f4e49]: "#"
+        - generic [ref=f4e50]: Leader
+        - generic [ref=f4e51]: Set
+        - generic [ref=f4e52]: Colores
+        - generic [ref=f4e53]: Play Rate
+        - generic [ref=f4e54]: Win Rate
+        - generic [ref=f4e55]: 1st WR
+        - generic [ref=f4e56]: 2nd WR
+        - generic [ref=f4e57]: Rondas
+      - paragraph [ref=f4e65]: Solo se muestran leaders con mínimo 5 rondas registradas (torneos oficiales + sessions). · 0 rondas totales en el meta.
+  - region "Notifications alt+T"

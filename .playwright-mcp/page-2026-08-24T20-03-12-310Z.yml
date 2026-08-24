@@ -1,0 +1,663 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - link:
+              - /url: /
+              - generic: Trading Card
+              - generic: Nexus
+          - generic:
+            - generic:
+              - button: One Piece Card Game
+          - generic:
+            - link:
+              - /url: /login
+              - text: Iniciar sesión
+      - generic:
+        - generic:
+          - main:
+            - generic:
+              - paragraph: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+              - heading [level=1]: Circuito Nacional
+              - paragraph: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+            - generic:
+              - generic:
+                - generic:
+                  - combobox [expanded]:
+                    - generic: TCG
+                    - generic: Todos
+                  - combobox:
+                    - generic: Ciudad
+                    - generic: Todas
+                  - combobox:
+                    - generic: Tienda
+                    - generic: Todas las tiendas
+                  - combobox:
+                    - generic: Mes
+                    - generic: Más reciente
+                - generic:
+                  - textbox:
+                    - /placeholder: Buscar Geek Tag…
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - heading [level=2]: Ranking Mensual
+                      - generic: JUNIO 2026
+                - generic:
+                  - generic: "#"
+                  - generic: Tag
+                  - generic: Ciudad
+                  - generic: Pts
+                  - generic: Trn
+                  - generic: W
+                  - generic: OMW%
+                - generic:
+                  - generic:
+                    - link:
+                      - /url: /players/Wololol
+                      - generic:
+                        - generic:
+                          - generic: "01"
+                          - generic: "10"
+                        - generic: Wololol
+                        - generic: Monterrey
+                        - generic: "225"
+                        - generic: "3"
+                        - generic: "1"
+                        - generic: 58.27%
+                    - link:
+                      - /url: /players/HoracioDC
+                      - generic:
+                        - generic:
+                          - generic: "02"
+                          - generic: "13"
+                        - generic: HoracioDC
+                        - generic: Monterrey
+                        - generic: "225"
+                        - generic: "4"
+                        - generic: "1"
+                        - generic: 52.35%
+                    - link:
+                      - /url: /players/GALLO%20D.%20ORO
+                      - generic:
+                        - generic:
+                          - generic: "03"
+                          - generic: "13"
+                        - generic: GALLO D. ORO
+                        - generic: Monterrey
+                        - generic: "216.67"
+                        - generic: "3"
+                        - generic: "0"
+                        - generic: 51.13%
+                    - link:
+                      - /url: /players/RedLotus
+                      - generic:
+                        - generic:
+                          - generic: "04"
+                          - generic: "14"
+                        - generic: RedLotus
+                        - generic: Monterrey
+                        - generic: "200"
+                        - generic: "3"
+                        - generic: "1"
+                        - generic: 59.4%
+                    - link:
+                      - /url: /players/Ballinaman
+                      - generic:
+                        - generic:
+                          - generic: "05"
+                          - generic: "25"
+                        - generic: Ballinaman
+                        - generic: Monterrey
+                        - generic: "150"
+                        - generic: "4"
+                        - generic: "0"
+                        - generic: 58.25%
+                    - link:
+                      - /url: /players/JESUS%20RIOS%20%2FSmile
+                      - generic:
+                        - generic:
+                          - generic: "06"
+                          - generic: "3"
+                        - generic: JESUS RIOS /Smile
+                        - generic: Monterrey
+                        - generic: "150"
+                        - generic: "2"
+                        - generic: "0"
+                        - generic: 53%
+                    - link:
+                      - /url: /players/AC%20UDT%20|%20Bruno
+                      - generic:
+                        - generic:
+                          - generic: "07"
+                          - generic: "2"
+                        - generic: AC UDT | Bruno
+                        - generic: Monterrey
+                        - generic: "141.67"
+                        - generic: "2"
+                        - generic: "0"
+                        - generic: 49.15%
+                    - link:
+                      - /url: /players/LA%20|%20Smile
+                      - generic:
+                        - generic:
+                          - generic: "08"
+                          - generic: "11"
+                        - generic: LA | Smile
+                        - generic: Monterrey
+                        - generic: "125"
+                        - generic: "3"
+                        - generic: "0"
+                        - generic: 56.2%
+                    - link:
+                      - /url: /players/Capu%20|%20Smile
+                      - generic:
+                        - generic:
+                          - generic: "09"
+                          - generic: "3"
+                        - generic: Capu | Smile
+                        - generic: Monterrey
+                        - generic: "125"
+                        - generic: "2"
+                        - generic: "0"
+                        - generic: 63.55%
+                    - link:
+                      - /url: /players/Pris%20D%20Ferruzca
+                      - generic:
+                        - generic:
+                          - generic: "10"
+                          - generic: "14"
+                        - generic: Pris D Ferruzca
+                        - generic: Monterrey
+                        - generic: "108.33"
+                        - generic: "4"
+                        - generic: "0"
+                        - generic: 58.45%
+                    - link:
+                      - /url: /players/Barbie.D.Ferruzca
+                      - generic:
+                        - generic:
+                          - generic: "11"
+                          - generic: NEW
+                        - generic: Barbie.D.Ferruzca
+                        - generic: Monterrey
+                        - generic: "100"
+                        - generic: "3"
+                        - generic: "0"
+                        - generic: 59%
+                    - link:
+                      - /url: /players/Martin%20Ca%C3%B1ez
+                      - generic:
+                        - generic:
+                          - generic: "12"
+                          - generic: NEW
+                        - generic: Martin Cañez
+                        - generic: Monterrey
+                        - generic: "100"
+                        - generic: "2"
+                        - generic: "1"
+                        - generic: 59.65%
+                    - link:
+                      - /url: /players/Scooby32
+                      - generic:
+                        - generic:
+                          - generic: "13"
+                          - generic: "7"
+                        - generic: Scooby32
+                        - generic: Monterrey
+                        - generic: "75"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 64.5%
+                    - link:
+                      - /url: /players/Chander%20l%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "14"
+                          - generic: NEW
+                        - generic: Chander l Mandarinas
+                        - generic: Monterrey
+                        - generic: "75"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 47.8%
+                    - link:
+                      - /url: /players/Porras%20SMILE
+                      - generic:
+                        - generic:
+                          - generic: "15"
+                          - generic: NEW
+                        - generic: Porras SMILE
+                        - generic: Monterrey
+                        - generic: "75"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 58.3%
+                    - link:
+                      - /url: /players/Pato%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "16"
+                          - generic: "14"
+                        - generic: Pato | Mandarinas
+                        - generic: Monterrey
+                        - generic: "66.67"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 66.6%
+                    - link:
+                      - /url: /players/ArturoRedGuerra
+                      - generic:
+                        - generic:
+                          - generic: "17"
+                          - generic: NEW
+                        - generic: ArturoRedGuerra
+                        - generic: Monterrey
+                        - generic: "50"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 50%
+                    - link:
+                      - /url: /players/Alan
+                      - generic:
+                        - generic:
+                          - generic: "18"
+                          - generic: "9"
+                        - generic: Alan
+                        - generic: Monterrey
+                        - generic: "50"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 33%
+                    - link:
+                      - /url: /players/Adrian%20Gomez%20|%20Noreste
+                      - generic:
+                        - generic:
+                          - generic: "19"
+                          - generic: NEW
+                        - generic: Adrian Gomez | Noreste
+                        - generic: Monterrey
+                        - generic: "50"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 58.3%
+                    - link:
+                      - /url: /players/Luisgabu98%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "20"
+                          - generic: "2"
+                        - generic: Luisgabu98 | Mandarinas
+                        - generic: Monterrey
+                        - generic: "50"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 52%
+                    - link:
+                      - /url: /players/Umichin
+                      - generic:
+                        - generic:
+                          - generic: "21"
+                          - generic: "4"
+                        - generic: Umichin
+                        - generic: Monterrey
+                        - generic: "50"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 47.8%
+                    - link:
+                      - /url: /players/FonderKROS%20|%20Mandarina
+                      - generic:
+                        - generic:
+                          - generic: "22"
+                          - generic: NEW
+                        - generic: FonderKROS | Mandarina
+                        - generic: Monterrey
+                        - generic: "33.33"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 66.6%
+                    - link:
+                      - /url: /players/Ab%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "23"
+                          - generic: "10"
+                        - generic: Ab | Mandarinas
+                        - generic: Monterrey
+                        - generic: "25"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 58.3%
+                    - link:
+                      - /url: /players/Hernan%20Canavati
+                      - generic:
+                        - generic:
+                          - generic: "24"
+                          - generic: NEW
+                        - generic: Hernan Canavati
+                        - generic: Monterrey
+                        - generic: "25"
+                        - generic: "1"
+                        - generic: "0"
+                        - generic: 54%
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - heading [level=2]: General Semestral
+                      - generic: Liga Geek Collector Prueba 1
+                  - paragraph: Ranking general · no filtrado por tienda
+                - generic:
+                  - generic: "#"
+                  - generic: Tag
+                  - generic: Ciudad
+                  - generic: Pts
+                  - generic: Trn
+                  - generic: W
+                  - generic: OMW%
+                - generic:
+                  - generic:
+                    - link:
+                      - /url: /players/Pato%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "01"
+                          - generic: "1"
+                        - generic: Pato | Mandarinas
+                        - generic: Monterrey
+                        - generic: "416.67"
+                        - generic: "6"
+                        - generic: "2"
+                        - generic: 58.9%
+                    - link:
+                      - /url: /players/CharlyCharms%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "02"
+                          - generic: "1"
+                        - generic: CharlyCharms | Mandarinas
+                        - generic: Monterrey
+                        - generic: "383.34"
+                        - generic: "7"
+                        - generic: "0"
+                        - generic: 56.99%
+                    - link:
+                      - /url: /players/AC%20UDT%20|%20Bruno
+                      - generic:
+                        - generic:
+                          - generic: "03"
+                          - generic: "2"
+                        - generic: AC UDT | Bruno
+                        - generic: Monterrey
+                        - generic: "383.34"
+                        - generic: "5"
+                        - generic: "1"
+                        - generic: 54.78%
+                    - link:
+                      - /url: /players/Capu%20|%20Smile
+                      - generic:
+                        - generic:
+                          - generic: "04"
+                          - generic: "2"
+                        - generic: Capu | Smile
+                        - generic: Monterrey
+                        - generic: "341.67"
+                        - generic: "5"
+                        - generic: "1"
+                        - generic: 54.68%
+                    - link:
+                      - /url: /players/Ascalon
+                      - generic:
+                        - generic:
+                          - generic: "05"
+                          - generic: "2"
+                        - generic: Ascalon
+                        - generic: Monterrey
+                        - generic: "333.34"
+                        - generic: "7"
+                        - generic: "0"
+                        - generic: 51.14%
+                    - link:
+                      - /url: /players/Wololol
+                      - generic:
+                        - generic:
+                          - generic: "06"
+                          - generic: "5"
+                        - generic: Wololol
+                        - generic: Monterrey
+                        - generic: "333.33"
+                        - generic: "6"
+                        - generic: "1"
+                        - generic: 60.6%
+                    - link:
+                      - /url: /players/HoracioDC
+                      - generic:
+                        - generic:
+                          - generic: "07"
+                          - generic: "8"
+                        - generic: HoracioDC
+                        - generic: Monterrey
+                        - generic: "308.33"
+                        - generic: "6"
+                        - generic: "1"
+                        - generic: 53.17%
+                    - link:
+                      - /url: /players/GALLO%20D.%20ORO
+                      - generic:
+                        - generic:
+                          - generic: "08"
+                          - generic: "8"
+                        - generic: GALLO D. ORO
+                        - generic: Monterrey
+                        - generic: "291.67"
+                        - generic: "4"
+                        - generic: "0"
+                        - generic: 54.48%
+                    - link:
+                      - /url: /players/One2p
+                      - generic:
+                        - generic:
+                          - generic: "09"
+                          - generic: "5"
+                        - generic: One2p
+                        - generic: Monterrey
+                        - generic: "275"
+                        - generic: "3"
+                        - generic: "2"
+                        - generic: 57.6%
+                    - link:
+                      - /url: /players/RedLotus
+                      - generic:
+                        - generic:
+                          - generic: "10"
+                          - generic: "8"
+                        - generic: RedLotus
+                        - generic: Monterrey
+                        - generic: "275"
+                        - generic: "5"
+                        - generic: "1"
+                        - generic: 57.4%
+                    - link:
+                      - /url: /players/JESUS%20RIOS%20%2FSmile
+                      - generic:
+                        - generic:
+                          - generic: "11"
+                          - generic: "2"
+                        - generic: JESUS RIOS /Smile
+                        - generic: Monterrey
+                        - generic: "275"
+                        - generic: "4"
+                        - generic: "0"
+                        - generic: 58.25%
+                    - link:
+                      - /url: /players/EL%20GEORCH%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "12"
+                          - generic: "5"
+                        - generic: EL GEORCH | Mandarinas
+                        - generic: Monterrey
+                        - generic: "200"
+                        - generic: "3"
+                        - generic: "0"
+                        - generic: 52.03%
+                    - link:
+                      - /url: /players/Ballinaman
+                      - generic:
+                        - generic:
+                          - generic: "13"
+                          - generic: "17"
+                        - generic: Ballinaman
+                        - generic: Monterrey
+                        - generic: "200"
+                        - generic: "7"
+                        - generic: "0"
+                        - generic: 56.3%
+                    - link:
+                      - /url: /players/LA%20|%20Smile
+                      - generic:
+                        - generic:
+                          - generic: "14"
+                          - generic: "5"
+                        - generic: LA | Smile
+                        - generic: Monterrey
+                        - generic: "200"
+                        - generic: "4"
+                        - generic: "0"
+                        - generic: 54.65%
+                    - link:
+                      - /url: /players/Pris%20D%20Ferruzca
+                      - generic:
+                        - generic:
+                          - generic: "15"
+                          - generic: "9"
+                        - generic: Pris D Ferruzca
+                        - generic: Monterrey
+                        - generic: "166.66"
+                        - generic: "6"
+                        - generic: "0"
+                        - generic: 57.92%
+                    - link:
+                      - /url: /players/Bryanberu%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "16"
+                          - generic: "8"
+                        - generic: Bryanberu | Mandarinas
+                        - generic: Monterrey
+                        - generic: "150"
+                        - generic: "3"
+                        - generic: "0"
+                        - generic: 61.77%
+                    - link:
+                      - /url: /players/Scooby32
+                      - generic:
+                        - generic:
+                          - generic: "17"
+                          - generic: "3"
+                        - generic: Scooby32
+                        - generic: Monterrey
+                        - generic: "150"
+                        - generic: "3"
+                        - generic: "0"
+                        - generic: 58.27%
+                    - link:
+                      - /url: /players/Luisgabu98%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "18"
+                          - generic: "4"
+                        - generic: Luisgabu98 | Mandarinas
+                        - generic: Monterrey
+                        - generic: "116.67"
+                        - generic: "2"
+                        - generic: "0"
+                        - generic: 48.15%
+                    - link:
+                      - /url: /players/Zemefar%20|%20Mandarinas
+                      - generic:
+                        - generic:
+                          - generic: "19"
+                          - generic: "9"
+                        - generic: Zemefar | Mandarinas
+                        - generic: Monterrey
+                        - generic: "108.33"
+                        - generic: "2"
+                        - generic: "0"
+                        - generic: 56.55%
+                    - link:
+                      - /url: /players/CHIDO%20|%20SKL%20|%20Okama
+                      - generic:
+                        - generic:
+                          - generic: "20"
+                          - generic: "8"
+                        - generic: CHIDO | SKL | Okama
+                        - generic: Monterrey
+                        - generic: "108.33"
+                        - generic: "4"
+                        - generic: "0"
+                        - generic: 54.28%
+                    - link:
+                      - /url: /players/Isma
+                      - generic:
+                        - generic:
+                          - generic: "21"
+                          - generic: "8"
+                        - generic: Isma
+                        - generic: Monterrey
+                        - generic: "100"
+                        - generic: "1"
+                        - generic: "1"
+                        - generic: 44.4%
+                    - link:
+                      - /url: /players/Umichin
+                      - generic:
+                        - generic:
+                          - generic: "22"
+                          - generic: "3"
+                        - generic: Umichin
+                        - generic: Monterrey
+                        - generic: "100"
+                        - generic: "4"
+                        - generic: "0"
+                        - generic: 56%
+                    - link:
+                      - /url: /players/Alan
+                      - generic:
+                        - generic:
+                          - generic: "23"
+                          - generic: "4"
+                        - generic: Alan
+                        - generic: Monterrey
+                        - generic: "100"
+                        - generic: "2"
+                        - generic: "0"
+                        - generic: 45.65%
+                    - link:
+                      - /url: /players/Barbie.D.Ferruzca
+                      - generic:
+                        - generic:
+                          - generic: "24"
+                          - generic: NEW
+                        - generic: Barbie.D.Ferruzca
+                        - generic: Monterrey
+                        - generic: "100"
+                        - generic: "3"
+                        - generic: "0"
+                        - generic: 59%
+    - region "Notifications alt+T"
+  - listbox [ref=f11e938]:
+    - option "Todos" [active] [selected] [ref=f11e939]
+    - option "Dragon Ball Super Card Game" [ref=f11e945]
+    - option "Gundam Card Game" [ref=f11e948]
+    - 'option "Magic: The Gathering" [ref=f11e951]'
+    - option "One Piece Card Game" [ref=f11e954]
+    - option "Pokémon TCG" [ref=f11e957]
+    - option "Riftbound" [ref=f11e960]

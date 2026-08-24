@@ -1,13 +1,13 @@
 import {
   Outlet,
   Link,
-  createRootRoute,
+  createRootRouteWithContext,
   useRouter,
   useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
+import type { QueryClient } from "@tanstack/react-query";
 import { NexusAuthProvider } from "../context/nexus-auth.context";
 import { TCGProvider } from "@/context/tcg.context";
 import appCss from "../styles.css?url";
@@ -120,7 +120,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 const description =
   "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG. Analiza el meta, lleva el registro detallado de tus torneos y compite por la cima del leaderboard nacional de One Piece, Pokémon y MTG.";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -271,18 +271,9 @@ function RootComponent() {
           {!isPanel && <PlayerSidebar />}
           <div className="min-w-0 flex-1">
             {!isPanel && <AppHeader />}
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: "easeInOut" }}
-                className="pb-16 lg:pb-0"
-              >
-                <Outlet />
-              </motion.div>
-            </AnimatePresence>
+            <div className="pb-16 lg:pb-0">
+              <Outlet />
+            </div>
           </div>
           <Toaster
             position="bottom-right"

@@ -1,20 +1,50 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { TrendingUp, Shield, Calendar, Swords } from "lucide-react";
 import { useTCG } from "@/context/tcg.context";
-import { getMetaStats, getMetaMatchups, getMetaFilterOptions } from "@/lib/nexus-meta.functions";
+import { getMetaMatchups } from "@/lib/nexus-meta.functions";
+import { metaFilterOptionsQuery, metaQuery, type MetaFilters } from "@/lib/meta-queries";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { BlockSelect } from "@/components/ui/block-select";
+
+const DEFAULT_GAME_ID = "5b608762-d0a3-4a93-9739-e5cd150b01cd";
+const DEFAULT_FILTERS: MetaFilters = {
+  game_id: DEFAULT_GAME_ID,
+  zone: null,
+  store_id: null,
+  date_from: null,
+  date_to: null,
+};
 
 export const Route = createFileRoute("/meta")({
+  // Best effort (no relanza): calienta la caché para cuando el usuario
+  // llega por hover/intent desde la nav. Usa los filtros por default —
+  // si el TCG activo global difiere, el efecto de sync del componente
+  // dispara su propio fetch, igual que el comportamiento anterior.
+  //
+  // Devuelve los datos (no solo los precarga): en SSR, este loader corre
+  // contra el QueryClient del servidor, así que el server renderiza con
+  // datos reales. El cliente hidrata con un QueryClient nuevo y vacío — sin
+  // pasarle esto como initialData, la primera pintada del cliente mostraría
+  // el skeleton mientras el server mostró la tabla → hydration mismatch
+  // (se detectó así, con Playwright, antes de dar el fix por terminado).
+  loader: async ({ context }) => {
+    try {
+      const [options, meta] = await Promise.all([
+        context.queryClient.ensureQueryData(metaFilterOptionsQuery(DEFAULT_GAME_ID)),
+        context.queryClient.ensureQueryData(metaQuery(DEFAULT_FILTERS)),
+      ]);
+      return { options, meta };
+    } catch {
+      return undefined;
+    }
+  },
   head: () => ({ meta: [{ title: "Meta — Nexus" }] }),
   component: MetaPage,
 });
 
-const DEFAULT_GAME_ID = "5b608762-d0a3-4a93-9739-e5cd150b01cd";
-
-type MetaData = Awaited<ReturnType<typeof getMetaStats>>;
-type FilterOptions = Awaited<ReturnType<typeof getMetaFilterOptions>>;
+type MatchupData = Awaited<ReturnType<typeof getMetaMatchups>>;
 
 const COLOR_MAP: Record<string, string> = {
   Red: "bg-red-500",
@@ -46,92 +76,45 @@ function wrColor(wr: number | null): string {
   return "text-red-400";
 }
 
-type Filters = {
-  game_id: string;
-  zone: string | null;
-  store_id: string | null;
-  date_from: string | null;
-  date_to: string | null;
-};
-
-function SimpleSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-}: {
-  value: string | null;
-  onChange: (v: string | null) => void;
-  options: Array<{ value: string; label: string }>;
-  placeholder: string;
-}) {
+function sameFilters(a: MetaFilters, b: MetaFilters): boolean {
   return (
-    <select
-      value={value ?? ""}
-      onChange={(e) => onChange(e.target.value || null)}
-      className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
-    >
-      <option value="" className="bg-gray-900 text-white">
-        {placeholder}
-      </option>
-      {options.map((o) => (
-        <option key={o.value} value={o.value} className="bg-gray-900 text-white">
-          {o.label}
-        </option>
-      ))}
-    </select>
+    a.game_id === b.game_id &&
+    a.zone === b.zone &&
+    a.store_id === b.store_id &&
+    a.date_from === b.date_from &&
+    a.date_to === b.date_to
   );
 }
 
-type MatchupData = Awaited<ReturnType<typeof getMetaMatchups>>;
-
 function MetaPage() {
   const { activeTcg } = useTCG();
-  const fetchMeta = useServerFn(getMetaStats);
-  const fetchMatchups = useServerFn(getMetaMatchups);
-  const fetchOptions = useServerFn(getMetaFilterOptions);
+  const loaderData = Route.useLoaderData();
 
-  const [filters, setFilters] = useState<Filters>({
-    game_id: DEFAULT_GAME_ID,
-    zone: null,
-    store_id: null,
-    date_from: null,
-    date_to: null,
+  // `filters` = draft (lo que el usuario está editando); `appliedFilters` =
+  // lo que realmente dispara la query — reproduce el patrón "Aplicar/Limpiar
+  // filtros" que ya existía (zona/tienda/fechas no auto-aplican). game_id es
+  // la excepción: lo controla el TcgSwitcher global, no un select de esta
+  // página, así que sí aplica de inmediato (igual que antes).
+  const [filters, setFilters] = useState<MetaFilters>(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<MetaFilters>(DEFAULT_FILTERS);
+
+  const optionsQuery = useQuery({
+    ...metaFilterOptionsQuery(filters.game_id),
+    initialData: filters.game_id === DEFAULT_GAME_ID ? loaderData?.options : undefined,
   });
-  const [metaData, setMetaData] = useState<MetaData | null>(null);
-  const [matchupData, setMatchupData] = useState<MatchupData | null>(null);
-  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadMeta = (f: Filters) => {
-    setLoading(true);
-    Promise.all([fetchMeta({ data: f }), fetchMatchups({ data: f })])
-      .then(([stats, matchups]) => {
-        setMetaData(stats);
-        setMatchupData(matchups);
-      })
-      .catch(() => {
-        setMetaData(null);
-        setMatchupData(null);
-      })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchOptions({ data: { game_id: filters.game_id } })
-      .then(setFilterOptions)
-      .catch(() => setFilterOptions(null));
-    loadMeta(filters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const metaQ = useQuery({
+    ...metaQuery(appliedFilters),
+    initialData: sameFilters(appliedFilters, DEFAULT_FILTERS) ? loaderData?.meta : undefined,
+  });
+  const filterOptions = optionsQuery.data;
+  // isPending (no isFetching): con keepPreviousData, cambiar un filtro no
+  // vuelve a mostrar el skeleton — la tabla anterior queda visible mientras
+  // llegan los datos nuevos, igual que el leaderboard desde P0-04.
+  const loading = metaQ.isPending;
 
   const handleGameChange = (gameId: string) => {
-    const next = { ...filters, game_id: gameId };
-    setFilters(next);
-    fetchOptions({ data: { game_id: gameId } })
-      .then(setFilterOptions)
-      .catch(() => {});
-    loadMeta(next);
+    setFilters((f) => ({ ...f, game_id: gameId }));
+    setAppliedFilters((f) => ({ ...f, game_id: gameId }));
   };
 
   useEffect(() => {
@@ -140,6 +123,15 @@ function MetaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTcg?.id]);
 
+  const applyFilters = () => setAppliedFilters(filters);
+  const clearFilters = () => {
+    const reset: MetaFilters = { ...DEFAULT_FILTERS, game_id: filters.game_id };
+    setFilters(reset);
+    setAppliedFilters(reset);
+  };
+
+  const metaData = metaQ.data?.stats;
+  const matchupData = metaQ.data?.matchups;
   const leaders = metaData?.leaders ?? [];
 
   return (
@@ -161,7 +153,7 @@ function MetaPage() {
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               Zona
             </label>
-            <SimpleSelect
+            <BlockSelect
               value={filters.zone}
               onChange={(v) => setFilters((f) => ({ ...f, zone: v }))}
               options={(filterOptions?.zones ?? []).map((z: string) => ({ value: z, label: z }))}
@@ -172,7 +164,7 @@ function MetaPage() {
             <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
               Tienda
             </label>
-            <SimpleSelect
+            <BlockSelect
               value={filters.store_id}
               onChange={(v) => setFilters((f) => ({ ...f, store_id: v }))}
               options={(filterOptions?.stores ?? [])
@@ -223,23 +215,13 @@ function MetaPage() {
 
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => {
-              const reset: Filters = {
-                game_id: filters.game_id,
-                zone: null,
-                store_id: null,
-                date_from: null,
-                date_to: null,
-              };
-              setFilters(reset);
-              loadMeta(reset);
-            }}
+            onClick={clearFilters}
             className="rounded-md border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-300 hover:bg-white/[0.05] transition"
           >
             Limpiar filtros
           </button>
           <button
-            onClick={() => loadMeta(filters)}
+            onClick={applyFilters}
             className="rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
           >
             Aplicar filtros

@@ -1,7 +1,7 @@
 import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNexusUser } from "./nexus-auth.middleware";
+import { requireNexusUser, optionalNexusUser } from "./nexus-auth.middleware";
 
 export const getMyDashboard = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
@@ -380,8 +380,13 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+// Perfil público real: visible para cualquier visitante (sin sesión
+// incluida) cuando el jugador lo dejó público. El dueño y admin/tcg_manager
+// siempre lo ven completo aunque esté marcado privado. Antes exigía sesión
+// (requireNexusUser) para CUALQUIER perfil, público o no — el bloqueo vivía
+// en el fetch, no en la privacidad real del dato.
 export const getPublicProfile = createServerFn({ method: "POST" })
-  .middleware([requireNexusUser])
+  .middleware([optionalNexusUser])
   .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player: viewer } = context;
@@ -397,8 +402,8 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     if (!target) throw new Error("Jugador no encontrado");
     const t = target as any;
 
-    const isOwner = viewer.id === t.id;
-    const isSuperior = viewer.role === "admin" || viewer.role === "tcg_manager";
+    const isOwner = viewer?.id === t.id;
+    const isSuperior = viewer?.role === "admin" || viewer?.role === "tcg_manager";
     const isPublic = t.is_profile_public ?? true;
     const canView = isOwner || isSuperior || isPublic;
 

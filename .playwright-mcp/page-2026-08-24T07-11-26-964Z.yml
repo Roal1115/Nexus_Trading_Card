@@ -1,0 +1,74 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - link "Trading Card Nexus" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e15]: Trading Card
+            - generic [ref=e16]: Nexus
+          - button "Dragon Ball Super Card Game" [ref=e232]
+          - link "Iniciar sesión" [ref=e236] [cursor=pointer]:
+            - /url: /login
+      - main [ref=e19]:
+        - generic [ref=e20]:
+          - paragraph [ref=e22]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+          - heading "Circuito Nacional" [level=1] [ref=e23]
+          - paragraph [ref=e24]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+        - generic [ref=e26]:
+          - generic [ref=e27] [cursor=pointer]:
+            - button "TCG Dragon Ball Super Card Game" [active] [ref=e237]:
+              - generic [ref=e30]: TCG
+              - generic [ref=e31]: Dragon Ball Super Card Game
+            - button "Ciudad Todas" [ref=e35]:
+              - generic [ref=e36]: Ciudad
+              - generic [ref=e37]: Todas
+            - button "Tienda Todas las tiendas" [ref=e41]:
+              - generic [ref=e42]: Tienda
+              - generic [ref=e43]: Todas las tiendas
+            - button "Mes Junio 2026" [ref=e238]:
+              - generic [ref=e48]: Mes
+              - generic [ref=e49]: Junio 2026
+          - textbox "Buscar Geek Tag…" [ref=e53]
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e58]:
+              - heading "Ranking Mensual" [level=2] [ref=e66]
+              - generic [ref=e67]: JUNIO 2026
+            - generic [ref=e68]:
+              - generic [ref=e69]: "#"
+              - generic [ref=e70]: Tag
+              - generic [ref=e71]: Ciudad
+              - generic [ref=e72]: Pts
+              - generic "Torneos jugados" [ref=e73]: Trn
+              - generic "Victorias" [ref=e74]: W
+              - generic "Opponent Match Win %" [ref=e75]: OMW%
+            - generic [ref=e77]:
+              - paragraph [ref=e243]: Sin resultados para estos filtros
+              - paragraph [ref=e244]: Prueba cambiando el TCG, ciudad o mes seleccionado
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e145]:
+                - heading "General Semestral" [level=2] [ref=e153]
+                - generic [ref=e154]: Liga Geek Collector Prueba 1
+              - paragraph [ref=e155]: Ranking general · no filtrado por tienda
+            - generic [ref=e156]:
+              - generic [ref=e157]: "#"
+              - generic [ref=e158]: Tag
+              - generic [ref=e159]: Ciudad
+              - generic [ref=e160]: Pts
+              - generic "Torneos jugados" [ref=e161]: Trn
+              - generic "Victorias" [ref=e162]: W
+              - generic "Opponent Match Win %" [ref=e163]: OMW%
+            - generic [ref=e165]:
+              - paragraph [ref=e249]: Sin resultados para estos filtros
+              - paragraph [ref=e250]: Prueba cambiando el TCG, ciudad o mes seleccionado
+    - region "Notifications alt+T"
+  - generic [ref=e252]:
+    - button "Todos" [ref=e253] [cursor=pointer]
+    - button "Dragon Ball Super Card Game" [ref=e254] [cursor=pointer]
+    - button "Gundam Card Game" [ref=e255] [cursor=pointer]
+    - 'button "Magic: The Gathering" [ref=e256] [cursor=pointer]'
+    - button "One Piece Card Game" [ref=e257] [cursor=pointer]
+    - button "Pokémon TCG" [ref=e258] [cursor=pointer]
+    - button "Riftbound" [ref=e259] [cursor=pointer]

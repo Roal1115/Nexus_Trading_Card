@@ -178,20 +178,20 @@ function StoreProfilePage() {
           <div className="flex items-center gap-2">
             <button
               onClick={goToPrevWeek}
-              className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+              className="rounded-lg border border-border p-2 text-secondary-foreground hover:text-white transition"
             >
               <ChevronLeft size={16} />
             </button>
             <span className="min-w-[180px] text-center text-sm font-semibold text-white">{weekLabel}</span>
             <button
               onClick={goToNextWeek}
-              className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+              className="rounded-lg border border-border p-2 text-secondary-foreground hover:text-white transition"
             >
               <ChevronRight size={16} />
             </button>
             <button
               onClick={goToToday}
-              className="rounded-lg border border-[#2A3A57] px-3 py-1.5 text-xs font-medium text-[#AAB6D1] hover:text-white transition"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:text-white transition"
             >
               Hoy
             </button>
@@ -226,17 +226,17 @@ function StoreProfilePage() {
           onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="animate-in fade-in-0 zoom-in-95 duration-200 glass w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6"
+            className="animate-in fade-in-0 zoom-in-95 duration-200 glass w-full max-w-sm rounded-2xl border border-border p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
               {selectedEntry.game_name}
             </span>
             <h3 className="text-lg font-bold text-white">{selectedEntry.store_name}</h3>
-            <div className="mt-3 space-y-2 text-sm text-[#AAB6D1]">
+            <div className="mt-3 space-y-2 text-sm text-secondary-foreground">
               {selectedEntry.time && (
                 <p className="flex items-center gap-2">
-                  <Clock size={14} className="flex-shrink-0 text-[#72819D]" />
+                  <Clock size={14} className="flex-shrink-0 text-muted-foreground" />
                   {selectedEntry.time.slice(0, 5)} hrs
                 </p>
               )}
@@ -246,7 +246,7 @@ function StoreProfilePage() {
             </div>
             <button
               onClick={() => setSelectedEntry(null)}
-              className="mt-5 w-full rounded-xl border border-[#2A3A57] py-2.5 text-sm font-medium text-[#AAB6D1] hover:text-white transition"
+              className="mt-5 w-full rounded-xl border border-border py-2.5 text-sm font-medium text-secondary-foreground hover:text-white transition"
             >
               Cerrar
             </button>

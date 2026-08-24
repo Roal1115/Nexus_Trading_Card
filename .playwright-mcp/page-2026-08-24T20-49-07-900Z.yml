@@ -1,0 +1,48 @@
+- generic [ref=f23e2]:
+  - generic [ref=f23e3]:
+    - banner [ref=f23e4]:
+      - link "Trading Card Nexus" [ref=f23e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f23e15]: Trading Card
+        - generic [ref=f23e16]: Nexus
+    - generic [ref=f23e18]:
+      - complementary
+      - main [ref=f23e19]:
+        - generic [ref=f23e20]:
+          - paragraph [ref=f23e22]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+          - heading "Circuito Nacional" [level=1] [ref=f23e23]
+          - paragraph [ref=f23e24]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+        - generic [ref=f23e26]:
+          - generic [ref=f23e27] [cursor=pointer]:
+            - combobox [ref=f23e28]:
+              - generic [ref=f23e29]: TCG
+            - combobox [ref=f23e32]
+            - combobox [ref=f23e33]:
+              - generic [ref=f23e34]: Ciudad
+            - combobox [ref=f23e37]
+            - combobox [ref=f23e38]:
+              - generic [ref=f23e39]: Tienda
+            - combobox [ref=f23e42]
+            - combobox [ref=f23e43]:
+              - generic [ref=f23e44]: Mes
+            - combobox [ref=f23e47]
+          - textbox "Buscar Geek Tag…" [ref=f23e49]
+        - tablist "Periodo del ranking" [ref=f23e51]:
+          - tab "Mensual" [ref=f23e52] [cursor=pointer]
+          - tab "Semestral" [selected] [ref=f23e53] [cursor=pointer]
+        - generic [ref=f23e54]:
+          - generic [ref=f23e55]:
+            - generic [ref=f23e57]:
+              - heading "General Semestral" [level=2] [ref=f23e65]
+              - generic [ref=f23e66]: —
+            - paragraph [ref=f23e67]: Ranking general · no filtrado por tienda
+          - generic [ref=f23e68]:
+            - generic [ref=f23e69]: "#"
+            - generic [ref=f23e70]: Tag
+            - generic [ref=f23e71]: Ciudad
+            - generic [ref=f23e72]: Pts
+            - generic "Torneos jugados" [ref=f23e73]: Trn
+            - generic "Victorias" [ref=f23e74]: W
+            - generic "Opponent Match Win %" [ref=f23e75]: OMW%
+      - complementary
+  - region "Notifications alt+T"

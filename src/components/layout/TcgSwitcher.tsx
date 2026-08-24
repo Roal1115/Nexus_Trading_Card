@@ -32,12 +32,12 @@ export function TcgSwitcher({ collapsed = false }: { collapsed?: boolean }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         title={collapsed ? activeTcg?.name : undefined}
-        className={`flex items-center rounded-lg border border-[#2A3A57] bg-[#111A2E] text-xs font-semibold text-white transition hover:border-[#32D9FF]/40 ${
+        className={`flex items-center rounded-lg border border-border bg-card text-xs font-semibold text-white transition hover:border-primary/40 ${
           collapsed ? "h-9 w-9 justify-center" : "gap-1.5 px-3 py-1.5"
         }`}
       >
         {collapsed ? (
-          <span className="text-[10px] text-[#32D9FF]">{initials ?? "TCG"}</span>
+          <span className="text-[10px] text-primary">{initials ?? "TCG"}</span>
         ) : (
           <>
             {activeTcg?.name ?? "TCG"}
@@ -61,7 +61,7 @@ export function TcgSwitcher({ collapsed = false }: { collapsed?: boolean }) {
                 setOpen(false);
               }}
               className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition hover:bg-white/5 ${
-                activeTcg?.id === tcg.id ? "text-[#32D9FF] font-semibold" : "text-white"
+                activeTcg?.id === tcg.id ? "text-primary font-semibold" : "text-white"
               }`}
             >
               {tcg.name}

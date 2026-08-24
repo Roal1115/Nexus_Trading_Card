@@ -1,0 +1,46 @@
+- generic [ref=f25e2]:
+  - generic [ref=f25e3]:
+    - banner [ref=f25e4]:
+      - link "Trading Card Nexus" [ref=f25e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f25e15]: Trading Card
+        - generic [ref=f25e16]: Nexus
+    - generic [ref=f25e18]:
+      - complementary
+      - main [ref=f25e19]:
+        - generic [ref=f25e20]:
+          - paragraph [ref=f25e22]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+          - heading "Circuito Nacional" [level=1] [ref=f25e23]
+          - paragraph [ref=f25e24]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+        - generic [ref=f25e26]:
+          - generic [ref=f25e27] [cursor=pointer]:
+            - combobox [ref=f25e28]:
+              - generic [ref=f25e29]: TCG
+            - combobox [ref=f25e32]
+            - combobox [ref=f25e33]:
+              - generic [ref=f25e34]: Ciudad
+            - combobox [ref=f25e37]
+            - combobox [ref=f25e38]:
+              - generic [ref=f25e39]: Tienda
+            - combobox [ref=f25e42]
+            - combobox [ref=f25e43]:
+              - generic [ref=f25e44]: Mes
+            - combobox [ref=f25e47]
+          - textbox "Buscar Geek Tag…" [ref=f25e49]
+        - tablist "Periodo del ranking" [ref=f25e51]:
+          - tab "Mensual" [selected] [ref=f25e52] [cursor=pointer]
+          - tab "Semestral" [ref=f25e53] [cursor=pointer]
+        - generic [ref=f25e54]:
+          - generic [ref=f25e57]:
+            - heading "Ranking Mensual" [level=2] [ref=f25e65]
+            - generic [ref=f25e66]: —
+          - generic [ref=f25e67]:
+            - generic [ref=f25e68]: "#"
+            - generic [ref=f25e69]: Tag
+            - generic [ref=f25e70]: Ciudad
+            - generic [ref=f25e71]: Pts
+            - generic "Torneos jugados" [ref=f25e72]: Trn
+            - generic "Victorias" [ref=f25e73]: W
+            - generic "Opponent Match Win %" [ref=f25e74]: OMW%
+      - complementary
+  - region "Notifications alt+T"

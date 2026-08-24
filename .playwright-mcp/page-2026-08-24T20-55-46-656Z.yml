@@ -1,0 +1,289 @@
+- generic [ref=f28e2]:
+  - generic [ref=f28e3]:
+    - banner [ref=f28e4]:
+      - generic [ref=f28e5]:
+        - link [ref=f28e7] [cursor=pointer]:
+          - /url: /
+        - button "One Piece Card Game" [ref=f28e17]
+        - generic [ref=f28e20]:
+          - button "Notificaciones" [ref=f28e21]
+          - button "Abrir menú de perfil" [ref=f28e25]:
+            - generic [ref=f28e26]: WO
+    - main [ref=f28e29]:
+      - generic [ref=f28e30]:
+        - paragraph [ref=f28e32]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+        - heading "Circuito Nacional" [level=1] [ref=f28e33]
+        - paragraph [ref=f28e34]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+      - generic [ref=f28e36]:
+        - generic [ref=f28e37] [cursor=pointer]:
+          - combobox [ref=f28e38]:
+            - generic [ref=f28e39]: TCG
+            - generic: Todos
+          - combobox [ref=f28e42]:
+            - generic [ref=f28e43]: Ciudad
+            - generic: Todas
+          - combobox [ref=f28e46]:
+            - generic [ref=f28e47]: Tienda
+            - generic: Todas las tiendas
+          - combobox [ref=f28e50]:
+            - generic [ref=f28e51]: Mes
+            - generic: Más reciente
+        - textbox "Buscar Geek Tag…" [ref=f28e55]
+      - tablist "Periodo del ranking" [ref=f28e57]:
+        - tab "Mensual" [selected] [ref=f28e58] [cursor=pointer]
+        - tab "Semestral" [ref=f28e59] [cursor=pointer]
+      - generic [ref=f28e60]:
+        - generic [ref=f28e63]:
+          - heading "Ranking Mensual" [level=2] [ref=f28e71]
+          - generic [ref=f28e72]: JUNIO 2026
+          - button "→ Mi posición" [ref=f28e73] [cursor=pointer]
+        - generic [ref=f28e74]:
+          - generic [ref=f28e75]: "#"
+          - generic [ref=f28e76]: Geek Tag
+          - generic [ref=f28e77]: Pts
+        - generic [ref=f28e79]:
+          - link "01 10 Wololol Tú 225" [ref=f28e80] [cursor=pointer]:
+            - /url: /players/Wololol
+            - generic [ref=f28e81]:
+              - generic [ref=f28e82]:
+                - generic [ref=f28e83]: "01"
+                - generic [ref=f28e84]: "10"
+              - generic [ref=f28e88]:
+                - generic [ref=f28e95]: Wololol
+                - generic [ref=f28e96]: Tú
+              - generic [ref=f28e97]: "225"
+          - link "02 13 HoracioDC 225" [ref=f28e98] [cursor=pointer]:
+            - /url: /players/HoracioDC
+            - generic [ref=f28e99]:
+              - generic [ref=f28e100]:
+                - generic [ref=f28e101]: "02"
+                - generic [ref=f28e102]: "13"
+              - generic [ref=f28e106]: HoracioDC
+              - generic [ref=f28e108]: "225"
+          - link "03 13 GALLO D. ORO 216.67" [ref=f28e109] [cursor=pointer]:
+            - /url: /players/GALLO%20D.%20ORO
+            - generic [ref=f28e110]:
+              - generic [ref=f28e111]:
+                - generic [ref=f28e112]: "03"
+                - generic [ref=f28e113]: "13"
+              - generic [ref=f28e117]: GALLO D. ORO
+              - generic [ref=f28e119]: "216.67"
+          - link "04 14 RedLotus 200" [ref=f28e120] [cursor=pointer]:
+            - /url: /players/RedLotus
+            - generic [ref=f28e121]:
+              - generic [ref=f28e122]:
+                - generic [ref=f28e123]: "04"
+                - generic [ref=f28e124]: "14"
+              - generic [ref=f28e128]: RedLotus
+              - generic [ref=f28e130]: "200"
+          - link "05 25 Ballinaman 150" [ref=f28e131] [cursor=pointer]:
+            - /url: /players/Ballinaman
+            - generic [ref=f28e132]:
+              - generic [ref=f28e133]:
+                - generic [ref=f28e134]: "05"
+                - generic [ref=f28e135]: "25"
+              - generic [ref=f28e139]: Ballinaman
+              - generic [ref=f28e141]: "150"
+          - link "06 3 JESUS RIOS /Smile 150" [ref=f28e142] [cursor=pointer]:
+            - /url: /players/JESUS%20RIOS%20%2FSmile
+            - generic [ref=f28e143]:
+              - generic [ref=f28e144]:
+                - generic [ref=f28e145]: "06"
+                - generic [ref=f28e146]: "3"
+              - generic [ref=f28e150]: JESUS RIOS /Smile
+              - generic [ref=f28e152]: "150"
+          - link "07 2 AC UDT | Bruno 141.67" [ref=f28e153] [cursor=pointer]:
+            - /url: /players/AC%20UDT%20|%20Bruno
+            - generic [ref=f28e154]:
+              - generic [ref=f28e155]:
+                - generic [ref=f28e156]: "07"
+                - generic [ref=f28e157]: "2"
+              - generic [ref=f28e161]: AC UDT | Bruno
+              - generic [ref=f28e163]: "141.67"
+          - link "08 11 LA | Smile 125" [ref=f28e164] [cursor=pointer]:
+            - /url: /players/LA%20|%20Smile
+            - generic [ref=f28e165]:
+              - generic [ref=f28e166]:
+                - generic [ref=f28e167]: "08"
+                - generic [ref=f28e168]: "11"
+              - generic [ref=f28e172]: LA | Smile
+              - generic [ref=f28e174]: "125"
+          - link "09 3 Capu | Smile 125" [ref=f28e175] [cursor=pointer]:
+            - /url: /players/Capu%20|%20Smile
+            - generic [ref=f28e176]:
+              - generic [ref=f28e177]:
+                - generic [ref=f28e178]: "09"
+                - generic [ref=f28e179]: "3"
+              - generic [ref=f28e183]: Capu | Smile
+              - generic [ref=f28e185]: "125"
+          - link "10 14 Pris D Ferruzca 108.33" [ref=f28e186] [cursor=pointer]:
+            - /url: /players/Pris%20D%20Ferruzca
+            - generic [ref=f28e187]:
+              - generic [ref=f28e188]:
+                - generic [ref=f28e189]: "10"
+                - generic [ref=f28e190]: "14"
+              - generic [ref=f28e194]: Pris D Ferruzca
+              - generic [ref=f28e196]: "108.33"
+          - link "11 NEW Barbie.D.Ferruzca 100" [ref=f28e197] [cursor=pointer]:
+            - /url: /players/Barbie.D.Ferruzca
+            - generic [ref=f28e198]:
+              - generic [ref=f28e199]:
+                - generic [ref=f28e200]: "11"
+                - generic [ref=f28e201]: NEW
+              - generic [ref=f28e202]: Barbie.D.Ferruzca
+              - generic [ref=f28e204]: "100"
+          - link "12 NEW Martin Cañez 100" [ref=f28e205] [cursor=pointer]:
+            - /url: /players/Martin%20Ca%C3%B1ez
+            - generic [ref=f28e206]:
+              - generic [ref=f28e207]:
+                - generic [ref=f28e208]: "12"
+                - generic [ref=f28e209]: NEW
+              - generic [ref=f28e210]: Martin Cañez
+              - generic [ref=f28e212]: "100"
+          - link "13 7 Scooby32 75" [ref=f28e213] [cursor=pointer]:
+            - /url: /players/Scooby32
+            - generic [ref=f28e214]:
+              - generic [ref=f28e215]:
+                - generic [ref=f28e216]: "13"
+                - generic [ref=f28e217]: "7"
+              - generic [ref=f28e221]: Scooby32
+              - generic [ref=f28e223]: "75"
+          - link "14 NEW Chander l Mandarinas 75" [ref=f28e224] [cursor=pointer]:
+            - /url: /players/Chander%20l%20Mandarinas
+            - generic [ref=f28e225]:
+              - generic [ref=f28e226]:
+                - generic [ref=f28e227]: "14"
+                - generic [ref=f28e228]: NEW
+              - generic [ref=f28e229]: Chander l Mandarinas
+              - generic [ref=f28e231]: "75"
+          - link "15 NEW Porras SMILE 75" [ref=f28e232] [cursor=pointer]:
+            - /url: /players/Porras%20SMILE
+            - generic [ref=f28e233]:
+              - generic [ref=f28e234]:
+                - generic [ref=f28e235]: "15"
+                - generic [ref=f28e236]: NEW
+              - generic [ref=f28e237]: Porras SMILE
+              - generic [ref=f28e239]: "75"
+          - link "16 14 Pato | Mandarinas 66.67" [ref=f28e240] [cursor=pointer]:
+            - /url: /players/Pato%20|%20Mandarinas
+            - generic [ref=f28e241]:
+              - generic [ref=f28e242]:
+                - generic [ref=f28e243]: "16"
+                - generic [ref=f28e244]: "14"
+              - generic [ref=f28e248]: Pato | Mandarinas
+              - generic [ref=f28e250]: "66.67"
+          - link "17 NEW ArturoRedGuerra 50" [ref=f28e251] [cursor=pointer]:
+            - /url: /players/ArturoRedGuerra
+            - generic [ref=f28e252]:
+              - generic [ref=f28e253]:
+                - generic [ref=f28e254]: "17"
+                - generic [ref=f28e255]: NEW
+              - generic [ref=f28e256]: ArturoRedGuerra
+              - generic [ref=f28e258]: "50"
+          - link "18 9 Alan 50" [ref=f28e259] [cursor=pointer]:
+            - /url: /players/Alan
+            - generic [ref=f28e260]:
+              - generic [ref=f28e261]:
+                - generic [ref=f28e262]: "18"
+                - generic [ref=f28e263]: "9"
+              - generic [ref=f28e267]: Alan
+              - generic [ref=f28e269]: "50"
+          - link "19 NEW Adrian Gomez | Noreste 50" [ref=f28e270] [cursor=pointer]:
+            - /url: /players/Adrian%20Gomez%20|%20Noreste
+            - generic [ref=f28e271]:
+              - generic [ref=f28e272]:
+                - generic [ref=f28e273]: "19"
+                - generic [ref=f28e274]: NEW
+              - generic [ref=f28e275]: Adrian Gomez | Noreste
+              - generic [ref=f28e277]: "50"
+          - link "20 2 Luisgabu98 | Mandarinas 50" [ref=f28e278] [cursor=pointer]:
+            - /url: /players/Luisgabu98%20|%20Mandarinas
+            - generic [ref=f28e279]:
+              - generic [ref=f28e280]:
+                - generic [ref=f28e281]: "20"
+                - generic [ref=f28e282]: "2"
+              - generic [ref=f28e286]: Luisgabu98 | Mandarinas
+              - generic [ref=f28e288]: "50"
+          - link "21 4 Umichin 50" [ref=f28e289] [cursor=pointer]:
+            - /url: /players/Umichin
+            - generic [ref=f28e290]:
+              - generic [ref=f28e291]:
+                - generic [ref=f28e292]: "21"
+                - generic [ref=f28e293]: "4"
+              - generic [ref=f28e297]: Umichin
+              - generic [ref=f28e299]: "50"
+          - link "22 NEW FonderKROS | Mandarina 33.33" [ref=f28e300] [cursor=pointer]:
+            - /url: /players/FonderKROS%20|%20Mandarina
+            - generic [ref=f28e301]:
+              - generic [ref=f28e302]:
+                - generic [ref=f28e303]: "22"
+                - generic [ref=f28e304]: NEW
+              - generic [ref=f28e305]: FonderKROS | Mandarina
+              - generic [ref=f28e307]: "33.33"
+          - link "23 10 Ab | Mandarinas 25" [ref=f28e308] [cursor=pointer]:
+            - /url: /players/Ab%20|%20Mandarinas
+            - generic [ref=f28e309]:
+              - generic [ref=f28e310]:
+                - generic [ref=f28e311]: "23"
+                - generic [ref=f28e312]: "10"
+              - generic [ref=f28e316]: Ab | Mandarinas
+              - generic [ref=f28e318]: "25"
+          - link "24 NEW Hernan Canavati 25" [ref=f28e319] [cursor=pointer]:
+            - /url: /players/Hernan%20Canavati
+            - generic [ref=f28e320]:
+              - generic [ref=f28e321]:
+                - generic [ref=f28e322]: "24"
+                - generic [ref=f28e323]: NEW
+              - generic [ref=f28e324]: Hernan Canavati
+              - generic [ref=f28e326]: "25"
+  - region "Notifications alt+T"
+  - navigation "Navegación principal" [ref=f28e329]:
+    - link "Ranking" [ref=f28e330] [cursor=pointer]:
+      - /url: /
+    - link "Calendario" [ref=f28e340] [cursor=pointer]:
+      - /url: /calendar
+    - link "Panel" [ref=f28e345] [cursor=pointer]:
+      - /url: /dashboard
+    - link "Meta" [ref=f28e353] [cursor=pointer]:
+      - /url: /meta
+    - button "WO Menú" [expanded] [ref=f28e359]:
+      - generic [active] [ref=f28e360]: WO
+      - generic [ref=f28e363]: Menú
+  - dialog "Menú de perfil" [ref=f28e366]:
+    - generic [ref=f28e367]:
+      - generic [ref=f28e368]:
+        - generic [ref=f28e369]: WO
+        - generic [ref=f28e371]:
+          - paragraph [ref=f28e372]: Wololol
+          - link "Ver perfil público →" [ref=f28e373] [cursor=pointer]:
+            - /url: /players/Wololol
+      - button "Cerrar" [ref=f28e374]
+    - generic [ref=f28e378]:
+      - generic [ref=f28e379]:
+        - paragraph [ref=f28e380]: Explorar
+        - generic [ref=f28e381]:
+          - link [ref=f28e382] [cursor=pointer]:
+            - /url: /
+          - link [ref=f28e390] [cursor=pointer]:
+            - /url: /calendar
+          - link [ref=f28e394] [cursor=pointer]:
+            - /url: /meta
+          - link [ref=f28e399] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f28e405]:
+        - paragraph [ref=f28e406]: Mi Carrera
+        - generic [ref=f28e407]:
+          - link [ref=f28e408] [cursor=pointer]:
+            - /url: /dashboard
+          - link [ref=f28e415] [cursor=pointer]:
+            - /url: /my-stats
+          - link [ref=f28e419] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f28e430]:
+        - paragraph [ref=f28e431]: Cuenta
+        - generic [ref=f28e432]:
+          - link [ref=f28e433] [cursor=pointer]:
+            - /url: /players/Wololol
+          - link [ref=f28e439] [cursor=pointer]:
+            - /url: /settings
+    - button "Cerrar sesión" [ref=f28e445]

@@ -530,8 +530,8 @@ function SettingsPage() {
       <PushNotificationsToggle />
 
       {/* Zona de cuenta */}
-      <section className="mt-8 border-t border-[#2A3A57] pt-6">
-        <p className="mb-3 text-[10px] uppercase tracking-widest text-[#72819D]">Cuenta</p>
+      <section className="mt-8 border-t border-border pt-6">
+        <p className="mb-3 text-[10px] uppercase tracking-widest text-muted-foreground">Cuenta</p>
         <button
           type="button"
           onClick={async () => {

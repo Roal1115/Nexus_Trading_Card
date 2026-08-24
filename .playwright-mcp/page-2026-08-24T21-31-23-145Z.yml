@@ -1,0 +1,13 @@
+- generic [ref=f45e2]:
+  - generic [ref=f45e3]:
+    - banner [ref=f45e4]:
+      - link "Trading Card Nexus" [ref=f45e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f45e15]: Trading Card
+        - generic [ref=f45e16]: Nexus
+    - generic [ref=f45e18]:
+      - generic [ref=f45e19]:
+        - strong [ref=f45e20]: Something went wrong!
+        - button "Hide Error" [ref=f45e21]
+      - code [ref=f45e25]: Jugador no encontrado
+  - region "Notifications alt+T"

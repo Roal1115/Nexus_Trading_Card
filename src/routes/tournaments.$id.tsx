@@ -52,14 +52,14 @@ export const Route = createFileRoute("/tournaments/$id")({
 function TournamentNotFound() {
   return (
     <div className="mx-auto max-w-md px-4 py-16 text-center">
-      <ShieldQuestion className="mx-auto mb-4 h-12 w-12 text-[#72819D]" />
+      <ShieldQuestion className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
       <h1 className="mb-2 text-xl font-bold text-white">Torneo no disponible</h1>
-      <p className="mb-6 text-sm text-[#AAB6D1]">
+      <p className="mb-6 text-sm text-secondary-foreground">
         Este torneo no existe o aún no ha sido publicado.
       </p>
       <Link
         to="/meta"
-        className="inline-flex items-center rounded-xl border border-[#2A3A57] bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+        className="inline-flex items-center rounded-xl border border-border bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
       >
         Ver el ranking nacional
       </Link>
@@ -143,12 +143,12 @@ function PublicTournamentPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
       {/* Header card */}
-      <div className="glass rounded-2xl border border-[#2A3A57] p-6">
-        <span className="inline-block rounded-full bg-[#32D9FF]/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#32D9FF]">
+      <div className="glass rounded-2xl border border-border p-6">
+        <span className="inline-block rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
           {t.game_name}
         </span>
         <h1 className="mt-2 text-2xl font-bold text-white">{t.store_name}</h1>
-        <div className="mt-3 flex flex-wrap gap-3 text-sm text-[#AAB6D1]">
+        <div className="mt-3 flex flex-wrap gap-3 text-sm text-secondary-foreground">
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" /> {t.store_city}, {t.store_state}
           </span>
@@ -157,10 +157,10 @@ function PublicTournamentPage() {
           </span>
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{t.zone}</span>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#72819D]">
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span>{data.total_participants} participantes</span>
           {isFuture ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[#AAB6D1]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-secondary-foreground">
               <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} confirmados
             </span>
           ) : null}
@@ -195,14 +195,14 @@ function PublicTournamentPage() {
                 }),
               )}
               download={icsFileName(`${t.game_name}-${t.store_name}-${t.date}`)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#32D9FF]/40 bg-[#32D9FF]/10 py-2.5 text-sm font-semibold text-[#32D9FF] transition hover:bg-[#32D9FF]/20"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
             >
               <CalendarPlus className="h-4 w-4" /> Agregar a mi calendario
             </a>
           ) : null}
           <button
             onClick={handleShare}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#2A3A57] bg-white/5 py-2.5 text-sm font-semibold text-[#AAB6D1] transition hover:bg-white/10"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-white/5 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-white/10"
           >
             {copied ? (
               <>
@@ -220,14 +220,14 @@ function PublicTournamentPage() {
       <Link
         to="/stores/$slug"
         params={{ slug: t.store_slug }}
-        className="mt-3 inline-block text-xs text-[#32D9FF] hover:underline"
+        className="mt-3 inline-block text-xs text-primary hover:underline"
       >
         Ver perfil de {t.store_name} →
       </Link>
 
       {/* Winner highlight */}
       {winner ? (
-        <div className="mt-6 flex items-center gap-4 rounded-2xl border border-[#32D9FF]/30 bg-gradient-to-r from-[#32D9FF]/10 to-transparent p-4">
+        <div className="mt-6 flex items-center gap-4 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 to-transparent p-4">
           {winner.leader_image ? (
             <img
               src={winner.leader_image}
@@ -236,16 +236,16 @@ function PublicTournamentPage() {
             />
           ) : (
             <div className="flex h-16 w-11 flex-shrink-0 items-center justify-center rounded border border-white/10 bg-white/5">
-              <Trophy className="h-5 w-5 text-[#32D9FF]" />
+              <Trophy className="h-5 w-5 text-primary" />
             </div>
           )}
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-[#32D9FF]">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
               🏆 Campeón
             </div>
             <div className="truncate text-lg font-bold text-white">{winner.geek_tag}</div>
             {winner.leader_name ? (
-              <div className="truncate text-xs text-[#AAB6D1]">{winner.leader_name}</div>
+              <div className="truncate text-xs text-secondary-foreground">{winner.leader_name}</div>
             ) : null}
           </div>
         </div>
@@ -253,8 +253,8 @@ function PublicTournamentPage() {
 
       {/* Standings */}
       {data.standings.length > 0 ? (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-[#2A3A57] glass">
-          <div className="grid grid-cols-[40px_1fr_70px_60px_60px] gap-2 border-b border-white/10 px-4 py-2 text-[10px] uppercase tracking-widest text-[#72819D]">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-border glass">
+          <div className="grid grid-cols-[40px_1fr_70px_60px_60px] gap-2 border-b border-white/10 px-4 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">
             <div>#</div>
             <div>Jugador</div>
             <div>V/D/E</div>
@@ -271,7 +271,7 @@ function PublicTournamentPage() {
                 key={`${s.rank}-${s.geek_tag}`}
                 className="grid grid-cols-[40px_1fr_70px_60px_60px] items-center gap-2 border-b border-white/[0.05] px-4 py-3"
               >
-                <div className={`font-mono text-sm ${isTop3 ? "font-bold text-[#32D9FF]" : "text-[#72819D]"}`}>
+                <div className={`font-mono text-sm ${isTop3 ? "font-bold text-primary" : "text-muted-foreground"}`}>
                   {s.rank}
                 </div>
                 <div className="flex min-w-0 items-center gap-2">
@@ -287,7 +287,7 @@ function PublicTournamentPage() {
                       <Link
                         to="/players/$playerTag"
                         params={{ playerTag: s.geek_tag }}
-                        className="block truncate text-sm font-medium text-white hover:text-[#32D9FF]"
+                        className="block truncate text-sm font-medium text-white hover:text-primary"
                       >
                         {s.geek_tag}
                       </Link>
@@ -295,19 +295,19 @@ function PublicTournamentPage() {
                       <div className="truncate text-sm font-medium text-white">{s.geek_tag}</div>
                     )}
                     {s.leader_name ? (
-                      <div className="truncate text-[10px] text-[#72819D]">{s.leader_name}</div>
+                      <div className="truncate text-[10px] text-muted-foreground">{s.leader_name}</div>
                     ) : null}
                   </div>
                 </div>
-                <div className="whitespace-nowrap font-mono text-xs text-[#AAB6D1]">{vde}</div>
-                <div className="font-mono text-xs text-[#72819D]">{omw}</div>
+                <div className="whitespace-nowrap font-mono text-xs text-secondary-foreground">{vde}</div>
+                <div className="font-mono text-xs text-muted-foreground">{omw}</div>
                 <div className="font-mono text-sm font-semibold text-white">{pts}</div>
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="mt-6 rounded-2xl border border-[#2A3A57] bg-white/5 p-6 text-center text-sm text-[#AAB6D1]">
+        <div className="mt-6 rounded-2xl border border-border bg-white/5 p-6 text-center text-sm text-secondary-foreground">
           Este torneo no tiene resultados registrados.
         </div>
       )}
@@ -315,12 +315,12 @@ function PublicTournamentPage() {
       {/* Footer CTA */}
       <div className="mt-8 text-center">
         <h3 className="text-sm font-semibold text-white">¿Compites en este circuito?</h3>
-        <p className="mt-1 text-xs text-[#AAB6D1]">
+        <p className="mt-1 text-xs text-secondary-foreground">
           Registra tus partidas, sigue tu ranking nacional y consulta el meta.
         </p>
         <Link
           to="/signup"
-          className="mt-3 inline-flex items-center rounded-xl bg-[#32D9FF] px-4 py-2 text-sm font-semibold text-[#0B1220] hover:bg-[#32D9FF]/90"
+          className="mt-3 inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-[#0B1220] hover:bg-primary/90"
         >
           Crear mi cuenta
         </Link>

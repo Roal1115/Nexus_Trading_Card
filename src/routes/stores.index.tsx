@@ -74,7 +74,7 @@ function FavoriteStar({
       className={`rounded-md p-1.5 transition disabled:opacity-40 ${
         isFavorite
           ? "text-[#FFD54A] hover:bg-[#FFD54A]/10"
-          : "text-[#72819D] hover:bg-white/5 hover:text-[#FFD54A]"
+          : "text-muted-foreground hover:bg-white/5 hover:text-[#FFD54A]"
       }`}
     >
       <Star size={16} fill={isFavorite ? "currentColor" : "none"} />

@@ -176,20 +176,20 @@ function CalendarPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={goToPrevWeek}
-            className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+            className="rounded-lg border border-border p-2 text-secondary-foreground hover:text-white transition"
           >
             <ChevronLeft size={16} />
           </button>
           <span className="min-w-[200px] text-center text-sm font-semibold text-white">{weekLabel}</span>
           <button
             onClick={goToNextWeek}
-            className="rounded-lg border border-[#2A3A57] p-2 text-[#AAB6D1] hover:text-white transition"
+            className="rounded-lg border border-border p-2 text-secondary-foreground hover:text-white transition"
           >
             <ChevronRight size={16} />
           </button>
           <button
             onClick={goToToday}
-            className="rounded-lg border border-[#2A3A57] px-3 py-1.5 text-xs font-medium text-[#AAB6D1] hover:text-white transition"
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:text-white transition"
           >
             Hoy
           </button>
@@ -204,7 +204,7 @@ function CalendarPage() {
               className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
                 onlyFavorites
                   ? "border-primary/50 bg-primary/10 text-primary"
-                  : "border-[#2A3A57] bg-[#111A2E] text-[#AAB6D1] hover:text-white"
+                  : "border-border bg-card text-secondary-foreground hover:text-white"
               }`}
             >
               <Star
@@ -214,7 +214,7 @@ function CalendarPage() {
               Mis favoritas
               <span
                 className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                  onlyFavorites ? "bg-primary/20 text-primary" : "bg-white/10 text-[#AAB6D1]"
+                  onlyFavorites ? "bg-primary/20 text-primary" : "bg-white/10 text-secondary-foreground"
                 }`}
               >
                 {favoriteIds.length}
@@ -225,7 +225,7 @@ function CalendarPage() {
           <select
             value={filterZone ?? ""}
             onChange={(e) => setFilterZone(e.target.value || null)}
-            className="rounded-lg border border-[#2A3A57] bg-[#111A2E] px-3 py-1.5 text-xs text-white outline-none focus:border-[#32D9FF]"
+            className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-white outline-none focus:border-primary"
           >
             <option value="">Todas las zonas</option>
             {zones.map((z) => (
@@ -239,7 +239,7 @@ function CalendarPage() {
             value={filterStore ?? ""}
             onChange={(e) => setFilterStore(e.target.value || null)}
             disabled={onlyFavorites}
-            className={`rounded-lg border border-[#2A3A57] bg-[#111A2E] px-3 py-1.5 text-xs text-white outline-none focus:border-[#32D9FF] ${
+            className={`rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-white outline-none focus:border-primary ${
               onlyFavorites ? "opacity-40 cursor-not-allowed" : ""
             }`}
           >
@@ -273,7 +273,7 @@ function CalendarPage() {
       </div>
 
       {onlyFavorites && !loading && events.length === 0 && (
-        <p className="mt-3 text-center text-xs text-[#AAB6D1]">
+        <p className="mt-3 text-center text-xs text-secondary-foreground">
           Estás filtrando por tus tiendas favoritas. Desactiva el filtro para ver todos los torneos.
         </p>
       )}
@@ -294,7 +294,7 @@ function CalendarPage() {
                   onClick={(e) => e.stopPropagation()}
                   aria-describedby={undefined}
                 >
-                  <div className="animate-in fade-in-0 zoom-in-95 duration-200 glass my-auto w-full max-w-sm rounded-2xl border border-[#2A3A57] p-6">
+                  <div className="animate-in fade-in-0 zoom-in-95 duration-200 glass my-auto w-full max-w-sm rounded-2xl border border-border p-6">
             <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
               {selectedEntry.game_name}
             </span>
@@ -309,22 +309,22 @@ function CalendarPage() {
               <h3 className="text-lg font-bold text-white">{selectedEntry.store_name}</h3>
             </DialogPrimitive.Title>
 
-            <div className="mt-3 space-y-2 text-sm text-[#AAB6D1]">
+            <div className="mt-3 space-y-2 text-sm text-secondary-foreground">
               <p className="flex items-center gap-2">
-                <MapPin size={14} className="flex-shrink-0 text-[#72819D]" />
+                <MapPin size={14} className="flex-shrink-0 text-muted-foreground" />
                 {[selectedEntry.store_address, selectedEntry.store_city, selectedEntry.store_state]
                   .filter(Boolean)
                   .join(", ") || "—"}
               </p>
               {selectedEntry.time && (
                 <p className="flex items-center gap-2">
-                  <Clock size={14} className="flex-shrink-0 text-[#72819D]" />
+                  <Clock size={14} className="flex-shrink-0 text-muted-foreground" />
                   {selectedEntry.time.slice(0, 5)} hrs
                 </p>
               )}
               {selectedEntry.store_phone && (
                 <p className="flex items-center gap-2">
-                  <Phone size={14} className="flex-shrink-0 text-[#72819D]" />
+                  <Phone size={14} className="flex-shrink-0 text-muted-foreground" />
                   {selectedEntry.store_phone}
                 </p>
               )}
@@ -405,7 +405,7 @@ function CalendarPage() {
             <a
               href={icsDataUri(buildEventIcs(selectedEntry))}
               download={icsFileName(`${selectedEntry.game_name}-${selectedEntry.store_name}-${selectedEntry.date}`)}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#32D9FF]/40 bg-[#32D9FF]/10 py-2.5 text-sm font-semibold text-[#32D9FF] transition hover:bg-[#32D9FF]/20"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
             >
               <CalendarPlus size={15} />
               Agregar a mi calendario
@@ -413,7 +413,7 @@ function CalendarPage() {
 
             <button
               onClick={() => setSelectedEntry(null)}
-              className="mt-5 w-full rounded-xl border border-[#2A3A57] py-2.5 text-sm font-medium text-[#AAB6D1] hover:text-white transition"
+              className="mt-5 w-full rounded-xl border border-border py-2.5 text-sm font-medium text-secondary-foreground hover:text-white transition"
             >
               Cerrar
             </button>

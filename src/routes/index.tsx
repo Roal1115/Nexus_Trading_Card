@@ -1,22 +1,41 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, HelpCircle, Medal, Search, Trophy } from "lucide-react";
+import { HelpCircle, Medal, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import { useTCG } from "@/context/tcg.context";
 
-import { getLeaderboard, getLeaderboardOptions } from "@/lib/nexus-leaderboard.functions";
+import { useQuery } from "@tanstack/react-query";
+import { leaderboardOptionsQuery, leaderboardQuery } from "@/lib/leaderboard-queries";
 import { listActiveSponsors, getActiveBanner } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
-import ReactDOM from "react-dom";
 import { ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
+import { PillSelect } from "@/components/ui/pill-select";
+
+type Period = "monthly" | "semestral";
+
+type LeaderboardSearch = {
+  tcg?: string;
+  city?: string;
+  store?: string;
+  month?: string;
+  q?: string;
+  period?: Period;
+};
 
 export const Route = createFileRoute("/")({
+  validateSearch: (s: Record<string, unknown>): LeaderboardSearch => ({
+    tcg: typeof s.tcg === "string" && s.tcg ? s.tcg : undefined,
+    city: typeof s.city === "string" && s.city ? s.city : undefined,
+    store: typeof s.store === "string" && s.store ? s.store : undefined,
+    month: typeof s.month === "string" && /^\d{4}-\d{2}$/.test(s.month) ? s.month : undefined,
+    q: typeof s.q === "string" && s.q ? s.q : undefined,
+    period: s.period === "semestral" ? "semestral" : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Trading Card Nexus" },
@@ -76,12 +95,12 @@ function HeroBackground() {
     >
       <defs>
         <radialGradient id="heroGlow1" cx="70%" cy="10%" r="50%">
-          <stop offset="0%" stopColor="#9C5CFF" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#9C5CFF" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="heroGlow2" cx="20%" cy="80%" r="40%">
-          <stop offset="0%" stopColor="#32D9FF" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#32D9FF" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
         </radialGradient>
         <filter id="cardBlur">
           <feGaussianBlur stdDeviation="0.8" />
@@ -93,7 +112,7 @@ function HeroBackground() {
       <rect width="100%" height="100%" fill="url(#heroGlow2)" />
 
       {/* Constellation lines */}
-      <g stroke="#32D9FF" strokeOpacity="0.12" strokeWidth="0.8">
+      <g stroke="var(--primary)" strokeOpacity="0.12" strokeWidth="0.8">
         <line x1="10%" y1="20%" x2="30%" y2="45%" />
         <line x1="30%" y1="45%" x2="55%" y2="30%" />
         <line x1="55%" y1="30%" x2="75%" y2="55%" />
@@ -106,7 +125,7 @@ function HeroBackground() {
       </g>
 
       {/* Constellation dots */}
-      <g fill="#32D9FF" fillOpacity="0.35">
+      <g fill="var(--primary)" fillOpacity="0.35">
         <circle cx="10%" cy="20%" r="1.5" />
         <circle cx="30%" cy="45%" r="2" />
         <circle cx="55%" cy="30%" r="1.5" />
@@ -131,7 +150,7 @@ function HeroBackground() {
           rx="4"
           ry="4"
           fill="none"
-          stroke="#32D9FF"
+          stroke="var(--primary)"
           strokeWidth="1.2"
           transform="rotate(-12, 82, 13)"
         />
@@ -143,7 +162,7 @@ function HeroBackground() {
           rx="4"
           ry="4"
           fill="none"
-          stroke="#9C5CFF"
+          stroke="var(--accent)"
           strokeWidth="1.2"
           transform="rotate(5, 87, 10)"
         />
@@ -164,7 +183,7 @@ function HeroBackground() {
           y1="10%"
           x2="84.5%"
           y2="10%"
-          stroke="#32D9FF"
+          stroke="var(--primary)"
           strokeWidth="0.6"
           strokeOpacity="0.6"
         />
@@ -173,7 +192,7 @@ function HeroBackground() {
           y1="12%"
           x2="82%"
           y2="12%"
-          stroke="#32D9FF"
+          stroke="var(--primary)"
           strokeWidth="0.6"
           strokeOpacity="0.4"
         />
@@ -185,9 +204,44 @@ function HeroBackground() {
   );
 }
 
+function PeriodSegmentedControl({
+  period,
+  onChange,
+}: {
+  period: Period;
+  onChange: (p: Period) => void;
+}) {
+  const options: Array<{ value: Period; label: string }> = [
+    { value: "monthly", label: "Mensual" },
+    { value: "semestral", label: "Semestral" },
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="Periodo del ranking"
+      className="inline-flex gap-1 rounded-md border border-white/10 bg-white/5 p-1"
+    >
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="tab"
+          aria-selected={period === o.value}
+          onClick={() => onChange(o.value)}
+          className={`rounded px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+            period === o.value
+              ? "bg-primary/15 text-primary"
+              : "text-gray-400 hover:text-gray-200"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function LeaderboardPage() {
-  const fetchOptions = useServerFn(getLeaderboardOptions);
-  const fetchLeaderboard = useServerFn(getLeaderboard);
   const fetchActiveSponsors = useServerFn(listActiveSponsors);
   const fetchBanner = useServerFn(getActiveBanner);
   const { player: viewer, role } = useNexusRole();
@@ -209,92 +263,64 @@ function LeaderboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
-  const [games, setGames] = useState<Game[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
-  const [months, setMonths] = useState<string[]>([]);
+  // La URL es la única fuente de verdad de filtros y búsqueda (compartible,
+  // sobrevive atrás/adelante y refresh). Sin valores en la URL: TCG = Todos.
+  const urlSearch = Route.useSearch();
+  const navigate = useNavigate({ from: "/" });
+  const tcg = urlSearch.tcg ?? ALL;
+  const city = urlSearch.city ?? ALL;
+  const storeId = urlSearch.store ?? ALL;
+  const month = urlSearch.month ?? ALL;
+  const search = urlSearch.q ?? "";
+  const period: Period = urlSearch.period ?? "monthly";
 
-  const [tcg, setTcg] = useState<string>(ALL);
-  const { activeTcg } = useTCG();
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem("ga_filter_tcg");
-    if (saved && saved !== ALL) setTcg(saved);
-  }, []);
-
-  useEffect(() => {
-    if (!activeTcg?.id) return;
-    setTcg(activeTcg.id);
-  }, [activeTcg?.id]);
-
-  const handleTcgChange = (v: string) => {
-    setTcg(v);
-    if (typeof window !== "undefined") {
-      if (v === ALL) window.localStorage.removeItem("ga_filter_tcg");
-      else window.localStorage.setItem("ga_filter_tcg", v);
-    }
-  };
-  const [city, setCity] = useState<string>(ALL);
-  const [storeId, setStoreId] = useState<string>(ALL);
-  const [month, setMonth] = useState<string>(ALL);
-  const [search, setSearch] = useState("");
-
-  const [monthly, setMonthly] = useState<Row[]>([]);
-  const [semestral, setSemestral] = useState<Row[]>([]);
-  const [monthLbl, setMonthLbl] = useState<string>("");
-  const [semesterLbl, setSemesterLbl] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const opts = await fetchOptions();
-        if (!mounted) return;
-        setGames(opts.games as Game[]);
-        setStores(opts.stores as Store[]);
-        setMonths(opts.months as string[]);
-        if (opts.months.length > 0) setMonth(opts.months[0]);
-      } catch (e) {
-        toast.error("Error al cargar los filtros. Intenta de nuevo.");
-        console.error(e);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    fetchLeaderboard({
-      data: {
-        game_id: tcg === ALL ? null : tcg,
-        city: city === ALL ? null : city,
-        store_id: storeId === ALL ? null : storeId,
-        month: month === ALL ? null : month,
+  const patchSearch = (patch: Partial<LeaderboardSearch>, replace = false) =>
+    navigate({
+      search: (prev) => {
+        const next = { ...prev, ...patch };
+        for (const k of Object.keys(next) as (keyof LeaderboardSearch)[]) {
+          if (!next[k]) delete next[k];
+        }
+        return next;
       },
-    })
-      .then((res) => {
-        if (!mounted) return;
-        setMonthly(res.monthly as Row[]);
-        setSemestral(res.semestral as Row[]);
-        setMonthLbl(res.month_label);
-        setSemesterLbl(res.semester_label);
-      })
-      .catch((e) => {
-        toast.error("Error al cargar el ranking. Intenta de nuevo.");
-        console.error(e);
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tcg, city, storeId, month]);
+      replace,
+    });
+
+  const handleTcgChange = (v: string) => patchSearch({ tcg: v === ALL ? undefined : v });
+  const setCity = (v: string) => patchSearch({ city: v === ALL ? undefined : v });
+  const setStoreId = (v: string) => patchSearch({ store: v === ALL ? undefined : v });
+  const setMonth = (v: string) => patchSearch({ month: v === ALL ? undefined : v });
+  // Teclear no debe ensuciar el historial: replace en vez de push.
+  const setSearch = (v: string) => patchSearch({ q: v || undefined }, true);
+  const setPeriod = (v: Period) => patchSearch({ period: v === "monthly" ? undefined : v });
+
+  const optionsQuery = useQuery(leaderboardOptionsQuery());
+  const games = (optionsQuery.data?.games ?? []) as Game[];
+  const stores = (optionsQuery.data?.stores ?? []) as Store[];
+  const months = (optionsQuery.data?.months ?? []) as string[];
+
+  const boardQuery = useQuery(
+    leaderboardQuery({
+      game_id: tcg === ALL ? null : tcg,
+      city: city === ALL ? null : city,
+      store_id: storeId === ALL ? null : storeId,
+      month: month === ALL ? null : month,
+    }),
+  );
+  const monthly = (boardQuery.data?.monthly ?? []) as Row[];
+  const semestral = (boardQuery.data?.semestral ?? []) as Row[];
+  const monthLbl = boardQuery.data?.month_label ?? "";
+  const semesterLbl = boardQuery.data?.semester_label ?? "";
+  // isPending solo es true sin datos (ni cacheados ni previos): el skeleton
+  // aparece únicamente en la primera carga real, no en cada cambio de filtro.
+  const loading = boardQuery.isPending;
+
+  useEffect(() => {
+    if (optionsQuery.isError) toast.error("Error al cargar los filtros. Intenta de nuevo.");
+  }, [optionsQuery.isError]);
+  useEffect(() => {
+    if (boardQuery.isError) toast.error("Error al cargar el ranking. Intenta de nuevo.");
+  }, [boardQuery.isError]);
 
   const cities = useMemo(() => {
     const set = new Set<string>();
@@ -308,10 +334,15 @@ function LeaderboardPage() {
   }, [stores, city]);
 
   useEffect(() => {
-    if (storeId !== ALL && !visibleStores.some((s) => s.id === storeId)) {
-      setStoreId(ALL);
+    if (
+      storeId !== ALL &&
+      stores.length > 0 &&
+      !visibleStores.some((s) => s.id === storeId)
+    ) {
+      patchSearch({ store: undefined }, true);
     }
-  }, [visibleStores, storeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleStores, storeId, stores.length]);
 
   const applySearch = (rows: Row[]) => {
     if (!search) return rows;
@@ -330,13 +361,13 @@ function LeaderboardPage() {
         {!isStaff && <AdVertical sponsor={activeSponsor} />}
       </aside>
       <main className="min-w-0 pb-20">
-        <section className="relative my-8 overflow-hidden rounded-2xl border-[#2A3A57] bg-[#111A2E] p-8 sm:p-12">
+        <section className="relative my-8 overflow-hidden rounded-2xl border-border bg-card p-8 sm:p-12">
           <HeroBackground />
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
             Temporada III · Patrocinado por Bandai · Wizards · TPCI
           </p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl bg-gradient-to-r from-[#32D9FF] via-[#5F8CFF] to-[#9C5CFF] bg-clip-text text-transparent">
+          <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl bg-gradient-to-r from-primary via-[#5F8CFF] to-accent bg-clip-text text-transparent">
             Circuito <span className="text-primary">Nacional</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
@@ -360,7 +391,7 @@ function LeaderboardPage() {
           {" "}
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap w-full items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer ... min-w-[180px]">
-              <FilterSelect
+              <PillSelect
                 label="TCG"
                 value={tcg}
                 onChange={handleTcgChange}
@@ -370,7 +401,7 @@ function LeaderboardPage() {
                 ]}
               />
 
-              <FilterSelect
+              <PillSelect
                 label="Ciudad"
                 value={city}
                 onChange={(v) => setCity(v)}
@@ -379,7 +410,7 @@ function LeaderboardPage() {
                   ...cities.map((c) => ({ value: c, label: c })),
                 ]}
               />
-              <FilterSelect
+              <PillSelect
                 label="Tienda"
                 value={storeId}
                 onChange={setStoreId}
@@ -391,7 +422,7 @@ function LeaderboardPage() {
                   })),
                 ]}
               />
-              <FilterSelect
+              <PillSelect
                 label="Mes"
                 value={month}
                 onChange={setMonth}
@@ -426,35 +457,28 @@ function LeaderboardPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <LeaderboardTable
-            title="Ranking Mensual"
-            badge={monthLbl.toUpperCase()}
-            subtitle={
-              selectedStore
+        <div className="mb-4">
+          <PeriodSegmentedControl period={period} onChange={setPeriod} />
+        </div>
+
+        <div className="lg:hidden">{!isStaff && <AdHorizontal sponsor={activeSponsor} />}</div>
+
+        <LeaderboardTable
+          title={period === "semestral" ? "General Semestral" : "Ranking Mensual"}
+          badge={period === "semestral" ? semesterLbl : monthLbl.toUpperCase()}
+          subtitle={
+            period === "semestral"
+              ? "Ranking general · no filtrado por tienda"
+              : selectedStore
                 ? `Mostrando: ${selectedStore.name}${selectedStore.city ? ` — ${selectedStore.city}` : ""}`
                 : null
-            }
-            rows={filteredMonthly}
-            loading={loading}
-            myGeekTag={myGeekTag}
-            search={search}
-            onClearSearch={() => setSearch("")}
-          />
-          <div className="xl:hidden lg:hidden">
-            {!isStaff && <AdHorizontal sponsor={activeSponsor} />}
-          </div>
-          <LeaderboardTable
-            title="General Semestral"
-            badge={semesterLbl}
-            subtitle="Ranking general · no filtrado por tienda"
-            rows={filteredSemestral}
-            loading={loading}
-            myGeekTag={myGeekTag}
-            search={search}
-            onClearSearch={() => setSearch("")}
-          />
-        </div>
+          }
+          rows={period === "semestral" ? filteredSemestral : filteredMonthly}
+          loading={loading}
+          myGeekTag={myGeekTag}
+          search={search}
+          onClearSearch={() => setSearch("")}
+        />
       </main>
       <aside className="hidden xl:block">
         {!isStaff && <AdVertical sponsor={activeSponsor} />}
@@ -745,110 +769,5 @@ function LeaderboardTable({
         )}
       </div>
     </section>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: Array<{ value: string; label: string }>;
-}) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-  const ref = useRef<HTMLDivElement>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
-  const selected = options.find((o) => o.value === value);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        ref.current &&
-        !ref.current.contains(e.target as Node) &&
-        portalRef.current &&
-        !portalRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const handleOpen = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      const dropdownHeight = Math.min(options.length * 36, 240);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const goUp = spaceBelow < dropdownHeight + 8;
-      setPos({
-        top: goUp ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
-        left: rect.left,
-        width: Math.max(rect.width, 160),
-      });
-    }
-    setOpen((o) => !o);
-  };
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={handleOpen}
-        aria-haspopup="listbox"
-        aria-expanded={false} // Changed from isOpen to false to stop the error
-        className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-      >
-        <span className="uppercase tracking-wider text-gray-500">{label}</span>
-        <span className="text-white">{selected?.label ?? "—"}</span>
-        <ChevronDown
-          size={12}
-          className="text-gray-500 flex-shrink-0 transition-transform duration-200"
-        />
-      </button>
-
-      {open &&
-        typeof document !== "undefined" &&
-        ReactDOM.createPortal(
-          <div
-            ref={portalRef}
-            style={{
-              position: "fixed",
-              top: pos.top,
-              left: pos.left,
-              minWidth: pos.width,
-              zIndex: 99999,
-            }}
-            className="animate-in fade-in-0 zoom-in-95 duration-150 rounded-md border border-white/10 bg-[#0f1117] shadow-xl"
-          >
-            <div className="max-h-60 overflow-y-auto">
-              {options.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(o.value);
-                    setOpen(false);
-                  }}
-                  className={`flex w-full items-center px-3 py-2 text-left text-xs transition hover:bg-white/10 cursor-pointer focus-visible:outline-none focus-visible:bg-white/10 ${
-                    o.value === value ? "text-primary font-semibold" : "text-white"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </div>,
-          document.body,
-        )}
-    </div>
   );
 }
