@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -31,6 +32,7 @@ import { getMyStatsGames } from "@/lib/nexus-player.functions";
 import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { sessionsPageQuery } from "@/lib/sessions-queries";
 
 type DeckIdentifier = {
   id: string;
@@ -46,6 +48,13 @@ function cleanName(name: string): string {
 
 export const Route = createFileRoute("/sessions/")({
   head: () => ({ meta: [{ title: "Mis Sesiones — Nexus" }] }),
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(sessionsPageQuery());
+    } catch {
+      return undefined;
+    }
+  },
   component: SessionsPage,
 });
 
@@ -356,62 +365,36 @@ function Section({
 
 function SessionsPage() {
   const { player, loading: roleLoading } = useNexusRole();
-  const fetchSessions = useServerFn(getStandaloneSessions);
   const removeSession = useServerFn(deleteStandaloneSession);
-  const fetchTracked = useServerFn(getMyTrackedTournaments);
-
-  const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [trackedTournaments, setTrackedTournaments] = useState<TrackedTournament[]>([]);
-  const [loadingTournaments, setLoadingTournaments] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const loaderData = Route.useLoaderData();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const { data, isLoading } = useQuery({
+    ...sessionsPageQuery(),
+    enabled: !!player,
+    initialData: loaderData,
+  });
+  const sessions = data?.sessions ?? [];
+  const trackedTournaments = data?.tournaments ?? [];
+  const loading = roleLoading || (!!player && isLoading && !data);
+  const loadingTournaments = loading;
 
-  useEffect(() => {
-    if (roleLoading) return;
-    if (!player) {
-      setLoading(false);
-      setLoadingTournaments(false);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchSessions();
-        if (!cancelled) setSessions(res.sessions);
-      } catch (e: any) {
-        if (!cancelled) toast.error(e?.message ?? "Error al cargar sesiones");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    fetchTracked()
-      .then((res) => {
-        if (!cancelled) setTrackedTournaments(res.tournaments);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoadingTournaments(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [player, roleLoading, fetchSessions, fetchTracked]);
-
-  const handleDelete = async (id: string) => {
-    setDeletingId(id);
-    try {
-      await removeSession({ data: { session_id: id } });
-      setSessions((prev) => prev.filter((s) => s.id !== id));
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => removeSession({ data: { session_id: id } }),
+    onMutate: (id) => setDeletingId(id),
+    onSuccess: (_res, id) => {
+      queryClient.setQueryData(sessionsPageQuery().queryKey, (prev: typeof data) =>
+        prev ? { ...prev, sessions: prev.sessions.filter((s) => s.id !== id) } : prev,
+      );
       toast.success("Sesión eliminada");
-    } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo eliminar la sesión");
-    } finally {
-      setDeletingId(null);
-    }
-  };
+    },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo eliminar la sesión"),
+    onSettled: () => setDeletingId(null),
+  });
+  const handleDelete = (id: string) => deleteMutation.mutate(id);
 
   if (!roleLoading && !player) {
     return (

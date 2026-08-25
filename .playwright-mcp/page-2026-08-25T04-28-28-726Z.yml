@@ -1,0 +1,231 @@
+- generic [ref=f87e2]:
+  - complementary [ref=f87e43]:
+    - link "Nexus Jugador" [ref=f87e44] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f87e52]:
+        - generic [ref=f87e53]: Nexus
+        - generic [ref=f87e54]: Jugador
+    - button "Colapsar menú" [ref=f87e55]
+    - generic [ref=f87e59]:
+      - button "One Piece Card Game" [ref=f87e61]
+      - button "Notificaciones" [ref=f87e64]
+    - navigation [ref=f87e70]:
+      - generic [ref=f87e71]:
+        - generic [ref=f87e72]: Explorar
+        - generic [ref=f87e73]:
+          - link "Ranking" [ref=f87e74] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=f87e83] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=f87e88] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=f87e94] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f87e101]:
+        - generic [ref=f87e102]: Mi Carrera
+        - generic [ref=f87e103]:
+          - link "Mi Panel" [ref=f87e104] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=f87e112] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=f87e117] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f87e129]:
+        - generic [ref=f87e130]: Cuenta
+        - generic [ref=f87e131]:
+          - link "Mi Perfil" [ref=f87e132] [cursor=pointer]:
+            - /url: /players/Wololol
+          - link "Configuración" [ref=f87e139] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f87e145]:
+      - generic [ref=f87e146]:
+        - generic [ref=f87e147]: Sesión
+        - generic [ref=f87e148]: Wololol
+      - button "Cerrar sesión" [ref=f87e149]
+  - generic [ref=f87e18]:
+    - banner [ref=f87e19]:
+      - link "Volver al dashboard" [ref=f87e20] [cursor=pointer]:
+        - /url: /dashboard
+      - heading "Mis Stats" [level=1] [ref=f87e23]
+    - generic [ref=f87e24]:
+      - generic [ref=f87e25]:
+        - button "Oficial" [ref=f87e26]
+        - button "Casual" [ref=f87e27]
+        - button "Pendientes" [ref=f87e28]
+        - button "Todo" [active] [ref=f87e29]
+      - generic [ref=f87e30]:
+        - button "30d" [ref=f87e31]
+        - button "90d" [ref=f87e32]
+        - button "Todo el tiempo" [ref=f87e33]
+    - paragraph [ref=f87e336]: Todas tus partidas combinadas (incluye pendientes).
+    - generic [ref=f87e34]:
+      - generic [ref=f87e155]:
+        - generic [ref=f87e156]:
+          - paragraph [ref=f87e496]: Récord
+          - paragraph [ref=f87e497]: 25W — 19L
+        - generic [ref=f87e159]:
+          - paragraph [ref=f87e498]: Win Rate
+          - paragraph [ref=f87e499]: 56.8%
+        - generic [ref=f87e500]:
+          - paragraph [ref=f87e501]: Leaders
+          - paragraph [ref=f87e502]: "5"
+      - generic [ref=f87e503]:
+        - generic [ref=f87e504]:
+          - paragraph [ref=f87e505]: Tus leaders
+          - generic [ref=f87e506]:
+            - button [ref=f87e507]:
+              - img "Sengoku" [ref=f87e508]
+              - generic [ref=f87e509]:
+                - paragraph [ref=f87e510]: Sengoku
+                - paragraph [ref=f87e511]: 20 partidas · 65% WR
+            - button [ref=f87e512]:
+              - img "Monkey.D.Luffy" [ref=f87e513]
+              - generic [ref=f87e514]:
+                - paragraph [ref=f87e515]: Monkey.D.Luffy
+                - paragraph [ref=f87e516]: 8 partidas · 50% WR
+            - button [ref=f87e517]:
+              - img "Monkey.D.Luffy" [ref=f87e518]
+              - generic [ref=f87e519]:
+                - paragraph [ref=f87e520]: Monkey.D.Luffy
+                - paragraph [ref=f87e521]: 8 partidas · 62.5% WR
+            - button [ref=f87e522]:
+              - img "Donquixote Doflamingo" [ref=f87e523]
+              - generic [ref=f87e524]:
+                - paragraph [ref=f87e525]: Donquixote Doflamingo
+                - paragraph [ref=f87e526]: 7 partidas · 42.9% WR
+            - button [ref=f87e527]:
+              - img "Marshall.D.Teach" [ref=f87e528]
+              - generic [ref=f87e529]:
+                - paragraph [ref=f87e530]: Marshall.D.Teach
+                - paragraph [ref=f87e531]: 1 partidas · 0% WR
+        - generic [ref=f87e532]:
+          - generic [ref=f87e533]:
+            - generic [ref=f87e534]:
+              - img "Sengoku" [ref=f87e535]
+              - generic [ref=f87e536]:
+                - heading "Sengoku" [level=2] [ref=f87e538]
+                - paragraph [ref=f87e539]: One Piece Card Game · 20 partidas
+                - generic [ref=f87e540]:
+                  - paragraph [ref=f87e541]: 65%
+                  - paragraph [ref=f87e542]: 13W — 7L
+            - generic [ref=f87e543]:
+              - generic [ref=f87e544]:
+                - generic [ref=f87e545]:
+                  - paragraph [ref=f87e546]: WR Confirmado
+                  - button "Qué significa WR Confirmado" [ref=f87e547]
+                - paragraph [ref=f87e551]: 65%
+                - paragraph [ref=f87e552]: Solo rondas confirmadas
+              - generic [ref=f87e553]:
+                - generic [ref=f87e554]:
+                  - paragraph [ref=f87e555]: WR Total
+                  - button "Qué significa WR Total" [ref=f87e556]
+                - paragraph [ref=f87e560]: 65%
+                - paragraph [ref=f87e561]: Todas las rondas
+              - generic [ref=f87e562]:
+                - generic [ref=f87e563]:
+                  - paragraph [ref=f87e564]: 1st Winrate
+                  - button "Qué significa 1st Winrate" [ref=f87e565]
+                - paragraph [ref=f87e569]: 76.9%
+                - paragraph [ref=f87e570]: 13 partidas
+              - generic [ref=f87e571]:
+                - generic [ref=f87e572]:
+                  - paragraph [ref=f87e573]: 2nd Winrate
+                  - button "Qué significa 2nd Winrate" [ref=f87e574]
+                - paragraph [ref=f87e578]: 42.9%
+                - paragraph [ref=f87e579]: 7 partidas
+          - generic [ref=f87e580]:
+            - generic [ref=f87e581]:
+              - heading "⚔ Matchups" [level=3] [ref=f87e582]:
+                - generic [ref=f87e583]: ⚔
+                - text: Matchups
+              - generic [ref=f87e584]:
+                - button "Más jugados" [ref=f87e585]
+                - button "Mejores" [ref=f87e586]
+                - button "Peores" [ref=f87e587]
+            - searchbox "Buscar leader oponente…" [ref=f87e589]
+            - generic [ref=f87e590]:
+              - button [ref=f87e592]:
+                - img "Monkey.D.Luffy" [ref=f87e593]
+                - generic [ref=f87e595]:
+                  - paragraph [ref=f87e596]: Monkey.D.Luffy
+                  - generic [ref=f87e597]: Datos inciertos
+                - generic [ref=f87e602]:
+                  - paragraph [ref=f87e603]: 50%
+                  - paragraph [ref=f87e604]: 4 partidas · muestra baja
+              - button [ref=f87e608]:
+                - img "Donquixote Rosinante" [ref=f87e609]
+                - paragraph [ref=f87e612]: Donquixote Rosinante
+                - generic [ref=f87e615]:
+                  - paragraph [ref=f87e616]: 100%
+                  - paragraph [ref=f87e617]: 3 partidas · muestra baja
+              - button [ref=f87e621]:
+                - img "Enel" [ref=f87e622]
+                - generic [ref=f87e624]:
+                  - paragraph [ref=f87e625]: Enel
+                  - generic [ref=f87e626]: Datos inciertos
+                - generic [ref=f87e631]:
+                  - paragraph [ref=f87e632]: 33.3%
+                  - paragraph [ref=f87e633]: 3 partidas · muestra baja
+              - button [ref=f87e637]:
+                - img "Nami" [ref=f87e638]
+                - generic [ref=f87e640]:
+                  - paragraph [ref=f87e641]: Nami
+                  - generic [ref=f87e642]: Datos inciertos
+                - generic [ref=f87e646]:
+                  - paragraph [ref=f87e647]: 0%
+                  - paragraph [ref=f87e648]: 2 partidas · muestra baja
+              - button [ref=f87e652]:
+                - img "Buggy" [ref=f87e653]
+                - paragraph [ref=f87e656]: Buggy
+                - generic [ref=f87e659]:
+                  - paragraph [ref=f87e660]: 100%
+                  - paragraph [ref=f87e661]: 1 partidas · muestra baja
+              - button [ref=f87e665]:
+                - img "Portgas.D.Ace" [ref=f87e666]
+                - paragraph [ref=f87e669]: Portgas.D.Ace
+                - generic [ref=f87e672]:
+                  - paragraph [ref=f87e673]: 100%
+                  - paragraph [ref=f87e674]: 1 partidas · muestra baja
+              - button [ref=f87e678]:
+                - img "Marshall.D.Teach" [ref=f87e679]
+                - paragraph [ref=f87e682]: Marshall.D.Teach
+                - generic [ref=f87e685]:
+                  - paragraph [ref=f87e686]: 100%
+                  - paragraph [ref=f87e687]: 1 partidas · muestra baja
+              - button [ref=f87e691]:
+                - img "Monkey.D.Luffy" [ref=f87e692]
+                - paragraph [ref=f87e695]: Monkey.D.Luffy
+                - generic [ref=f87e698]:
+                  - paragraph [ref=f87e699]: 100%
+                  - paragraph [ref=f87e700]: 1 partidas · muestra baja
+              - button [ref=f87e704]:
+                - img "Kuzan" [ref=f87e705]
+                - paragraph [ref=f87e708]: Kuzan
+                - generic [ref=f87e710]:
+                  - paragraph [ref=f87e711]: 0%
+                  - paragraph [ref=f87e712]: 1 partidas · muestra baja
+              - button [ref=f87e716]:
+                - img "Crocodile" [ref=f87e717]
+                - generic [ref=f87e719]:
+                  - paragraph [ref=f87e720]: Crocodile
+                  - generic [ref=f87e721]: Datos inciertos
+                - generic [ref=f87e726]:
+                  - paragraph [ref=f87e727]: 100%
+                  - paragraph [ref=f87e728]: 1 partidas · muestra baja
+              - button [ref=f87e732]:
+                - img "Carrot" [ref=f87e733]
+                - generic [ref=f87e735]:
+                  - paragraph [ref=f87e736]: Carrot
+                  - generic [ref=f87e737]: Datos inciertos
+                - generic [ref=f87e742]:
+                  - paragraph [ref=f87e743]: 100%
+                  - paragraph [ref=f87e744]: 1 partidas · muestra baja
+              - button [ref=f87e748]:
+                - img "Portgas.D.Ace" [ref=f87e749]
+                - generic [ref=f87e751]:
+                  - paragraph [ref=f87e752]: Portgas.D.Ace
+                  - generic [ref=f87e753]: Datos inciertos
+                - generic [ref=f87e758]:
+                  - paragraph [ref=f87e759]: 100%
+                  - paragraph [ref=f87e760]: 1 partidas · muestra baja
+  - region "Notifications alt+T"

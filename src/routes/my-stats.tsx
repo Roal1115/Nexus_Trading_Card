@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ShieldQuestion, AlertTriangle, BarChart3, HelpCircle, Search, ChevronRight, X } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import { getMyStats, getMyStatsGames, getMyCasualStats, getMyPendingStats } from "@/lib/nexus-player.functions";
+import { getMyStats } from "@/lib/nexus-player.functions";
+import { myStatsGamesQuery, myStatsSourceQuery } from "@/lib/my-stats-queries";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/my-stats")({
@@ -662,85 +663,63 @@ function mergeStats(official: StatsData, casual: any): StatsData {
 
 function StatsPage() {
   const { player, loading: authLoading } = useNexusRole();
-  const fetchGames = useServerFn(getMyStatsGames);
-  const fetchStats = useServerFn(getMyStats);
-  const fetchCasual = useServerFn(getMyCasualStats);
-  const fetchPending = useServerFn(getMyPendingStats);
 
-  const [games, setGames] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
-  const [stats, setStats] = useState<StatsData | null>(null);
   const [statsSource, setStatsSource] = useState<StatsSource>("official");
   const [selectedLeaderIdx, setSelectedLeaderIdx] = useState(0);
-  const [loadingGames, setLoadingGames] = useState(true);
-  const [loadingStats, setLoadingStats] = useState(false);
   const [matchupSort, setMatchupSort] = useState<"games" | "best" | "worst">("games");
   const [matchupSearch, setMatchupSearch] = useState("");
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [vsLeaderId, setVsLeaderId] = useState<string | null>(null);
 
-  // Cargar TCGs disponibles
+  const { data: gamesData, isLoading: loadingGames } = useQuery({
+    ...myStatsGamesQuery(),
+    enabled: !!player,
+  });
+  const games = gamesData?.games ?? [];
   useEffect(() => {
-    if (authLoading || !player) return;
-    fetchGames()
-      .then((res) => {
-        setGames(res.games);
-        if (res.games.length > 0) setSelectedGameId(res.games[0].id);
-      })
-      .catch(() => {})
-      .finally(() => setLoadingGames(false));
+    if (games.length > 0 && !selectedGameId) setSelectedGameId(games[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [player?.id, authLoading]);
+  }, [games]);
 
-  // Cargar stats cuando cambia el TCG o la fuente.
-  // ponytail: cache en memoria por TCG+fuente — cada tab se fetchea una sola vez por visita a la página;
-  // si algún día hace falta revalidación/stale-while-revalidate, migrar a TanStack Query
-  const statsCache = useRef(new Map<string, StatsData>());
   useEffect(() => {
-    if (!selectedGameId) return;
     setSelectedLeaderIdx(0);
     setVsLeaderId(null);
-
-    const cacheKey = `${selectedGameId}:${statsSource}`;
-    const cached = statsCache.current.get(cacheKey);
-    if (cached) {
-      setStats(cached);
-      return;
-    }
-
-    setLoadingStats(true);
-
-    // fetch individual con cache por fuente, para que "Todo" reuse lo ya cargado
-    const fetchSource = async (source: Exclude<StatsSource, "all">) => {
-      const key = `${selectedGameId}:${source}`;
-      const hit = statsCache.current.get(key);
-      if (hit) return hit;
-      const fn =
-        source === "official" ? fetchStats : source === "casual" ? fetchCasual : fetchPending;
-      const res = (await fn({ data: { game_id: selectedGameId } })) as StatsData;
-      statsCache.current.set(key, res);
-      return res;
-    };
-
-    const loader = async () => {
-      if (statsSource !== "all") return await fetchSource(statsSource);
-      const [official, casual, pending] = await Promise.all([
-        fetchSource("official"),
-        fetchSource("casual"),
-        fetchSource("pending"),
-      ]);
-      return mergeStats(mergeStats(official, casual), pending);
-    };
-
-    loader()
-      .then((res) => {
-        statsCache.current.set(cacheKey, res);
-        setStats(res);
-      })
-      .catch(() => setStats(null))
-      .finally(() => setLoadingStats(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGameId, statsSource]);
+
+  const gameId = selectedGameId ?? "";
+  const officialQ = useQuery({
+    ...myStatsSourceQuery(gameId, "official"),
+    enabled: !!selectedGameId && (statsSource === "official" || statsSource === "all"),
+  });
+  const casualQ = useQuery({
+    ...myStatsSourceQuery(gameId, "casual"),
+    enabled: !!selectedGameId && (statsSource === "casual" || statsSource === "all"),
+  });
+  const pendingQ = useQuery({
+    ...myStatsSourceQuery(gameId, "pending"),
+    enabled: !!selectedGameId && (statsSource === "pending" || statsSource === "all"),
+  });
+
+  const stats: StatsData | null =
+    statsSource === "official"
+      ? (officialQ.data ?? null)
+      : statsSource === "casual"
+        ? (casualQ.data ?? null)
+        : statsSource === "pending"
+          ? (pendingQ.data ?? null)
+          : officialQ.data && casualQ.data && pendingQ.data
+            ? mergeStats(mergeStats(officialQ.data, casualQ.data), pendingQ.data)
+            : null;
+
+  const loadingStats =
+    statsSource === "all"
+      ? officialQ.isLoading || casualQ.isLoading || pendingQ.isLoading
+      : statsSource === "official"
+        ? officialQ.isLoading
+        : statsSource === "casual"
+          ? casualQ.isLoading
+          : pendingQ.isLoading;
 
   if (!authLoading && !player) {
     return (

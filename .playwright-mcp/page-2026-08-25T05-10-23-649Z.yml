@@ -1,0 +1,28 @@
+- generic [ref=f98e2]:
+  - generic [ref=f98e3]:
+    - banner [ref=f98e4]:
+      - link "Trading Card Nexus" [ref=f98e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f98e15]: Trading Card
+        - generic [ref=f98e16]: Nexus
+    - generic [ref=f98e18]:
+      - banner [ref=f98e19]:
+        - link "Volver al dashboard" [ref=f98e20] [cursor=pointer]:
+          - /url: /dashboard
+        - heading "Mis Stats" [level=1] [ref=f98e23]
+      - generic [ref=f98e24]:
+        - generic [ref=f98e25]:
+          - button "Oficial" [ref=f98e26]
+          - button "Casual" [ref=f98e27]
+          - button "Pendientes" [ref=f98e28]
+          - button "Todo" [ref=f98e29]
+        - generic [ref=f98e30]:
+          - button "30d" [ref=f98e31]
+          - button "90d" [ref=f98e32]
+          - button "Todo el tiempo" [ref=f98e33]
+      - generic [ref=f98e34]:
+        - paragraph [ref=f98e37]: Sin datos registrados
+        - paragraph [ref=f98e38]: Registra tus rondas en el Performance Tracker para ver tus stats aquí.
+        - link "Volver al dashboard" [ref=f98e39] [cursor=pointer]:
+          - /url: /dashboard
+  - region "Notifications alt+T"

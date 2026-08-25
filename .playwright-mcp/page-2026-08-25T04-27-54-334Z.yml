@@ -1,0 +1,100 @@
+- generic [ref=f86e2]:
+  - complementary [ref=f86e110]:
+    - link "Nexus Jugador" [ref=f86e111] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f86e119]:
+        - generic [ref=f86e120]: Nexus
+        - generic [ref=f86e121]: Jugador
+    - button "Colapsar menú" [ref=f86e122]
+    - generic [ref=f86e126]:
+      - button "One Piece Card Game" [ref=f86e128]
+      - button "Notificaciones" [ref=f86e131]
+    - navigation [ref=f86e137]:
+      - generic [ref=f86e138]:
+        - generic [ref=f86e139]: Explorar
+        - generic [ref=f86e140]:
+          - link "Ranking" [ref=f86e141] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=f86e150] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=f86e155] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=f86e161] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f86e168]:
+        - generic [ref=f86e169]: Mi Carrera
+        - generic [ref=f86e170]:
+          - link "Mi Panel" [ref=f86e171] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=f86e179] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=f86e184] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f86e196]:
+        - generic [ref=f86e197]: Cuenta
+        - generic [ref=f86e198]:
+          - link "Mi Perfil" [ref=f86e199] [cursor=pointer]:
+            - /url: /players/Wololol
+          - link "Configuración" [ref=f86e206] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f86e212]:
+      - generic [ref=f86e213]:
+        - generic [ref=f86e214]: Sesión
+        - generic [ref=f86e215]: Wololol
+      - button "Cerrar sesión" [ref=f86e216]
+  - generic [ref=f86e465]:
+    - banner [ref=f86e466]:
+      - paragraph [ref=f86e467]: Nexus
+      - heading "Tiendas del Circuito" [level=1] [ref=f86e468]
+      - paragraph [ref=f86e469]: Encuentra dónde jugar en cada región.
+    - generic [ref=f86e470]:
+      - heading "Zona Monterrey" [level=2] [ref=f86e471]
+      - link "Geek Collector Monterrey Marcar Geek Collector como favorita One Piece Card Game Lun-Dom 13:00-23:00 Cómo llegar" [ref=f86e474] [cursor=pointer]:
+        - /url: /stores/geek-collector
+        - generic [ref=f86e475]:
+          - generic [ref=f86e476]:
+            - heading "Geek Collector" [level=3] [ref=f86e477]
+            - paragraph [ref=f86e478]: Monterrey
+          - button "Marcar Geek Collector como favorita" [ref=f86e482]
+        - generic [ref=f86e485]: One Piece Card Game
+        - paragraph [ref=f86e487]: Lun-Dom 13:00-23:00
+        - button "Cómo llegar" [ref=f86e503]
+    - generic [ref=f86e506]:
+      - heading "Zona Extendida" [level=2] [ref=f86e507]
+      - generic [ref=f86e508]:
+        - link [ref=f86e510] [cursor=pointer]:
+          - /url: /stores/tienda-2
+          - generic [ref=f86e511]:
+            - generic [ref=f86e512]:
+              - heading "Tienda 2" [level=3] [ref=f86e513]
+              - paragraph [ref=f86e514]: —
+            - button "Marcar Tienda 2 como favorita" [ref=f86e518]
+        - link [ref=f86e523] [cursor=pointer]:
+          - /url: /stores/tienda-3
+          - generic [ref=f86e524]:
+            - generic [ref=f86e525]:
+              - heading "Tienda 3" [level=3] [ref=f86e526]
+              - paragraph [ref=f86e527]: —
+            - button "Marcar Tienda 3 como favorita" [ref=f86e531]
+        - link [ref=f86e536] [cursor=pointer]:
+          - /url: /stores/tienda-4
+          - generic [ref=f86e537]:
+            - generic [ref=f86e538]:
+              - heading "Tienda 4" [level=3] [ref=f86e539]
+              - paragraph [ref=f86e540]: —
+            - button "Marcar Tienda 4 como favorita" [ref=f86e544]
+        - link [ref=f86e549] [cursor=pointer]:
+          - /url: /stores/tienda-5
+          - generic [ref=f86e550]:
+            - generic [ref=f86e551]:
+              - heading "Tienda 5" [level=3] [ref=f86e552]
+              - paragraph [ref=f86e553]: —
+            - button "Marcar Tienda 5 como favorita" [ref=f86e557]
+        - link [ref=f86e562] [cursor=pointer]:
+          - /url: /stores/tienda-6
+          - generic [ref=f86e563]:
+            - generic [ref=f86e564]:
+              - heading "Tienda 6" [level=3] [ref=f86e565]
+              - paragraph [ref=f86e566]: —
+            - button "Marcar Tienda 6 como favorita" [ref=f86e570]
+  - region "Notifications alt+T"

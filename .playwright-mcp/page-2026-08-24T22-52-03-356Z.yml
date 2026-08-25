@@ -1,0 +1,13 @@
+- generic [ref=f73e2]:
+  - generic [ref=f73e3]:
+    - banner [ref=f73e4]:
+      - link "Trading Card Nexus" [ref=f73e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f73e15]: Trading Card
+        - generic [ref=f73e16]: Nexus
+    - main [ref=f73e18]:
+      - heading "Debes iniciar sesión" [level=2] [ref=f73e19]
+      - paragraph [ref=f73e20]: Tu dashboard muestra tu historial competitivo.
+      - link "Iniciar sesión" [ref=f73e21] [cursor=pointer]:
+        - /url: /login
+  - region "Notifications alt+T"

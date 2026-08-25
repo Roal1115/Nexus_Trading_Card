@@ -1,0 +1,27 @@
+- generic [ref=f85e2]:
+  - generic [ref=f85e3]:
+    - banner [ref=f85e4]:
+      - link "Trading Card Nexus" [ref=f85e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f85e15]: Trading Card
+        - generic [ref=f85e16]: Nexus
+    - generic [ref=f85e18]:
+      - complementary [ref=f85e19]
+      - main [ref=f85e20]:
+        - generic [ref=f85e21]:
+          - paragraph [ref=f85e22]: Torneos
+          - heading "Calendario" [level=1] [ref=f85e23]
+          - paragraph [ref=f85e24]: Torneos programados — Todos los TCGs
+        - generic [ref=f85e25]:
+          - generic [ref=f85e26]:
+            - button [ref=f85e27]
+            - generic [ref=f85e30]: 23 ago — 29 ago 2026
+            - button [ref=f85e31]
+            - button "Hoy" [ref=f85e34]
+          - generic [ref=f85e35]:
+            - combobox [ref=f85e36]:
+              - option "Todas las zonas" [selected]
+            - combobox [ref=f85e37]:
+              - option "Todas las tiendas" [selected]
+      - complementary [ref=f85e41]
+  - region "Notifications alt+T"

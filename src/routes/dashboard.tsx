@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import {
   Award,
   BarChart3,
@@ -21,11 +22,8 @@ import {
 
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import {
-  getMyDashboard,
-  getTournamentDetail,
-  toggleProfilePrivacy,
-} from "@/lib/nexus-player.functions";
+import { toggleProfilePrivacy } from "@/lib/nexus-player.functions";
+import { myDashboardQuery, tournamentDetailQuery } from "@/lib/dashboard-queries";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
@@ -40,23 +38,30 @@ import {
 } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/dashboard")({
+  // Best effort (no relanza). En SSR (carga fresca) casi siempre falla: el
+  // token del usuario vive en localStorage del navegador, inaccesible en el
+  // request del servidor — esta app no usa auth por cookie. El valor real
+  // de este loader es el hover/intent en SPA (nav ya logueada en cliente,
+  // donde attachNexusAuth sí puede adjuntar el token), igual que Player
+  // Profile y Meta.
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(myDashboardQuery());
+    } catch {
+      return undefined;
+    }
+  },
   head: () => ({ meta: [{ title: "Mi Panel — Nexus" }] }),
   component: DashboardPage,
 });
 
-type DashboardData = Awaited<ReturnType<typeof getMyDashboard>>;
-type TournamentDetail = Awaited<ReturnType<typeof getTournamentDetail>>;
-
 function DashboardPage() {
   const { player: gaPlayer } = useNexusRole();
   const navigate = useNavigate();
-  const fetchDashboard = useServerFn(getMyDashboard);
-  const fetchTournamentDetail = useServerFn(getTournamentDetail);
+  const loaderData = Route.useLoaderData();
 
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
   const [sponsor, setSponsor] = useState<any>(null);
   const [page, setPage] = useState(1);
@@ -67,8 +72,6 @@ function DashboardPage() {
     id: string;
     game_id: string;
   } | null>(null);
-  const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
   const [isPublic, setIsPublic] = useState(true);
@@ -86,6 +89,18 @@ function DashboardPage() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // enabled: !!gaPlayer — sin sesión, ni siquiera intenta (antes el efecto
+  // hacía el mismo chequeo a mano). initialData del loader: solo tiene
+  // valor real en navegación SPA con hover previo (SSR normalmente no
+  // tiene el token del usuario — ver comentario del loader arriba).
+  const dashboardQuery = useQuery({
+    ...myDashboardQuery(),
+    enabled: !!gaPlayer,
+    initialData: loaderData,
+  });
+  const data = dashboardQuery.data ?? null;
+  const loading = !!gaPlayer && dashboardQuery.isPending;
 
   useEffect(() => {
     if (data && typeof (data as any).is_profile_public === "boolean") {
@@ -105,47 +120,23 @@ function DashboardPage() {
     }
   };
 
-  const openTournament = async (tournament_id: string) => {
+  // Reabrir el mismo torneo (misma tournamentId) pinta desde caché — sin
+  // loadingDetail manual ni riesgo de mostrar el detalle de un torneo
+  // anterior mientras carga el nuevo (enabled solo corre con id presente).
+  const tournamentDetailQ = useQuery({
+    ...tournamentDetailQuery(selectedTournamentId ?? ""),
+    enabled: !!selectedTournamentId,
+  });
+  const tournamentDetail = tournamentDetailQ.data ?? null;
+  const loadingDetail = !!selectedTournamentId && tournamentDetailQ.isPending;
+
+  const openTournament = (tournament_id: string) => {
     setSelectedTournamentId(tournament_id);
-    setLoadingDetail(true);
-    setTournamentDetail(null);
-    try {
-      const detail = await fetchTournamentDetail({ data: { tournament_id } });
-      setTournamentDetail(detail);
-    } catch {
-      setTournamentDetail(null);
-    } finally {
-      setLoadingDetail(false);
-    }
   };
 
   const closeModal = () => {
     setSelectedTournamentId(null);
-    setTournamentDetail(null);
   };
-
-  useEffect(() => {
-    if (!gaPlayer) {
-      setLoading(false);
-      return;
-    }
-    let mounted = true;
-    setLoading(true);
-    fetchDashboard()
-      .then((d) => {
-        if (mounted) setData(d);
-      })
-      .catch(() => {
-        if (mounted) setData(null);
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gaPlayer?.id]);
 
   useEffect(() => {
     if (data?.tcgStats?.length && !selectedTcg) {

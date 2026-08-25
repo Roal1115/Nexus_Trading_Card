@@ -1,0 +1,30 @@
+- generic [ref=f95e2]:
+  - generic [ref=f95e3]:
+    - banner [ref=f95e4]:
+      - link "Trading Card Nexus" [ref=f95e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f95e15]: Trading Card
+        - generic [ref=f95e16]: Nexus
+    - main [ref=f95e18]:
+      - generic [ref=f95e19]:
+        - generic [ref=f95e20]:
+          - paragraph [ref=f95e21]: Nexus
+          - heading "Bienvenido de vuelta" [level=1] [ref=f95e22]
+          - paragraph [ref=f95e23]: Inicia sesión para seguir tu ranking.
+        - generic [ref=f95e24]:
+          - generic [ref=f95e25]:
+            - generic [ref=f95e26]: Geek Tag o correo electrónico
+            - textbox "Geek Tag o jugador@nexus.gg" [ref=f95e27]
+          - generic [ref=f95e29]:
+            - generic [ref=f95e30]: Contraseña
+            - generic [ref=f95e31]:
+              - textbox "••••••••" [ref=f95e32]
+              - button "Mostrar contraseña" [ref=f95e33]
+          - button "Entrar a la Arena" [ref=f95e37]
+          - generic [ref=f95e38]:
+            - button "¿Olvidaste tu contraseña?" [ref=f95e39]
+            - link "¿No tienes cuenta? Únete al Circuito →" [ref=f95e40] [cursor=pointer]:
+              - /url: /signup
+        - link "Continuar como invitado →" [ref=f95e41] [cursor=pointer]:
+          - /url: /
+  - region "Notifications alt+T"

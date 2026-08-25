@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarPlus,
   CheckCircle2,
@@ -17,7 +18,6 @@ import {
 } from "lucide-react";
 import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { getPublicCalendar } from "@/lib/nexus-public.functions";
 import { getMyAttendedTournamentIds } from "@/lib/nexus-standalone.functions";
 import { getMyFavoriteStores } from "@/lib/nexus-player.functions";
 import { Star } from "lucide-react";
@@ -27,6 +27,7 @@ import { useWeekNav, useCalendarGrid, WeeklyGrid } from "@/components/calendar/w
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
+import { publicCalendarQuery } from "@/lib/calendar-queries";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -34,7 +35,6 @@ export const Route = createFileRoute("/calendar")({
 });
 
 function CalendarPage() {
-  const fetchCalendar = useServerFn(getPublicCalendar);
   const fetchAttended = useServerFn(getMyAttendedTournamentIds);
   const fetchFavorites = useServerFn(getMyFavoriteStores);
   const { player } = useNexusRole();
@@ -45,17 +45,29 @@ function CalendarPage() {
   const [sponsor, setSponsor] = useState<any>(null);
 
   const { weekDates, weekStartStr, goToPrevWeek, goToNextWeek, goToToday, weekLabel } = useWeekNav();
-  const [events, setEvents] = useState<any[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
-  const [zones, setZones] = useState<string[]>([]);
   const [filterZone, setFilterZone] = useState<string | null>(null);
   const [filterStore, setFilterStore] = useState<string | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const hasFavorites = favoriteIds.length > 0;
   const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
   const [attendedIds, setAttendedIds] = useState<Set<string>>(new Set());
+
+  const { data: calendarData, isLoading: loading } = useQuery(
+    publicCalendarQuery({
+      game_id: activeTcg?.id ?? null,
+      zone: filterZone,
+      store_id: onlyFavorites ? null : filterStore,
+      store_ids: onlyFavorites && favoriteIds.length > 0 ? favoriteIds : null,
+      week_start: weekStartStr,
+    }),
+  );
+  // useMemo, no `?? []` inline: calendarData es undefined mientras carga,
+  // y un literal `[]` nuevo en cada render rompía el useEffect de attendedIds
+  // de abajo (depende de `events` por referencia) — bucle infinito de renders.
+  const events = useMemo(() => calendarData?.events ?? [], [calendarData]);
+  const stores = calendarData?.stores ?? [];
+  const zones = calendarData?.zones ?? [];
 
   useEffect(() => {
     registerView()
@@ -67,26 +79,6 @@ function CalendarPage() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    fetchCalendar({
-      data: {
-        game_id: activeTcg?.id ?? null,
-        zone: filterZone,
-        store_id: onlyFavorites ? null : filterStore,
-        store_ids: onlyFavorites && favoriteIds.length > 0 ? favoriteIds : null,
-        week_start: weekStartStr,
-      },
-    } as any)
-      .then((res: any) => {
-        setEvents(res.events ?? []);
-        setStores(res.stores ?? []);
-        setZones(res.zones ?? []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [weekStartStr, activeTcg?.id, filterZone, filterStore, onlyFavorites, favoriteIds]);
 
   useEffect(() => {
     const realTournamentIds = events.filter((e) => !e.is_scheduled).map((e) => e.id);

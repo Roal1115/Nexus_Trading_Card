@@ -1,0 +1,70 @@
+- generic [ref=f97e2]:
+  - complementary [ref=f97e50]:
+    - link "Nexus Jugador" [ref=f97e51] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f97e59]:
+        - generic [ref=f97e60]: Nexus
+        - generic [ref=f97e61]: Jugador
+    - button "Colapsar menú" [ref=f97e62]
+    - generic [ref=f97e66]:
+      - button "One Piece Card Game" [ref=f97e68]
+      - button "Notificaciones" [ref=f97e71]
+    - navigation [ref=f97e77]:
+      - generic [ref=f97e78]:
+        - generic [ref=f97e79]: Explorar
+        - generic [ref=f97e80]:
+          - link "Ranking" [ref=f97e81] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=f97e90] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=f97e95] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=f97e101] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f97e108]:
+        - generic [ref=f97e109]: Mi Carrera
+        - generic [ref=f97e110]:
+          - link "Mi Panel" [ref=f97e111] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=f97e119] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=f97e124] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f97e136]:
+        - generic [ref=f97e137]: Cuenta
+        - generic [ref=f97e138]:
+          - link "Mi Perfil" [ref=f97e139] [cursor=pointer]:
+            - /url: /players/Wololol
+          - link "Configuración" [ref=f97e146] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f97e152]:
+      - generic [ref=f97e153]:
+        - generic [ref=f97e154]: Sesión
+        - generic [ref=f97e155]: Wololol
+      - button "Cerrar sesión" [ref=f97e156]
+  - main [ref=f97e18]:
+    - generic [ref=f97e19]:
+      - generic [ref=f97e20]:
+        - paragraph [ref=f97e21]: Nexus
+        - heading "Bienvenido de vuelta" [level=1] [ref=f97e22]
+        - paragraph [ref=f97e23]: Inicia sesión para seguir tu ranking.
+      - generic [ref=f97e24]:
+        - generic [ref=f97e25]:
+          - generic [ref=f97e26]: Geek Tag o correo electrónico
+          - textbox "Geek Tag o jugador@nexus.gg" [ref=f97e27]: Wololol
+        - generic [ref=f97e29]:
+          - generic [ref=f97e30]: Contraseña
+          - generic [ref=f97e31]:
+            - textbox "••••••••" [ref=f97e32]: "!Rorry1996"
+            - button "Mostrar contraseña" [ref=f97e33]
+        - button "Entrar a la Arena" [disabled] [ref=f97e37]
+        - generic [ref=f97e38]:
+          - button "¿Olvidaste tu contraseña?" [ref=f97e39]
+          - link "¿No tienes cuenta? Únete al Circuito →" [ref=f97e40] [cursor=pointer]:
+            - /url: /signup
+      - link "Continuar como invitado →" [ref=f97e41] [cursor=pointer]:
+        - /url: /
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f97e162]:
+        - generic [ref=f97e166]: ¡Bienvenido de vuelta a la Arena!

@@ -148,6 +148,64 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
+
+  /* Bug conocido de Radix/react-remove-scroll: al bloquear el scroll (p.ej.
+     un modal de Dialog abierto) el body pasa a position:relative como
+     containing block. Un descendiente position:sticky pierde su referencia
+     y salta -scrollY px hacia arriba, fuera de pantalla, hasta que el lock
+     se libera. Radix marca el body con data-scroll-locked mientras dura —
+     es el hook oficial para overrides como este.
+
+     Se probaron 2 alternativas antes de esta, ambas descartadas con
+     evidencia de Playwright (medido con getBoundingClientRect en vivo):
+     - position:static → el sidebar queda sujeto al scrollTop de la página,
+       que sigue "congelado" en su valor previo aunque overflow:hidden lo
+       bloquee — vuelve a saltar -scrollY px, mismo síntoma por otra vía.
+     - position:fixed solo (sin espaciador) → corrige el salto, pero saca
+       el <aside> del flujo normal → su contenedor flex colapsa a 0 de
+       ancho → el contenido principal se expande/desplaza (regresión real,
+       reportada por el usuario, visible incluso detrás del blur del modal).
+
+     Fix final: position:fixed (inmune tanto al containing-block del body
+     como al scrollTop congelado) + un div espaciador en PanelSidebar.tsx
+     que reserva el mismo ancho en el layout mientras el aside está fuera
+     de flujo — así ninguno de los dos síntomas puede volver a aparecer. */
+  body[data-scroll-locked] .panel-sidebar {
+    position: fixed !important;
+  }
+
+  /* Espaciador de PanelSidebar.tsx: ancho 0 por defecto — fuera de un
+     scroll-lock el <aside> ya es position:sticky y reserva su propio
+     espacio en el flujo normal, así que este espaciador solo debe existir
+     mientras el aside está en position:fixed (arriba) y deja de aportar
+     ancho al layout. Reservar su ancho solo aquí, condicionado al mismo
+     data-scroll-locked, evita que se duplique con el ancho del aside en
+     un padre flex (bug real: en los paneles de staff, cuyo layout es
+     `flex` a diferencia del `block` de PlayerSidebar, un espaciador con
+     ancho fijo permanente empujaba el sidebar completo ~256px). */
+  .panel-sidebar-spacer {
+    width: 0;
+    transition: width 0.2s ease-in-out;
+  }
+  body[data-scroll-locked] .panel-sidebar-spacer {
+    width: var(--panel-sidebar-w, 16rem);
+  }
+
+  /* react-remove-scroll (el lock de scroll interno de Radix Dialog) también
+     inyecta body[data-scroll-locked]{margin-right:10px !important} — su
+     estimación del ancho de la scrollbar del navegador, para compensar que
+     "desaparece" al bloquear. En esta app la scrollbar NUNCA desaparece:
+     html{overflow-y:scroll} la reserva siempre (ver arriba). Esa
+     compensación es entonces una resta de más: todo el contenido (no solo
+     el sidebar) se angostaba ~10px mientras el modal estaba abierto —
+     regresión real reportada por el usuario tras el fix anterior. El
+     selector de Radix es body[data-scroll-locked] (especificidad 0,1,1);
+     este necesita especificidad mayor — no basta con !important solo,
+     porque su hoja se inyecta dinámicamente y por orden de cascada gana en
+     empates — para neutralizarlo de forma determinista. */
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
+  }
 }
 
 @layer utilities {

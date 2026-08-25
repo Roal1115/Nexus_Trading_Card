@@ -1,0 +1,384 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - link:
+          - /url: /
+          - generic:
+            - generic: Nexus
+            - generic: Jugador
+        - button
+        - generic:
+          - generic:
+            - button: One Piece Card Game
+          - button:
+            - generic: Notificaciones
+        - navigation:
+          - generic:
+            - generic: Explorar
+            - generic:
+              - link:
+                - /url: /
+                - generic: Ranking
+              - link:
+                - /url: /calendar
+                - generic: Calendario
+              - link:
+                - /url: /meta
+                - generic: Meta
+              - link:
+                - /url: /stores
+                - generic: Tiendas
+          - generic:
+            - generic: Mi Carrera
+            - generic:
+              - link:
+                - /url: /dashboard
+                - generic: Mi Panel
+              - link:
+                - /url: /my-stats
+                - generic: Mis Stats
+              - link:
+                - /url: /sessions
+                - generic: Sesiones
+          - generic:
+            - generic: Cuenta
+            - generic:
+              - link:
+                - /url: /players/Wololol
+                - generic: Mi Perfil
+              - link:
+                - /url: /settings
+                - generic: Configuración
+        - generic:
+          - generic:
+            - generic: Sesión
+            - generic: Wololol
+          - button:
+            - generic: Cerrar sesión
+    - generic:
+      - generic:
+        - generic:
+          - complementary
+          - main:
+            - generic:
+              - generic:
+                - generic: "Visibilidad del perfil:"
+                - generic: Público
+              - button: Hacer privado
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Tu Geek Tag
+                  - heading [level=1]: Wololol
+                  - paragraph: —
+                - generic:
+                  - generic:
+                    - generic: Global
+                    - generic: "#6"
+                    - paragraph: Liga Geek Collector Prueba 1
+                  - generic:
+                    - generic: Mensual
+                    - generic: —
+                    - paragraph: agosto de 2026
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: 13W
+                      - generic: ·
+                      - generic: 10L
+                      - generic: 23 partidas
+                  - link:
+                    - /url: /my-stats
+                    - generic: Ver mis stats
+                    - generic: →
+              - generic:
+                - link:
+                  - /url: /players/Wololol
+                  - text: Ver mi perfil público →
+                - button: Compartir mi perfil
+            - generic:
+              - generic:
+                - heading [level=2]: Mis Sesiones
+                - link:
+                  - /url: /sessions
+                  - text: Ver todas →
+              - link:
+                - /url: /sessions
+                - generic:
+                  - paragraph: Performance Tracker
+                  - paragraph: Registra tus partidas durante torneos y prácticas
+            - generic:
+              - generic:
+                - heading [level=2]:
+                  - text: Mis Rankings
+                  - button
+              - generic:
+                - generic:
+                  - generic: One Piece Card Game
+                  - generic:
+                    - button: Global
+                    - button: Mensual
+                  - generic:
+                    - generic:
+                      - generic: Rank Global
+                      - paragraph: "#6"
+                      - paragraph: Liga Geek Collector Prueba 1
+                    - generic:
+                      - generic: Puntos
+                      - paragraph: "333"
+                      - paragraph: Arena pts
+                    - generic:
+                      - generic: Jugados
+                      - paragraph: "6"
+                    - generic:
+                      - generic: Ganados
+                      - paragraph: "1"
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=2]: Torneos Recientes
+                - generic: 6 torneos jugados
+              - generic:
+                - table:
+                  - rowgroup:
+                    - row:
+                      - columnheader: Fecha
+                      - columnheader: Tienda
+                      - columnheader: TCG
+                      - columnheader: V / D
+                      - columnheader: Posición
+                      - columnheader: Pts Arena
+                      - columnheader
+                  - rowgroup:
+                    - row:
+                      - cell: 2026-06-15
+                      - cell:
+                        - text: Geek Collector
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 0
+                      - cell:
+                        - generic:
+                          - generic: "#1"
+                          - generic: ▲8
+                      - cell: "+100.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-06-08
+                      - cell:
+                        - text: Geek Collector
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 2 / 2
+                      - cell:
+                        - generic:
+                          - generic: "#9"
+                          - generic: ▼6
+                      - cell: "+50.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-06-01
+                      - cell:
+                        - text: Geek Collector
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 3 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#3"
+                          - generic: ▲2
+                      - cell: "+75.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-05-25
+                      - cell:
+                        - text: Geek Collector
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 1 / 2
+                      - cell:
+                        - generic:
+                          - generic: "#5"
+                          - generic: ▲9
+                      - cell: "+33.33"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-05-11
+                      - cell:
+                        - text: Geek Collector
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 1 / 3
+                      - cell:
+                        - generic:
+                          - generic: "#14"
+                          - generic: ▼4
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-05-04
+                      - cell:
+                        - text: Geek Collector
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 2 / 2
+                      - cell:
+                        - generic: "#10"
+                      - cell: "+50.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+          - complementary
+    - region "Notifications alt+T"
+  - dialog [ref=f71e393]:
+    - generic [ref=f71e394]:
+      - generic [ref=f71e395]:
+        - paragraph [ref=f71e396]: Detalle del Torneo
+        - heading "One Piece Card Game" [level=2] [ref=f71e397]
+      - button "Cerrar" [active] [ref=f71e398]
+    - generic [ref=f71e403]:
+      - generic [ref=f71e404]:
+        - generic [ref=f71e405]:
+          - generic [ref=f71e406]:
+            - paragraph [ref=f71e407]: Tienda
+            - paragraph [ref=f71e408]: Geek Collector
+            - paragraph [ref=f71e409]: Monterrey, Nuevo Leon
+          - generic [ref=f71e410]:
+            - paragraph [ref=f71e411]: Fecha
+            - paragraph [ref=f71e412]: 15 de junio de 2026
+            - paragraph [ref=f71e413]: S1 2026
+          - generic [ref=f71e414]:
+            - paragraph [ref=f71e415]: Editorial
+            - paragraph [ref=f71e416]: Bandai
+          - generic [ref=f71e417]:
+            - paragraph [ref=f71e418]: Participantes
+            - paragraph [ref=f71e419]: "16"
+            - paragraph [ref=f71e420]: "Tu posición: #1"
+        - generic [ref=f71e421]:
+          - heading "Resultados del torneo" [level=3] [ref=f71e422]
+          - table [ref=f71e424]:
+            - rowgroup [ref=f71e425]:
+              - row [ref=f71e426]:
+                - columnheader "#" [ref=f71e427]
+                - columnheader "Geek Tag" [ref=f71e428]
+                - columnheader "V / D" [ref=f71e429]
+                - columnheader "OMW%" [ref=f71e430]
+                - columnheader "Pts Arena" [ref=f71e431]
+            - rowgroup [ref=f71e432]:
+              - row [ref=f71e433]:
+                - cell "01" [ref=f71e434]
+                - cell "WolololTú" [ref=f71e435]
+                - cell "4 / 0" [ref=f71e437]
+                - cell "62.5%" [ref=f71e438]
+                - cell "100.00" [ref=f71e439]
+              - row [ref=f71e440] [cursor=pointer]:
+                - cell "02" [ref=f71e441]
+                - cell "JESUS RIOS /Smile" [ref=f71e442]
+                - cell "3 / 1" [ref=f71e443]
+                - cell "64.5%" [ref=f71e444]
+                - cell "75.00" [ref=f71e445]
+              - row [ref=f71e446] [cursor=pointer]:
+                - cell "03" [ref=f71e447]
+                - cell "Capu | Smile" [ref=f71e448]
+                - cell "3 / 1" [ref=f71e449]
+                - cell "58.3%" [ref=f71e450]
+                - cell "75.00" [ref=f71e451]
+              - row [ref=f71e452] [cursor=pointer]:
+                - cell "04" [ref=f71e453]
+                - cell "GALLO D. ORO" [ref=f71e454]
+                - cell "3 / 1" [ref=f71e455]
+                - cell "52.0%" [ref=f71e456]
+                - cell "75.00" [ref=f71e457]
+              - row [ref=f71e458] [cursor=pointer]:
+                - cell "05" [ref=f71e459]
+                - cell "Ballinaman" [ref=f71e460]
+                - cell "3 / 1" [ref=f71e461]
+                - cell "37.3%" [ref=f71e462]
+                - cell "75.00" [ref=f71e463]
+              - row [ref=f71e464] [cursor=pointer]:
+                - cell "06" [ref=f71e465]
+                - cell "RedLotus" [ref=f71e466]
+                - cell "2 / 2" [ref=f71e467]
+                - cell "64.5%" [ref=f71e468]
+                - cell "50.00" [ref=f71e469]
+              - row [ref=f71e470] [cursor=pointer]:
+                - cell "07" [ref=f71e471]
+                - cell "Adrian Gomez | Noreste" [ref=f71e472]
+                - cell "2 / 2" [ref=f71e473]
+                - cell "58.3%" [ref=f71e474]
+                - cell "50.00" [ref=f71e475]
+              - row [ref=f71e476] [cursor=pointer]:
+                - cell "08" [ref=f71e477]
+                - cell "Barbie.D.Ferruzca" [ref=f71e478]
+                - cell "2 / 2" [ref=f71e479]
+                - cell "54.0%" [ref=f71e480]
+                - cell "50.00" [ref=f71e481]
+              - row [ref=f71e482] [cursor=pointer]:
+                - cell "09" [ref=f71e483]
+                - cell "Luisgabu98 | Mandarinas" [ref=f71e484]
+                - cell "2 / 2" [ref=f71e485]
+                - cell "52.0%" [ref=f71e486]
+                - cell "50.00" [ref=f71e487]
+              - row [ref=f71e488] [cursor=pointer]:
+                - cell "10" [ref=f71e489]
+                - cell "HoracioDC" [ref=f71e490]
+                - cell "2 / 2" [ref=f71e491]
+                - cell "52.0%" [ref=f71e492]
+                - cell "50.00" [ref=f71e493]
+              - row [ref=f71e494] [cursor=pointer]:
+                - cell "11" [ref=f71e495]
+                - cell "Umichin" [ref=f71e496]
+                - cell "2 / 2" [ref=f71e497]
+                - cell "47.8%" [ref=f71e498]
+                - cell "50.00" [ref=f71e499]
+              - row [ref=f71e500] [cursor=pointer]:
+                - cell "12" [ref=f71e501]
+                - cell "Ascalon" [ref=f71e502]
+                - cell "1 / 3" [ref=f71e503]
+                - cell "62.5%" [ref=f71e504]
+                - cell "25.00" [ref=f71e505]
+              - row [ref=f71e506] [cursor=pointer]:
+                - cell "13" [ref=f71e507]
+                - cell "LA | Smile" [ref=f71e508]
+                - cell "1 / 3" [ref=f71e509]
+                - cell "58.3%" [ref=f71e510]
+                - cell "25.00" [ref=f71e511]
+              - row [ref=f71e512] [cursor=pointer]:
+                - cell "14" [ref=f71e513]
+                - cell "Pris D Ferruzca" [ref=f71e514]
+                - cell "1 / 3" [ref=f71e515]
+                - cell "50.0%" [ref=f71e516]
+                - cell "25.00" [ref=f71e517]
+              - row [ref=f71e518] [cursor=pointer]:
+                - cell "15" [ref=f71e519]
+                - cell "CharlyCharms | Mandarinas" [ref=f71e520]
+                - cell "1 / 3" [ref=f71e521]
+                - cell "41.5%" [ref=f71e522]
+                - cell "25.00" [ref=f71e523]
+              - row [ref=f71e524] [cursor=pointer]:
+                - cell "16" [ref=f71e525]
+                - cell "Martin Cañez" [ref=f71e526]
+                - cell "0 / 4" [ref=f71e527]
+                - cell "61.0%" [ref=f71e528]
+                - cell "0.00" [ref=f71e529]
+      - generic [ref=f71e530]:
+        - heading "Performance Tracker" [level=3] [ref=f71e531]
+        - paragraph [ref=f71e532]: Cargando rondas…

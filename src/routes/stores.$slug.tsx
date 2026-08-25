@@ -1,29 +1,40 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, ChevronLeft, ChevronRight } from "lucide-react";
-import { getStoreProfile, getPublicCalendar } from "@/lib/nexus-public.functions";
 import { useWeekNav, useCalendarGrid, WeeklyGrid, dotColorForGame } from "@/components/calendar/weekly-grid";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
+import { storeProfileQuery } from "@/lib/stores-queries";
+import { publicCalendarQuery } from "@/lib/calendar-queries";
 
 export const Route = createFileRoute("/stores/$slug")({
   head: () => ({ meta: [{ title: "Tienda — Nexus" }] }),
+  loader: async ({ context, params }) => {
+    try {
+      return await context.queryClient.ensureQueryData(storeProfileQuery(params.slug));
+    } catch {
+      return undefined;
+    }
+  },
   component: StoreProfilePage,
 });
 
 function StoreProfilePage() {
   const { slug } = Route.useParams();
-  const fetchProfile = useServerFn(getStoreProfile);
-  const fetchCalendar = useServerFn(getPublicCalendar);
-  const [loading, setLoading] = useState(true);
-  const [store, setStore] = useState<any>(null);
-  const [notFound, setNotFound] = useState(false);
+  const loaderData = Route.useLoaderData();
+
+  const { data: profileData, isLoading: loading } = useQuery({
+    ...storeProfileQuery(slug),
+    initialData: loaderData,
+    retry: false,
+  });
+  const store = profileData?.store ?? null;
+  const notFound = !loading && !store;
 
   const { weekDates, weekStartStr, goToPrevWeek, goToNextWeek, goToToday, weekLabel } = useWeekNav();
-  const [events, setEvents] = useState<any[]>([]);
-  const [calLoading, setCalLoading] = useState(true);
   const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
 
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
@@ -41,25 +52,11 @@ function StoreProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    fetchProfile({ data: { slug } })
-      .then((res: any) => setStore(res.store))
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
-
-  useEffect(() => {
-    if (!store?.id) return;
-    setCalLoading(true);
-    fetchCalendar({
-      data: { game_id: null, zone: null, store_id: store.id, week_start: weekStartStr },
-    } as any)
-      .then((res: any) => setEvents(res.events ?? []))
-      .catch(() => {})
-      .finally(() => setCalLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store?.id, weekStartStr]);
+  const { data: calendarData, isLoading: calLoading } = useQuery({
+    ...publicCalendarQuery({ game_id: null, zone: null, store_id: store?.id ?? null, store_ids: null, week_start: weekStartStr }),
+    enabled: !!store?.id,
+  });
+  const events = calendarData?.events ?? [];
 
   const calendarGrid = useCalendarGrid(events, weekDates);
   const gamesInSchedule = Array.from(

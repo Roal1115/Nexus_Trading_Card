@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Info } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
@@ -15,7 +15,26 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+type HistorySearch = {
+  status?: string;
+  game_id?: string;
+  season_id?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+};
+
+const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
+
 export const Route = createFileRoute("/organizer/history")({
+  validateSearch: (s: Record<string, unknown>): HistorySearch => ({
+    status: str(s.status),
+    game_id: str(s.game_id),
+    season_id: str(s.season_id),
+    date_from: str(s.date_from),
+    date_to: str(s.date_to),
+    page: typeof s.page === "number" && s.page > 1 ? s.page : undefined,
+  }),
   head: () => ({ meta: [{ title: "Historial de Torneos — Organizador" }] }),
   component: OrganizerHistoryPage,
 });
@@ -82,7 +101,19 @@ function fmtDate(s?: string | null) {
 }
 
 function OrganizerHistoryPage() {
-  const [filters, setFilters] = useState<Filters>(INITIAL);
+  const navigate = useNavigate({ from: Route.fullPath });
+  const urlSearch = Route.useSearch();
+  const filters: Filters = useMemo(
+    () => ({
+      status: urlSearch.status ?? "",
+      game_id: urlSearch.game_id ?? "",
+      season_id: urlSearch.season_id ?? "",
+      date_from: urlSearch.date_from ?? "",
+      date_to: urlSearch.date_to ?? "",
+      page: urlSearch.page ?? 1,
+    }),
+    [urlSearch],
+  );
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<Record<string, number>>({});
@@ -96,19 +127,17 @@ function OrganizerHistoryPage() {
   const fetchHist = useServerFn(getOrganizerTournamentHistory);
   const fetchOpts = useServerFn(getOrganizerFilterOptions);
 
-  const load = async (overrides: Partial<Filters> = {}) => {
-    const f = { ...filters, ...overrides };
-    setFilters(f);
+  const reload = async () => {
     setLoading(true);
     try {
       const res = await fetchHist({
         data: {
-          ...(f.status && { status: f.status }),
-          ...(f.game_id && { game_id: f.game_id }),
-          ...(f.season_id && { season_id: f.season_id }),
-          ...(f.date_from && { date_from: f.date_from }),
-          ...(f.date_to && { date_to: f.date_to }),
-          page: f.page,
+          ...(filters.status && { status: filters.status }),
+          ...(filters.game_id && { game_id: filters.game_id }),
+          ...(filters.season_id && { season_id: filters.season_id }),
+          ...(filters.date_from && { date_from: filters.date_from }),
+          ...(filters.date_to && { date_to: filters.date_to }),
+          page: filters.page,
         },
       });
       setRows(res.tournaments as Row[]);
@@ -119,11 +148,26 @@ function OrganizerHistoryPage() {
     }
   };
 
+  const load = (overrides: Partial<Filters> = {}) =>
+    navigate({
+      search: (prev) => {
+        const next: HistorySearch = { ...prev, ...overrides };
+        for (const k of Object.keys(next) as (keyof HistorySearch)[]) {
+          if (!next[k]) delete next[k];
+        }
+        return next;
+      },
+    });
+
   useEffect(() => {
     fetchOpts({ data: {} as any }).then(setOpts).catch(() => {});
-    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(filters)]);
 
   const totalPages = Math.max(1, Math.ceil(total / 25));
   const activeFilters = [

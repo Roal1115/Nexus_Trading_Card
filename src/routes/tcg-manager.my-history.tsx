@@ -1,10 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Loader2 } from "lucide-react";
 import { getManagerHistory } from "@/lib/nexus-manager.functions";
 
+type HistorySearch = {
+  action_type?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+};
+
+const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
+
 export const Route = createFileRoute("/tcg-manager/my-history")({
+  validateSearch: (s: Record<string, unknown>): HistorySearch => ({
+    action_type: str(s.action_type),
+    date_from: str(s.date_from),
+    date_to: str(s.date_to),
+    page: typeof s.page === "number" && s.page > 1 ? s.page : undefined,
+  }),
   head: () => ({ meta: [{ title: "Mi Historial — TCG Manager" }] }),
   component: HistoryPage,
 });
@@ -59,23 +74,31 @@ function fmtDateTime(s: string) {
 }
 
 function HistoryPage() {
-  const [filters, setFilters] = useState<Filters>(INITIAL);
+  const navigate = useNavigate({ from: Route.fullPath });
+  const urlSearch = Route.useSearch();
+  const filters: Filters = useMemo(
+    () => ({
+      action_type: urlSearch.action_type ?? "",
+      date_from: urlSearch.date_from ?? "",
+      date_to: urlSearch.date_to ?? "",
+      page: urlSearch.page ?? 1,
+    }),
+    [urlSearch],
+  );
   const [entries, setEntries] = useState<Entry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const fetchHist = useServerFn(getManagerHistory);
 
-  const load = async (overrides: Partial<Filters> = {}) => {
-    const f = { ...filters, ...overrides };
-    setFilters(f);
+  const reload = async () => {
     setLoading(true);
     try {
       const res = await fetchHist({
         data: {
-          ...(f.action_type && { action_type: f.action_type }),
-          ...(f.date_from && { date_from: f.date_from }),
-          ...(f.date_to && { date_to: f.date_to }),
-          page: f.page,
+          ...(filters.action_type && { action_type: filters.action_type }),
+          ...(filters.date_from && { date_from: filters.date_from }),
+          ...(filters.date_to && { date_to: filters.date_to }),
+          page: filters.page,
         },
       });
       setEntries(res.entries as Entry[]);
@@ -85,10 +108,21 @@ function HistoryPage() {
     }
   };
 
+  const load = (overrides: Partial<Filters> = {}) =>
+    navigate({
+      search: (prev) => {
+        const next: HistorySearch = { ...prev, ...overrides };
+        for (const k of Object.keys(next) as (keyof HistorySearch)[]) {
+          if (!next[k]) delete next[k];
+        }
+        return next;
+      },
+    });
+
   useEffect(() => {
-    load();
+    reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [JSON.stringify(filters)]);
 
   const totalPages = Math.max(1, Math.ceil(total / 25));
   const activeFilters = [filters.action_type, filters.date_from, filters.date_to].filter(Boolean).length;

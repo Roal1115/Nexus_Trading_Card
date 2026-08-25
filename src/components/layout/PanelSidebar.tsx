@@ -107,8 +107,30 @@ export function PanelSidebar({
       {/* Overlay en mobile */}
       {mobileOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={closeMobile} aria-hidden />}
 
+      {/* Espaciador: reserva el ancho del sidebar en el layout del padre
+          SOLO mientras el <aside> está en position:fixed durante un
+          scroll-lock de Radix (ver styles.css, body[data-scroll-locked]) —
+          ahí el aside sale del flujo normal y sin esto su contenedor
+          colapsaría (bug real, reportado por el usuario, medido con
+          Playwright). Ancho 0 en cualquier otro momento — el propio
+          <aside> (position:sticky fuera de un lock) ya reserva su espacio
+          en el flujo normal, así que un espaciador con ancho fijo aquí
+          duplicaría ese espacio. Esa duplicación es justo el segundo bug
+          real que este comentario reemplaza: en un padre `flex` (paneles
+          de staff, a diferencia del padre `block` de PlayerSidebar) los
+          dos hermanos se acomodaban lado a lado en vez de superponerse,
+          empujando el sidebar completo ~256px a la derecha — el ancho de
+          un espaciador width:0 nunca puede duplicar nada, sin importar si
+          el padre es flex o block. Ver .panel-sidebar-spacer en
+          styles.css. */}
+      <div
+        aria-hidden
+        className="panel-sidebar-spacer hidden md:block shrink-0"
+        style={{ "--panel-sidebar-w": collapsed ? "4.5rem" : "16rem" } as React.CSSProperties}
+      />
+
       <aside
-        className={`glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out sm:pb-4 md:sticky md:top-0 md:z-auto md:translate-x-0 ${
+        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out sm:pb-4 md:sticky md:top-0 md:z-auto md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
         style={{ height: "100dvh" }}

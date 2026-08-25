@@ -1,0 +1,275 @@
+- generic [ref=f78e2]:
+  - complementary [ref=f78e36]:
+    - link "Nexus Jugador" [ref=f78e37] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f78e45]:
+        - generic [ref=f78e46]: Nexus
+        - generic [ref=f78e47]: Jugador
+    - button "Colapsar menú" [ref=f78e48]
+    - generic [ref=f78e52]:
+      - button "One Piece Card Game" [ref=f78e54]
+      - button "Notificaciones" [ref=f78e57]
+    - navigation [ref=f78e63]:
+      - generic [ref=f78e64]:
+        - generic [ref=f78e65]: Explorar
+        - generic [ref=f78e66]:
+          - link "Ranking" [ref=f78e67] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=f78e76] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=f78e81] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=f78e87] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f78e94]:
+        - generic [ref=f78e95]: Mi Carrera
+        - generic [ref=f78e96]:
+          - link "Mi Panel" [ref=f78e97] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=f78e105] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=f78e110] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f78e122]:
+        - generic [ref=f78e123]: Cuenta
+        - generic [ref=f78e124]:
+          - link "Mi Perfil" [ref=f78e125] [cursor=pointer]:
+            - /url: /players/Wololol
+          - link "Configuración" [ref=f78e132] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f78e138]:
+      - generic [ref=f78e139]:
+        - generic [ref=f78e140]: Sesión
+        - generic [ref=f78e141]: Wololol
+      - button "Cerrar sesión" [ref=f78e142]
+  - main [ref=f78e18]:
+    - generic [ref=f78e19]:
+      - generic [ref=f78e20]:
+        - generic [ref=f78e21]: Performance
+        - heading "Mis Sesiones" [level=1] [ref=f78e26]
+      - button "Nueva Sesión" [ref=f78e27]
+    - generic [ref=f78e148]:
+      - generic [ref=f78e149]:
+        - heading "Pendientes de vincular" [level=2] [ref=f78e153]
+        - generic [ref=f78e154]: "3"
+      - paragraph [ref=f78e155]: Se vincularán automáticamente cuando el organizador suba los resultados.
+      - generic [ref=f78e156]:
+        - generic [ref=f78e157] [cursor=pointer]:
+          - img "Marshall.D.Teach" [ref=f78e159]
+          - generic [ref=f78e160]:
+            - generic [ref=f78e161]:
+              - generic [ref=f78e162]: Pendiente
+              - generic [ref=f78e164]: 0% WR
+              - generic [ref=f78e165]: Torneo Competitivo
+            - generic [ref=f78e166]:
+              - generic [ref=f78e167]: One Piece Card Game
+              - generic [ref=f78e168]: ·
+              - generic [ref=f78e169]: Marshall.D.Teach
+          - generic [ref=f78e170]:
+            - generic [ref=f78e171]: 03 ago 2026
+            - generic [ref=f78e172]: Geek Collector
+          - button "Eliminar sesión" [ref=f78e174]
+        - generic [ref=f78e180] [cursor=pointer]:
+          - img "Sengoku" [ref=f78e182]
+          - generic [ref=f78e183]:
+            - generic [ref=f78e184]:
+              - generic [ref=f78e185]: Pendiente
+              - generic [ref=f78e187]: 75% WR
+              - generic [ref=f78e188]: Geek 14/07/26
+            - generic [ref=f78e189]:
+              - generic [ref=f78e190]: One Piece Card Game
+              - generic [ref=f78e191]: ·
+              - generic [ref=f78e192]: Sengoku
+          - generic [ref=f78e193]:
+            - generic [ref=f78e194]: 14 jul 2026
+            - generic [ref=f78e195]: Geek Collector
+          - button "Eliminar sesión" [ref=f78e197]
+        - generic [ref=f78e203] [cursor=pointer]:
+          - generic [ref=f78e211]:
+            - generic [ref=f78e212]:
+              - generic [ref=f78e213]: Pendiente
+              - generic [ref=f78e215]: 50% WR
+              - generic [ref=f78e216]: Lunes en Geek
+            - generic [ref=f78e217]: One Piece Card Game
+          - generic [ref=f78e219]:
+            - generic [ref=f78e220]: 29 jun 2026
+            - generic [ref=f78e221]: Geek Collector
+          - button "Eliminar sesión" [ref=f78e223]
+    - generic [ref=f78e229]:
+      - generic [ref=f78e230]:
+        - heading "Torneos Oficiales" [level=2] [ref=f78e238]
+        - generic [ref=f78e239]: "5"
+      - paragraph [ref=f78e240]: Resultados verificados — cuentan para tu ranking.
+      - generic [ref=f78e241]:
+        - link "Oficial 100% WR Geek Collector One Piece Card Game · 4 rondas · 4W 0L 15 jun 2026 Performance Tracker" [ref=f78e242] [cursor=pointer]:
+          - /url: /sessions/tournament/d41bc2ba-6828-42e5-9ae1-504de02fd3f4
+          - generic [ref=f78e250]:
+            - generic [ref=f78e251]:
+              - generic [ref=f78e252]: Oficial
+              - generic [ref=f78e256]: 100% WR
+              - generic [ref=f78e257]: Geek Collector
+            - generic [ref=f78e258]:
+              - generic [ref=f78e259]: One Piece Card Game
+              - generic [ref=f78e260]: ·
+              - generic [ref=f78e261]: 4 rondas · 4W 0L
+          - generic [ref=f78e262]:
+            - generic [ref=f78e263]: 15 jun 2026
+            - generic [ref=f78e264]: Performance Tracker
+        - link "Oficial 50% WR Geek Collector One Piece Card Game · 4 rondas · 2W 2L 08 jun 2026 Performance Tracker" [ref=f78e267] [cursor=pointer]:
+          - /url: /sessions/tournament/4362c7bc-779a-4887-bb1a-66483b07e339
+          - generic [ref=f78e275]:
+            - generic [ref=f78e276]:
+              - generic [ref=f78e277]: Oficial
+              - generic [ref=f78e281]: 50% WR
+              - generic [ref=f78e282]: Geek Collector
+            - generic [ref=f78e283]:
+              - generic [ref=f78e284]: One Piece Card Game
+              - generic [ref=f78e285]: ·
+              - generic [ref=f78e286]: 4 rondas · 2W 2L
+          - generic [ref=f78e287]:
+            - generic [ref=f78e288]: 08 jun 2026
+            - generic [ref=f78e289]: Performance Tracker
+        - link "Oficial 75% WR Geek Collector One Piece Card Game · 4 rondas · 3W 1L 01 jun 2026 Performance Tracker" [ref=f78e292] [cursor=pointer]:
+          - /url: /sessions/tournament/e29ec42b-f97d-4a42-87e6-2c3fbbd8dba6
+          - generic [ref=f78e300]:
+            - generic [ref=f78e301]:
+              - generic [ref=f78e302]: Oficial
+              - generic [ref=f78e306]: 75% WR
+              - generic [ref=f78e307]: Geek Collector
+            - generic [ref=f78e308]:
+              - generic [ref=f78e309]: One Piece Card Game
+              - generic [ref=f78e310]: ·
+              - generic [ref=f78e311]: 4 rondas · 3W 1L
+          - generic [ref=f78e312]:
+            - generic [ref=f78e313]: 01 jun 2026
+            - generic [ref=f78e314]: Performance Tracker
+        - link "Oficial 0% WR Geek Collector One Piece Card Game · 2 rondas · 0W 2L 25 may 2026 Performance Tracker" [ref=f78e317] [cursor=pointer]:
+          - /url: /sessions/tournament/93b9181a-dd0c-4590-a9e4-4237aa80df03
+          - generic [ref=f78e325]:
+            - generic [ref=f78e326]:
+              - generic [ref=f78e327]: Oficial
+              - generic [ref=f78e331]: 0% WR
+              - generic [ref=f78e332]: Geek Collector
+            - generic [ref=f78e333]:
+              - generic [ref=f78e334]: One Piece Card Game
+              - generic [ref=f78e335]: ·
+              - generic [ref=f78e336]: 2 rondas · 0W 2L
+          - generic [ref=f78e337]:
+            - generic [ref=f78e338]: 25 may 2026
+            - generic [ref=f78e339]: Performance Tracker
+        - link "Oficial 0% WR Geek Collector One Piece Card Game · 1 rondas · 0W 1L 04 may 2026 Performance Tracker" [ref=f78e342] [cursor=pointer]:
+          - /url: /sessions/tournament/0369ea3e-0b1f-4fd1-a047-3e7ad25c2955
+          - generic [ref=f78e350]:
+            - generic [ref=f78e351]:
+              - generic [ref=f78e352]: Oficial
+              - generic [ref=f78e356]: 0% WR
+              - generic [ref=f78e357]: Geek Collector
+            - generic [ref=f78e358]:
+              - generic [ref=f78e359]: One Piece Card Game
+              - generic [ref=f78e360]: ·
+              - generic [ref=f78e361]: 1 rondas · 0W 1L
+          - generic [ref=f78e362]:
+            - generic [ref=f78e363]: 04 may 2026
+            - generic [ref=f78e364]: Performance Tracker
+    - generic [ref=f78e367]:
+      - generic [ref=f78e368]:
+        - heading "Casual" [level=2] [ref=f78e379]
+        - generic [ref=f78e380]: "6"
+      - paragraph [ref=f78e381]: Prácticas y partidas fuera de torneo — no afectan tu ranking.
+      - generic [ref=f78e382]:
+        - generic [ref=f78e383] [cursor=pointer]:
+          - img "Sengoku" [ref=f78e385]
+          - generic [ref=f78e386]:
+            - generic [ref=f78e387]:
+              - generic [ref=f78e388]: Casual
+              - generic [ref=f78e398]: 33% WR
+              - generic [ref=f78e399]: Sim 27/07
+            - generic [ref=f78e400]:
+              - generic [ref=f78e401]: One Piece Card Game
+              - generic [ref=f78e402]: ·
+              - generic [ref=f78e403]: Sengoku
+          - generic [ref=f78e404]:
+            - generic [ref=f78e405]: 27 jul 2026
+            - generic [ref=f78e406]: Sin tienda
+          - button "Eliminar sesión" [ref=f78e408]
+        - generic [ref=f78e414] [cursor=pointer]:
+          - img "Monkey.D.Luffy" [ref=f78e416]
+          - generic [ref=f78e417]:
+            - generic [ref=f78e418]:
+              - generic [ref=f78e419]: Casual
+              - generic [ref=f78e429]: 0% WR
+              - generic [ref=f78e430]: SIM 27/07
+            - generic [ref=f78e431]:
+              - generic [ref=f78e432]: One Piece Card Game
+              - generic [ref=f78e433]: ·
+              - generic [ref=f78e434]: Monkey.D.Luffy
+          - generic [ref=f78e435]:
+            - generic [ref=f78e436]: 27 jul 2026
+            - generic [ref=f78e437]: Sin tienda
+          - button "Eliminar sesión" [ref=f78e439]
+        - generic [ref=f78e445] [cursor=pointer]:
+          - img "Monkey.D.Luffy" [ref=f78e447]
+          - generic [ref=f78e448]:
+            - generic [ref=f78e449]:
+              - generic [ref=f78e450]: Casual
+              - generic [ref=f78e460]: 60% WR
+              - generic [ref=f78e461]: Sim 27/07
+            - generic [ref=f78e462]:
+              - generic [ref=f78e463]: One Piece Card Game
+              - generic [ref=f78e464]: ·
+              - generic [ref=f78e465]: Monkey.D.Luffy
+          - generic [ref=f78e466]:
+            - generic [ref=f78e467]: 27 jul 2026
+            - generic [ref=f78e468]: Sin tienda
+          - button "Eliminar sesión" [ref=f78e470]
+        - generic [ref=f78e476] [cursor=pointer]:
+          - img "Sengoku" [ref=f78e478]
+          - generic [ref=f78e479]:
+            - generic [ref=f78e480]:
+              - generic [ref=f78e481]: Casual
+              - generic [ref=f78e491]: 100% WR
+              - generic [ref=f78e492]: SIM 22/07/26 Sengoku
+            - generic [ref=f78e493]:
+              - generic [ref=f78e494]: One Piece Card Game
+              - generic [ref=f78e495]: ·
+              - generic [ref=f78e496]: Sengoku
+          - generic [ref=f78e497]:
+            - generic [ref=f78e498]: 22 jul 2026
+            - generic [ref=f78e499]: Sin tienda
+          - button "Eliminar sesión" [ref=f78e501]
+        - generic [ref=f78e507] [cursor=pointer]:
+          - img "Monkey.D.Luffy" [ref=f78e509]
+          - generic [ref=f78e510]:
+            - generic [ref=f78e511]:
+              - generic [ref=f78e512]: Casual
+              - generic [ref=f78e522]: 67% WR
+              - generic [ref=f78e523]: Sim 22/07/26 GP Luffy
+            - generic [ref=f78e524]:
+              - generic [ref=f78e525]: One Piece Card Game
+              - generic [ref=f78e526]: ·
+              - generic [ref=f78e527]: Monkey.D.Luffy
+          - generic [ref=f78e528]:
+            - generic [ref=f78e529]: 22 jul 2026
+            - generic [ref=f78e530]: Sin tienda
+          - button "Eliminar sesión" [ref=f78e532]
+        - generic [ref=f78e538] [cursor=pointer]:
+          - img "Monkey.D.Luffy" [ref=f78e540]
+          - generic [ref=f78e541]:
+            - generic [ref=f78e542]:
+              - generic [ref=f78e543]: Casual
+              - generic [ref=f78e553]: 50% WR
+              - generic [ref=f78e554]: Sim
+            - generic [ref=f78e555]:
+              - generic [ref=f78e556]: One Piece Card Game
+              - generic [ref=f78e557]: ·
+              - generic [ref=f78e558]: Monkey.D.Luffy
+          - generic [ref=f78e559]:
+            - generic [ref=f78e560]: 21 jul 2026
+            - generic [ref=f78e561]: Sin tienda
+          - button "Eliminar sesión" [active] [ref=f78e563]
+          - generic [ref=f78e569]:
+            - generic [ref=f78e570]: ¿Eliminar "Sim"?
+            - generic [ref=f78e571]:
+              - button "Eliminar" [ref=f78e572]
+              - button "Cancelar" [ref=f78e573]
+  - region "Notifications alt+T"

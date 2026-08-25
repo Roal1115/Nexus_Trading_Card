@@ -1,0 +1,44 @@
+- generic [ref=f103e2]:
+  - generic [ref=f103e5]:
+    - complementary [ref=f103e7]:
+      - link "Nexus Panel" [ref=f103e8] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f103e16]:
+          - generic [ref=f103e17]: Nexus
+          - generic [ref=f103e18]: Panel
+      - navigation [ref=f103e19]:
+        - generic [ref=f103e20]:
+          - generic [ref=f103e21]: Administración
+          - generic [ref=f103e22]:
+            - link "Torneos" [ref=f103e23] [cursor=pointer]:
+              - /url: /admin/tournaments-panel
+            - link "Historial de Torneos" [ref=f103e29] [cursor=pointer]:
+              - /url: /admin/history
+            - link "Tiendas y Staff" [ref=f103e36] [cursor=pointer]:
+              - /url: /admin/stores
+            - link "Usuarios" [ref=f103e43] [cursor=pointer]:
+              - /url: /admin/players
+            - link "Temporadas" [ref=f103e51] [cursor=pointer]:
+              - /url: /admin/seasons
+            - link "Activity Center" [ref=f103e56] [cursor=pointer]:
+              - /url: /admin/activity
+        - generic [ref=f103e61]:
+          - generic [ref=f103e62]: Circuito
+          - generic [ref=f103e63]:
+            - link "Publicar Manualmente" [ref=f103e64] [cursor=pointer]:
+              - /url: /admin/publish
+            - link "Calendario Nacional" [ref=f103e70] [cursor=pointer]:
+              - /url: /admin/calendar
+            - link "Subir Torneo" [ref=f103e75] [cursor=pointer]:
+              - /url: /admin/upload
+        - generic [ref=f103e81]:
+          - generic [ref=f103e82]: Publicidad
+          - link "Sponsors & Ads" [ref=f103e84] [cursor=pointer]:
+            - /url: /admin/ads
+      - generic [ref=f103e90]:
+        - generic [ref=f103e91]:
+          - generic [ref=f103e92]: Sesión
+          - generic [ref=f103e93]: Admin
+        - button "Cerrar sesión" [ref=f103e94]
+    - main [ref=f103e100]
+  - region "Notifications alt+T"

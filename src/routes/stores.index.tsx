@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { StoreCardSkeleton } from "@/components/ui/skeleton-loader";
@@ -15,13 +16,20 @@ import {
   Star,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getPublicStoresList } from "@/lib/nexus-public.functions";
 import { getMyFavoriteStores, toggleFavoriteStore } from "@/lib/nexus-player.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
+import { publicStoresQuery } from "@/lib/stores-queries";
 
 
 export const Route = createFileRoute("/stores/")({
   head: () => ({ meta: [{ title: "Tiendas — Nexus" }] }),
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(publicStoresQuery());
+    } catch {
+      return undefined;
+    }
+  },
   component: TiendasPage,
 });
 
@@ -161,23 +169,18 @@ const gridVariants = {
 };
 
 function TiendasPage() {
-  const fetchStores = useServerFn(getPublicStoresList);
   const fetchFavorites = useServerFn(getMyFavoriteStores);
   const toggleFav = useServerFn(toggleFavoriteStore);
   const { player } = useNexusRole();
+  const loaderData = Route.useLoaderData();
 
-  const [loading, setLoading] = useState(true);
-  const [stores, setStores] = useState<StoreCard[]>([]);
+  const { data: storesData, isLoading: loading } = useQuery({
+    ...publicStoresQuery(),
+    initialData: loaderData,
+  });
+  const stores: StoreCard[] = storesData?.stores ?? [];
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [togglingId, setTogglingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchStores()
-      .then((res: any) => setStores(res.stores ?? []))
-      .catch(() => setStores([]))
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!player?.id) {

@@ -1,11 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Crown, Download, Share2, Check, Trophy, Target } from "lucide-react";
 import { getSeasonProfile } from "@/lib/nexus-season-profile.functions";
+import { seasonProfileQuery } from "@/lib/season-profile-queries";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/players/$playerTag_/season/$seasonId")({
+  loader: async ({ context, params }) => {
+    try {
+      return await context.queryClient.ensureQueryData(
+        seasonProfileQuery(params.playerTag, params.seasonId),
+      );
+    } catch {
+      return undefined;
+    }
+  },
   head: ({ params }) => ({
     meta: [
       { title: `Temporada de ${params.playerTag} — Nexus` },
@@ -123,19 +133,14 @@ async function downloadCard(p: any) {
 
 function SeasonProfilePage() {
   const { playerTag, seasonId } = Route.useParams();
-  const fetchProfile = useServerFn(getSeasonProfile);
-  const [data, setData] = useState<SeasonProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const loaderData = Route.useLoaderData();
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchProfile({ data: { player_tag: playerTag, season_id: seasonId } })
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerTag, seasonId]);
+  const { data, isLoading: loading } = useQuery({
+    ...seasonProfileQuery(playerTag, seasonId),
+    initialData: loaderData,
+    retry: false,
+  });
 
   const share = async () => {
     const url = window.location.href;

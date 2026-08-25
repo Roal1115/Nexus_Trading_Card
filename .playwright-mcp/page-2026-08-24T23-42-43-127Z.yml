@@ -1,0 +1,14 @@
+- generic [ref=f76e2]:
+  - generic [ref=f76e3]:
+    - banner [ref=f76e4]:
+      - link "Trading Card Nexus" [ref=f76e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f76e15]: Trading Card
+        - generic [ref=f76e16]: Nexus
+    - main [ref=f76e18]:
+      - generic [ref=f76e19]:
+        - generic [ref=f76e20]:
+          - generic [ref=f76e21]: Performance
+          - heading "Mis Sesiones" [level=1] [ref=f76e26]
+        - button "Nueva Sesión" [ref=f76e27]
+  - region "Notifications alt+T"
