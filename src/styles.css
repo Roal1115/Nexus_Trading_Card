@@ -112,6 +112,7 @@
   html {
     background-color: #08111f;
     overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
   input[type="date"],
   input[type="time"] {

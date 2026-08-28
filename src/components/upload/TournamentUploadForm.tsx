@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { mondayOfWeek, toLocalDateStr } from "@/lib/utils";
+import { randomId } from "@/lib/random-id";
 import { nexus } from "@/integrations/nexus/client";
 import {
   getOrganizerOverview,
@@ -503,7 +504,7 @@ export function TournamentUploadForm({
         points_earned: r.points_earned,
       }));
 
-      const tournamentId = crypto.randomUUID();
+      const tournamentId = randomId();
       const csvUrl = selectedFile ? await uploadFileToStorage(selectedFile, tournamentId) : null;
 
       const result = await submitUpload({

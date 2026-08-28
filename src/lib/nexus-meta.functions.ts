@@ -26,6 +26,32 @@ type Round = {
   turn_order: string | null;
 };
 
+// ponytail: .in() con cientos de UUIDs arma una URL que puede pasar el
+// límite de headers de undici (16KB, ver fix en getMyCasualStats /
+// getStandaloneSessions) — se trocea antes de mandarla.
+const ID_BATCH_SIZE = 150;
+async function fetchRoundsBatched(
+  admin: ReturnType<typeof getNexusAdmin>,
+  table: "tournament_round_results" | "standalone_round_results",
+  column: "tournament_id" | "session_id",
+  ids: string[],
+): Promise<Round[]> {
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += ID_BATCH_SIZE) batches.push(ids.slice(i, i + ID_BATCH_SIZE));
+
+  const results = await Promise.all(
+    batches.map((batch) =>
+      admin
+        .from(table)
+        .select("player_leader_id, opponent_leader_id, won_match, turn_order")
+        .in(column, batch)
+        .eq("is_bye", false)
+        .not("won_match", "is", null),
+    ),
+  );
+  return results.flatMap((r) => (r.data ?? []) as Round[]);
+}
+
 async function fetchMetaRounds(
   admin: ReturnType<typeof getNexusAdmin>,
   data: MetaFilters,
@@ -43,17 +69,6 @@ async function fetchMetaRounds(
   const { data: tournaments } = await tournamentQuery;
   const tournamentIds = (tournaments ?? []).map((t: any) => t.id);
 
-  const tournamentRounds = tournamentIds.length
-    ? ((
-        await admin
-          .from("tournament_round_results")
-          .select("player_leader_id, opponent_leader_id, won_match, turn_order")
-          .in("tournament_id", tournamentIds)
-          .eq("is_bye", false)
-          .not("won_match", "is", null)
-      ).data ?? [])
-    : [];
-
   // Rondas de Sessions personales SIN torneo vinculado
   let sessionQuery = admin
     .from("standalone_sessions")
@@ -67,18 +82,12 @@ async function fetchMetaRounds(
   const { data: sessions } = await sessionQuery;
   const sessionIds = (sessions ?? []).map((s: any) => s.id);
 
-  const sessionRounds = sessionIds.length
-    ? ((
-        await admin
-          .from("standalone_round_results")
-          .select("player_leader_id, opponent_leader_id, won_match, turn_order")
-          .in("session_id", sessionIds)
-          .eq("is_bye", false)
-          .not("won_match", "is", null)
-      ).data ?? [])
-    : [];
+  const [tournamentRounds, sessionRounds] = await Promise.all([
+    fetchRoundsBatched(admin, "tournament_round_results", "tournament_id", tournamentIds),
+    fetchRoundsBatched(admin, "standalone_round_results", "session_id", sessionIds),
+  ]);
 
-  return [...tournamentRounds, ...sessionRounds] as Round[];
+  return [...tournamentRounds, ...sessionRounds];
 }
 
 // Resuelve arte alternativo → líder canónico y regresa info de cada líder

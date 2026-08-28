@@ -1,0 +1,39 @@
+- generic [ref=f1e2]:
+  - complementary [ref=f1e50]:
+    - link "Nexus Jugador" [ref=f1e51] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f1e59]:
+        - generic [ref=f1e60]: Nexus
+        - generic [ref=f1e61]: Jugador
+    - button "Colapsar menú" [ref=f1e62]
+    - button "One Piece Card Game" [ref=f1e68]
+    - navigation [ref=f1e71]
+    - generic [ref=f1e72]:
+      - generic [ref=f1e73]: Sesión
+      - button "Cerrar sesión" [ref=f1e75]
+  - main [ref=f1e18]:
+    - generic [ref=f1e19]:
+      - generic [ref=f1e20]:
+        - paragraph [ref=f1e21]: Nexus
+        - heading "Bienvenido de vuelta" [level=1] [ref=f1e22]
+        - paragraph [ref=f1e23]: Inicia sesión para seguir tu ranking.
+      - generic [ref=f1e24]:
+        - generic [ref=f1e25]:
+          - generic [ref=f1e26]: Geek Tag o correo electrónico
+          - textbox "Geek Tag o jugador@nexus.gg" [ref=f1e27]: playerall@test.com
+        - generic [ref=f1e29]:
+          - generic [ref=f1e30]: Contraseña
+          - generic [ref=f1e31]:
+            - textbox "••••••••" [ref=f1e32]: "!Test1234"
+            - button "Mostrar contraseña" [ref=f1e33]
+        - button "Entrar a la Arena" [disabled] [ref=f1e37]
+        - generic [ref=f1e38]:
+          - button "¿Olvidaste tu contraseña?" [ref=f1e39]
+          - link "¿No tienes cuenta? Únete al Circuito →" [ref=f1e40] [cursor=pointer]:
+            - /url: /signup
+      - link "Continuar como invitado →" [ref=f1e41] [cursor=pointer]:
+        - /url: /
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f1e81]:
+        - generic [ref=f1e85]: ¡Bienvenido de vuelta a la Arena!

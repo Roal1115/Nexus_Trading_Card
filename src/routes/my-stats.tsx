@@ -6,6 +6,7 @@ import { ArrowLeft, ShieldQuestion, AlertTriangle, BarChart3, HelpCircle, Search
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { getMyStats } from "@/lib/nexus-player.functions";
 import { myStatsGamesQuery, myStatsSourceQuery } from "@/lib/my-stats-queries";
+import { myDashboardQuery } from "@/lib/dashboard-queries";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/my-stats")({
@@ -114,7 +115,80 @@ const STAT_TOOLTIPS: Record<string, string> = {
   "1st Winrate":
     "Win Rate cuando tú juegas primero (tu turno 1). En One Piece, jugar primero o segundo impacta significativamente la estrategia.",
   "2nd Winrate": "Win Rate cuando juegas segundo (oponente tiene turno 1).",
+  "WR ganando dado": "Tu win rate en las partidas donde ganaste la tirada de dado inicial.",
+  "WR perdiendo dado": "Tu win rate en las partidas donde perdiste la tirada de dado inicial.",
+  "Mejor puesto": "Tu mejor posición final en un torneo, considerando todos tus torneos oficiales de este TCG.",
+  "Top 8 rate": "Porcentaje de torneos donde terminaste en el top 8.",
 };
+
+// Agregados a nivel jugador (no por leader): racha, dado, turno — derivados del round_history
+// que cada matchup ya trae cargado, sin pedir datos nuevos al server.
+function computePlayerAggregates(stats: StatsData | null) {
+  const rounds: RoundHistory[] = stats
+    ? stats.leaders.flatMap((l) =>
+        l.matchups.flatMap((m) => ((m as any).round_history ?? []) as RoundHistory[]),
+      )
+    : [];
+  if (rounds.length === 0) return null;
+
+  const sorted = [...rounds].sort((a, b) => {
+    const ad = a.tournament_date ?? "";
+    const bd = b.tournament_date ?? "";
+    if (ad !== bd) return ad.localeCompare(bd);
+    return a.round_number - b.round_number;
+  });
+
+  let bestWinStreak = 0;
+  let run = 0;
+  for (const r of sorted) {
+    run = r.won_match ? run + 1 : 0;
+    if (run > bestWinStreak) bestWinStreak = run;
+  }
+
+  let currentStreak: { type: "W" | "L" | null; count: number } = { type: null, count: 0 };
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const type = sorted[i].won_match ? "W" : "L";
+    if (currentStreak.type === null) currentStreak = { type, count: 1 };
+    else if (currentStreak.type === type) currentStreak.count++;
+    else break;
+  }
+
+  const wr = (arr: RoundHistory[]) =>
+    arr.length ? round1((arr.filter((r) => r.won_match).length / arr.length) * 100) : null;
+  const dieWon = rounds.filter((r) => r.won_die_roll === true);
+  const dieLost = rounds.filter((r) => r.won_die_roll === false);
+  const first = rounds.filter((r) => r.turn_order === "first");
+  const second = rounds.filter((r) => r.turn_order === "second");
+
+  return {
+    bestWinStreak,
+    currentStreak,
+    dieRollWinRate: wr(dieWon),
+    dieRollGames: dieWon.length,
+    noDieRollWinRate: wr(dieLost),
+    noDieRollGames: dieLost.length,
+    firstWinRate: wr(first),
+    firstGames: first.length,
+    secondWinRate: wr(second),
+    secondGames: second.length,
+  };
+}
+
+type DashboardEvent = { game_id: string | null; placement: number | null; date: string };
+
+// Solo torneos oficiales (dashboard events) — puesto/top-cut no aplican a partidas casuales.
+function computeTournamentSummary(events: DashboardEvent[], gameId: string) {
+  const filtered = events.filter((e) => e.game_id === gameId && e.placement != null);
+  if (filtered.length === 0) return null;
+  const placements = filtered.map((e) => e.placement as number);
+  const topCut = filtered.filter((e) => (e.placement as number) <= 8).length;
+  return {
+    played: filtered.length,
+    best: Math.min(...placements),
+    avg: round1(placements.reduce((a, b) => a + b, 0) / placements.length),
+    topCutRate: round1((topCut / filtered.length) * 100),
+  };
+}
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   const [show, setShow] = useState(false);
@@ -164,6 +238,11 @@ function UncertainBadge() {
 // ponytail: <5 partidas = muestra baja, se atenúa el color para no vender un 100% de 1 partida como dato sólido
 const LOW_SAMPLE = 5;
 
+function wrColorClass(rate: number, lowSample = false): string {
+  if (lowSample) return "text-gray-400";
+  return rate >= 55 ? "text-emerald-400" : rate >= 45 ? "text-white" : "text-red-400";
+}
+
 function WinRateBar({ rate, dim }: { rate: number; dim?: boolean }) {
   const color = dim
     ? "bg-gray-500"
@@ -205,6 +284,49 @@ function ColorDots({ colors }: { colors: string[] }) {
   );
 }
 
+// Nombre corto para mostrar: nadie dice "Dracule Mihawk" o "Monkey.D.Luffy" completo,
+// todos usan el último nombre ("Mihawk", "Luffy"). Nunca tocamos el dato real, solo el display.
+function shortLeaderName(name: string): string {
+  // Algunos base_name usan comillas en vez de espacios como separador, ej. Eustass"Captain"Kid
+  const parts = name.split(/[\s."'‘’“”]+/).filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 1] : name;
+}
+
+// set_code normalmente es "EB-02" / "OP-09" (letras-dígitos) y lo mostramos sin guion.
+// Pero algunos releases US son fusiones de dos expansiones, ej. "OP14-EB04" (dos códigos
+// completos separados por guion) — ahí mostramos solo el primero, que es el set real del leader.
+function setBadge(setCode: string | null | undefined): string | null {
+  if (!setCode) return null;
+  const [first, ...rest] = setCode.split("-");
+  if (rest.length > 0 && /\d/.test(first)) return first.toUpperCase();
+  return setCode.replace(/-/g, "").toUpperCase();
+}
+
+function LeaderLabel({
+  name,
+  setCode,
+  colors,
+  className = "",
+}: {
+  name: string;
+  setCode?: string | null;
+  colors?: string[] | null;
+  className?: string;
+}) {
+  const badge = setBadge(setCode);
+  return (
+    <span className={`inline-flex min-w-0 items-center gap-1.5 ${className}`}>
+      <span className="truncate">{shortLeaderName(name)}</span>
+      {badge && (
+        <span className="flex-shrink-0 rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
+          {badge}
+        </span>
+      )}
+      {colors && colors.length > 0 && <ColorDots colors={colors} />}
+    </span>
+  );
+}
+
 function LeaderCard({
   stat,
   selected,
@@ -227,6 +349,8 @@ function LeaderCard({
         <img
           src={stat.leader_image}
           alt={stat.leader_name}
+          loading="lazy"
+          decoding="async"
           className="h-12 w-8 flex-shrink-0 rounded-md border border-white/10 object-cover"
         />
       ) : (
@@ -235,7 +359,12 @@ function LeaderCard({
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-white">{stat.leader_name}</p>
+        <LeaderLabel
+          name={stat.leader_name}
+          setCode={stat.leader_set_code}
+          colors={stat.leader_colors}
+          className="text-sm font-semibold text-white"
+        />
         <p className="text-xs text-gray-500">
           {stat.total_games} partidas · {stat.raw_win_rate}% WR
         </p>
@@ -249,62 +378,7 @@ function LeaderCard({
   );
 }
 
-function MatchupRow({ matchup, onClick }: { matchup: Matchup; onClick: () => void }) {
-  const lowSample = matchup.total < LOW_SAMPLE;
-
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
-      <button
-        onClick={onClick}
-        className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-white/5 transition"
-      >
-        {matchup.opponent_leader_image ? (
-          <img
-            src={matchup.opponent_leader_image}
-            alt={matchup.opponent_leader_name}
-            className="h-8 w-6 flex-shrink-0 rounded border border-white/10 object-cover"
-          />
-        ) : (
-          <div className="flex h-8 w-6 flex-shrink-0 items-center justify-center rounded border border-white/10 bg-black/30">
-            <ShieldQuestion size={11} className="text-gray-600" />
-          </div>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-white truncate">
-              {matchup.opponent_leader_name}
-            </p>
-            {matchup.has_uncertain_data && <UncertainBadge />}
-          </div>
-          <WinRateBar rate={matchup.overall_win_rate} dim={lowSample} />
-        </div>
-
-        <div className="text-right flex-shrink-0 ml-2">
-          <p
-            className={`font-mono text-base font-bold leading-tight ${
-              lowSample
-                ? "text-gray-400"
-                : matchup.overall_win_rate >= 55
-                  ? "text-emerald-400"
-                  : matchup.overall_win_rate >= 45
-                    ? "text-white"
-                    : "text-red-400"
-            }`}
-          >
-            {matchup.overall_win_rate}%
-          </p>
-          <p className="text-[10px] text-gray-500">
-            {matchup.total} partidas{lowSample ? " · muestra baja" : ""}
-          </p>
-        </div>
-        <ChevronRight size={14} className="flex-shrink-0 text-gray-600" />
-      </button>
-    </div>
-  );
-}
-
-type HistoryRound = RoundHistory & { my_leader_name?: string };
+type HistoryRound = RoundHistory & { my_leader_name?: string; my_leader_id: string };
 
 function RoundHistoryList({
   rounds,
@@ -315,77 +389,86 @@ function RoundHistoryList({
 }) {
   return (
     <div className="space-y-1.5">
-      {rounds.map((r, i) => (
-        <div
-          key={i}
-          className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-            r.won_match
-              ? "bg-emerald-500/10 border border-emerald-500/20"
-              : "bg-red-500/10 border border-red-500/20"
-          }`}
-        >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`text-xs font-bold ${r.won_match ? "text-emerald-400" : "text-red-400"}`}
-              >
-                {r.won_match ? "Victoria" : "Derrota"}
-              </span>
-              <span className="text-xs text-gray-400">vs {r.opponent_tag}</span>
-              {r.my_leader_name && (
-                <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] text-gray-400">
-                  con {r.my_leader_name}
+      {rounds.map((r, i) => {
+        const prev = rounds[i - 1];
+        const leaderChanged = i > 0 && r.my_leader_id !== prev.my_leader_id;
+        return (
+          <div key={i}>
+            {leaderChanged && r.my_leader_name && (
+              <div className="my-3 flex items-center gap-2">
+                <span className="h-px flex-1 bg-white/10" />
+                <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                  Con {r.my_leader_name}
                 </span>
-              )}
-              {r.is_pending ? (
-                <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
-                  En espera del torneo
-                </span>
-              ) : (
-                r.status !== "confirmed" &&
-                statsSource === "official" && (
-                  <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
-                    En proceso de vinculación
-                  </span>
-                )
-              )}
-            </div>
-            <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-600 flex-wrap">
-              <span>{r.store_name}</span>
-              {r.tournament_date && (
-                <>
-                  <span>·</span>
-                  <span>
-                    {new Date(r.tournament_date + "T12:00:00").toLocaleDateString("es-MX", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
-                </>
-              )}
-              {r.turn_order && (
-                <>
-                  <span>·</span>
-                  <span>{r.turn_order === "first" ? "Fui primero" : "Fui segundo"}</span>
-                </>
-              )}
-              {r.won_die_roll !== null && (
-                <>
-                  <span>·</span>
-                  <span>Dado: {r.won_die_roll ? "Yo" : "Oponente"}</span>
-                </>
-              )}
-              <span>· R{r.round_number}</span>
-            </div>
-            {r.notes && (
-              <p className="mt-1 text-[10px] italic text-gray-500 truncate max-w-xs">
-                "{r.notes}"
-              </p>
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
             )}
+            <div
+              className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                r.won_match
+                  ? "bg-emerald-500/10 border border-emerald-500/20"
+                  : "bg-red-500/10 border border-red-500/20"
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`text-xs font-bold ${r.won_match ? "text-emerald-400" : "text-red-400"}`}
+                  >
+                    {r.won_match ? "Victoria" : "Derrota"}
+                  </span>
+                  <span className="text-xs text-gray-400">vs {r.opponent_tag}</span>
+                  {r.is_pending ? (
+                    <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
+                      En espera del torneo
+                    </span>
+                  ) : (
+                    r.status !== "confirmed" &&
+                    statsSource === "official" && (
+                      <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
+                        En proceso de vinculación
+                      </span>
+                    )
+                  )}
+                </div>
+                <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-600 flex-wrap">
+                  <span>{r.store_name}</span>
+                  {r.tournament_date && (
+                    <>
+                      <span>·</span>
+                      <span>
+                        {new Date(r.tournament_date + "T12:00:00").toLocaleDateString("es-MX", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </>
+                  )}
+                  {r.turn_order && (
+                    <>
+                      <span>·</span>
+                      <span>{r.turn_order === "first" ? "Fui primero" : "Fui segundo"}</span>
+                    </>
+                  )}
+                  {r.won_die_roll !== null && (
+                    <>
+                      <span>·</span>
+                      <span>Dado: {r.won_die_roll ? "Yo" : "Oponente"}</span>
+                    </>
+                  )}
+                  <span>· R{r.round_number}</span>
+                </div>
+                {r.notes && (
+                  <p className="mt-1 text-[10px] italic text-gray-500 truncate max-w-xs">
+                    "{r.notes}"
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -395,11 +478,13 @@ function VsLeaderDrawer({
   opponentId,
   leaders,
   statsSource,
+  currentLeaderId,
   onClose,
 }: {
   opponentId: string;
   leaders: LeaderStat[];
   statsSource: StatsSource;
+  currentLeaderId: string | null;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -423,16 +508,25 @@ function VsLeaderDrawer({
   const secondWins = entries.reduce((s, e) => s + e.m.second_wins, 0);
   const wr = total ? round1((wins / total) * 100) : 0;
 
-  const history: HistoryRound[] = entries
-    .flatMap((e) =>
-      (((e.m as any).round_history ?? []) as RoundHistory[]).map((r) => ({
-        ...r,
-        my_leader_name: entries.length > 1 ? e.leader.leader_name : undefined,
-      })),
-    )
-    .sort((a, b) => (b.tournament_date ?? "").localeCompare(a.tournament_date ?? ""));
+  // Agrupamos por leader (el que estás viendo ahora primero) en vez de solo por fecha,
+  // así el historial no salta entre leaders partida a partida.
+  const orderedEntries = [...entries].sort((a, b) => {
+    if (currentLeaderId) {
+      if (a.leader.leader_id === currentLeaderId) return -1;
+      if (b.leader.leader_id === currentLeaderId) return 1;
+    }
+    return b.m.total - a.m.total;
+  });
 
-  const colors = ((opp as any).opponent_leader_colors as string[] | null) ?? [];
+  const history: HistoryRound[] = orderedEntries.flatMap((e) =>
+    (((e.m as any).round_history ?? []) as RoundHistory[])
+      .map((r) => ({
+        ...r,
+        my_leader_id: e.leader.leader_id,
+        my_leader_name: entries.length > 1 ? shortLeaderName(e.leader.leader_name) : undefined,
+      }))
+      .sort((a, b) => (b.tournament_date ?? "").localeCompare(a.tournament_date ?? "")),
+  );
 
   return (
     <>
@@ -469,10 +563,13 @@ function VsLeaderDrawer({
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-lg font-bold text-white">
-                vs {opp.opponent_leader_name}
-              </h2>
-              {colors.length > 0 && <ColorDots colors={colors} />}
+              <h2 className="truncate text-lg font-bold text-white">vs</h2>
+              <LeaderLabel
+                name={opp.opponent_leader_name}
+                setCode={opp.opponent_leader_set_code}
+                colors={opp.opponent_leader_colors}
+                className="text-lg font-bold text-white"
+              />
             </div>
             <p className="text-xs text-gray-500">
               {total} partidas · {entries.length} de tus leaders
@@ -492,13 +589,7 @@ function VsLeaderDrawer({
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-center">
               <p className="text-[10px] uppercase tracking-widest text-gray-500">Overall</p>
-              <p
-                className={`mt-1 font-mono text-lg font-bold ${
-                  wr >= 55 ? "text-emerald-400" : wr >= 45 ? "text-white" : "text-red-400"
-                }`}
-              >
-                {wr}%
-              </p>
+              <p className={`mt-1 font-mono text-lg font-bold ${wrColorClass(wr)}`}>{wr}%</p>
               <p className="text-[10px] text-gray-600">
                 {wins}W — {total - wins}L
               </p>
@@ -522,23 +613,33 @@ function VsLeaderDrawer({
           {/* Con cuál de mis leaders me va mejor */}
           {entries.length > 1 && (
             <div>
-              <p className="mb-2 text-[10px] uppercase tracking-widest text-gray-500">
-                Con tus leaders
+              <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                Tu win rate contra {shortLeaderName(opp.opponent_leader_name)}, por leader
+              </p>
+              <p className="mb-2 text-[10px] text-gray-600">
+                Cómo te fue contra este oponente cada vez que jugaste con cada uno de tus leaders.
               </p>
               <div className="space-y-1.5">
                 {[...entries]
                   .sort((a, b) => b.m.overall_win_rate - a.m.overall_win_rate)
                   .map((e) => {
                     const low = e.m.total < LOW_SAMPLE;
+                    const isCurrent = e.leader.leader_id === currentLeaderId;
                     return (
                       <div
                         key={e.leader.leader_id}
-                        className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2"
+                        className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${
+                          isCurrent
+                            ? "border-primary/40 bg-primary/5"
+                            : "border-white/10 bg-white/[0.02]"
+                        }`}
                       >
                         {e.leader.leader_image ? (
                           <img
                             src={e.leader.leader_image}
                             alt={e.leader.leader_name}
+                            loading="lazy"
+                            decoding="async"
                             className="h-8 w-6 flex-shrink-0 rounded border border-white/10 object-cover"
                           />
                         ) : (
@@ -547,22 +648,24 @@ function VsLeaderDrawer({
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-white">
-                            {e.leader.leader_name}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <LeaderLabel
+                              name={e.leader.leader_name}
+                              setCode={e.leader.leader_set_code}
+                              colors={e.leader.leader_colors}
+                              className="text-sm font-semibold text-white"
+                            />
+                            {isCurrent && (
+                              <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
+                                Viendo
+                              </span>
+                            )}
+                          </div>
                           <WinRateBar rate={e.m.overall_win_rate} dim={low} />
                         </div>
                         <div className="ml-2 flex-shrink-0 text-right">
                           <p
-                            className={`font-mono text-sm font-bold ${
-                              low
-                                ? "text-gray-400"
-                                : e.m.overall_win_rate >= 55
-                                  ? "text-emerald-400"
-                                  : e.m.overall_win_rate >= 45
-                                    ? "text-white"
-                                    : "text-red-400"
-                            }`}
+                            className={`font-mono text-sm font-bold ${wrColorClass(e.m.overall_win_rate, low)}`}
                           >
                             {e.m.overall_win_rate}%
                           </p>
@@ -700,6 +803,7 @@ function StatsPage() {
     ...myStatsSourceQuery(gameId, "pending"),
     enabled: !!selectedGameId && (statsSource === "pending" || statsSource === "all"),
   });
+  const dashboardQ = useQuery({ ...myDashboardQuery(), enabled: !!player });
 
   const stats: StatsData | null =
     statsSource === "official"
@@ -756,6 +860,12 @@ function StatsPage() {
   const overviewWr =
     overview && overview.games > 0 ? Math.round((overview.wins / overview.games) * 1000) / 10 : null;
 
+  const playerAgg = computePlayerAggregates(displayStats);
+  const tournamentSummary =
+    selectedGameId && statsSource === "official"
+      ? computeTournamentSummary(dashboardQ.data?.events ?? [], selectedGameId)
+      : null;
+
   const sortedMatchups = selectedLeader
     ? [...selectedLeader.matchups]
         .filter((m) =>
@@ -770,25 +880,15 @@ function StatsPage() {
         )
     : [];
 
-  // ponytail: >12 matchups = lista larga, se agrupa por combinación de color; debajo del threshold la lista plana es más rápida de leer
-  const GROUP_THRESHOLD = 12;
-  const grouped =
-    sortedMatchups.length > GROUP_THRESHOLD
-      ? Array.from(
-          sortedMatchups.reduce((map, m) => {
-            const colors = ((m as any).opponent_leader_colors as string[] | null) ?? [];
-            const key = colors.length ? colors.join("/") : "Sin color";
-            const g = map.get(key) ?? { key, colors, matchups: [] as Matchup[], total: 0, wins: 0 };
-            g.matchups.push(m);
-            g.total += m.total;
-            g.wins += m.wins;
-            map.set(key, g);
-            return map;
-          }, new Map<string, { key: string; colors: string[]; matchups: Matchup[]; total: number; wins: number }>()),
-        )
-          .map(([, g]) => g)
-          .sort((a, b) => b.total - a.total)
-      : null;
+  const matchupBuckets = selectedLeader
+    ? {
+        favored: selectedLeader.matchups.filter((m) => m.overall_win_rate >= 55).length,
+        even: selectedLeader.matchups.filter(
+          (m) => m.overall_win_rate >= 45 && m.overall_win_rate < 55,
+        ).length,
+        unfavored: selectedLeader.matchups.filter((m) => m.overall_win_rate < 45).length,
+      }
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 pb-20">
@@ -961,6 +1061,70 @@ function StatsPage() {
                 </div>
               )}
 
+              {/* Tú como jugador — agregados cross-leader, no por deck */}
+              {(playerAgg || tournamentSummary) && (
+                <div className="glass mb-6 rounded-2xl border border-white/10 p-4 sm:p-5">
+                  <p className="mb-3 text-[10px] uppercase tracking-widest text-gray-500">
+                    Tú como jugador
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {playerAgg && (
+                      <div className="flex flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                          Racha actual
+                        </p>
+                        <p
+                          className={`mt-1 font-mono text-xl font-bold sm:text-2xl ${
+                            playerAgg.currentStreak.type === "W"
+                              ? "text-emerald-400"
+                              : playerAgg.currentStreak.type === "L"
+                                ? "text-red-400"
+                                : "text-white"
+                          }`}
+                        >
+                          {playerAgg.currentStreak.type
+                            ? `${playerAgg.currentStreak.count}${playerAgg.currentStreak.type}`
+                            : "—"}
+                        </p>
+                        <p className="text-[10px] text-gray-500">
+                          Mejor racha de victorias: {playerAgg.bestWinStreak}
+                        </p>
+                      </div>
+                    )}
+                    {playerAgg && (
+                      <StatCard
+                        label="WR ganando dado"
+                        value={playerAgg.dieRollWinRate != null ? `${playerAgg.dieRollWinRate}%` : "—"}
+                        sub={playerAgg.dieRollGames > 0 ? `${playerAgg.dieRollGames} partidas` : "Sin datos"}
+                      />
+                    )}
+                    {playerAgg && (
+                      <StatCard
+                        label="WR perdiendo dado"
+                        value={
+                          playerAgg.noDieRollWinRate != null ? `${playerAgg.noDieRollWinRate}%` : "—"
+                        }
+                        sub={playerAgg.noDieRollGames > 0 ? `${playerAgg.noDieRollGames} partidas` : "Sin datos"}
+                      />
+                    )}
+                    {tournamentSummary && (
+                      <StatCard
+                        label="Mejor puesto"
+                        value={`#${tournamentSummary.best}`}
+                        sub={`${tournamentSummary.played} torneos jugados`}
+                      />
+                    )}
+                    {tournamentSummary && (
+                      <StatCard
+                        label="Top 8 rate"
+                        value={`${tournamentSummary.topCutRate}%`}
+                        sub={`Puesto promedio: #${tournamentSummary.avg}`}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
                 {/* Leaders: select nativo en móvil, sidebar en desktop */}
                 <div className="min-w-0">
@@ -972,13 +1136,18 @@ function StatsPage() {
                     onChange={(e) => setSelectedLeaderIdx(Number(e.target.value))}
                     className="w-full rounded-xl border border-white/10 bg-[#0f1117] px-4 py-3 text-sm font-semibold text-white lg:hidden"
                   >
-                    {displayStats.leaders.map((l, i) => (
-                      <option key={l.leader_id} value={i}>
-                        {l.leader_name} · {l.total_games} partidas · {l.raw_win_rate}% WR
-                      </option>
-                    ))}
+                    {displayStats.leaders.map((l, i) => {
+                      const badge = setBadge(l.leader_set_code);
+                      return (
+                        <option key={l.leader_id} value={i}>
+                          {shortLeaderName(l.leader_name)}
+                          {badge ? ` [${badge}]` : ""} · {l.total_games} partidas · {l.raw_win_rate}
+                          % WR
+                        </option>
+                      );
+                    })}
                   </select>
-                  <div className="hidden flex-col gap-2 lg:flex">
+                  <div className="hidden max-h-[calc(100vh-220px)] flex-col gap-2 overflow-y-auto pr-1 lg:sticky lg:top-24 lg:flex">
                     {displayStats.leaders.map((l, i) => (
                       <LeaderCard
                         key={l.leader_id}
@@ -1013,9 +1182,12 @@ function StatsPage() {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start gap-2 flex-wrap">
-                          <h2 className="text-xl font-bold text-white">
-                            {selectedLeader.leader_name}
-                          </h2>
+                          <LeaderLabel
+                            name={selectedLeader.leader_name}
+                            setCode={selectedLeader.leader_set_code}
+                            colors={selectedLeader.leader_colors}
+                            className="text-xl font-bold text-white"
+                          />
                           {selectedLeader.has_uncertain_data && <UncertainBadge />}
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
@@ -1026,13 +1198,7 @@ function StatsPage() {
                         {/* Dato estrella: el WR de este leader, grande */}
                         <div className="mt-3 flex items-baseline gap-3">
                           <p
-                            className={`font-mono text-4xl font-bold ${
-                              selectedLeader.raw_win_rate >= 55
-                                ? "text-emerald-400"
-                                : selectedLeader.raw_win_rate >= 45
-                                  ? "text-white"
-                                  : "text-red-400"
-                            }`}
+                            className={`font-mono text-4xl font-bold ${wrColorClass(selectedLeader.raw_win_rate)}`}
                           >
                             {selectedLeader.raw_win_rate}%
                           </p>
@@ -1054,6 +1220,7 @@ function StatsPage() {
 
                     {/* Stats grid */}
                     <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <StatCard label="Total Games" value={`${selectedLeader.total_games}`} />
                       <StatCard
                         label="WR Confirmado"
                         value={`${selectedLeader.wtd_win_rate}%`}
@@ -1131,6 +1298,35 @@ function StatsPage() {
                       )}
                     </div>
 
+                    {matchupBuckets && selectedLeader.matchups.length > 0 && (
+                      <div className="mb-4 grid grid-cols-3 gap-2">
+                        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-center">
+                          <p className="font-mono text-lg font-bold text-emerald-400">
+                            {matchupBuckets.favored}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                            Favorable
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-center">
+                          <p className="font-mono text-lg font-bold text-white">
+                            {matchupBuckets.even}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                            Parejo
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-center">
+                          <p className="font-mono text-lg font-bold text-red-400">
+                            {matchupBuckets.unfavored}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                            Desfavorable
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {selectedLeader.matchups.length > 3 && (
                       <div className="relative mb-3">
                         <Search
@@ -1155,42 +1351,95 @@ function StatsPage() {
                       <p className="py-8 text-center text-sm text-gray-500">
                         Sin matchups que coincidan con "{matchupSearch}".
                       </p>
-                    ) : grouped ? (
-                      <div key={`${selectedLeaderIdx}-${matchupSort}-g`} className="space-y-3">
-                        {grouped.map((g) => (
-                          <details key={g.key} open className="group">
-                            <summary className="flex cursor-pointer select-none items-center gap-2 rounded-lg px-1 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-white [&::-webkit-details-marker]:hidden">
-                              <span className="text-[10px] text-gray-600 transition-transform group-open:rotate-90">
-                                ▶
-                              </span>
-                              {g.colors.length > 0 && <ColorDots colors={g.colors} />}
-                              {g.key}
-                              <span className="ml-auto font-mono text-[11px] normal-case text-gray-500">
-                                {g.total > 0 ? Math.round((g.wins / g.total) * 100) : 0}% ·{" "}
-                                {g.matchups.length} leaders · {g.total} partidas
-                              </span>
-                            </summary>
-                            <div className="mt-1.5 space-y-2">
-                              {g.matchups.map((m) => (
-                                <MatchupRow
-                                  key={m.opponent_leader_id}
-                                  matchup={m}
-                                  onClick={() => setVsLeaderId(m.opponent_leader_id)}
-                                />
-                              ))}
-                            </div>
-                          </details>
-                        ))}
-                      </div>
                     ) : (
-                      <div key={`${selectedLeaderIdx}-${matchupSort}`} className="space-y-2">
-                        {sortedMatchups.map((m) => (
-                          <MatchupRow
-                            key={m.opponent_leader_id}
-                            matchup={m}
-                            onClick={() => setVsLeaderId(m.opponent_leader_id)}
-                          />
-                        ))}
+                      <div
+                        key={`${selectedLeaderIdx}-${matchupSort}`}
+                        className="grid gap-2.5"
+                        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))" }}
+                      >
+                        {sortedMatchups.map((m) => {
+                          const lowOverall = m.total < LOW_SAMPLE;
+                          const lowFirst = m.first_total < LOW_SAMPLE;
+                          const lowSecond = m.second_total < LOW_SAMPLE;
+                          const bucketBorder =
+                            m.overall_win_rate >= 55
+                              ? "border-t-emerald-400"
+                              : m.overall_win_rate >= 45
+                                ? "border-t-white/30"
+                                : "border-t-red-400";
+                          return (
+                            <button
+                              key={m.opponent_leader_id}
+                              onClick={() => setVsLeaderId(m.opponent_leader_id)}
+                              className={`rounded-b-lg rounded-t-sm border-t-2 ${bucketBorder} bg-white/[0.02] p-2 text-left transition hover:bg-white/5`}
+                            >
+                              {m.opponent_leader_image ? (
+                                <img
+                                  src={m.opponent_leader_image}
+                                  alt={m.opponent_leader_name}
+                                  className="mx-auto h-24 w-auto rounded-md border border-white/10 object-cover"
+                                />
+                              ) : (
+                                <div className="mx-auto flex h-24 w-16 items-center justify-center rounded-md border border-white/10 bg-black/30">
+                                  <ShieldQuestion size={18} className="text-gray-600" />
+                                </div>
+                              )}
+                              <LeaderLabel
+                                name={m.opponent_leader_name}
+                                setCode={m.opponent_leader_set_code}
+                                className="mt-1.5 justify-center text-center text-xs font-semibold text-white"
+                              />
+
+                              <div className="mt-2 space-y-1 border-t border-white/5 pt-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-gray-500">WR</span>
+                                  <span className="font-mono text-xs">
+                                    <span
+                                      className={`font-bold ${wrColorClass(m.overall_win_rate, lowOverall)}`}
+                                    >
+                                      {m.overall_win_rate}%
+                                    </span>{" "}
+                                    <span className="text-[10px] text-gray-600">{m.total}p</span>
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-gray-500">1st</span>
+                                  <span className="font-mono text-xs">
+                                    <span
+                                      className={`font-bold ${
+                                        m.first_win_rate != null
+                                          ? wrColorClass(m.first_win_rate, lowFirst)
+                                          : "text-gray-600"
+                                      }`}
+                                    >
+                                      {m.first_win_rate != null ? `${m.first_win_rate}%` : "—"}
+                                    </span>{" "}
+                                    <span className="text-[10px] text-gray-600">
+                                      {m.first_total}p
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-gray-500">2nd</span>
+                                  <span className="font-mono text-xs">
+                                    <span
+                                      className={`font-bold ${
+                                        m.second_win_rate != null
+                                          ? wrColorClass(m.second_win_rate, lowSecond)
+                                          : "text-gray-600"
+                                      }`}
+                                    >
+                                      {m.second_win_rate != null ? `${m.second_win_rate}%` : "—"}
+                                    </span>{" "}
+                                    <span className="text-[10px] text-gray-600">
+                                      {m.second_total}p
+                                    </span>
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1209,6 +1458,7 @@ function StatsPage() {
             opponentId={vsLeaderId}
             leaders={displayStats.leaders}
             statsSource={statsSource}
+            currentLeaderId={selectedLeader?.leader_id ?? null}
             onClose={() => setVsLeaderId(null)}
           />
         )}

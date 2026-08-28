@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { nexus } from "@/integrations/nexus/client";
 import { useNexusRole } from "@/hooks/use-nexus-role";
+import { randomId } from "@/lib/random-id";
 
 type NotificationRow = {
   id: string;
@@ -72,7 +73,7 @@ export function NotificationBell({
     // nombre fijo hace que supabase-js reutilice el canal ya suscrito del
     // primer montaje, provocando "cannot add callbacks after subscribe()".
     const channel = db
-      .channel(`notifications:${playerId}:${crypto.randomUUID()}`)
+      .channel(`notifications:${playerId}:${randomId()}`)
       .on(
         "postgres_changes",
         {

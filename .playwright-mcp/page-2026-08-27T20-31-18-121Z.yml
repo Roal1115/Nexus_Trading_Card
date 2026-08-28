@@ -1,0 +1,212 @@
+- generic [ref=f8e2]:
+  - complementary [ref=f8e43]:
+    - link "Nexus Jugador" [ref=f8e44] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f8e52]:
+        - generic [ref=f8e53]: Nexus
+        - generic [ref=f8e54]: Jugador
+    - button "Colapsar menú" [ref=f8e55]
+    - generic [ref=f8e59]:
+      - button "One Piece Card Game" [ref=f8e61]
+      - button "Notificaciones" [ref=f8e64]
+    - navigation [ref=f8e70]:
+      - generic [ref=f8e71]:
+        - generic [ref=f8e72]: Explorar
+        - generic [ref=f8e73]:
+          - link "Ranking" [ref=f8e74] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=f8e83] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=f8e88] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=f8e94] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f8e101]:
+        - generic [ref=f8e102]: Mi Carrera
+        - generic [ref=f8e103]:
+          - link "Mi Panel" [ref=f8e104] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=f8e112] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=f8e117] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f8e129]:
+        - generic [ref=f8e130]: Cuenta
+        - generic [ref=f8e131]:
+          - link "Mi Perfil" [ref=f8e132] [cursor=pointer]:
+            - /url: /players/PLAYERALL
+          - link "Configuración" [ref=f8e139] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f8e145]:
+      - generic [ref=f8e146]:
+        - generic [ref=f8e147]: Sesión
+        - generic [ref=f8e148]: PLAYERALL
+      - button "Cerrar sesión" [ref=f8e149]
+  - generic [ref=f8e18]:
+    - banner [ref=f8e19]:
+      - link "Volver al dashboard" [ref=f8e20] [cursor=pointer]:
+        - /url: /dashboard
+      - heading "Mis Stats" [level=1] [ref=f8e23]
+    - generic [ref=f8e24]:
+      - generic [ref=f8e25]:
+        - button "Oficial" [ref=f8e26]
+        - button "Casual" [active] [ref=f8e27]
+        - button "Pendientes" [ref=f8e28]
+        - button "Todo" [ref=f8e29]
+      - generic [ref=f8e30]:
+        - button "30d" [ref=f8e31]
+        - button "90d" [ref=f8e32]
+        - button "Todo el tiempo" [ref=f8e33]
+    - paragraph [ref=f8e576]: Partidas casuales y de práctica. No afectan tu ranking competitivo.
+    - generic [ref=f8e34]:
+      - generic [ref=f8e155]:
+        - generic [ref=f8e156]:
+          - paragraph [ref=f8e577]: Récord
+          - paragraph [ref=f8e578]: 199W — 209L
+        - generic [ref=f8e159]:
+          - paragraph [ref=f8e579]: Win Rate
+          - paragraph [ref=f8e580]: 48.8%
+        - generic [ref=f8e581]:
+          - paragraph [ref=f8e582]: Leaders
+          - paragraph [ref=f8e583]: "12"
+      - generic [ref=f8e584]:
+        - generic [ref=f8e585]:
+          - paragraph [ref=f8e586]: Tus leaders
+          - generic [ref=f8e587]:
+            - button [ref=f8e588]:
+              - img "Monkey.D.Luffy" [ref=f8e589]
+              - generic [ref=f8e590]:
+                - paragraph [ref=f8e591]: Monkey.D.Luffy
+                - paragraph [ref=f8e592]: 100 partidas · 43% WR
+            - button [ref=f8e593]:
+              - img "Donquixote Rosinante" [ref=f8e594]
+              - generic [ref=f8e595]:
+                - paragraph [ref=f8e596]: Donquixote Rosinante
+                - paragraph [ref=f8e597]: 100 partidas · 48% WR
+            - button [ref=f8e598]:
+              - img "Jewelry Bonney" [ref=f8e599]
+              - generic [ref=f8e600]:
+                - paragraph [ref=f8e601]: Jewelry Bonney
+                - paragraph [ref=f8e602]: 100 partidas · 51% WR
+            - button [ref=f8e603]:
+              - img "King" [ref=f8e604]
+              - generic [ref=f8e605]:
+                - paragraph [ref=f8e606]: King
+                - paragraph [ref=f8e607]: 100 partidas · 51% WR
+            - button [ref=f8e608]:
+              - img "Sakazuki" [ref=f8e609]
+              - generic [ref=f8e610]:
+                - paragraph [ref=f8e611]: Sakazuki
+                - paragraph [ref=f8e612]: 1 partidas · 0% WR
+            - button [ref=f8e613]:
+              - img "Monkey.D.Luffy" [ref=f8e614]
+              - generic [ref=f8e615]:
+                - paragraph [ref=f8e616]: Monkey.D.Luffy
+                - paragraph [ref=f8e617]: 1 partidas · 100% WR
+            - button [ref=f8e618]:
+              - img "Monkey.D.Luffy" [ref=f8e619]
+              - generic [ref=f8e620]:
+                - paragraph [ref=f8e621]: Monkey.D.Luffy
+                - paragraph [ref=f8e622]: 1 partidas · 100% WR
+            - button [ref=f8e623]:
+              - img "Jewelry Bonney" [ref=f8e624]
+              - generic [ref=f8e625]:
+                - paragraph [ref=f8e626]: Jewelry Bonney
+                - paragraph [ref=f8e627]: 1 partidas · 100% WR
+            - button [ref=f8e628]:
+              - img "Donquixote Doflamingo" [ref=f8e629]
+              - generic [ref=f8e630]:
+                - paragraph [ref=f8e631]: Donquixote Doflamingo
+                - paragraph [ref=f8e632]: 1 partidas · 100% WR
+            - button [ref=f8e633]:
+              - img "Monkey.D.Luffy" [ref=f8e634]
+              - generic [ref=f8e635]:
+                - paragraph [ref=f8e636]: Monkey.D.Luffy
+                - paragraph [ref=f8e637]: 1 partidas · 100% WR
+            - button [ref=f8e638]:
+              - img "Monkey.D.Luffy" [ref=f8e639]
+              - generic [ref=f8e640]:
+                - paragraph [ref=f8e641]: Monkey.D.Luffy
+                - paragraph [ref=f8e642]: 1 partidas · 100% WR
+            - button [ref=f8e643]:
+              - img "Charlotte Pudding" [ref=f8e644]
+              - generic [ref=f8e645]:
+                - paragraph [ref=f8e646]: Charlotte Pudding
+                - paragraph [ref=f8e647]: 1 partidas · 0% WR
+        - generic [ref=f8e648]:
+          - generic [ref=f8e649]:
+            - generic [ref=f8e650]:
+              - img "Monkey.D.Luffy" [ref=f8e651]
+              - generic [ref=f8e652]:
+                - heading "Monkey.D.Luffy" [level=2] [ref=f8e654]
+                - paragraph [ref=f8e655]: One Piece Card Game · 100 partidas
+                - generic [ref=f8e656]:
+                  - paragraph [ref=f8e657]: 43%
+                  - paragraph [ref=f8e658]: 43W — 57L
+            - generic [ref=f8e659]:
+              - generic [ref=f8e660]:
+                - generic [ref=f8e661]:
+                  - paragraph [ref=f8e662]: WR Confirmado
+                  - button "Qué significa WR Confirmado" [ref=f8e663]
+                - paragraph [ref=f8e667]: 43%
+                - paragraph [ref=f8e668]: Solo rondas confirmadas
+              - generic [ref=f8e669]:
+                - generic [ref=f8e670]:
+                  - paragraph [ref=f8e671]: WR Total
+                  - button "Qué significa WR Total" [ref=f8e672]
+                - paragraph [ref=f8e676]: 43%
+                - paragraph [ref=f8e677]: Todas las rondas
+              - generic [ref=f8e678]:
+                - generic [ref=f8e679]:
+                  - paragraph [ref=f8e680]: 1st Winrate
+                  - button "Qué significa 1st Winrate" [ref=f8e681]
+                - paragraph [ref=f8e685]: 46%
+                - paragraph [ref=f8e686]: 50 partidas
+              - generic [ref=f8e687]:
+                - generic [ref=f8e688]:
+                  - paragraph [ref=f8e689]: 2nd Winrate
+                  - button "Qué significa 2nd Winrate" [ref=f8e690]
+                - paragraph [ref=f8e694]: 40%
+                - paragraph [ref=f8e695]: 50 partidas
+          - generic [ref=f8e696]:
+            - generic [ref=f8e697]:
+              - heading "⚔ Matchups" [level=3] [ref=f8e698]:
+                - generic [ref=f8e699]: ⚔
+                - text: Matchups
+              - generic [ref=f8e700]:
+                - button "Más jugados" [ref=f8e701]
+                - button "Mejores" [ref=f8e702]
+                - button "Peores" [ref=f8e703]
+            - searchbox "Buscar leader oponente…" [ref=f8e705]
+            - generic [ref=f8e706]:
+              - button [ref=f8e708]:
+                - img "Crocodile" [ref=f8e709]
+                - paragraph [ref=f8e712]: Crocodile
+                - generic [ref=f8e715]:
+                  - paragraph [ref=f8e716]: 55%
+                  - paragraph [ref=f8e717]: 20 partidas
+              - button [ref=f8e721]:
+                - img "Kaido" [ref=f8e722]
+                - paragraph [ref=f8e725]: Kaido
+                - generic [ref=f8e728]:
+                  - paragraph [ref=f8e729]: 60%
+                  - paragraph [ref=f8e730]: 20 partidas
+              - button [ref=f8e734]:
+                - img "Charlotte Linlin" [ref=f8e735]
+                - paragraph [ref=f8e738]: Charlotte Linlin
+                - generic [ref=f8e741]:
+                  - paragraph [ref=f8e742]: 35%
+                  - paragraph [ref=f8e743]: 20 partidas
+              - button [ref=f8e747]:
+                - img "Dracule Mihawk" [ref=f8e748]
+                - paragraph [ref=f8e751]: Dracule Mihawk
+                - generic [ref=f8e754]:
+                  - paragraph [ref=f8e755]: 30%
+                  - paragraph [ref=f8e756]: 20 partidas
+              - button [ref=f8e760]:
+                - img "Sakazuki" [ref=f8e761]
+                - paragraph [ref=f8e764]: Sakazuki
+                - generic [ref=f8e767]:
+                  - paragraph [ref=f8e768]: 35%
+                  - paragraph [ref=f8e769]: 20 partidas
+  - region "Notifications alt+T"

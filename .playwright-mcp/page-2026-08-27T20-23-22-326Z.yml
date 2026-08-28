@@ -1,0 +1,61 @@
+- generic [ref=f5e2]:
+  - complementary [ref=f5e43]:
+    - link "Nexus Jugador" [ref=f5e44] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f5e52]:
+        - generic [ref=f5e53]: Nexus
+        - generic [ref=f5e54]: Jugador
+    - button "Colapsar menú" [ref=f5e55]
+    - generic [ref=f5e59]:
+      - button "One Piece Card Game" [ref=f5e61]
+      - button "Notificaciones" [ref=f5e64]
+    - navigation [ref=f5e70]:
+      - generic [ref=f5e71]:
+        - generic [ref=f5e72]: Explorar
+        - generic [ref=f5e73]:
+          - link "Ranking" [ref=f5e74] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=f5e83] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=f5e88] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=f5e94] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f5e101]:
+        - generic [ref=f5e102]: Mi Carrera
+        - generic [ref=f5e103]:
+          - link "Mi Panel" [ref=f5e104] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=f5e112] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=f5e117] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f5e129]:
+        - generic [ref=f5e130]: Cuenta
+        - generic [ref=f5e131]:
+          - link "Mi Perfil" [ref=f5e132] [cursor=pointer]:
+            - /url: /players/PLAYERALL
+          - link "Configuración" [ref=f5e139] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f5e145]:
+      - generic [ref=f5e146]:
+        - generic [ref=f5e147]: Sesión
+        - generic [ref=f5e148]: PLAYERALL
+      - button "Cerrar sesión" [ref=f5e149]
+  - generic [ref=f5e18]:
+    - banner [ref=f5e19]:
+      - link "Volver al dashboard" [ref=f5e20] [cursor=pointer]:
+        - /url: /dashboard
+      - heading "Mis Stats" [level=1] [ref=f5e23]
+    - generic [ref=f5e24]:
+      - generic [ref=f5e25]:
+        - button "Oficial" [ref=f5e26]
+        - button "Casual" [active] [ref=f5e27]
+        - button "Pendientes" [ref=f5e28]
+        - button "Todo" [ref=f5e29]
+      - generic [ref=f5e30]:
+        - button "30d" [ref=f5e31]
+        - button "90d" [ref=f5e32]
+        - button "Todo el tiempo" [ref=f5e33]
+    - paragraph [ref=f5e576]: Partidas casuales y de práctica. No afectan tu ranking competitivo.
+  - region "Notifications alt+T"

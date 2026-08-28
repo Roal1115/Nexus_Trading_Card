@@ -1,0 +1,626 @@
+- generic [active] [ref=f18e1]:
+  - generic [ref=f18e2]:
+    - navigation [ref=f18e3]:
+      - generic [ref=f18e5]:
+        - link "Logo UniVersus" [ref=f18e7] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=f18e9]
+          - generic [ref=f18e10]: UniVersus
+        - navigation [ref=f18e11]:
+          - link "Events" [ref=f18e12] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=f18e13] [cursor=pointer]:
+            - /url: /stores/search
+          - link "Cards" [ref=f18e14] [cursor=pointer]:
+            - /url: /cards
+          - link "Decks" [ref=f18e15] [cursor=pointer]:
+            - /url: /decks
+          - link "Rewards" [ref=f18e16] [cursor=pointer]:
+            - /url: /rewards
+        - link [ref=f18e18] [cursor=pointer]:
+          - /url: /login?returnTo=%2Fevents
+          - button "Login" [ref=f18e19]
+    - main [ref=f18e21]:
+      - generic [ref=f18e23]:
+        - link "All Events" [ref=f18e25] [cursor=pointer]:
+          - /url: /events
+        - generic [ref=f18e27]:
+          - complementary [ref=f18e28]:
+            - generic [ref=f18e30]:
+              - searchbox "Search" [ref=f18e36]
+              - generic [ref=f18e37]:
+                - generic [ref=f18e38]: When
+                - generic [ref=f18e43]:
+                  - button "Upcoming" [ref=f18e44]
+                  - button "Live" [ref=f18e45]
+                  - button "Past" [ref=f18e46]
+                - generic [ref=f18e48]:
+                  - button "Today" [ref=f18e49]
+                  - button "This Week" [ref=f18e50]
+                  - button "This Month" [ref=f18e51]
+                  - button "This Year" [ref=f18e52]
+                  - button "Custom" [ref=f18e53]
+              - generic [ref=f18e54]:
+                - generic [ref=f18e55]: Where
+                - generic [ref=f18e61]:
+                  - button "Near Me" [ref=f18e62] [cursor=pointer]
+                  - button "Address" [ref=f18e64] [cursor=pointer]
+                  - button "Store" [ref=f18e66] [cursor=pointer]
+              - generic [ref=f18e68]:
+                - generic [ref=f18e69]: Format
+                - generic [ref=f18e78]:
+                  - button "Standard" [ref=f18e79]
+                  - button "Hero Too" [ref=f18e80]
+                  - button "Retro" [ref=f18e81]
+                  - button "Spotlight" [ref=f18e82]
+                  - button "Sealed" [ref=f18e83]
+                  - button "Draft" [ref=f18e84]
+                  - button "Modified Draft" [ref=f18e85]
+                  - 'button "Spotlight: My Hero Academia" [ref=f18e86]'
+                  - 'button "Spotlight: Attack on Titan" [ref=f18e87]'
+                  - 'button "Spotlight: Critical Role" [ref=f18e88]'
+                  - 'button "Spotlight: Star Trek: Lower Decks" [ref=f18e89]'
+                  - 'button "Spotlight: Trigun" [ref=f18e90]'
+                  - 'button "Spotlight: Cowboy Bebop" [ref=f18e91]'
+                  - 'button "Spotlight: Godzilla" [ref=f18e92]'
+                  - 'button "Spotlight: Guilty Gear" [ref=f18e93]'
+                  - 'button "Spotlight: Solo Leveling" [ref=f18e94]'
+                  - 'button "Spotlight: Teenage Mutant Ninja Turtles" [ref=f18e95]'
+                  - button "Challenger Series" [ref=f18e96]
+                  - button "Critical Role Boss Battle" [ref=f18e97]
+                  - button "Pre-Release" [ref=f18e98]
+                  - paragraph [ref=f18e99]: All formats shown
+              - generic [ref=f18e100]:
+                - generic [ref=f18e101]: Category
+                - generic [ref=f18e106]:
+                  - button "UniVersus Demo Event" [ref=f18e107]
+                  - button "Major Regional" [ref=f18e108]
+                  - button "Specialty" [ref=f18e109]
+                  - button "Local Game Store Event" [ref=f18e110]
+                  - button "Critical Role Boss Battle" [ref=f18e111]
+                  - button "Store Scrambles" [ref=f18e112]
+                  - button "Nationals" [ref=f18e113]
+                  - button "Community" [ref=f18e114]
+                  - button "UniVersal Championship" [ref=f18e115]
+                  - button "Free Play" [ref=f18e116]
+                  - button "Round 4 Local Championship 2026" [ref=f18e117]
+                  - paragraph [ref=f18e118]: All categories shown
+              - generic [ref=f18e119]:
+                - generic [ref=f18e120]: Pricing
+                - generic [ref=f18e125]:
+                  - button "Free" [ref=f18e126]
+                  - button "Paid" [ref=f18e127]
+              - generic [ref=f18e128]:
+                - generic [ref=f18e129]: Options
+                - button "Show Featured" [ref=f18e135]
+              - button "Reset Filters" [ref=f18e141] [cursor=pointer]
+          - main [ref=f18e143]:
+            - generic [ref=f18e146]:
+              - generic [ref=f18e147]:
+                - button "Round 3 Local Championships" [ref=f18e148] [cursor=pointer]
+                - button "Round 4 Local Championships" [ref=f18e149] [cursor=pointer]
+              - generic [ref=f18e150]:
+                - combobox [disabled] [ref=f18e151]: Any
+                - generic [ref=f18e152]:
+                  - button "List" [ref=f18e153] [cursor=pointer]
+                  - button "Grid" [ref=f18e155] [cursor=pointer]
+                  - button "Calendar" [ref=f18e157] [cursor=pointer]
+            - generic [ref=f18e159]:
+              - paragraph [ref=f18e160]: 829 events
+              - generic [ref=f18e161]:
+                - generic [ref=f18e162]:
+                  - generic [ref=f18e163]: Tuesday, August 25, 2026
+                  - generic [ref=f18e167]:
+                    - link [ref=f18e168] [cursor=pointer]:
+                      - /url: /events/656841
+                      - article [ref=f18e169]:
+                        - generic [ref=f18e170]:
+                          - generic [ref=f18e171]: AUG 25 • 6:00 PM (EDT)
+                          - generic [ref=f18e173]:
+                            - generic [ref=f18e174]: Upcoming
+                            - button "Add to Calendar" [ref=f18e175]
+                        - heading "UVS Tuesday Trade & Battle Night" [level=3] [ref=f18e178]
+                        - generic [ref=f18e179]:
+                          - generic [ref=f18e180]: Battle & Brew
+                          - generic [ref=f18e187]: 5920 Roswell Rd, STE A120, Sandy Springs, GA, 30328, US
+                          - generic [ref=f18e192]:
+                            - generic [ref=f18e193]: Standard
+                            - generic [ref=f18e201]: Local Game Store Event
+                            - generic [ref=f18e205]: 0 / 64 spots
+                            - 'group "Rewards: Currency" [ref=f18e212]'
+                            - generic [ref=f18e218]: Free
+                    - link [ref=f18e219] [cursor=pointer]:
+                      - /url: /events/656842
+                      - article [ref=f18e220]:
+                        - generic [ref=f18e221]:
+                          - generic [ref=f18e222]: AUG 25 • 5:00 PM (CDT)
+                          - generic [ref=f18e224]:
+                            - generic [ref=f18e225]: Upcoming
+                            - button "Add to Calendar" [ref=f18e226]
+                        - heading "Local League at Gnome Games Green Bay East" [level=3] [ref=f18e229]
+                        - generic [ref=f18e230]:
+                          - generic [ref=f18e231]: Gnome Games Green Bay East
+                          - generic [ref=f18e238]: 1683 East Mason Street, Green Bay, WI, 54302, US
+                          - generic [ref=f18e243]:
+                            - generic [ref=f18e244]: Standard
+                            - generic [ref=f18e252]: Local Game Store Event
+                            - generic [ref=f18e256]: 2 / 16 spots
+                            - 'group "Rewards: Currency" [ref=f18e263]'
+                            - generic [ref=f18e269]: Free
+                    - link [ref=f18e270] [cursor=pointer]:
+                      - /url: /events/656845
+                      - article [ref=f18e271]:
+                        - generic [ref=f18e272]:
+                          - generic [ref=f18e273]: AUG 25 • 6:30 PM (EDT)
+                          - generic [ref=f18e275]:
+                            - generic [ref=f18e276]: Upcoming
+                            - button "Add to Calendar" [ref=f18e277]
+                        - heading "Tuesday Night Universus" [level=3] [ref=f18e280]
+                        - generic [ref=f18e281]:
+                          - generic [ref=f18e282]: The Portal
+                          - generic [ref=f18e289]: 60 Hilliard Street, Manchester, CT, 06042, US
+                          - generic [ref=f18e294]:
+                            - generic [ref=f18e295]: Standard
+                            - generic [ref=f18e303]: Local Game Store Event
+                            - generic [ref=f18e307]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e314]'
+                            - generic [ref=f18e320]: Free
+                    - link [ref=f18e321] [cursor=pointer]:
+                      - /url: /events/755152
+                      - article [ref=f18e322]:
+                        - generic [ref=f18e323]:
+                          - generic [ref=f18e324]: AUG 25 • 6:00 PM (CDT)
+                          - generic [ref=f18e326]:
+                            - generic [ref=f18e327]: Upcoming
+                            - button "Add to Calendar" [ref=f18e328]
+                        - heading "Quest Givers UVS Weeklies" [level=3] [ref=f18e331]
+                        - generic [ref=f18e332]:
+                          - generic [ref=f18e333]: Quest Givers Gaming and Collectibles
+                          - generic [ref=f18e340]: 18, S Galena Ave, Freeport, IL, 61032, US
+                          - generic [ref=f18e345]:
+                            - generic [ref=f18e346]: Standard
+                            - generic [ref=f18e354]: Local Game Store Event
+                            - 'group "Rewards: Currency" [ref=f18e358]'
+                            - generic [ref=f18e364]: $5.00
+                    - link [ref=f18e365] [cursor=pointer]:
+                      - /url: /events/656846
+                      - article [ref=f18e366]:
+                        - generic [ref=f18e367]:
+                          - generic [ref=f18e368]: AUG 25 • 6:00 PM (CDT)
+                          - generic [ref=f18e370]:
+                            - generic [ref=f18e371]: Upcoming
+                            - button "Add to Calendar" [ref=f18e372]
+                        - heading "Tuesday Night Universus" [level=3] [ref=f18e375]
+                        - generic [ref=f18e376]:
+                          - generic [ref=f18e377]: The Comic Cave
+                          - generic [ref=f18e384]: 2370 North Expressway, Suite 1066, Brownsville, TX, 78521, US
+                          - generic [ref=f18e389]:
+                            - generic [ref=f18e390]: Standard
+                            - generic [ref=f18e398]: Local Game Store Event
+                            - generic [ref=f18e402]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e409]'
+                            - generic [ref=f18e415]: Free
+                    - link [ref=f18e416] [cursor=pointer]:
+                      - /url: /events/800021
+                      - article [ref=f18e417]:
+                        - generic [ref=f18e418]:
+                          - generic [ref=f18e419]: AUG 25 • 6:30 PM (CDT)
+                          - generic [ref=f18e421]:
+                            - generic [ref=f18e422]: Upcoming
+                            - button "Add to Calendar" [ref=f18e423]
+                        - heading "Retro Tournament" [level=3] [ref=f18e426]
+                        - generic [ref=f18e427]:
+                          - generic [ref=f18e428]: Cade's Dice & Decanters LLC
+                          - generic [ref=f18e435]: 5160 Dogwood Dr, Milton, FL, 32570, US
+                          - generic [ref=f18e440]:
+                            - generic [ref=f18e441]: Retro
+                            - generic [ref=f18e449]: Local Game Store Event
+                            - generic [ref=f18e453]: 0 / 16 spots
+                            - 'group "Rewards: Currency" [ref=f18e460]'
+                            - generic [ref=f18e466]: $5.00
+                    - link [ref=f18e467] [cursor=pointer]:
+                      - /url: /events/656849
+                      - article [ref=f18e468]:
+                        - generic [ref=f18e469]:
+                          - generic [ref=f18e470]: AUG 25 • 6:30 PM (CDT)
+                          - generic [ref=f18e472]:
+                            - generic [ref=f18e473]: Upcoming
+                            - button "Add to Calendar" [ref=f18e474]
+                        - heading "Standard Event" [level=3] [ref=f18e477]
+                        - generic [ref=f18e478]:
+                          - generic [ref=f18e479]: Magic Man Games
+                          - generic [ref=f18e486]: 58 North Brown Street, Rhinelander, WI, 54501, US
+                          - generic [ref=f18e491]:
+                            - generic [ref=f18e492]: Standard
+                            - generic [ref=f18e500]: Local Game Store Event
+                            - generic [ref=f18e504]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e511]'
+                            - generic [ref=f18e517]: Free
+                    - link [ref=f18e518] [cursor=pointer]:
+                      - /url: /events/656850
+                      - article [ref=f18e519]:
+                        - generic [ref=f18e520]:
+                          - generic [ref=f18e521]: AUG 25 • 6:35 PM (CDT)
+                          - generic [ref=f18e523]:
+                            - generic [ref=f18e524]: Upcoming
+                            - button "Add to Calendar" [ref=f18e525]
+                        - heading "UNV at Oinkers Island" [level=3] [ref=f18e528]
+                        - generic [ref=f18e529]:
+                          - generic [ref=f18e530]: Oinkers Island
+                          - generic [ref=f18e537]: 745 North Aspen Avenue, Broken Arrow, OK, 74012, US
+                          - generic [ref=f18e542]:
+                            - generic [ref=f18e543]: Standard
+                            - generic [ref=f18e551]: Local Game Store Event
+                            - generic [ref=f18e555]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e562]'
+                            - generic [ref=f18e568]: Free
+                - generic [ref=f18e569]:
+                  - generic [ref=f18e570]: Wednesday, August 26, 2026
+                  - generic [ref=f18e574]:
+                    - link [ref=f18e575] [cursor=pointer]:
+                      - /url: /events/881029
+                      - article [ref=f18e576]:
+                        - generic [ref=f18e577]:
+                          - generic [ref=f18e578]: AUG 26 • 11:00 AM (CDT)
+                          - generic [ref=f18e580]:
+                            - generic [ref=f18e581]: Upcoming
+                            - button "Add to Calendar" [ref=f18e582]
+                        - heading "Wednesday Morning Free Play" [level=3] [ref=f18e585]
+                        - generic [ref=f18e586]:
+                          - generic [ref=f18e587]: Red River Comic and Collectibles
+                          - generic [ref=f18e594]: 105 W Commerce St, Altus, OK 73521, USA
+                          - generic [ref=f18e599]:
+                            - generic [ref=f18e600]: Challenger Series
+                            - generic [ref=f18e608]: Free Play
+                            - generic [ref=f18e612]: 0 / 50 spots
+                            - 'group "Rewards: Currency" [ref=f18e619]'
+                            - generic [ref=f18e625]: Free
+                    - link [ref=f18e626] [cursor=pointer]:
+                      - /url: /events/656857
+                      - article [ref=f18e627]:
+                        - generic [ref=f18e628]:
+                          - generic [ref=f18e629]: AUG 26 • 6:15 PM (GMT+1)
+                          - generic [ref=f18e631]:
+                            - generic [ref=f18e632]: Upcoming
+                            - button "Add to Calendar" [ref=f18e633]
+                        - heading "Wednesday Meetup" [level=3] [ref=f18e636]
+                        - generic [ref=f18e637]:
+                          - generic [ref=f18e638]: Patriot Games Ltd
+                          - generic [ref=f18e645]: 97 Mary Street, Sheffield City Centre, England, S1 4RT, GB
+                          - generic [ref=f18e650]:
+                            - generic [ref=f18e651]: Standard
+                            - generic [ref=f18e659]: Local Game Store Event
+                            - generic [ref=f18e663]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e670]'
+                            - generic [ref=f18e676]: Free
+                    - link [ref=f18e677] [cursor=pointer]:
+                      - /url: /events/733759
+                      - article [ref=f18e678]:
+                        - generic [ref=f18e679]:
+                          - generic [ref=f18e680]: AUG 26 • 5:00 PM (EDT)
+                          - generic [ref=f18e682]:
+                            - generic [ref=f18e683]: Upcoming
+                            - button "Add to Calendar" [ref=f18e684]
+                        - heading "Weekly Play" [level=3] [ref=f18e687]
+                        - generic [ref=f18e688]:
+                          - generic [ref=f18e689]: Great Oaks Tavern
+                          - generic [ref=f18e696]: 210 Great Oaks Trail, Wadsworth, OH, 44281, US
+                          - generic [ref=f18e701]:
+                            - generic [ref=f18e702]: Standard
+                            - generic [ref=f18e710]: Local Game Store Event
+                            - generic [ref=f18e714]: 0 / 16 spots
+                            - 'group "Rewards: Currency" [ref=f18e721]'
+                            - generic [ref=f18e727]: Free
+                    - link [ref=f18e728] [cursor=pointer]:
+                      - /url: /events/735072
+                      - article [ref=f18e729]:
+                        - generic [ref=f18e730]:
+                          - generic [ref=f18e731]: AUG 26 • 5:00 PM (EDT)
+                          - generic [ref=f18e733]:
+                            - generic [ref=f18e734]: Upcoming
+                            - button "Add to Calendar" [ref=f18e735]
+                        - heading "UniVersus Weekly Play (Standard)" [level=3] [ref=f18e738]
+                        - generic [ref=f18e739]:
+                          - generic [ref=f18e740]: House Of Games
+                          - generic [ref=f18e747]: 562 Tusculum Boulevard, Greeneville, TN, 37745, US
+                          - generic [ref=f18e752]:
+                            - generic [ref=f18e753]: Standard
+                            - generic [ref=f18e761]: Local Game Store Event
+                            - generic [ref=f18e765]: 0 / 8 spots
+                            - 'group "Rewards: Currency" [ref=f18e772]'
+                            - generic [ref=f18e778]: $5.00
+                    - link [ref=f18e779] [cursor=pointer]:
+                      - /url: /events/715203
+                      - article [ref=f18e780]:
+                        - generic [ref=f18e781]:
+                          - generic [ref=f18e782]: AUG 26 • 6:00 PM (EDT)
+                          - generic [ref=f18e784]:
+                            - generic [ref=f18e785]: Upcoming
+                            - button "Add to Calendar" [ref=f18e786]
+                        - heading "Wednesday Evening Round 4 Local Championship 2026" [level=3] [ref=f18e789]
+                        - generic [ref=f18e790]:
+                          - generic [ref=f18e791]: Heaven's Collectibles & TCG
+                          - generic [ref=f18e798]: LL1 - 190, Wortley Rd, Unit LL1, London, ON, N6C 4Y7, CA
+                          - generic [ref=f18e803]:
+                            - generic [ref=f18e804]: Standard
+                            - generic [ref=f18e812]: Round 4 Local Championship 2026
+                            - generic [ref=f18e816]: 0 / 32 spots
+                            - generic [ref=f18e823]: CA$10.00
+                    - link [ref=f18e824] [cursor=pointer]:
+                      - /url: /events/735281
+                      - article [ref=f18e825]:
+                        - generic [ref=f18e826]:
+                          - generic [ref=f18e827]: AUG 26 • 5:00 PM (CDT)
+                          - generic [ref=f18e829]:
+                            - generic [ref=f18e830]: Upcoming
+                            - button "Add to Calendar" [ref=f18e831]
+                        - heading "Wednesday Night UniVersus" [level=3] [ref=f18e834]
+                        - generic [ref=f18e835]:
+                          - generic [ref=f18e836]: Heroes Welcome Comics & Games
+                          - generic [ref=f18e843]: 424 Main Street East, Menomonie, WI, 54751, US
+                          - generic [ref=f18e848]:
+                            - generic [ref=f18e849]: Standard
+                            - generic [ref=f18e857]: Local Game Store Event
+                            - generic [ref=f18e861]: 0 / 8 spots
+                            - 'group "Rewards: Currency" [ref=f18e868]'
+                            - generic [ref=f18e874]: Free
+                    - link [ref=f18e875] [cursor=pointer]:
+                      - /url: /events/841059
+                      - article [ref=f18e876]:
+                        - generic [ref=f18e877]:
+                          - generic [ref=f18e878]: AUG 26 • 6:00 PM (EDT)
+                          - generic [ref=f18e880]:
+                            - generic [ref=f18e881]: Upcoming
+                            - button "Add to Calendar" [ref=f18e882]
+                        - heading "UVS Free Play" [level=3] [ref=f18e885]
+                        - generic [ref=f18e886]:
+                          - generic [ref=f18e887]: The Dragon's Vault of NJ, LLC (dba The Dragon's Vault)
+                          - generic [ref=f18e894]: 1370 South Main Road, Building 6, Vineland, NJ, 08361, US
+                          - generic [ref=f18e899]:
+                            - generic [ref=f18e900]: Standard
+                            - generic [ref=f18e908]: Free Play
+                            - generic [ref=f18e912]: 0 / 16 spots
+                            - 'group "Rewards: Currency" [ref=f18e919]'
+                            - generic [ref=f18e925]: Free
+                    - link [ref=f18e926] [cursor=pointer]:
+                      - /url: /events/656858
+                      - article [ref=f18e927]:
+                        - generic [ref=f18e928]:
+                          - generic [ref=f18e929]: AUG 26 • 5:00 PM (CDT)
+                          - generic [ref=f18e931]:
+                            - generic [ref=f18e932]: Upcoming
+                            - button "Add to Calendar" [ref=f18e933]
+                        - heading "Local Championship" [level=3] [ref=f18e936]
+                        - generic [ref=f18e937]:
+                          - generic [ref=f18e938]: Heroes Welcome Comics & Games
+                          - generic [ref=f18e945]: 424 Main Street East, Menomonie, WI, 54751, US
+                          - generic [ref=f18e950]:
+                            - generic [ref=f18e951]: Standard
+                            - generic [ref=f18e959]: Round 4 Local Championship 2026
+                            - generic [ref=f18e963]: 0 / 32 spots
+                            - generic [ref=f18e970]: Free
+                    - link [ref=f18e971] [cursor=pointer]:
+                      - /url: /events/699089
+                      - article [ref=f18e972]:
+                        - generic [ref=f18e973]:
+                          - generic [ref=f18e974]: AUG 26 • 6:00 PM (CDT)
+                          - generic [ref=f18e976]:
+                            - generic [ref=f18e977]: Upcoming
+                            - button "Add to Calendar" [ref=f18e978]
+                        - heading "Boar Hat Tekken Scramble August" [level=3] [ref=f18e981]
+                        - generic [ref=f18e982]:
+                          - generic [ref=f18e983]: Boar's Hat Gaming
+                          - generic [ref=f18e990]: 1341 Manor Court, Elgin Township, IL, 60123, US
+                          - generic [ref=f18e995]:
+                            - generic [ref=f18e996]: Standard
+                            - generic [ref=f18e1004]: Store Scrambles
+                            - generic [ref=f18e1008]: 1 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e1015]'
+                            - generic [ref=f18e1021]: $10.00
+                    - link [ref=f18e1022] [cursor=pointer]:
+                      - /url: /events/735548
+                      - article [ref=f18e1023]:
+                        - generic [ref=f18e1024]:
+                          - generic [ref=f18e1025]: AUG 26 • 7:00 PM (EDT)
+                          - generic [ref=f18e1027]:
+                            - generic [ref=f18e1028]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1029]
+                        - 'heading "BGM: Wednesday Night Casual" [level=3] [ref=f18e1032]'
+                        - generic [ref=f18e1033]:
+                          - generic [ref=f18e1034]: Broadway Games and More
+                          - generic [ref=f18e1041]: 11 South Main Street, Floor 1, Bangor, PA, 18013, US
+                          - generic [ref=f18e1046]:
+                            - generic [ref=f18e1047]: Spotlight
+                            - generic [ref=f18e1055]: 0 / 8 spots
+                            - generic [ref=f18e1062]: Free
+                    - link [ref=f18e1063] [cursor=pointer]:
+                      - /url: /events/811214
+                      - article [ref=f18e1064]:
+                        - generic [ref=f18e1065]:
+                          - generic [ref=f18e1066]: AUG 26 • 7:00 PM (EDT)
+                          - generic [ref=f18e1068]:
+                            - generic [ref=f18e1069]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1070]
+                        - heading "GG Locals August 26, 2026" [level=3] [ref=f18e1073]
+                        - generic [ref=f18e1074]:
+                          - generic [ref=f18e1075]: Gaming Giant
+                          - generic [ref=f18e1082]: 3925 Chain Bridge Road, Suite 201, Fairfax, VA, 22030, US
+                          - generic [ref=f18e1087]:
+                            - generic [ref=f18e1088]: Standard
+                            - generic [ref=f18e1096]: Local Game Store Event
+                            - generic [ref=f18e1100]: 0 / 8 spots
+                            - 'group "Rewards: Currency" [ref=f18e1107]'
+                            - generic [ref=f18e1113]: Free
+                    - link [ref=f18e1114] [cursor=pointer]:
+                      - /url: /events/656860
+                      - article [ref=f18e1115]:
+                        - generic [ref=f18e1116]:
+                          - generic [ref=f18e1117]: AUG 26 • 6:00 PM (CDT)
+                          - generic [ref=f18e1119]:
+                            - generic [ref=f18e1120]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1121]
+                        - heading "Wednesday Night Universus at The Outlets" [level=3] [ref=f18e1124]
+                        - generic [ref=f18e1125]:
+                          - generic [ref=f18e1126]: The Comic Cave
+                          - generic [ref=f18e1133]: 5001 East Expressway 83, Suite 0917, Mercedes, TX, 78570, US
+                          - generic [ref=f18e1138]:
+                            - generic [ref=f18e1139]: Standard
+                            - generic [ref=f18e1147]: Local Game Store Event
+                            - generic [ref=f18e1151]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e1158]'
+                            - generic [ref=f18e1164]: Free
+                    - link [ref=f18e1165] [cursor=pointer]:
+                      - /url: /events/811446
+                      - article [ref=f18e1166]:
+                        - generic [ref=f18e1167]:
+                          - generic [ref=f18e1168]: AUG 26 • 6:30 PM (CDT)
+                          - generic [ref=f18e1170]:
+                            - generic [ref=f18e1171]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1172]
+                        - heading "UniVersus Standard Constructed at Good Game" [level=3] [ref=f18e1175]
+                        - generic [ref=f18e1176]:
+                          - generic [ref=f18e1177]: Good Game
+                          - generic [ref=f18e1184]: 407 North Arkansas Avenue, 13, Russellville, AR, 72801, US
+                          - generic [ref=f18e1189]:
+                            - generic [ref=f18e1190]: Standard
+                            - generic [ref=f18e1198]: Local Game Store Event
+                            - generic [ref=f18e1202]: 0 / 8 spots
+                            - 'group "Rewards: Currency" [ref=f18e1209]'
+                            - generic [ref=f18e1215]: Free
+                    - link [ref=f18e1216] [cursor=pointer]:
+                      - /url: /events/656861
+                      - article [ref=f18e1217]:
+                        - generic [ref=f18e1218]:
+                          - generic [ref=f18e1219]: AUG 26 • 6:30 PM (CDT)
+                          - generic [ref=f18e1221]:
+                            - generic [ref=f18e1222]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1223]
+                        - heading "Wednesday Night Open Play" [level=3] [ref=f18e1226]
+                        - generic [ref=f18e1227]:
+                          - generic [ref=f18e1228]: Gamemasters Guild
+                          - generic [ref=f18e1235]: 99 North 7th Street, Tonkawa, OK, 74653, US
+                          - generic [ref=f18e1240]:
+                            - generic [ref=f18e1241]: Standard
+                            - generic [ref=f18e1249]: Local Game Store Event
+                            - generic [ref=f18e1253]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e1260]'
+                            - generic [ref=f18e1266]: Free
+                    - link [ref=f18e1267] [cursor=pointer]:
+                      - /url: /events/879207
+                      - article [ref=f18e1268]:
+                        - generic [ref=f18e1269]:
+                          - generic [ref=f18e1270]: AUG 26 • 6:00 PM (PDT)
+                          - generic [ref=f18e1272]:
+                            - generic [ref=f18e1273]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1274]
+                        - heading "Weekly Wednesday Play @ Strategy & Games" [level=3] [ref=f18e1277]
+                        - generic [ref=f18e1278]:
+                          - generic [ref=f18e1279]: Strategy & Games
+                          - generic [ref=f18e1286]: "200 West Hanley Avenue, #1207, Coeur d'Alene, ID, 83815, US"
+                          - generic [ref=f18e1291]:
+                            - generic [ref=f18e1292]: Standard
+                            - generic [ref=f18e1300]: Local Game Store Event
+                            - generic [ref=f18e1304]: 1 / 16 spots
+                            - 'group "Rewards: Currency" [ref=f18e1311]'
+                            - generic [ref=f18e1317]: Free
+                    - link [ref=f18e1318] [cursor=pointer]:
+                      - /url: /events/656862
+                      - article [ref=f18e1319]:
+                        - generic [ref=f18e1320]:
+                          - generic [ref=f18e1321]: AUG 26 • 6:10 PM (PDT)
+                          - generic [ref=f18e1323]:
+                            - generic [ref=f18e1324]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1325]
+                        - heading "Oakridge Locals!" [level=3] [ref=f18e1328]
+                        - generic [ref=f18e1329]:
+                          - generic [ref=f18e1330]: Legends Comics & Games Oakridge
+                          - generic [ref=f18e1337]: 925 Blossom Hill Road, Ste 1277, San Jose, CA, 95123, US
+                          - generic [ref=f18e1342]:
+                            - generic [ref=f18e1343]: Retro
+                            - generic [ref=f18e1351]: Local Game Store Event
+                            - generic [ref=f18e1355]: 0 / 32 spots
+                            - 'group "Rewards: Currency" [ref=f18e1362]'
+                            - generic [ref=f18e1368]: Free
+                    - link [ref=f18e1369] [cursor=pointer]:
+                      - /url: /events/773365
+                      - article [ref=f18e1370]:
+                        - generic [ref=f18e1371]:
+                          - generic [ref=f18e1372]: AUG 26 • 6:30 PM (PDT)
+                          - generic [ref=f18e1374]:
+                            - generic [ref=f18e1375]: Upcoming
+                            - button "Add to Calendar" [ref=f18e1376]
+                        - heading "Wednesday UVS Tournament Template" [level=3] [ref=f18e1379]
+                        - generic [ref=f18e1380]:
+                          - generic [ref=f18e1381]: The Game Parlour
+                          - generic [ref=f18e1388]: 1342 Irving Street, San Francisco, CA, 94122, US
+                          - generic [ref=f18e1393]:
+                            - generic [ref=f18e1394]: Standard
+                            - generic [ref=f18e1402]: Local Game Store Event
+                            - generic [ref=f18e1406]: 0 / 8 spots
+                            - 'group "Rewards: Currency" [ref=f18e1413]'
+                            - generic [ref=f18e1419]: Free
+              - generic [ref=f18e1421]:
+                - generic [ref=f18e1423]:
+                  - generic [ref=f18e1424]: Results per page
+                  - combobox [ref=f18e1425]:
+                    - generic: "25"
+                - paragraph [ref=f18e1427]: 829 events
+                - generic [ref=f18e1428]:
+                  - button "1" [ref=f18e1429] [cursor=pointer]
+                  - button "2" [ref=f18e1430] [cursor=pointer]
+                  - button "3" [ref=f18e1431] [cursor=pointer]
+                  - button "4" [ref=f18e1432] [cursor=pointer]
+                  - generic [ref=f18e1433]: ...
+                  - button "34" [ref=f18e1434] [cursor=pointer]
+                  - button "Next" [ref=f18e1435] [cursor=pointer]
+    - contentinfo [ref=f18e1436]:
+      - generic [ref=f18e1437]:
+        - generic [ref=f18e1438]:
+          - link "X (Twitter)" [ref=f18e1439] [cursor=pointer]:
+            - /url: https://x.com/UniVersusCCG
+          - link "Instagram" [ref=f18e1442] [cursor=pointer]:
+            - /url: https://www.instagram.com/universusccg
+          - link "YouTube" [ref=f18e1446] [cursor=pointer]:
+            - /url: https://www.youtube.com/@UniVersusCCG
+          - link "TikTok" [ref=f18e1450] [cursor=pointer]:
+            - /url: https://www.tiktok.com/@universusccg
+          - link "Facebook" [ref=f18e1453] [cursor=pointer]:
+            - /url: https://www.facebook.com/UniVersusCollectibleCardGame
+          - link "Twitch" [ref=f18e1456] [cursor=pointer]:
+            - /url: https://www.twitch.tv/universusccg
+          - link "Discord" [ref=f18e1459] [cursor=pointer]:
+            - /url: https://discord.gg/universusccg
+          - link "Bluesky" [ref=f18e1462] [cursor=pointer]:
+            - /url: https://bsky.app/profile/universusccg.bsky.social
+        - generic [ref=f18e1465]:
+          - generic [ref=f18e1466]:
+            - heading "Links" [level=3] [ref=f18e1467]
+            - link "UVS Games Official Website" [ref=f18e1468] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/
+            - link "Learn To Play" [ref=f18e1469] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/learntoplay/
+            - link "Contact UVS Games" [ref=f18e1470] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/contact-us
+            - link "Learn About Organized Play" [ref=f18e1471] [cursor=pointer]:
+              - /url: https://uvsgames.com/universus-organized-play/
+            - link "Retailers" [ref=f18e1472] [cursor=pointer]:
+              - /url: https://uvsgames.com/retailer-info
+            - link "Player FAQ" [ref=f18e1473] [cursor=pointer]:
+              - /url: https://assets.ctfassets.net/qgsv4hbp414k/2fl7IBtiB6NVPeANjqc2ZP/8e364845381bd7f5cb67f4d838240a42/UGN_Article__Players.pdf
+            - link "Retailer FAQ" [ref=f18e1474] [cursor=pointer]:
+              - /url: https://assets.ctfassets.net/qgsv4hbp414k/5HIZ9AzYkqGM2TYmHToAPL/2e37d22fb516e57391cc3313fbba6f94/UGN_Article__Organizations.pdf
+            - link "Formats and Ban Lists" [ref=f18e1475] [cursor=pointer]:
+              - /url: https://uvsgames.com/news/formats-and-ban-lists/
+            - link "Store Locator" [ref=f18e1476] [cursor=pointer]:
+              - /url: /stores/search
+          - generic [ref=f18e1477]:
+            - heading "Policies" [level=3] [ref=f18e1478]
+            - link "Terms of Use" [ref=f18e1479] [cursor=pointer]:
+              - /url: https://carde.io/terms-and-conditions
+            - link "Privacy Policy" [ref=f18e1480] [cursor=pointer]:
+              - /url: https://carde.io/privacy
+            - link "Cookie Policy" [ref=f18e1481] [cursor=pointer]:
+              - /url: https://carde.io/cookies
+        - generic [ref=f18e1482]: "© 2026 K. Horikoshi / Shueisha, My Hero Academia Project © Hajime Isayama / KODANSHA Ltd. ©Critical Role 2024 ©2023 Yasuhiro Nightow, SHONENGAHOSHA / TRIGUN STAMPEDE Project ©Yoshihiro Togashi 1990-1994 TV animation series: ©Pierrot/Shueisha ©SUNRISE TM & © TOHO CO., LTD © & TM DC and WBEI. Based on illustrations by AA, TEKKEN™ 8 & ©Bandai Namco Entertainment Inc., TM & ©2024 CBS Studios Inc. All Rights Reserved, ©Solo Leveling Animation Partners ©CAPCOM ©SNK ©2023 UVS Games. All Rights Reserved"
+  - region "Notifications alt+T"
+  - alert [ref=f18e1483]

@@ -95,13 +95,20 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
+    // ponytail: tope de 200 más recientes — sin esto, un player con cientos
+    // de sesiones casuales manda la página a pintar todas de una y el fetch
+    // de récords de abajo se acerca al límite de headers de undici (ver fix
+    // en getMyCasualStats). Agregar "cargar más" si algún día hace falta ver
+    // más allá de las 200 recientes.
+    const SESSIONS_PAGE_LIMIT = 200;
     const { data: sessions, error } = await admin
       .from("standalone_sessions")
       .select(
         "id, session_type, name, status, game_id, session_date, session_time, store_id, tournament_id, player_leader_id, created_at, updated_at",
       )
       .eq("player_id", player.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(SESSIONS_PAGE_LIMIT);
 
     if (error) failDb(error);
     const sessionList = sessions ?? [];
@@ -117,6 +124,24 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
       new Set(sessionList.map((s: any) => s.player_leader_id).filter(Boolean)),
     );
 
+    // ponytail: .in() con muchos UUIDs arma una URL que puede pasar el
+    // límite de headers de undici (16KB, ver fix en getMyCasualStats) — se
+    // trocea en vez de mandar los 200 session_id en una sola request.
+    const ROUND_ID_BATCH_SIZE = 150;
+    const roundsPromise = (async () => {
+      const rows: any[] = [];
+      for (let i = 0; i < sessionIds.length; i += ROUND_ID_BATCH_SIZE) {
+        const batch = sessionIds.slice(i, i + ROUND_ID_BATCH_SIZE);
+        const { data, error: batchErr } = await admin
+          .from("standalone_round_results")
+          .select("session_id, won_match")
+          .in("session_id", batch);
+        if (batchErr) failDb(batchErr);
+        rows.push(...(data ?? []));
+      }
+      return { data: rows };
+    })();
+
     const [gamesRes, storesRes, tournamentsRes, roundsRes, leadersRes] = await Promise.all([
       gameIds.length
         ? admin.from("games").select("id, name").in("id", gameIds)
@@ -130,12 +155,7 @@ export const getStandaloneSessions = createServerFn({ method: "POST" })
             .select("id, tournament_date, stores!inner(name, city)")
             .in("id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
-      sessionIds.length
-        ? admin
-            .from("standalone_round_results")
-            .select("session_id, won_match")
-            .in("session_id", sessionIds)
-        : Promise.resolve({ data: [] as any[] }),
+      sessionIds.length ? roundsPromise : Promise.resolve({ data: [] as any[] }),
       leaderIds.length
         ? admin
             .from("deck_identifiers")

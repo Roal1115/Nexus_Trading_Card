@@ -1,0 +1,124 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - navigation [ref=f6e3]:
+      - generic [ref=f6e5]:
+        - link "Logo UniVersus" [ref=f6e7] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=f6e9]
+          - generic [ref=f6e10]: UniVersus
+        - navigation [ref=f6e11]:
+          - link "Events" [ref=f6e12] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=f6e13] [cursor=pointer]:
+            - /url: /stores/search
+          - link "Cards" [ref=f6e14] [cursor=pointer]:
+            - /url: /cards
+          - link "Decks" [ref=f6e15] [cursor=pointer]:
+            - /url: /decks
+          - link "Rewards" [ref=f6e16] [cursor=pointer]:
+            - /url: /rewards
+        - link [ref=f6e18] [cursor=pointer]:
+          - /url: /login?returnTo=%2Fstores%2Fsearch
+          - button "Login" [ref=f6e19]
+    - main [ref=f6e21]:
+      - generic [ref=f6e23]:
+        - generic [ref=f6e25]:
+          - heading "Find Our Stores" [level=1] [ref=f6e26]
+          - paragraph [ref=f6e27]: Enter your zip code or city below to see stores that carry our games near you! If you don't see any results, try adjusting the distance filters and be sure to click 'Search' when you're adjusting search criteria. Your browser will ask to use your location for more precise results.
+        - generic [ref=f6e29]:
+          - generic [ref=f6e30]:
+            - generic [ref=f6e31]: Location
+            - generic [ref=f6e32]:
+              - generic [ref=f6e36]:
+                - generic [ref=f6e38]: Address autocomplete
+                - textbox "Enter a zip code, city, or address" [ref=f6e39]: Monterrey
+              - button "Use my location" [ref=f6e40] [cursor=pointer]
+          - generic [ref=f6e41]:
+            - generic [ref=f6e42]: Distance
+            - combobox "Distance" [ref=f6e43]:
+              - generic: 25 miles
+          - generic [ref=f6e44]:
+            - generic [ref=f6e45]: Store Type
+            - combobox "Store Type" [ref=f6e46]:
+              - generic: Show All
+          - button "Search Stores" [ref=f6e47] [cursor=pointer]
+        - generic [ref=f6e49]:
+          - generic [ref=f6e50]:
+            - generic [ref=f6e51]:
+              - generic [ref=f6e52]: Stores
+              - generic [ref=f6e53]: showing 2 stores
+            - generic [ref=f6e54]:
+              - generic [ref=f6e55]: Click on map to focus store.
+              - generic [ref=f6e56]:
+                - generic [ref=f6e58] [cursor=pointer]:
+                  - generic [ref=f6e59]: El cachalote regio tcgs and hobbies
+                  - generic [ref=f6e62]:
+                    - generic [ref=f6e63]: 3352 Calle El Deslinde, Balcones de Aztlán (Residencial Lic Raúl Frías), N.L., 64165, MX
+                    - generic [ref=f6e68]: Organized Play
+                  - link [ref=f6e74]:
+                    - /url: /stores/e2f574bf-37dd-4de2-a8d6-c897ab06e8d0
+                    - button "Store Details" [ref=f6e75]
+                - generic [ref=f6e77] [cursor=pointer]:
+                  - generic [ref=f6e78]: Decks y Mazos
+                  - generic [ref=f6e81]:
+                    - generic [ref=f6e82]: Decks y Mazos Plaza Platino, Blvd. Acapulco 402-Local 34, Guadalupe, N.L., 67113, MX
+                    - generic [ref=f6e87]: Physical Retailer / Organized Play
+                  - generic [ref=f6e92]:
+                    - link "Store Website" [ref=f6e93]:
+                      - /url: http://www.decksymazos.com/
+                    - link [ref=f6e98]:
+                      - /url: /stores/a215a476-d0f4-4860-985b-dc73ab6f3efc
+                      - button "Store Details" [ref=f6e99]
+            - generic [ref=f6e100]: Showing 2 stores
+          - paragraph [ref=f6e103]: Loading map...
+    - contentinfo [ref=f6e104]:
+      - generic [ref=f6e105]:
+        - generic [ref=f6e106]:
+          - link "X (Twitter)" [ref=f6e107] [cursor=pointer]:
+            - /url: https://x.com/UniVersusCCG
+          - link "Instagram" [ref=f6e110] [cursor=pointer]:
+            - /url: https://www.instagram.com/universusccg
+          - link "YouTube" [ref=f6e114] [cursor=pointer]:
+            - /url: https://www.youtube.com/@UniVersusCCG
+          - link "TikTok" [ref=f6e118] [cursor=pointer]:
+            - /url: https://www.tiktok.com/@universusccg
+          - link "Facebook" [ref=f6e121] [cursor=pointer]:
+            - /url: https://www.facebook.com/UniVersusCollectibleCardGame
+          - link "Twitch" [ref=f6e124] [cursor=pointer]:
+            - /url: https://www.twitch.tv/universusccg
+          - link "Discord" [ref=f6e127] [cursor=pointer]:
+            - /url: https://discord.gg/universusccg
+          - link "Bluesky" [ref=f6e130] [cursor=pointer]:
+            - /url: https://bsky.app/profile/universusccg.bsky.social
+        - generic [ref=f6e133]:
+          - generic [ref=f6e134]:
+            - heading "Links" [level=3] [ref=f6e135]
+            - link "UVS Games Official Website" [ref=f6e136] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/
+            - link "Learn To Play" [ref=f6e137] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/learntoplay/
+            - link "Contact UVS Games" [ref=f6e138] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/contact-us
+            - link "Learn About Organized Play" [ref=f6e139] [cursor=pointer]:
+              - /url: https://uvsgames.com/universus-organized-play/
+            - link "Retailers" [ref=f6e140] [cursor=pointer]:
+              - /url: https://uvsgames.com/retailer-info
+            - link "Player FAQ" [ref=f6e141] [cursor=pointer]:
+              - /url: https://assets.ctfassets.net/qgsv4hbp414k/2fl7IBtiB6NVPeANjqc2ZP/8e364845381bd7f5cb67f4d838240a42/UGN_Article__Players.pdf
+            - link "Retailer FAQ" [ref=f6e142] [cursor=pointer]:
+              - /url: https://assets.ctfassets.net/qgsv4hbp414k/5HIZ9AzYkqGM2TYmHToAPL/2e37d22fb516e57391cc3313fbba6f94/UGN_Article__Organizations.pdf
+            - link "Formats and Ban Lists" [ref=f6e143] [cursor=pointer]:
+              - /url: https://uvsgames.com/news/formats-and-ban-lists/
+            - link "Store Locator" [ref=f6e144] [cursor=pointer]:
+              - /url: /stores/search
+          - generic [ref=f6e145]:
+            - heading "Policies" [level=3] [ref=f6e146]
+            - link "Terms of Use" [ref=f6e147] [cursor=pointer]:
+              - /url: https://carde.io/terms-and-conditions
+            - link "Privacy Policy" [ref=f6e148] [cursor=pointer]:
+              - /url: https://carde.io/privacy
+            - link "Cookie Policy" [ref=f6e149] [cursor=pointer]:
+              - /url: https://carde.io/cookies
+        - generic [ref=f6e150]: "© 2026 K. Horikoshi / Shueisha, My Hero Academia Project © Hajime Isayama / KODANSHA Ltd. ©Critical Role 2024 ©2023 Yasuhiro Nightow, SHONENGAHOSHA / TRIGUN STAMPEDE Project ©Yoshihiro Togashi 1990-1994 TV animation series: ©Pierrot/Shueisha ©SUNRISE TM & © TOHO CO., LTD © & TM DC and WBEI. Based on illustrations by AA, TEKKEN™ 8 & ©Bandai Namco Entertainment Inc., TM & ©2024 CBS Studios Inc. All Rights Reserved, ©Solo Leveling Animation Partners ©CAPCOM ©SNK ©2023 UVS Games. All Rights Reserved"
+  - region "Notifications alt+T"
+  - alert [ref=f6e151]

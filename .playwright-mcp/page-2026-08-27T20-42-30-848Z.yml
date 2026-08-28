@@ -1,0 +1,471 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - link:
+          - /url: /
+          - generic:
+            - generic: Nexus
+            - generic: Jugador
+        - button
+        - generic:
+          - generic:
+            - button: One Piece Card Game
+          - button:
+            - generic: Notificaciones
+        - navigation:
+          - generic:
+            - generic: Explorar
+            - generic:
+              - link:
+                - /url: /
+                - generic: Ranking
+              - link:
+                - /url: /calendar
+                - generic: Calendario
+              - link:
+                - /url: /meta
+                - generic: Meta
+              - link:
+                - /url: /stores
+                - generic: Tiendas
+          - generic:
+            - generic: Mi Carrera
+            - generic:
+              - link:
+                - /url: /dashboard
+                - generic: Mi Panel
+              - link:
+                - /url: /my-stats
+                - generic: Mis Stats
+              - link:
+                - /url: /sessions
+                - generic: Sesiones
+          - generic:
+            - generic: Cuenta
+            - generic:
+              - link:
+                - /url: /players/PLAYERALL
+                - generic: Mi Perfil
+              - link:
+                - /url: /settings
+                - generic: Configuración
+        - generic:
+          - generic:
+            - generic: Sesión
+            - generic: PLAYERALL
+          - button:
+            - generic: Cerrar sesión
+    - generic:
+      - generic:
+        - generic:
+          - banner:
+            - paragraph: Meta
+            - heading [level=1]: Meta Leaderboard
+            - paragraph: Win rates y play rates calculados desde torneos oficiales publicados.
+          - generic:
+            - generic:
+              - generic:
+                - generic: Zona
+                - combobox [expanded]:
+                  - generic: Todas las zonas
+              - generic:
+                - generic: Tienda
+                - combobox:
+                  - generic: Todas las tiendas
+              - generic:
+                - generic: Desde
+                - generic:
+                  - textbox:
+                    - /placeholder: mm/dd/yy
+              - generic:
+                - generic: Hasta
+                - generic:
+                  - textbox:
+                    - /placeholder: mm/dd/yy
+            - generic:
+              - button: Limpiar filtros
+              - button: Aplicar filtros
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic: "#"
+                  - generic: Leader
+                  - generic: Set
+                  - generic: Colores
+                  - generic: Play Rate
+                  - generic: Win Rate
+                  - generic: 1st WR
+                  - generic: 2nd WR
+                  - generic: Rondas
+                - generic:
+                  - generic: "#1"
+                  - generic: Monkey.D.Luffy
+                  - generic: EB02-010
+                  - generic: 21.3%
+                  - generic: 46.3%
+                  - generic: 45%
+                  - generic: 47.5%
+                  - generic: "121"
+                - generic:
+                  - generic: "#2"
+                  - generic: Jewelry Bonney
+                  - generic: OP07-019
+                  - generic: 18.3%
+                  - generic: 52.9%
+                  - generic: 51.9%
+                  - generic: 53.8%
+                  - generic: "104"
+                - generic:
+                  - generic: "#3"
+                  - generic: Donquixote Rosinante
+                  - generic: OP05-022
+                  - generic: 18.1%
+                  - generic: 48.5%
+                  - generic: 46.2%
+                  - generic: 51%
+                  - generic: "103"
+                - generic:
+                  - generic: "#4"
+                  - generic: King
+                  - generic: OP08-057
+                  - generic: 18.1%
+                  - generic: 52.4%
+                  - generic: 48.1%
+                  - generic: 56.9%
+                  - generic: "103"
+                - generic:
+                  - generic: "#5"
+                  - generic: Sengoku
+                  - generic: OP16-060
+                  - generic: 3.5%
+                  - generic: 65%
+                  - generic: 76.9%
+                  - generic: 42.9%
+                  - generic: "20"
+                - generic:
+                  - generic: "#6"
+                  - generic: Donquixote Doflamingo
+                  - generic: OP14-060
+                  - generic: 1.6%
+                  - generic: 55.6%
+                  - generic: 25%
+                  - generic: 66.7%
+                  - generic: "9"
+                - generic:
+                  - generic: "#7"
+                  - generic: Donquixote Rosinante
+                  - generic: OP12-061
+                  - generic: 1.4%
+                  - generic: 25%
+                  - generic: 100%
+                  - generic: 0%
+                  - generic: "8"
+                - generic:
+                  - generic: "#8"
+                  - generic: Monkey.D.Luffy
+                  - generic: OP16-022
+                  - generic: 1.2%
+                  - generic: 57.1%
+                  - generic: 60%
+                  - generic: 50%
+                  - generic: "7"
+          - paragraph: Solo se muestran leaders con mínimo 5 rondas registradas (torneos oficiales + sessions). · 569 rondas totales en el meta.
+          - generic:
+            - generic:
+              - paragraph: Matchups
+              - heading [level=2]: Matriz de enfrentamientos
+              - paragraph: Win rate del líder de la fila contra el líder de la columna. Mínimo 3 rondas por matchup.
+            - generic:
+              - table:
+                - rowgroup:
+                  - row:
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                    - columnheader
+                - rowgroup:
+                  - row:
+                    - rowheader:
+                      - generic: Monkey.D.Luffy
+                    - cell: —
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell:
+                      - generic: 26.1%
+                      - generic: "23"
+                    - cell:
+                      - generic: 35%
+                      - generic: "20"
+                    - cell:
+                      - generic: 55%
+                      - generic: "20"
+                    - cell:
+                      - generic: 60%
+                      - generic: "20"
+                    - cell:
+                      - generic: 35%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: ·
+                    - cell:
+                      - generic: 66.7%
+                      - generic: "3"
+                  - row:
+                    - rowheader:
+                      - generic: Jewelry Bonney
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                    - cell: ·
+                    - cell:
+                      - generic: 45%
+                      - generic: "20"
+                    - cell:
+                      - generic: 35%
+                      - generic: "20"
+                    - cell:
+                      - generic: 75%
+                      - generic: "20"
+                    - cell:
+                      - generic: 50%
+                      - generic: "20"
+                    - cell:
+                      - generic: 50%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Donquixote Rosinante
+                    - cell: ·
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                    - cell:
+                      - generic: 45%
+                      - generic: "20"
+                    - cell:
+                      - generic: 28.6%
+                      - generic: "21"
+                    - cell:
+                      - generic: 70%
+                      - generic: "20"
+                    - cell:
+                      - generic: 57.1%
+                      - generic: "21"
+                    - cell:
+                      - generic: 40%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: King
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: —
+                    - cell:
+                      - generic: 45%
+                      - generic: "20"
+                    - cell:
+                      - generic: 45%
+                      - generic: "20"
+                    - cell:
+                      - generic: 65%
+                      - generic: "20"
+                    - cell:
+                      - generic: 55%
+                      - generic: "20"
+                    - cell:
+                      - generic: 45%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Dracule Mihawk
+                    - cell:
+                      - generic: 73.9%
+                      - generic: "23"
+                    - cell:
+                      - generic: 55%
+                      - generic: "20"
+                    - cell:
+                      - generic: 55%
+                      - generic: "20"
+                    - cell:
+                      - generic: 55%
+                      - generic: "20"
+                    - cell: —
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Sakazuki
+                    - cell:
+                      - generic: 65%
+                      - generic: "20"
+                    - cell:
+                      - generic: 65%
+                      - generic: "20"
+                    - cell:
+                      - generic: 71.4%
+                      - generic: "21"
+                    - cell:
+                      - generic: 55%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Crocodile
+                    - cell:
+                      - generic: 45%
+                      - generic: "20"
+                    - cell:
+                      - generic: 25%
+                      - generic: "20"
+                    - cell:
+                      - generic: 30%
+                      - generic: "20"
+                    - cell:
+                      - generic: 35%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Kaido
+                    - cell:
+                      - generic: 40%
+                      - generic: "20"
+                    - cell:
+                      - generic: 50%
+                      - generic: "20"
+                    - cell:
+                      - generic: 42.9%
+                      - generic: "21"
+                    - cell:
+                      - generic: 45%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Charlotte Linlin
+                    - cell:
+                      - generic: 65%
+                      - generic: "20"
+                    - cell:
+                      - generic: 50%
+                      - generic: "20"
+                    - cell:
+                      - generic: 60%
+                      - generic: "20"
+                    - cell:
+                      - generic: 55%
+                      - generic: "20"
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Sengoku
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                    - cell:
+                      - generic: 60%
+                      - generic: "5"
+                  - row:
+                    - rowheader:
+                      - generic: Donquixote Doflamingo
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: —
+                    - cell: ·
+                  - row:
+                    - rowheader:
+                      - generic: Monkey.D.Luffy
+                    - cell:
+                      - generic: 33.3%
+                      - generic: "3"
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell: ·
+                    - cell:
+                      - generic: 40%
+                      - generic: "5"
+                    - cell: ·
+                    - cell: —
+            - paragraph: "Celdas verdes: favorable para el líder de la fila · rojas: desfavorable · número inferior: rondas del matchup."
+    - region "Notifications alt+T"
+  - listbox [ref=f1e612]:
+    - option "Todas las zonas" [active] [selected] [ref=f1e613]
+    - option "Zona Extendida" [ref=f1e619]
+    - option "Zona Monterrey" [ref=f1e622]

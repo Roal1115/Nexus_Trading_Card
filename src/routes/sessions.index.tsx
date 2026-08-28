@@ -157,6 +157,8 @@ function SessionCard({
           <img
             src={session.leader.card_image}
             alt={session.leader.base_name}
+            loading="lazy"
+            decoding="async"
             className="h-10 w-7 rounded-md border border-white/10 object-cover"
           />
         ) : session.session_type === "competitive" ? (
@@ -624,6 +626,8 @@ function LeaderArtSwitcher({
                       <img
                         src={v.card_image}
                         alt={v.base_name}
+                        loading="lazy"
+                        decoding="async"
                         className="h-16 w-11 object-cover"
                       />
                     ) : (

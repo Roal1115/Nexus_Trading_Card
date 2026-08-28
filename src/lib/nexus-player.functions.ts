@@ -636,7 +636,7 @@ export const getMyStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -657,7 +657,7 @@ export const getMyStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
@@ -741,6 +741,7 @@ export const getMyStats = createServerFn({ method: "POST" })
               opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
               opponent_leader_image: oppLeader?.card_image ?? null,
               opponent_leader_colors: (oppLeader?.colors as string[] | null) ?? null,
+              opponent_leader_set_code: (oppLeader?.set_code as string | null) ?? null,
               total: oppTotal,
               wins: oppWins,
               overall_win_rate: oppTotal > 0 ? Math.round((oppWins / oppTotal) * 100) : 0,
@@ -773,6 +774,8 @@ export const getMyStats = createServerFn({ method: "POST" })
           leader_id: leaderId,
           leader_name: leader?.base_name ?? "Desconocido",
           leader_image: leader?.card_image ?? null,
+          leader_colors: (leader?.colors as string[] | null) ?? null,
+          leader_set_code: (leader?.set_code as string | null) ?? null,
           total_games: total,
           wins,
           losses: total - wins,
@@ -859,20 +862,16 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
-    // Info del juego
-    const { data: game } = await admin
-      .from("games")
-      .select("id, name, slug")
-      .eq("id", data.game_id)
-      .maybeSingle();
-
-    // 1. Sesiones casuales del player para este TCG
-    const { data: sessions } = await admin
-      .from("standalone_sessions")
-      .select("id, session_date, store_id")
-      .eq("player_id", player.id)
-      .eq("game_id", data.game_id)
-      .eq("session_type", "casual");
+    // Info del juego + sesiones casuales en paralelo — son independientes.
+    const [{ data: game }, { data: sessions }] = await Promise.all([
+      admin.from("games").select("id, name, slug").eq("id", data.game_id).maybeSingle(),
+      admin
+        .from("standalone_sessions")
+        .select("id, session_date, store_id")
+        .eq("player_id", player.id)
+        .eq("game_id", data.game_id)
+        .eq("session_type", "casual"),
+    ]);
 
     const sessionList = sessions ?? [];
     const sessionIds = sessionList.map((s: any) => s.id);
@@ -892,22 +891,42 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
 
     // Store names para las sesiones que tienen store_id
     const storeIds = Array.from(new Set(sessionList.map((s: any) => s.store_id).filter(Boolean)));
-    const { data: stores } = storeIds.length
-      ? await admin.from("stores").select("id, name").in("id", storeIds)
-      : { data: [] as any[] };
-    const storeNameMap = new Map(((stores ?? []) as any[]).map((s: any) => [s.id, s.name]));
 
     // 2. Rondas de esas sesiones
-    const { data: rounds } = await admin
-      .from("standalone_round_results")
-      .select(
-        "id, session_id, round_number, is_bye, player_leader_id, opponent_leader_id, opponent_player_id, won_match, turn_order, won_die_roll, status, notes",
-      )
-      .in("session_id", sessionIds)
-      .eq("is_bye", false)
-      .not("won_match", "is", null);
+    // ponytail: .in() con cientos de UUIDs arma una URL que puede pasar el
+    // límite de headers de undici (16KB) y tira HeadersOverflowError — se
+    // trocea para no volver a pisar ese límite. Corre en paralelo con el
+    // fetch de stores, que es independiente.
+    const SESSION_ID_BATCH_SIZE = 150;
+    const roundBatches: string[][] = [];
+    for (let i = 0; i < sessionIds.length; i += SESSION_ID_BATCH_SIZE) {
+      roundBatches.push(sessionIds.slice(i, i + SESSION_ID_BATCH_SIZE));
+    }
 
-    const allRounds = rounds ?? [];
+    const [{ data: stores }, roundBatchResults] = await Promise.all([
+      storeIds.length
+        ? admin.from("stores").select("id, name").in("id", storeIds)
+        : Promise.resolve({ data: [] as any[] }),
+      Promise.all(
+        roundBatches.map((batch) =>
+          admin
+            .from("standalone_round_results")
+            .select(
+              "id, session_id, round_number, is_bye, player_leader_id, opponent_leader_id, opponent_player_id, won_match, turn_order, won_die_roll, status, notes",
+            )
+            .in("session_id", batch)
+            .eq("is_bye", false)
+            .not("won_match", "is", null),
+        ),
+      ),
+    ]);
+    const storeNameMap = new Map(((stores ?? []) as any[]).map((s: any) => [s.id, s.name]));
+
+    const allRounds: any[] = [];
+    for (const { data: roundsBatch, error: roundsErr } of roundBatchResults) {
+      if (roundsErr) failDb(roundsErr);
+      allRounds.push(...(roundsBatch ?? []));
+    }
 
     if (allRounds.length === 0) {
       return {
@@ -942,7 +961,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -959,7 +978,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
@@ -1078,6 +1097,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
               opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
               opponent_leader_image: oppLeader?.card_image ?? null,
               opponent_leader_colors: (oppLeader?.colors as string[] | null) ?? null,
+              opponent_leader_set_code: (oppLeader?.set_code as string | null) ?? null,
               total: mu.total,
               wins: mu.wins,
               overall_win_rate: mu.total > 0 ? round1((mu.wins / mu.total) * 100) : 0,
@@ -1101,6 +1121,8 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
           leader_id: agg.leader_id,
           leader_name: leader?.base_name ?? "Desconocido",
           leader_image: leader?.card_image ?? null,
+          leader_colors: (leader?.colors as string[] | null) ?? null,
+          leader_set_code: (leader?.set_code as string | null) ?? null,
           total_games: agg.total_games,
           wins: agg.wins,
           losses: agg.total_games - agg.wins,
@@ -1212,7 +1234,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -1229,7 +1251,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors")
+          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
@@ -1332,6 +1354,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
               opponent_leader_name: oppLeader?.base_name ?? "Desconocido",
               opponent_leader_image: oppLeader?.card_image ?? null,
               opponent_leader_colors: (oppLeader?.colors as string[] | null) ?? null,
+              opponent_leader_set_code: (oppLeader?.set_code as string | null) ?? null,
               total: mu.total,
               wins: mu.wins,
               overall_win_rate: mu.total > 0 ? round1((mu.wins / mu.total) * 100) : 0,
@@ -1355,6 +1378,8 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
           leader_id: agg.leader_id,
           leader_name: leader?.base_name ?? "Desconocido",
           leader_image: leader?.card_image ?? null,
+          leader_colors: (leader?.colors as string[] | null) ?? null,
+          leader_set_code: (leader?.set_code as string | null) ?? null,
           total_games: agg.total_games,
           wins: agg.wins,
           losses: agg.total_games - agg.wins,

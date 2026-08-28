@@ -1,0 +1,458 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: We value your privacy
+      - generic [ref=e6]:
+        - text: We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept all," you consent to our use of cookies.
+        - link "Learn more" [ref=e7] [cursor=pointer]:
+          - /url: https://www.carde.io/privacy#Cookies-Other-Tracking-Tech
+    - generic [ref=e8]:
+      - button "Accept all" [ref=e9] [cursor=pointer]
+      - button "Reject all" [ref=e10] [cursor=pointer]
+  - generic [ref=e11]:
+    - navigation [ref=e12]:
+      - generic [ref=e14]:
+        - link "Logo UniVersus" [ref=e16] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e18]
+          - generic [ref=e19]: UniVersus
+        - navigation [ref=e20]:
+          - link "Events" [ref=e21] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=e22] [cursor=pointer]:
+            - /url: /stores/search
+          - link "Cards" [ref=e23] [cursor=pointer]:
+            - /url: /cards
+          - link "Decks" [ref=e24] [cursor=pointer]:
+            - /url: /decks
+          - link "Rewards" [ref=e25] [cursor=pointer]:
+            - /url: /rewards
+        - link [ref=e27] [cursor=pointer]:
+          - /url: /login?returnTo=%2Fdecks
+          - button "Login" [ref=e28]
+    - main [ref=e30]:
+      - generic [ref=e264]:
+        - link "ALL DECKS" [ref=e267] [cursor=pointer]:
+          - /url: /decks
+        - generic [ref=e269]:
+          - generic [ref=e271]:
+            - generic [ref=e272]:
+              - generic [ref=e273]: Search and Filter Decks
+              - generic [ref=e274]:
+                - button "Refresh" [ref=e275] [cursor=pointer]
+                - button "Remove Filters" [ref=e276] [cursor=pointer]
+                - button "Hide Filters" [ref=e279] [cursor=pointer]
+            - generic [ref=e283]:
+              - searchbox "Deck Name" [ref=e288]
+              - button [ref=e289]:
+                - button "Date Created" [ref=e290] [cursor=pointer]
+          - generic [ref=e292]:
+            - link "STUN DECK Standard • 66 cards Alone Infection Crushing Impact Destructive Heat Ray Earth symbol 8/23/2026" [ref=e293] [cursor=pointer]:
+              - /url: /decks/c3cf8708-ca82-4909-a4ad-ee02487db0a8
+              - generic [ref=e294]:
+                - generic [ref=e297]:
+                  - generic "STUN DECK" [ref=e299]
+                  - generic [ref=e303]:
+                    - generic [ref=e304]: Standard
+                    - generic [ref=e305]: •
+                    - generic [ref=e306]: 66 cards
+                - generic [ref=e308]:
+                  - generic:
+                    - img "Alone Infection" [ref=e311]
+                    - img "Crushing Impact" [ref=e314]
+                    - img "Destructive Heat Ray" [ref=e317]
+                  - generic [ref=e318]:
+                    - generic "Earth" [ref=e321]:
+                      - img "Earth symbol" [ref=e322]
+                    - generic [ref=e323]: 8/23/2026
+            - link "STUN DECK Standard • 67 cards Alone Infection Crushing Impact Destructive Heat Ray Earth symbol 8/23/2026" [ref=e325] [cursor=pointer]:
+              - /url: /decks/d6813451-7ba6-4d7b-b2f1-22e11e3f4844
+              - generic [ref=e326]:
+                - generic [ref=e329]:
+                  - generic "STUN DECK" [ref=e331]
+                  - generic [ref=e335]:
+                    - generic [ref=e336]: Standard
+                    - generic [ref=e337]: •
+                    - generic [ref=e338]: 67 cards
+                - generic [ref=e340]:
+                  - generic:
+                    - img "Alone Infection" [ref=e343]
+                    - img "Crushing Impact" [ref=e346]
+                    - img "Destructive Heat Ray" [ref=e349]
+                  - generic [ref=e350]:
+                    - generic "Earth" [ref=e353]:
+                      - img "Earth symbol" [ref=e354]
+                    - generic [ref=e355]: 8/23/2026
+            - link "STUN DECK Standard • 66 cards Alone Infection Crushing Impact Destructive Heat Ray Earth symbol 8/23/2026" [ref=e357] [cursor=pointer]:
+              - /url: /decks/f25763c7-7f95-4845-a8ce-3f2518536bb6
+              - generic [ref=e358]:
+                - generic [ref=e361]:
+                  - generic "STUN DECK" [ref=e363]
+                  - generic [ref=e367]:
+                    - generic [ref=e368]: Standard
+                    - generic [ref=e369]: •
+                    - generic [ref=e370]: 66 cards
+                - generic [ref=e372]:
+                  - generic:
+                    - img "Alone Infection" [ref=e375]
+                    - img "Crushing Impact" [ref=e378]
+                    - img "Destructive Heat Ray" [ref=e381]
+                  - generic [ref=e382]:
+                    - generic "Earth" [ref=e385]:
+                      - img "Earth symbol" [ref=e386]
+                    - generic [ref=e387]: 8/23/2026
+            - link "I'll give this god damn bird a go Standard • 80 cards Armor-Clad Faith Scales of Juno Battle For Dominance Void symbol 8/22/2026" [ref=e389] [cursor=pointer]:
+              - /url: /decks/49241ea7-079c-4bc0-ac13-f7209daede30
+              - generic [ref=e390]:
+                - generic [ref=e393]:
+                  - generic "I'll give this god damn bird a go" [ref=e395]
+                  - generic [ref=e399]:
+                    - generic [ref=e400]: Standard
+                    - generic [ref=e401]: •
+                    - generic [ref=e402]: 80 cards
+                - generic [ref=e404]:
+                  - generic:
+                    - img "Armor-Clad Faith" [ref=e407]
+                    - img "Scales of Juno" [ref=e410]
+                    - img "Battle For Dominance" [ref=e413]
+                  - generic [ref=e414]:
+                    - generic "Void" [ref=e417]:
+                      - img "Void symbol" [ref=e418]
+                    - generic [ref=e419]: 8/22/2026
+            - link "Sugar Sammy Standard • 81 cards Cute Host Koto Anti-Titan Artillery Team Dr. Ichigaki Order symbol 8/22/2026" [ref=e421] [cursor=pointer]:
+              - /url: /decks/2ded3378-57ab-4110-961c-e8f7f28d25d7
+              - generic [ref=e422]:
+                - generic [ref=e425]:
+                  - generic "Sugar Sammy" [ref=e427]
+                  - generic [ref=e431]:
+                    - generic [ref=e432]: Standard
+                    - generic [ref=e433]: •
+                    - generic [ref=e434]: 81 cards
+                - generic [ref=e436]:
+                  - generic:
+                    - img "Cute Host Koto" [ref=e439]
+                    - img "Anti-Titan Artillery" [ref=e442]
+                    - img "Team Dr. Ichigaki" [ref=e445]
+                  - generic [ref=e446]:
+                    - generic "Order" [ref=e449]:
+                      - img "Order symbol" [ref=e450]
+                    - generic [ref=e451]: 8/22/2026
+            - link "STUN DECK Standard • 64 cards Crushing Impact Destructive Heat Ray Analytical Observation Earth symbol 8/23/2026" [ref=e453] [cursor=pointer]:
+              - /url: /decks/eda7f08c-0fbe-414f-a30e-8f7bd1e4f15c
+              - generic [ref=e454]:
+                - generic [ref=e457]:
+                  - generic "STUN DECK" [ref=e459]
+                  - generic [ref=e463]:
+                    - generic [ref=e464]: Standard
+                    - generic [ref=e465]: •
+                    - generic [ref=e466]: 64 cards
+                - generic [ref=e468]:
+                  - generic:
+                    - img "Crushing Impact" [ref=e471]
+                    - img "Destructive Heat Ray" [ref=e474]
+                    - img "Analytical Observation" [ref=e477]
+                  - generic [ref=e478]:
+                    - generic "Earth" [ref=e481]:
+                      - img "Earth symbol" [ref=e482]
+                    - generic [ref=e483]: 8/23/2026
+            - link "New Deck Standard • 95 cards Bug Bite Violent Animus Shot Can’t Escape Me Air symbol 8/23/2026" [ref=e485] [cursor=pointer]:
+              - /url: /decks/380c6113-ac16-4dcc-a0a4-02920164a165
+              - generic [ref=e486]:
+                - generic [ref=e489]:
+                  - generic "New Deck" [ref=e491]
+                  - generic [ref=e495]:
+                    - generic [ref=e496]: Standard
+                    - generic [ref=e497]: •
+                    - generic [ref=e498]: 95 cards
+                - generic [ref=e500]:
+                  - generic:
+                    - img "Bug Bite" [ref=e503]
+                    - img "Violent Animus Shot" [ref=e506]
+                    - img "Can’t Escape Me" [ref=e509]
+                  - generic [ref=e510]:
+                    - generic "Air" [ref=e513]:
+                      - img "Air symbol" [ref=e514]
+                    - generic [ref=e515]: 8/23/2026
+            - link "water eddy Standard • 80 cards Fast Friendship Guardian Angel of Chinatown Acidic Sludge Water symbol 8/24/2026" [ref=e517] [cursor=pointer]:
+              - /url: /decks/2865650d-071c-4a84-80eb-ba37821560c0
+              - generic [ref=e518]:
+                - generic [ref=e521]:
+                  - generic "water eddy" [ref=e523]
+                  - generic [ref=e527]:
+                    - generic [ref=e528]: Standard
+                    - generic [ref=e529]: •
+                    - generic [ref=e530]: 80 cards
+                - generic [ref=e532]:
+                  - generic:
+                    - img "Fast Friendship" [ref=e535]
+                    - img "Guardian Angel of Chinatown" [ref=e538]
+                    - img "Acidic Sludge" [ref=e541]
+                  - generic [ref=e542]:
+                    - generic "Water" [ref=e545]:
+                      - img "Water symbol" [ref=e546]
+                    - generic [ref=e547]: 8/24/2026
+            - link "All for one Standard • 2 cards Evil symbol Void symbol 8/9/2026" [ref=e549] [cursor=pointer]:
+              - /url: /decks/672b5f65-7192-484d-9f87-64d169a71fea
+              - generic [ref=e550]:
+                - generic [ref=e553]:
+                  - generic "All for one" [ref=e555]
+                  - generic [ref=e559]:
+                    - generic [ref=e560]: Standard
+                    - generic [ref=e561]: •
+                    - generic [ref=e562]: 2 cards
+                - generic [ref=e565]:
+                  - generic [ref=e567]:
+                    - generic "Evil" [ref=e568]:
+                      - img "Evil symbol" [ref=e569]
+                    - generic "Void" [ref=e570]:
+                      - img "Void symbol" [ref=e571]
+                  - generic [ref=e572]: 8/9/2026
+            - link "Meitenkun Standard • 68 cards Queen of the Monsters Battle Aura Release Sword Get Longer Earth symbol 8/7/2026" [ref=e574] [cursor=pointer]:
+              - /url: /decks/7156e888-e1e0-4d10-a888-071981670f5b
+              - generic [ref=e575]:
+                - generic [ref=e578]:
+                  - generic "Meitenkun" [ref=e580]
+                  - generic [ref=e584]:
+                    - generic [ref=e585]: Standard
+                    - generic [ref=e586]: •
+                    - generic [ref=e587]: 68 cards
+                - generic [ref=e589]:
+                  - generic:
+                    - img "Queen of the Monsters" [ref=e592]
+                    - img "Battle Aura Release" [ref=e595]
+                    - img "Sword Get Longer" [ref=e598]
+                  - generic [ref=e599]:
+                    - generic "Earth" [ref=e602]:
+                      - img "Earth symbol" [ref=e603]
+                    - generic [ref=e604]: 8/7/2026
+            - link "Mechagodzilla 3 Kir Standard • 61 cards Ancient Research Built for Battle Fighter Jets All symbol 8/5/2026" [ref=e606] [cursor=pointer]:
+              - /url: /decks/78b79234-65cc-4402-948b-10ecf96a6c71
+              - generic [ref=e607]:
+                - generic [ref=e610]:
+                  - generic "Mechagodzilla 3 Kir" [ref=e612]
+                  - generic [ref=e616]:
+                    - generic [ref=e617]: Standard
+                    - generic [ref=e618]: •
+                    - generic [ref=e619]: 61 cards
+                - generic [ref=e621]:
+                  - generic:
+                    - img "Ancient Research" [ref=e624]
+                    - img "Built for Battle" [ref=e627]
+                    - img "Fighter Jets" [ref=e630]
+                  - generic [ref=e631]:
+                    - generic "All" [ref=e634]:
+                      - img "All symbol" [ref=e635]
+                    - generic [ref=e636]: 8/5/2026
+            - link "Moth Queen Standard • 84 cards Electric Moth Don’t Do This Bug Bite Good symbol 7/29/2026" [ref=e638] [cursor=pointer]:
+              - /url: /decks/57a15422-dddc-4340-8a75-c1f0940d0382
+              - generic [ref=e639]:
+                - generic [ref=e642]:
+                  - generic "Moth Queen" [ref=e644]
+                  - generic [ref=e648]:
+                    - generic [ref=e649]: Standard
+                    - generic [ref=e650]: •
+                    - generic [ref=e651]: 84 cards
+                - generic [ref=e653]:
+                  - generic:
+                    - img "Electric Moth" [ref=e656]
+                    - img "Don’t Do This" [ref=e659]
+                    - img "Bug Bite" [ref=e662]
+                  - generic [ref=e663]:
+                    - generic "Good" [ref=e666]:
+                      - img "Good symbol" [ref=e667]
+                    - generic [ref=e668]: 7/29/2026
+            - link "No Sludge Hero Too • 74 cards Acidic Sludge Dark Ward Botan's Coaching Death symbol 7/19/2026" [ref=e670] [cursor=pointer]:
+              - /url: /decks/d260c175-e285-43f9-b587-000751e31d31
+              - generic [ref=e671]:
+                - generic [ref=e674]:
+                  - generic "No Sludge" [ref=e676]
+                  - generic [ref=e680]:
+                    - generic [ref=e681]: Hero Too
+                    - generic [ref=e682]: •
+                    - generic [ref=e683]: 74 cards
+                - generic [ref=e685]:
+                  - generic:
+                    - img "Acidic Sludge" [ref=e688]
+                    - img "Dark Ward" [ref=e691]
+                    - img "Botan's Coaching" [ref=e694]
+                  - generic [ref=e695]:
+                    - generic "Death" [ref=e698]:
+                      - img "Death symbol" [ref=e699]
+                    - generic [ref=e700]: 7/19/2026
+            - link "Overhaul Hero Too • 78 cards Concealing Power Desperate Plea Fast Friendship Life symbol 7/19/2026" [ref=e702] [cursor=pointer]:
+              - /url: /decks/31840f30-130d-4fd2-96f2-518577b30cb8
+              - generic [ref=e703]:
+                - generic [ref=e706]:
+                  - generic "Overhaul" [ref=e708]
+                  - generic [ref=e712]:
+                    - generic [ref=e713]: Hero Too
+                    - generic [ref=e714]: •
+                    - generic [ref=e715]: 78 cards
+                - generic [ref=e717]:
+                  - generic:
+                    - img "Concealing Power" [ref=e720]
+                    - img "Desperate Plea" [ref=e723]
+                    - img "Fast Friendship" [ref=e726]
+                  - generic [ref=e727]:
+                    - generic "Life" [ref=e730]:
+                      - img "Life symbol" [ref=e731]
+                    - generic [ref=e732]: 7/19/2026
+            - link "Old Gucci Bag Hero Too • 61 cards Acidic Sludge Lizard Tail Splitter Wish Hard Water symbol 7/19/2026" [ref=e734] [cursor=pointer]:
+              - /url: /decks/16882619-f58e-411d-86e6-34bb6e4ed55d
+              - generic [ref=e735]:
+                - generic [ref=e738]:
+                  - generic "Old Gucci Bag" [ref=e740]
+                  - generic [ref=e744]:
+                    - generic [ref=e745]: Hero Too
+                    - generic [ref=e746]: •
+                    - generic [ref=e747]: 61 cards
+                - generic [ref=e749]:
+                  - generic:
+                    - img "Acidic Sludge" [ref=e752]
+                    - img "Lizard Tail Splitter" [ref=e755]
+                    - img "Wish Hard" [ref=e758]
+                  - generic [ref=e759]:
+                    - generic "Water" [ref=e762]:
+                      - img "Water symbol" [ref=e763]
+                    - generic [ref=e764]: 7/19/2026
+            - link "Iron Might Standard • 76 cards Bug Bite Queen of the Monsters Phantom Singulation Good symbol 7/18/2026" [ref=e766] [cursor=pointer]:
+              - /url: /decks/a1fb8235-57e7-4e72-803e-9ad4e6cd2730
+              - generic [ref=e767]:
+                - generic [ref=e770]:
+                  - generic "Iron Might" [ref=e772]
+                  - generic [ref=e776]:
+                    - generic [ref=e777]: Standard
+                    - generic [ref=e778]: •
+                    - generic [ref=e779]: 76 cards
+                - generic [ref=e781]:
+                  - generic:
+                    - img "Bug Bite" [ref=e784]
+                    - img "Queen of the Monsters" [ref=e787]
+                    - img "Phantom Singulation" [ref=e790]
+                  - generic [ref=e791]:
+                    - generic "Good" [ref=e794]:
+                      - img "Good symbol" [ref=e795]
+                    - generic [ref=e796]: 7/18/2026
+            - link "Iron Might Standard • 77 cards Bug Bite Queen of the Monsters Phantom Singulation Good symbol 7/18/2026" [ref=e798] [cursor=pointer]:
+              - /url: /decks/ca50d1be-4156-4206-b583-f23abccf8450
+              - generic [ref=e799]:
+                - generic [ref=e802]:
+                  - generic "Iron Might" [ref=e804]
+                  - generic [ref=e808]:
+                    - generic [ref=e809]: Standard
+                    - generic [ref=e810]: •
+                    - generic [ref=e811]: 77 cards
+                - generic [ref=e813]:
+                  - generic:
+                    - img "Bug Bite" [ref=e816]
+                    - img "Queen of the Monsters" [ref=e819]
+                    - img "Phantom Singulation" [ref=e822]
+                  - generic [ref=e823]:
+                    - generic "Good" [ref=e826]:
+                      - img "Good symbol" [ref=e827]
+                    - generic [ref=e828]: 7/18/2026
+            - link "Iron Might Standard • 77 cards Bug Bite Queen of the Monsters Phantom Singulation Good symbol 7/17/2026" [ref=e830] [cursor=pointer]:
+              - /url: /decks/bac136f0-aa7a-43bf-a670-024d602555ce
+              - generic [ref=e831]:
+                - generic [ref=e834]:
+                  - generic "Iron Might" [ref=e836]
+                  - generic [ref=e840]:
+                    - generic [ref=e841]: Standard
+                    - generic [ref=e842]: •
+                    - generic [ref=e843]: 77 cards
+                - generic [ref=e845]:
+                  - generic:
+                    - img "Bug Bite" [ref=e848]
+                    - img "Queen of the Monsters" [ref=e851]
+                    - img "Phantom Singulation" [ref=e854]
+                  - generic [ref=e855]:
+                    - generic "Good" [ref=e858]:
+                      - img "Good symbol" [ref=e859]
+                    - generic [ref=e860]: 7/17/2026
+            - link "Iron Might Standard • 77 cards Bug Bite Queen of the Monsters Phantom Singulation Good symbol 7/17/2026" [ref=e862] [cursor=pointer]:
+              - /url: /decks/536b62e1-7323-4e3d-abf3-e2ec24052642
+              - generic [ref=e863]:
+                - generic [ref=e866]:
+                  - generic "Iron Might" [ref=e868]
+                  - generic [ref=e872]:
+                    - generic [ref=e873]: Standard
+                    - generic [ref=e874]: •
+                    - generic [ref=e875]: 77 cards
+                - generic [ref=e877]:
+                  - generic:
+                    - img "Bug Bite" [ref=e880]
+                    - img "Queen of the Monsters" [ref=e883]
+                    - img "Phantom Singulation" [ref=e886]
+                  - generic [ref=e887]:
+                    - generic "Good" [ref=e890]:
+                      - img "Good symbol" [ref=e891]
+                    - generic [ref=e892]: 7/17/2026
+            - link "Deku on the Move Standard • 83 cards Drips Desperate Plea Battra Arrives Air symbol 7/17/2026" [ref=e894] [cursor=pointer]:
+              - /url: /decks/2869e7b0-3f47-492a-a5dc-adde2e0a6511
+              - generic [ref=e895]:
+                - generic [ref=e898]:
+                  - generic "Deku on the Move" [ref=e900]
+                  - generic [ref=e904]:
+                    - generic [ref=e905]: Standard
+                    - generic [ref=e906]: •
+                    - generic [ref=e907]: 83 cards
+                - generic [ref=e909]:
+                  - generic:
+                    - img "Drips" [ref=e912]
+                    - img "Desperate Plea" [ref=e915]
+                    - img "Battra Arrives" [ref=e918]
+                  - generic [ref=e919]:
+                    - generic "Air" [ref=e922]:
+                      - img "Air symbol" [ref=e923]
+                    - generic [ref=e924]: 7/17/2026
+    - contentinfo [ref=e214]:
+      - generic [ref=e215]:
+        - generic [ref=e216]:
+          - link "X (Twitter)" [ref=e217] [cursor=pointer]:
+            - /url: https://x.com/UniVersusCCG
+          - link "Instagram" [ref=e220] [cursor=pointer]:
+            - /url: https://www.instagram.com/universusccg
+          - link "YouTube" [ref=e224] [cursor=pointer]:
+            - /url: https://www.youtube.com/@UniVersusCCG
+          - link "TikTok" [ref=e228] [cursor=pointer]:
+            - /url: https://www.tiktok.com/@universusccg
+          - link "Facebook" [ref=e231] [cursor=pointer]:
+            - /url: https://www.facebook.com/UniVersusCollectibleCardGame
+          - link "Twitch" [ref=e234] [cursor=pointer]:
+            - /url: https://www.twitch.tv/universusccg
+          - link "Discord" [ref=e237] [cursor=pointer]:
+            - /url: https://discord.gg/universusccg
+          - link "Bluesky" [ref=e240] [cursor=pointer]:
+            - /url: https://bsky.app/profile/universusccg.bsky.social
+        - generic [ref=e243]:
+          - generic [ref=e244]:
+            - heading "Links" [level=3] [ref=e245]
+            - link "UVS Games Official Website" [ref=e246] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/
+            - link "Learn To Play" [ref=e247] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/learntoplay/
+            - link "Contact UVS Games" [ref=e248] [cursor=pointer]:
+              - /url: https://www.uvsgames.com/contact-us
+            - link "Learn About Organized Play" [ref=e249] [cursor=pointer]:
+              - /url: https://uvsgames.com/universus-organized-play/
+            - link "Retailers" [ref=e250] [cursor=pointer]:
+              - /url: https://uvsgames.com/retailer-info
+            - link "Player FAQ" [ref=e251] [cursor=pointer]:
+              - /url: https://assets.ctfassets.net/qgsv4hbp414k/2fl7IBtiB6NVPeANjqc2ZP/8e364845381bd7f5cb67f4d838240a42/UGN_Article__Players.pdf
+            - link "Retailer FAQ" [ref=e252] [cursor=pointer]:
+              - /url: https://assets.ctfassets.net/qgsv4hbp414k/5HIZ9AzYkqGM2TYmHToAPL/2e37d22fb516e57391cc3313fbba6f94/UGN_Article__Organizations.pdf
+            - link "Formats and Ban Lists" [ref=e253] [cursor=pointer]:
+              - /url: https://uvsgames.com/news/formats-and-ban-lists/
+            - link "Store Locator" [ref=e254] [cursor=pointer]:
+              - /url: /stores/search
+          - generic [ref=e255]:
+            - heading "Policies" [level=3] [ref=e256]
+            - link "Terms of Use" [ref=e257] [cursor=pointer]:
+              - /url: https://carde.io/terms-and-conditions
+            - link "Privacy Policy" [ref=e258] [cursor=pointer]:
+              - /url: https://carde.io/privacy
+            - link "Cookie Policy" [ref=e259] [cursor=pointer]:
+              - /url: https://carde.io/cookies
+        - generic [ref=e260]: "© 2026 K. Horikoshi / Shueisha, My Hero Academia Project © Hajime Isayama / KODANSHA Ltd. ©Critical Role 2024 ©2023 Yasuhiro Nightow, SHONENGAHOSHA / TRIGUN STAMPEDE Project ©Yoshihiro Togashi 1990-1994 TV animation series: ©Pierrot/Shueisha ©SUNRISE TM & © TOHO CO., LTD © & TM DC and WBEI. Based on illustrations by AA, TEKKEN™ 8 & ©Bandai Namco Entertainment Inc., TM & ©2024 CBS Studios Inc. All Rights Reserved, ©Solo Leveling Animation Partners ©CAPCOM ©SNK ©2023 UVS Games. All Rights Reserved"
+  - region "Notifications alt+T"
+  - alert [ref=e261]: UniVersus Gaming Network
