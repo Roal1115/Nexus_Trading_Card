@@ -9,125 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TcgManagerRouteImport } from './routes/tcg-manager'
-import { Route as StoresRouteImport } from './routes/stores'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SessionsRouteImport } from './routes/sessions'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as OrganizerRouteImport } from './routes/organizer'
-import { Route as MyStatsRouteImport } from './routes/my-stats'
-import { Route as MetaRouteImport } from './routes/meta'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as CheckInboxRouteImport } from './routes/check-inbox'
-import { Route as CalendarRouteImport } from './routes/calendar'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
-import { Route as StoresIndexRouteImport } from './routes/stores.index'
-import { Route as SessionsIndexRouteImport } from './routes/sessions.index'
-import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as CheckInboxRouteImport } from './routes/check-inbox'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MetaRouteImport } from './routes/meta'
+import { Route as MyStatsRouteImport } from './routes/my-stats'
+import { Route as OrganizerRouteImport } from './routes/organizer'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SessionsRouteImport } from './routes/sessions'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as StoresRouteImport } from './routes/stores'
+import { Route as TcgManagerRouteImport } from './routes/tcg-manager'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as TournamentsIdRouteImport } from './routes/tournaments.$id'
-import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
-import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
-import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
-import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my-history'
-import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
-import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.calendar'
-import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
-import { Route as TcgManagerAnalyticsRouteImport } from './routes/tcg-manager.analytics'
-import { Route as StoresSlugRouteImport } from './routes/stores.$slug'
-import { Route as SessionsSessionIdRouteImport } from './routes/sessions.$sessionId'
-import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
-import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
-import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
-import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
-import { Route as OrganizerHistoryRouteImport } from './routes/organizer.history'
-import { Route as OrganizerCalendarRouteImport } from './routes/organizer.calendar'
-import { Route as OrganizerAppealsRouteImport } from './routes/organizer.appeals'
-import { Route as AdminUploadRouteImport } from './routes/admin.upload'
-import { Route as AdminTournamentsPanelRouteImport } from './routes/admin.tournaments-panel'
-import { Route as AdminStoresRouteImport } from './routes/admin.stores'
-import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
-import { Route as AdminPublishRouteImport } from './routes/admin.publish'
-import { Route as AdminPlayersRouteImport } from './routes/admin.players'
-import { Route as AdminHistoryRouteImport } from './routes/admin.history'
-import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
-import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
-import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
-import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
-import { Route as SessionsTournamentTournamentIdRouteImport } from './routes/sessions.tournament.$tournamentId'
-import { Route as OrganizerTournamentsIdRouteImport } from './routes/organizer.tournaments.$id'
-import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
+import { Route as AdminAdsRouteImport } from './routes/admin.ads'
+import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
+import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
+import { Route as AdminHistoryRouteImport } from './routes/admin.history'
+import { Route as AdminPlayersRouteImport } from './routes/admin.players'
+import { Route as AdminPublishRouteImport } from './routes/admin.publish'
+import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
+import { Route as AdminStoresRouteImport } from './routes/admin.stores'
+import { Route as AdminTournamentsPanelRouteImport } from './routes/admin.tournaments-panel'
+import { Route as AdminUploadRouteImport } from './routes/admin.upload'
+import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
+import { Route as OrganizerAppealsRouteImport } from './routes/organizer.appeals'
+import { Route as OrganizerCalendarRouteImport } from './routes/organizer.calendar'
+import { Route as OrganizerHistoryRouteImport } from './routes/organizer.history'
+import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
+import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
+import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
+import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
+import { Route as SessionsIndexRouteImport } from './routes/sessions.index'
+import { Route as SessionsSessionIdRouteImport } from './routes/sessions.$sessionId'
+import { Route as StoresIndexRouteImport } from './routes/stores.index'
+import { Route as StoresSlugRouteImport } from './routes/stores.$slug'
+import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
+import { Route as TcgManagerAnalyticsRouteImport } from './routes/tcg-manager.analytics'
+import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
+import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.calendar'
+import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
+import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my-history'
+import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
+import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
+import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
+import { Route as TournamentsIdRouteImport } from './routes/tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
+import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
+import { Route as OrganizerTournamentsIdRouteImport } from './routes/organizer.tournaments.$id'
+import { Route as SessionsTournamentTournamentIdRouteImport } from './routes/sessions.tournament.$tournamentId'
+import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
 import { Route as PlayersPlayerTagSeasonSeasonIdRouteImport } from './routes/players.$playerTag_.season.$seasonId'
 
-const TcgManagerRoute = TcgManagerRouteImport.update({
-  id: '/tcg-manager',
-  path: '/tcg-manager',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StoresRoute = StoresRouteImport.update({
-  id: '/stores',
-  path: '/stores',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SessionsRoute = SessionsRouteImport.update({
-  id: '/sessions',
-  path: '/sessions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrganizerRoute = OrganizerRouteImport.update({
-  id: '/organizer',
-  path: '/organizer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyStatsRoute = MyStatsRouteImport.update({
-  id: '/my-stats',
-  path: '/my-stats',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MetaRoute = MetaRouteImport.update({
-  id: '/meta',
-  path: '/meta',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckInboxRoute = CheckInboxRouteImport.update({
-  id: '/check-inbox',
-  path: '/check-inbox',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarRoute = CalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -135,44 +75,224 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TcgManagerIndexRoute = TcgManagerIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => TcgManagerRoute,
+const CheckInboxRoute = CheckInboxRouteImport.update({
+  id: '/check-inbox',
+  path: '/check-inbox',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const StoresIndexRoute = StoresIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => StoresRoute,
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const SessionsIndexRoute = SessionsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SessionsRoute,
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => OrganizerRoute,
+const MetaRoute = MetaRouteImport.update({
+  id: '/meta',
+  path: '/meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyStatsRoute = MyStatsRouteImport.update({
+  id: '/my-stats',
+  path: '/my-stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerRoute = OrganizerRouteImport.update({
+  id: '/organizer',
+  path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionsRoute = SessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoresRoute = StoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TcgManagerRoute = TcgManagerRouteImport.update({
+  id: '/tcg-manager',
+  path: '/tcg-manager',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const TournamentsIdRoute = TournamentsIdRouteImport.update({
-  id: '/tournaments/$id',
-  path: '/tournaments/$id',
-  getParentRoute: () => rootRouteImport,
+const AdminActivityRoute = AdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminRoute,
 } as any)
-const TcgManagerUploadRoute = TcgManagerUploadRouteImport.update({
+const AdminAdsRoute = AdminAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminApprovedRoute = AdminApprovedRouteImport.update({
+  id: '/approved',
+  path: '/approved',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCalendarRoute = AdminCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHistoryRoute = AdminHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlayersRoute = AdminPlayersRouteImport.update({
+  id: '/players',
+  path: '/players',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPublishRoute = AdminPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSeasonsRoute = AdminSeasonsRouteImport.update({
+  id: '/seasons',
+  path: '/seasons',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStoresRoute = AdminStoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTournamentsPanelRoute = AdminTournamentsPanelRouteImport.update({
+  id: '/tournaments-panel',
+  path: '/tournaments-panel',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUploadRoute = AdminUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => AdminRoute,
+} as any)
+const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerAppealsRoute = OrganizerAppealsRouteImport.update({
+  id: '/appeals',
+  path: '/appeals',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerCalendarRoute = OrganizerCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerHistoryRoute = OrganizerHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerNewRoute = OrganizerNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerStoreRoute = OrganizerStoreRouteImport.update({
+  id: '/store',
+  path: '/store',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerTournamentsRoute = OrganizerTournamentsRouteImport.update({
+  id: '/tournaments',
+  path: '/tournaments',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const PlayersPlayerTagRoute = PlayersPlayerTagRouteImport.update({
+  id: '/players/$playerTag',
+  path: '/players/$playerTag',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionsIndexRoute = SessionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SessionsRoute,
+} as any)
+const SessionsSessionIdRoute = SessionsSessionIdRouteImport.update({
+  id: '/$sessionId',
+  path: '/$sessionId',
+  getParentRoute: () => SessionsRoute,
+} as any)
+const StoresIndexRoute = StoresIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoresRoute,
+} as any)
+const StoresSlugRoute = StoresSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => StoresRoute,
+} as any)
+const TcgManagerIndexRoute = TcgManagerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerAnalyticsRoute = TcgManagerAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerApprovedRoute = TcgManagerApprovedRouteImport.update({
+  id: '/approved',
+  path: '/approved',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerCalendarRoute = TcgManagerCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerHistoryRoute = TcgManagerHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerMyHistoryRoute = TcgManagerMyHistoryRouteImport.update({
+  id: '/my-history',
+  path: '/my-history',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
+const TcgManagerStoresRoute = TcgManagerStoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
   getParentRoute: () => TcgManagerRoute,
 } as any)
 const TcgManagerTournamentsPanelRoute =
@@ -181,140 +301,30 @@ const TcgManagerTournamentsPanelRoute =
     path: '/tournaments-panel',
     getParentRoute: () => TcgManagerRoute,
   } as any)
-const TcgManagerStoresRoute = TcgManagerStoresRouteImport.update({
-  id: '/stores',
-  path: '/stores',
-  getParentRoute: () => TcgManagerRoute,
-} as any)
-const TcgManagerMyHistoryRoute = TcgManagerMyHistoryRouteImport.update({
-  id: '/my-history',
-  path: '/my-history',
-  getParentRoute: () => TcgManagerRoute,
-} as any)
-const TcgManagerHistoryRoute = TcgManagerHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => TcgManagerRoute,
-} as any)
-const TcgManagerCalendarRoute = TcgManagerCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => TcgManagerRoute,
-} as any)
-const TcgManagerApprovedRoute = TcgManagerApprovedRouteImport.update({
-  id: '/approved',
-  path: '/approved',
-  getParentRoute: () => TcgManagerRoute,
-} as any)
-const TcgManagerAnalyticsRoute = TcgManagerAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => TcgManagerRoute,
-} as any)
-const StoresSlugRoute = StoresSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => StoresRoute,
-} as any)
-const SessionsSessionIdRoute = SessionsSessionIdRouteImport.update({
-  id: '/$sessionId',
-  path: '/$sessionId',
-  getParentRoute: () => SessionsRoute,
-} as any)
-const PlayersPlayerTagRoute = PlayersPlayerTagRouteImport.update({
-  id: '/players/$playerTag',
-  path: '/players/$playerTag',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrganizerTournamentsRoute = OrganizerTournamentsRouteImport.update({
-  id: '/tournaments',
-  path: '/tournaments',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerStoreRoute = OrganizerStoreRouteImport.update({
-  id: '/store',
-  path: '/store',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerNewRoute = OrganizerNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerHistoryRoute = OrganizerHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerCalendarRoute = OrganizerCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const OrganizerAppealsRoute = OrganizerAppealsRouteImport.update({
-  id: '/appeals',
-  path: '/appeals',
-  getParentRoute: () => OrganizerRoute,
-} as any)
-const AdminUploadRoute = AdminUploadRouteImport.update({
+const TcgManagerUploadRoute = TcgManagerUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => TcgManagerRoute,
 } as any)
-const AdminTournamentsPanelRoute = AdminTournamentsPanelRouteImport.update({
-  id: '/tournaments-panel',
-  path: '/tournaments-panel',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminStoresRoute = AdminStoresRouteImport.update({
-  id: '/stores',
-  path: '/stores',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSeasonsRoute = AdminSeasonsRouteImport.update({
-  id: '/seasons',
-  path: '/seasons',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPublishRoute = AdminPublishRouteImport.update({
-  id: '/publish',
-  path: '/publish',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPlayersRoute = AdminPlayersRouteImport.update({
-  id: '/players',
-  path: '/players',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminHistoryRoute = AdminHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCalendarRoute = AdminCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminApprovedRoute = AdminApprovedRouteImport.update({
-  id: '/approved',
-  path: '/approved',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdsRoute = AdminAdsRouteImport.update({
-  id: '/ads',
-  path: '/ads',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminActivityRoute = AdminActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
-  getParentRoute: () => AdminRoute,
-} as any)
-const TcgManagerTournamentsIdRoute = TcgManagerTournamentsIdRouteImport.update({
+const TournamentsIdRoute = TournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
-  getParentRoute: () => TcgManagerRoute,
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPlayersIdRoute = AdminPlayersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminPlayersRoute,
+} as any)
+const AdminTournamentsIdRoute = AdminTournamentsIdRouteImport.update({
+  id: '/tournaments/$id',
+  path: '/tournaments/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const OrganizerTournamentsIdRoute = OrganizerTournamentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => OrganizerTournamentsRoute,
 } as any)
 const SessionsTournamentTournamentIdRoute =
   SessionsTournamentTournamentIdRouteImport.update({
@@ -322,20 +332,10 @@ const SessionsTournamentTournamentIdRoute =
     path: '/tournament/$tournamentId',
     getParentRoute: () => SessionsRoute,
   } as any)
-const OrganizerTournamentsIdRoute = OrganizerTournamentsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => OrganizerTournamentsRoute,
-} as any)
-const AdminTournamentsIdRoute = AdminTournamentsIdRouteImport.update({
+const TcgManagerTournamentsIdRoute = TcgManagerTournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPlayersIdRoute = AdminPlayersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminPlayersRoute,
+  getParentRoute: () => TcgManagerRoute,
 } as any)
 const PlayersPlayerTagSeasonSeasonIdRoute =
   PlayersPlayerTagSeasonSeasonIdRouteImport.update({
@@ -703,95 +703,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tcg-manager': {
-      id: '/tcg-manager'
-      path: '/tcg-manager'
-      fullPath: '/tcg-manager'
-      preLoaderRoute: typeof TcgManagerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/stores': {
-      id: '/stores'
-      path: '/stores'
-      fullPath: '/stores'
-      preLoaderRoute: typeof StoresRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sessions': {
-      id: '/sessions'
-      path: '/sessions'
-      fullPath: '/sessions'
-      preLoaderRoute: typeof SessionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organizer': {
-      id: '/organizer'
-      path: '/organizer'
-      fullPath: '/organizer'
-      preLoaderRoute: typeof OrganizerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-stats': {
-      id: '/my-stats'
-      path: '/my-stats'
-      fullPath: '/my-stats'
-      preLoaderRoute: typeof MyStatsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meta': {
-      id: '/meta'
-      path: '/meta'
-      fullPath: '/meta'
-      preLoaderRoute: typeof MetaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/check-inbox': {
-      id: '/check-inbox'
-      path: '/check-inbox'
-      fullPath: '/check-inbox'
-      preLoaderRoute: typeof CheckInboxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar': {
-      id: '/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof CalendarRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -801,242 +717,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tcg-manager/': {
-      id: '/tcg-manager/'
-      path: '/'
-      fullPath: '/tcg-manager/'
-      preLoaderRoute: typeof TcgManagerIndexRouteImport
-      parentRoute: typeof TcgManagerRoute
+    '/check-inbox': {
+      id: '/check-inbox'
+      path: '/check-inbox'
+      fullPath: '/check-inbox'
+      preLoaderRoute: typeof CheckInboxRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/stores/': {
-      id: '/stores/'
-      path: '/'
-      fullPath: '/stores/'
-      preLoaderRoute: typeof StoresIndexRouteImport
-      parentRoute: typeof StoresRoute
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/sessions/': {
-      id: '/sessions/'
-      path: '/'
-      fullPath: '/sessions/'
-      preLoaderRoute: typeof SessionsIndexRouteImport
-      parentRoute: typeof SessionsRoute
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/organizer/': {
-      id: '/organizer/'
-      path: '/'
-      fullPath: '/organizer/'
-      preLoaderRoute: typeof OrganizerIndexRouteImport
-      parentRoute: typeof OrganizerRoute
+    '/meta': {
+      id: '/meta'
+      path: '/meta'
+      fullPath: '/meta'
+      preLoaderRoute: typeof MetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-stats': {
+      id: '/my-stats'
+      path: '/my-stats'
+      fullPath: '/my-stats'
+      preLoaderRoute: typeof MyStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer': {
+      id: '/organizer'
+      path: '/organizer'
+      fullPath: '/organizer'
+      preLoaderRoute: typeof OrganizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sessions': {
+      id: '/sessions'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof SessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stores': {
+      id: '/stores'
+      path: '/stores'
+      fullPath: '/stores'
+      preLoaderRoute: typeof StoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tcg-manager': {
+      id: '/tcg-manager'
+      path: '/tcg-manager'
+      fullPath: '/tcg-manager'
+      preLoaderRoute: typeof TcgManagerRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/tournaments/$id': {
-      id: '/tournaments/$id'
-      path: '/tournaments/$id'
-      fullPath: '/tournaments/$id'
-      preLoaderRoute: typeof TournamentsIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tcg-manager/upload': {
-      id: '/tcg-manager/upload'
-      path: '/upload'
-      fullPath: '/tcg-manager/upload'
-      preLoaderRoute: typeof TcgManagerUploadRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/tcg-manager/tournaments-panel': {
-      id: '/tcg-manager/tournaments-panel'
-      path: '/tournaments-panel'
-      fullPath: '/tcg-manager/tournaments-panel'
-      preLoaderRoute: typeof TcgManagerTournamentsPanelRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/tcg-manager/stores': {
-      id: '/tcg-manager/stores'
-      path: '/stores'
-      fullPath: '/tcg-manager/stores'
-      preLoaderRoute: typeof TcgManagerStoresRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/tcg-manager/my-history': {
-      id: '/tcg-manager/my-history'
-      path: '/my-history'
-      fullPath: '/tcg-manager/my-history'
-      preLoaderRoute: typeof TcgManagerMyHistoryRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/tcg-manager/history': {
-      id: '/tcg-manager/history'
-      path: '/history'
-      fullPath: '/tcg-manager/history'
-      preLoaderRoute: typeof TcgManagerHistoryRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/tcg-manager/calendar': {
-      id: '/tcg-manager/calendar'
-      path: '/calendar'
-      fullPath: '/tcg-manager/calendar'
-      preLoaderRoute: typeof TcgManagerCalendarRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/tcg-manager/approved': {
-      id: '/tcg-manager/approved'
-      path: '/approved'
-      fullPath: '/tcg-manager/approved'
-      preLoaderRoute: typeof TcgManagerApprovedRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/tcg-manager/analytics': {
-      id: '/tcg-manager/analytics'
-      path: '/analytics'
-      fullPath: '/tcg-manager/analytics'
-      preLoaderRoute: typeof TcgManagerAnalyticsRouteImport
-      parentRoute: typeof TcgManagerRoute
-    }
-    '/stores/$slug': {
-      id: '/stores/$slug'
-      path: '/$slug'
-      fullPath: '/stores/$slug'
-      preLoaderRoute: typeof StoresSlugRouteImport
-      parentRoute: typeof StoresRoute
-    }
-    '/sessions/$sessionId': {
-      id: '/sessions/$sessionId'
-      path: '/$sessionId'
-      fullPath: '/sessions/$sessionId'
-      preLoaderRoute: typeof SessionsSessionIdRouteImport
-      parentRoute: typeof SessionsRoute
-    }
-    '/players/$playerTag': {
-      id: '/players/$playerTag'
-      path: '/players/$playerTag'
-      fullPath: '/players/$playerTag'
-      preLoaderRoute: typeof PlayersPlayerTagRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organizer/tournaments': {
-      id: '/organizer/tournaments'
-      path: '/tournaments'
-      fullPath: '/organizer/tournaments'
-      preLoaderRoute: typeof OrganizerTournamentsRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/store': {
-      id: '/organizer/store'
-      path: '/store'
-      fullPath: '/organizer/store'
-      preLoaderRoute: typeof OrganizerStoreRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/new': {
-      id: '/organizer/new'
-      path: '/new'
-      fullPath: '/organizer/new'
-      preLoaderRoute: typeof OrganizerNewRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/history': {
-      id: '/organizer/history'
-      path: '/history'
-      fullPath: '/organizer/history'
-      preLoaderRoute: typeof OrganizerHistoryRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/calendar': {
-      id: '/organizer/calendar'
-      path: '/calendar'
-      fullPath: '/organizer/calendar'
-      preLoaderRoute: typeof OrganizerCalendarRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/organizer/appeals': {
-      id: '/organizer/appeals'
-      path: '/appeals'
-      fullPath: '/organizer/appeals'
-      preLoaderRoute: typeof OrganizerAppealsRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
-    '/admin/upload': {
-      id: '/admin/upload'
-      path: '/upload'
-      fullPath: '/admin/upload'
-      preLoaderRoute: typeof AdminUploadRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/tournaments-panel': {
-      id: '/admin/tournaments-panel'
-      path: '/tournaments-panel'
-      fullPath: '/admin/tournaments-panel'
-      preLoaderRoute: typeof AdminTournamentsPanelRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/stores': {
-      id: '/admin/stores'
-      path: '/stores'
-      fullPath: '/admin/stores'
-      preLoaderRoute: typeof AdminStoresRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/seasons': {
-      id: '/admin/seasons'
-      path: '/seasons'
-      fullPath: '/admin/seasons'
-      preLoaderRoute: typeof AdminSeasonsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/publish': {
-      id: '/admin/publish'
-      path: '/publish'
-      fullPath: '/admin/publish'
-      preLoaderRoute: typeof AdminPublishRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/players': {
-      id: '/admin/players'
-      path: '/players'
-      fullPath: '/admin/players'
-      preLoaderRoute: typeof AdminPlayersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/history': {
-      id: '/admin/history'
-      path: '/history'
-      fullPath: '/admin/history'
-      preLoaderRoute: typeof AdminHistoryRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/calendar': {
-      id: '/admin/calendar'
-      path: '/calendar'
-      fullPath: '/admin/calendar'
-      preLoaderRoute: typeof AdminCalendarRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/approved': {
-      id: '/admin/approved'
-      path: '/approved'
-      fullPath: '/admin/approved'
-      preLoaderRoute: typeof AdminApprovedRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/ads': {
-      id: '/admin/ads'
-      path: '/ads'
-      fullPath: '/admin/ads'
-      preLoaderRoute: typeof AdminAdsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/activity': {
@@ -1046,26 +822,236 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminActivityRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/tcg-manager/tournaments/$id': {
-      id: '/tcg-manager/tournaments/$id'
-      path: '/tournaments/$id'
-      fullPath: '/tcg-manager/tournaments/$id'
-      preLoaderRoute: typeof TcgManagerTournamentsIdRouteImport
-      parentRoute: typeof TcgManagerRoute
+    '/admin/ads': {
+      id: '/admin/ads'
+      path: '/ads'
+      fullPath: '/admin/ads'
+      preLoaderRoute: typeof AdminAdsRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/sessions/tournament/$tournamentId': {
-      id: '/sessions/tournament/$tournamentId'
-      path: '/tournament/$tournamentId'
-      fullPath: '/sessions/tournament/$tournamentId'
-      preLoaderRoute: typeof SessionsTournamentTournamentIdRouteImport
+    '/admin/approved': {
+      id: '/admin/approved'
+      path: '/approved'
+      fullPath: '/admin/approved'
+      preLoaderRoute: typeof AdminApprovedRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/calendar': {
+      id: '/admin/calendar'
+      path: '/calendar'
+      fullPath: '/admin/calendar'
+      preLoaderRoute: typeof AdminCalendarRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/history': {
+      id: '/admin/history'
+      path: '/history'
+      fullPath: '/admin/history'
+      preLoaderRoute: typeof AdminHistoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/players': {
+      id: '/admin/players'
+      path: '/players'
+      fullPath: '/admin/players'
+      preLoaderRoute: typeof AdminPlayersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/publish': {
+      id: '/admin/publish'
+      path: '/publish'
+      fullPath: '/admin/publish'
+      preLoaderRoute: typeof AdminPublishRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/seasons': {
+      id: '/admin/seasons'
+      path: '/seasons'
+      fullPath: '/admin/seasons'
+      preLoaderRoute: typeof AdminSeasonsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/stores': {
+      id: '/admin/stores'
+      path: '/stores'
+      fullPath: '/admin/stores'
+      preLoaderRoute: typeof AdminStoresRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tournaments-panel': {
+      id: '/admin/tournaments-panel'
+      path: '/tournaments-panel'
+      fullPath: '/admin/tournaments-panel'
+      preLoaderRoute: typeof AdminTournamentsPanelRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/upload': {
+      id: '/admin/upload'
+      path: '/upload'
+      fullPath: '/admin/upload'
+      preLoaderRoute: typeof AdminUploadRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/organizer/': {
+      id: '/organizer/'
+      path: '/'
+      fullPath: '/organizer/'
+      preLoaderRoute: typeof OrganizerIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/appeals': {
+      id: '/organizer/appeals'
+      path: '/appeals'
+      fullPath: '/organizer/appeals'
+      preLoaderRoute: typeof OrganizerAppealsRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/calendar': {
+      id: '/organizer/calendar'
+      path: '/calendar'
+      fullPath: '/organizer/calendar'
+      preLoaderRoute: typeof OrganizerCalendarRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/history': {
+      id: '/organizer/history'
+      path: '/history'
+      fullPath: '/organizer/history'
+      preLoaderRoute: typeof OrganizerHistoryRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/new': {
+      id: '/organizer/new'
+      path: '/new'
+      fullPath: '/organizer/new'
+      preLoaderRoute: typeof OrganizerNewRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/store': {
+      id: '/organizer/store'
+      path: '/store'
+      fullPath: '/organizer/store'
+      preLoaderRoute: typeof OrganizerStoreRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/tournaments': {
+      id: '/organizer/tournaments'
+      path: '/tournaments'
+      fullPath: '/organizer/tournaments'
+      preLoaderRoute: typeof OrganizerTournamentsRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/players/$playerTag': {
+      id: '/players/$playerTag'
+      path: '/players/$playerTag'
+      fullPath: '/players/$playerTag'
+      preLoaderRoute: typeof PlayersPlayerTagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sessions/': {
+      id: '/sessions/'
+      path: '/'
+      fullPath: '/sessions/'
+      preLoaderRoute: typeof SessionsIndexRouteImport
       parentRoute: typeof SessionsRoute
     }
-    '/organizer/tournaments/$id': {
-      id: '/organizer/tournaments/$id'
+    '/sessions/$sessionId': {
+      id: '/sessions/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/sessions/$sessionId'
+      preLoaderRoute: typeof SessionsSessionIdRouteImport
+      parentRoute: typeof SessionsRoute
+    }
+    '/stores/': {
+      id: '/stores/'
+      path: '/'
+      fullPath: '/stores/'
+      preLoaderRoute: typeof StoresIndexRouteImport
+      parentRoute: typeof StoresRoute
+    }
+    '/stores/$slug': {
+      id: '/stores/$slug'
+      path: '/$slug'
+      fullPath: '/stores/$slug'
+      preLoaderRoute: typeof StoresSlugRouteImport
+      parentRoute: typeof StoresRoute
+    }
+    '/tcg-manager/': {
+      id: '/tcg-manager/'
+      path: '/'
+      fullPath: '/tcg-manager/'
+      preLoaderRoute: typeof TcgManagerIndexRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/analytics': {
+      id: '/tcg-manager/analytics'
+      path: '/analytics'
+      fullPath: '/tcg-manager/analytics'
+      preLoaderRoute: typeof TcgManagerAnalyticsRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/approved': {
+      id: '/tcg-manager/approved'
+      path: '/approved'
+      fullPath: '/tcg-manager/approved'
+      preLoaderRoute: typeof TcgManagerApprovedRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/calendar': {
+      id: '/tcg-manager/calendar'
+      path: '/calendar'
+      fullPath: '/tcg-manager/calendar'
+      preLoaderRoute: typeof TcgManagerCalendarRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/history': {
+      id: '/tcg-manager/history'
+      path: '/history'
+      fullPath: '/tcg-manager/history'
+      preLoaderRoute: typeof TcgManagerHistoryRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/my-history': {
+      id: '/tcg-manager/my-history'
+      path: '/my-history'
+      fullPath: '/tcg-manager/my-history'
+      preLoaderRoute: typeof TcgManagerMyHistoryRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/stores': {
+      id: '/tcg-manager/stores'
+      path: '/stores'
+      fullPath: '/tcg-manager/stores'
+      preLoaderRoute: typeof TcgManagerStoresRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/tournaments-panel': {
+      id: '/tcg-manager/tournaments-panel'
+      path: '/tournaments-panel'
+      fullPath: '/tcg-manager/tournaments-panel'
+      preLoaderRoute: typeof TcgManagerTournamentsPanelRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tcg-manager/upload': {
+      id: '/tcg-manager/upload'
+      path: '/upload'
+      fullPath: '/tcg-manager/upload'
+      preLoaderRoute: typeof TcgManagerUploadRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
+    '/tournaments/$id': {
+      id: '/tournaments/$id'
+      path: '/tournaments/$id'
+      fullPath: '/tournaments/$id'
+      preLoaderRoute: typeof TournamentsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/players/$id': {
+      id: '/admin/players/$id'
       path: '/$id'
-      fullPath: '/organizer/tournaments/$id'
-      preLoaderRoute: typeof OrganizerTournamentsIdRouteImport
-      parentRoute: typeof OrganizerTournamentsRoute
+      fullPath: '/admin/players/$id'
+      preLoaderRoute: typeof AdminPlayersIdRouteImport
+      parentRoute: typeof AdminPlayersRoute
     }
     '/admin/tournaments/$id': {
       id: '/admin/tournaments/$id'
@@ -1074,12 +1060,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTournamentsIdRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/players/$id': {
-      id: '/admin/players/$id'
+    '/organizer/tournaments/$id': {
+      id: '/organizer/tournaments/$id'
       path: '/$id'
-      fullPath: '/admin/players/$id'
-      preLoaderRoute: typeof AdminPlayersIdRouteImport
-      parentRoute: typeof AdminPlayersRoute
+      fullPath: '/organizer/tournaments/$id'
+      preLoaderRoute: typeof OrganizerTournamentsIdRouteImport
+      parentRoute: typeof OrganizerTournamentsRoute
+    }
+    '/sessions/tournament/$tournamentId': {
+      id: '/sessions/tournament/$tournamentId'
+      path: '/tournament/$tournamentId'
+      fullPath: '/sessions/tournament/$tournamentId'
+      preLoaderRoute: typeof SessionsTournamentTournamentIdRouteImport
+      parentRoute: typeof SessionsRoute
+    }
+    '/tcg-manager/tournaments/$id': {
+      id: '/tcg-manager/tournaments/$id'
+      path: '/tournaments/$id'
+      fullPath: '/tcg-manager/tournaments/$id'
+      preLoaderRoute: typeof TcgManagerTournamentsIdRouteImport
+      parentRoute: typeof TcgManagerRoute
     }
     '/players/$playerTag_/season/$seasonId': {
       id: '/players/$playerTag_/season/$seasonId'
