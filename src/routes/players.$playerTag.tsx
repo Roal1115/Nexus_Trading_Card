@@ -58,6 +58,8 @@ function PublicProfilePage() {
   const [copied, setCopied] = useState(false);
 
   const [historyTcg, setHistoryTcg] = useState<string | null>(null);
+  const NATIONAL_LEAGUE = "__national__";
+  const [historyLeague, setHistoryLeague] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -98,9 +100,25 @@ function PublicProfilePage() {
     [tournaments],
   );
 
-  const filteredTournaments = historyTcg
-    ? tournaments.filter((t: any) => t.game_id === historyTcg)
-    : tournaments;
+  const uniqueLeagues = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          tournaments
+            .filter((t: any) => t.league_id)
+            .map((t: any) => [t.league_id, { id: t.league_id, name: t.league_name }]),
+        ).values(),
+      ),
+    [tournaments],
+  );
+
+  const filteredTournaments = tournaments
+    .filter((t: any) => !historyTcg || t.game_id === historyTcg)
+    .filter((t: any) => {
+      if (!historyLeague) return true;
+      if (historyLeague === NATIONAL_LEAGUE) return !t.league_id;
+      return t.league_id === historyLeague;
+    });
   const paginatedTournaments = filteredTournaments.slice(0, page * PAGE_SIZE);
   const hasMoreTournaments = filteredTournaments.length > page * PAGE_SIZE;
 
@@ -336,6 +354,53 @@ function PublicProfilePage() {
             </div>
           )}
 
+          {uniqueLeagues.length > 0 && (
+            <div className="flex overflow-x-auto border-b border-white/10 px-2">
+              <button
+                onClick={() => {
+                  setHistoryLeague(null);
+                  setPage(1);
+                }}
+                className={`px-4 py-2 text-[11px] font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
+                  historyLeague === null
+                    ? "border-fuchsia-400 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                Todas las ligas
+              </button>
+              <button
+                onClick={() => {
+                  setHistoryLeague(NATIONAL_LEAGUE);
+                  setPage(1);
+                }}
+                className={`px-4 py-2 text-[11px] font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
+                  historyLeague === NATIONAL_LEAGUE
+                    ? "border-fuchsia-400 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                Circuito Nacional
+              </button>
+              {uniqueLeagues.map((l: any) => (
+                <button
+                  key={l.id}
+                  onClick={() => {
+                    setHistoryLeague(l.id);
+                    setPage(1);
+                  }}
+                  className={`px-4 py-2 text-[11px] font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
+                    historyLeague === l.id
+                      ? "border-fuchsia-400 text-white"
+                      : "border-transparent text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  {l.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Desktop */}
           <div className="overflow-x-auto hidden sm:block">
             <table className="w-full text-sm">
@@ -384,7 +449,20 @@ function PublicProfilePage() {
                             })
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{t.tcg}</td>
+                      <td className="px-4 py-3 text-xs text-gray-400">
+                        {t.tcg}
+                        {t.league_name && t.store_slug && (
+                          <Link
+                            to="/stores/$slug"
+                            params={{ slug: t.store_slug }}
+                            hash="liga-interna"
+                            title="Ver leaderboard de esta liga"
+                            className="ml-1.5 inline-block rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300 hover:bg-fuchsia-500/25"
+                          >
+                            {t.league_name}
+                          </Link>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-white">
                         {t.store} <span className="text-xs text-gray-500">· {t.city}</span>
                       </td>
@@ -445,6 +523,17 @@ function PublicProfilePage() {
                             #{t.placement}
                           </span>
                           <span className="text-xs text-gray-400">{t.tcg}</span>
+                          {t.league_name && t.store_slug && (
+                            <Link
+                              to="/stores/$slug"
+                              params={{ slug: t.store_slug }}
+                              hash="liga-interna"
+                              onClick={(e) => e.stopPropagation()}
+                              className="rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300"
+                            >
+                              {t.league_name}
+                            </Link>
+                          )}
                           <span className="text-xs text-gray-600">—</span>
                           <span className="text-sm font-semibold text-white truncate">
                             {t.store}

@@ -23,7 +23,10 @@ import {
   listActiveStores,
   lookupPlayerTags,
   uploadTournamentResults,
+  getActiveLeaguesForStore,
 } from "@/lib/nexus-organizer.functions";
+
+const NATIONAL_LEAGUE_VALUE = "__national__";
 import { getManagerResponsibleStores } from "@/lib/nexus-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -348,6 +351,7 @@ export function TournamentUploadForm({
   const fetchManagerStores = useServerFn(getManagerResponsibleStores);
   const submitUpload = useServerFn(uploadTournamentResults);
   const lookupTags = useServerFn(lookupPlayerTags);
+  const fetchActiveLeagues = useServerFn(getActiveLeaguesForStore);
 
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
@@ -368,6 +372,9 @@ export function TournamentUploadForm({
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeLeagues, setActiveLeagues] = useState<{ id: string; name: string }[]>([]);
+  const [leagueChoice, setLeagueChoice] = useState<string>(NATIONAL_LEAGUE_VALUE);
 
   useEffect(() => {
     if (!player) return;
@@ -417,6 +424,23 @@ export function TournamentUploadForm({
     stores.find((s) => s.id === storeId) ??
     managerStores.find((s) => s.id === storeId) ??
     (homeStore?.id === storeId ? homeStore : null);
+
+  useEffect(() => {
+    setLeagueChoice(NATIONAL_LEAGUE_VALUE);
+    if (!storeId || isManager) {
+      setActiveLeagues([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res: any = await fetchActiveLeagues({ data: { store_id: storeId } });
+        setActiveLeagues(res.leagues ?? []);
+      } catch {
+        setActiveLeagues([]);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, isManager]);
 
   const qualifying = useMemo(() => {
     if (!date) return null;
@@ -515,6 +539,7 @@ export function TournamentUploadForm({
           rows: cleanRows,
           tournament_id: tournamentId,
           csv_url: csvUrl,
+          league_id: isManager || leagueChoice === NATIONAL_LEAGUE_VALUE ? null : leagueChoice,
         },
       });
       if (result && (result as { ok?: boolean }).ok === false) {
@@ -648,6 +673,28 @@ export function TournamentUploadForm({
               Calificación: mes <strong className="text-white">{qualifying.month}</strong> · semestre{" "}
               <strong className="text-white">{qualifying.semester}</strong> · año{" "}
               <strong className="text-white">{qualifying.year}</strong>
+            </div>
+          )}
+
+          {!isManager && (
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">Liga a la que pertenece este torneo *</Label>
+              <Select value={leagueChoice} onValueChange={setLeagueChoice}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NATIONAL_LEAGUE_VALUE}>Liga Semestral (Circuito Nacional)</SelectItem>
+                  {activeLeagues.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Puedes subir varios torneos del mismo TCG el mismo día si pertenecen a ligas distintas.
+              </p>
             </div>
           )}
 

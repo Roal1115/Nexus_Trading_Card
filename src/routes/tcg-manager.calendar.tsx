@@ -1,4 +1,5 @@
 import { toLocalDateStr } from "@/lib/utils";
+import { BlockSelect } from "@/components/ui/block-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -282,51 +283,39 @@ function ManagerCalendarPage() {
           </button>
         </div>
 
-        <select
-          value={zoneFilter}
-          onChange={(e) => {
-            setZoneFilter(e.target.value);
-            setStoreFilter("all");
-            setGameFilter("all");
-          }}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
-        >
-          <option value="all">Todas las zonas</option>
-          {uniqueZones.map((z) => (
-            <option key={z} value={z}>
-              {z}
-            </option>
-          ))}
-        </select>
+        <div className="w-40">
+          <BlockSelect
+            value={zoneFilter === "all" ? null : zoneFilter}
+            onChange={(v) => {
+              setZoneFilter(v ?? "all");
+              setStoreFilter("all");
+              setGameFilter("all");
+            }}
+            placeholder="Todas las zonas"
+            options={uniqueZones.map((z) => ({ value: z, label: z }))}
+          />
+        </div>
 
-        <select
-          value={storeFilter}
-          onChange={(e) => {
-            setStoreFilter(e.target.value);
-            setGameFilter("all");
-          }}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
-        >
-          <option value="all">Todas las tiendas</option>
-          {uniqueStores.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-44">
+          <BlockSelect
+            value={storeFilter === "all" ? null : storeFilter}
+            onChange={(v) => {
+              setStoreFilter(v ?? "all");
+              setGameFilter("all");
+            }}
+            placeholder="Todas las tiendas"
+            options={uniqueStores.map((s) => ({ value: s.id, label: s.name }))}
+          />
+        </div>
 
-        <select
-          value={gameFilter}
-          onChange={(e) => setGameFilter(e.target.value)}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
-        >
-          <option value="all">Todos los TCGs</option>
-          {uniqueGames.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-44">
+          <BlockSelect
+            value={gameFilter === "all" ? null : gameFilter}
+            onChange={(v) => setGameFilter(v ?? "all")}
+            placeholder="Todos los TCGs"
+            options={uniqueGames.map((g) => ({ value: g.id, label: g.name }))}
+          />
+        </div>
 
 
 

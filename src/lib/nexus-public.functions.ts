@@ -135,9 +135,10 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       .from("tournaments")
       .select(
         `
-        id, tournament_date, tournament_time, game_id, store_id,
+        id, tournament_date, tournament_time, game_id, store_id, league_id,
         stores!inner(id, slug, name, city, state, zone, address, phone, description, opening_hours, instagram, website, twitter, twitch, google_maps_url),
-        games!inner(id, name, slug)
+        games!inner(id, name, slug),
+        store_leagues!tournaments_league_id_fkey(name)
       `,
       )
       .eq("status", "PUBLISHED")
@@ -175,8 +176,40 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     const { data: schedules, error: scheduleError } = await scheduleQuery;
     if (scheduleError) failDb(scheduleError);
 
-    const realTournamentDates = new Set(
-      (tournaments ?? []).map((t: any) => `${t.store_id}_${t.tournament_date}`),
+    // 3. Horarios de ligas internas — comparten calendario con el circuito
+    // nacional (Épica 4). shares_national_slot=true solo etiqueta el schedule
+    // nacional con el nombre de la liga; false proyecta un slot propio.
+    let leagueScheduleQuery = admin
+      .from("store_league_schedules")
+      .select(
+        `
+        id, store_id, game_id, day_of_week, start_time, shares_national_slot, national_schedule_id, league_id,
+        games!inner(id, name, slug),
+        store_leagues!inner(name, status),
+        stores!inner(id, slug, name, city, state, zone, address, phone, description, opening_hours, instagram, website, twitter, twitch, google_maps_url)
+      `,
+      )
+      .eq("store_leagues.status", "active");
+    if (data.game_id) leagueScheduleQuery = leagueScheduleQuery.eq("game_id", data.game_id);
+    if (data.store_ids?.length) {
+      leagueScheduleQuery = leagueScheduleQuery.in("store_id", data.store_ids);
+    } else if (data.store_id) {
+      leagueScheduleQuery = leagueScheduleQuery.eq("store_id", data.store_id);
+    }
+    if (data.zone) leagueScheduleQuery = leagueScheduleQuery.eq("stores.zone", data.zone);
+
+    const { data: leagueSchedules, error: leagueScheduleError } = await leagueScheduleQuery;
+    if (leagueScheduleError) failDb(leagueScheduleError);
+
+    const sharedLeagueNameByNationalId = new Map<string, string>();
+    for (const s of (leagueSchedules ?? []) as any[]) {
+      if (s.shares_national_slot && s.national_schedule_id) {
+        sharedLeagueNameByNationalId.set(s.national_schedule_id, s.store_leagues?.name ?? "Liga interna");
+      }
+    }
+
+    const realTournamentKeys = new Set(
+      (tournaments ?? []).map((t: any) => `${t.store_id}_${t.tournament_date}_${t.league_id ?? "national"}`),
     );
 
     const scheduledEvents: any[] = [];
@@ -185,7 +218,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         if (dateStr < fromDate) continue;
         const d = new Date(dateStr + "T12:00:00");
         if (d.getDay() !== s.day_of_week) continue;
-        if (realTournamentDates.has(`${s.store_id}_${dateStr}`)) continue;
+        if (realTournamentKeys.has(`${s.store_id}_${dateStr}_national`)) continue;
 
         scheduledEvents.push({
           id: `schedule_${s.id}_${dateStr}`,
@@ -210,6 +243,44 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
           store_google_maps_url: s.stores?.google_maps_url ?? null,
           zone: s.stores?.zone ?? "—",
           is_scheduled: true,
+          league_id: null,
+          league_name: sharedLeagueNameByNationalId.get(s.id) ?? null,
+        });
+      }
+    }
+    for (const s of (leagueSchedules ?? []) as any[]) {
+      if (s.shares_national_slot) continue;
+      for (const dateStr of weekDates) {
+        if (dateStr < fromDate) continue;
+        const d = new Date(dateStr + "T12:00:00");
+        if (d.getDay() !== s.day_of_week) continue;
+        if (realTournamentKeys.has(`${s.store_id}_${dateStr}_${s.league_id}`)) continue;
+
+        scheduledEvents.push({
+          id: `league_schedule_${s.id}_${dateStr}`,
+          date: dateStr,
+          time: s.start_time,
+          game_id: s.game_id,
+          game_name: s.games?.name ?? "—",
+          game_slug: s.games?.slug ?? "",
+          store_id: s.store_id,
+          store_slug: s.stores?.slug ?? "",
+          store_name: s.stores?.name ?? "—",
+          store_city: s.stores?.city ?? "—",
+          store_state: s.stores?.state ?? "—",
+          store_address: s.stores?.address ?? null,
+          store_phone: s.stores?.phone ?? null,
+          store_description: s.stores?.description ?? null,
+          store_opening_hours: s.stores?.opening_hours ?? null,
+          store_instagram: s.stores?.instagram ?? null,
+          store_website: s.stores?.website ?? null,
+          store_twitter: s.stores?.twitter ?? null,
+          store_twitch: s.stores?.twitch ?? null,
+          store_google_maps_url: s.stores?.google_maps_url ?? null,
+          zone: s.stores?.zone ?? "—",
+          is_scheduled: true,
+          league_id: s.league_id,
+          league_name: s.store_leagues?.name ?? "Liga interna",
         });
       }
     }
@@ -238,6 +309,8 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         store_google_maps_url: t.stores?.google_maps_url ?? null,
         zone: t.stores?.zone ?? "—",
         is_scheduled: false,
+        league_id: t.league_id ?? null,
+        league_name: t.store_leagues?.name ?? null,
       })),
       ...scheduledEvents,
     ].sort((a, b) => {
@@ -259,6 +332,90 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       events: allEvents,
       stores: stores ?? [],
       zones,
+    };
+  });
+
+export const getStoreActiveLeague = createServerFn({ method: "POST" })
+  .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
+  .handler(async ({ data }) => {
+    const admin = getNexusAdmin();
+    const { data: store } = await admin
+      .from("stores")
+      .select("id")
+      .eq("slug", data.slug)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!store) return { league: null };
+
+    const { data: league, error } = await admin
+      .from("store_leagues")
+      .select("id, name, start_date, end_date, store_league_tournaments(tournament_id), store_league_prizes(id, description, image_url, sort_order)")
+      .eq("store_id", store.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) failDb(error);
+    if (!league) return { league: null };
+
+    const tournamentIds = (league.store_league_tournaments ?? []).map((t: any) => t.tournament_id);
+    type Standing = {
+      player_id: string;
+      geek_tag: string;
+      total_points: number;
+      tournaments_played: number;
+      tournaments_won: number;
+      omw_percentage: number;
+    };
+    let standings: Standing[] = [];
+    if (tournamentIds.length) {
+      const { data: results } = await admin
+        .from("tournament_results")
+        .select("player_id, points_earned, rank, omw_percentage")
+        .in("tournament_id", tournamentIds);
+
+      type Agg = { points: number; played: number; won: number; omw_sum: number; omw_count: number };
+      const agg = new Map<string, Agg>();
+      for (const r of (results ?? []) as any[]) {
+        const a = agg.get(r.player_id) ?? { points: 0, played: 0, won: 0, omw_sum: 0, omw_count: 0 };
+        a.points += r.points_earned ?? 0;
+        a.played += 1;
+        if (r.rank === 1) a.won += 1;
+        if (r.omw_percentage != null) {
+          a.omw_sum += Number(r.omw_percentage);
+          a.omw_count += 1;
+        }
+        agg.set(r.player_id, a);
+      }
+
+      const playerIds = Array.from(agg.keys());
+      const { data: players } = playerIds.length
+        ? await admin.from("players").select("id, geek_tag").in("id", playerIds)
+        : { data: [] as any[] };
+      const tagById = new Map((players ?? []).map((p: any) => [p.id, p.geek_tag]));
+
+      standings = Array.from(agg.entries())
+        .map(([player_id, a]) => ({
+          player_id,
+          geek_tag: tagById.get(player_id) ?? "—",
+          total_points: a.points,
+          tournaments_played: a.played,
+          tournaments_won: a.won,
+          omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
+        }))
+        .sort((a, b) => b.total_points - a.total_points)
+        .slice(0, 25);
+    }
+
+    return {
+      league: {
+        id: league.id,
+        name: league.name,
+        start_date: league.start_date,
+        end_date: league.end_date,
+        prizes: (league.store_league_prizes ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+        standings,
+      },
     };
   });
 

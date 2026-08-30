@@ -437,7 +437,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
       admin
         .from("tournament_results")
         .select(
-          "rank, points_earned, match_points, omw_percentage, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id)",
+          "rank, points_earned, match_points, omw_percentage, wins, losses, draws, tournament_id, tournaments!inner(status, tournament_date, game_id, store_id, league_id, store_leagues!tournaments_league_id_fkey(name))",
         )
         .eq("player_id", t.id)
         .in("tournaments.status", ["APPROVED", "PUBLISHED"])
@@ -469,7 +469,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
 
     const [storesRes, gamesRes, maxPtsRes] = await Promise.all([
       tStoreIds.length
-        ? admin.from("stores").select("id, name, city").in("id", tStoreIds)
+        ? admin.from("stores").select("id, name, city, slug").in("id", tStoreIds)
         : Promise.resolve({ data: [] as any[] }),
       gameIds.length
         ? admin.from("games").select("id, name").in("id", gameIds)
@@ -508,8 +508,11 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         date: tr?.tournament_date ?? "—",
         store: (store as any)?.name ?? "—",
         city: (store as any)?.city ?? "—",
+        store_slug: (store as any)?.slug ?? null,
         tcg: gamesMap.get(tr?.game_id) ?? "—",
         game_id: tr?.game_id ?? null,
+        league_id: tr?.league_id ?? null,
+        league_name: (Array.isArray(tr?.store_leagues) ? tr.store_leagues[0] : tr?.store_leagues)?.name ?? null,
         placement: r.rank,
         pointsEarned: Number(r.points_earned ?? 0).toFixed(2),
         wins: calcWins,

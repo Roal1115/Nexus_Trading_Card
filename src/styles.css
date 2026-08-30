@@ -183,10 +183,19 @@
      data-scroll-locked, evita que se duplique con el ancho del aside en
      un padre flex (bug real: en los paneles de staff, cuyo layout es
      `flex` a diferencia del `block` de PlayerSidebar, un espaciador con
-     ancho fijo permanente empujaba el sidebar completo ~256px). */
+     ancho fijo permanente empujaba el sidebar completo ~256px).
+
+     Sin transition a propósito (bug real, reportado por el usuario,
+     medido con Playwright): el <aside> pasa a position:fixed de forma
+     instantánea apenas Radix marca data-scroll-locked, pero si el ancho
+     del espaciador se anima en 0.2s, el <main> pierde su reserva de
+     espacio por esos 200ms y se desliza visiblemente ~256px hacia la
+     izquierda hasta que la transición termina — visible en CUALQUIER
+     apertura de Dialog o DropdownMenu (ambos activan el mismo lock), no
+     solo en modales grandes. El cambio de ancho debe ser instantáneo,
+     en el mismo frame que el cambio de position del aside. */
   .panel-sidebar-spacer {
     width: 0;
-    transition: width 0.2s ease-in-out;
   }
   body[data-scroll-locked] .panel-sidebar-spacer {
     width: var(--panel-sidebar-w, 16rem);

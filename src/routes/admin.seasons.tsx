@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Calendar, Loader2, Plus, Play, X } from "lucide-react";
+import { Calendar, Loader2, Plus, Play, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import {
@@ -9,11 +9,13 @@ import {
   createSeason,
   activateSeason,
   closeSeason,
+  updateSeason,
 } from "@/lib/nexus-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { BlockSelect } from "@/components/ui/block-select";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +76,7 @@ function AdminSeasonsPage() {
   const createFn = useServerFn(createSeason);
   const activateFn = useServerFn(activateSeason);
   const closeFn = useServerFn(closeSeason);
+  const updateFn = useServerFn(updateSeason);
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +88,9 @@ function AdminSeasonsPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const [editing, setEditing] = useState<Season | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -150,6 +156,34 @@ function AdminSeasonsPage() {
       await refresh();
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
+    }
+  }
+
+  async function handleUpdate() {
+    if (!editing) return;
+    if (!editing.name || !editing.slug || !editing.start_date || !editing.end_date) {
+      toast.error("Completa todos los campos.");
+      return;
+    }
+    setEditSubmitting(true);
+    try {
+      await updateFn({
+        data: {
+          season_id: editing.id,
+          name: editing.name,
+          slug: editing.slug,
+          start_date: editing.start_date,
+          end_date: editing.end_date,
+          status: editing.status,
+        },
+      });
+      toast.success("Temporada actualizada.");
+      setEditing(null);
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setEditSubmitting(false);
     }
   }
 
@@ -303,6 +337,13 @@ function AdminSeasonsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setEditing({ ...s })}
+                          className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs font-semibold text-gray-300 transition hover:bg-white/5"
+                        >
+                          <Pencil size={12} />
+                          Editar
+                        </button>
                         {s.status === "UPCOMING" && (
                           <button
                             onClick={() => handleActivate(s.id)}
@@ -330,6 +371,82 @@ function AdminSeasonsPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar temporada</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-season-name">Nombre</Label>
+                <Input
+                  id="edit-season-name"
+                  value={editing.name}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-season-slug">Slug</Label>
+                <Input
+                  id="edit-season-slug"
+                  value={editing.slug}
+                  onChange={(e) => setEditing({ ...editing, slug: slugify(e.target.value) })}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-season-start">Fecha inicio</Label>
+                  <Input
+                    id="edit-season-start"
+                    type="date"
+                    value={editing.start_date}
+                    onChange={(e) => setEditing({ ...editing, start_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-season-end">Fecha fin</Label>
+                  <Input
+                    id="edit-season-end"
+                    type="date"
+                    value={editing.end_date}
+                    onChange={(e) => setEditing({ ...editing, end_date: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <BlockSelect
+                  value={editing.status}
+                  onChange={(v) =>
+                    setEditing({ ...editing, status: (v ?? "UPCOMING") as Season["status"] })
+                  }
+                  placeholder="Estado"
+                  options={[
+                    { value: "UPCOMING", label: "Próxima" },
+                    { value: "ACTIVE", label: "Activa" },
+                    { value: "CLOSED", label: "Cerrada" },
+                  ]}
+                />
+                {editing.status === "ACTIVE" && (
+                  <p className="text-xs text-gray-500">
+                    Activar esta temporada desactivará cualquier otra temporada activa.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)} disabled={editSubmitting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdate} disabled={editSubmitting}>
+              {editSubmitting ? <Loader2 className="animate-spin" size={16} /> : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

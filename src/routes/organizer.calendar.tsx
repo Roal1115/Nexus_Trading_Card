@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { getOrganizerCalendar } from "@/lib/nexus-organizer.functions";
+import { BlockSelect } from "@/components/ui/block-select";
 
 export const Route = createFileRoute("/organizer/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -187,18 +188,14 @@ function OrganizerCalendarPage() {
             <ChevronRight size={18} />
           </button>
         </div>
-        <select
-          value={gameFilter}
-          onChange={(e) => setGameFilter(e.target.value)}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
-        >
-          <option value="all">Todos los TCGs</option>
-          {uniqueGames.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-44">
+          <BlockSelect
+            value={gameFilter === "all" ? null : gameFilter}
+            onChange={(v) => setGameFilter(v ?? "all")}
+            placeholder="Todos los TCGs"
+            options={uniqueGames.map((g) => ({ value: g.id, label: g.name }))}
+          />
+        </div>
       </div>
 
       <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">

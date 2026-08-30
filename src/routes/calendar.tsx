@@ -291,6 +291,12 @@ function CalendarPage() {
               {selectedEntry.game_name}
             </span>
 
+            {selectedEntry.league_name && (
+              <span className="ml-2 inline-block rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-300 mb-3">
+                {selectedEntry.league_name}
+              </span>
+            )}
+
             {selectedEntry.is_scheduled && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400 mb-2 ml-2">
                 Torneo programado · Pendiente de confirmar

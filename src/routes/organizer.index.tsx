@@ -23,7 +23,9 @@ import {
   Bar,
   Cell,
 } from "recharts";
+import { Link } from "@tanstack/react-router";
 import { useNexusRole } from "@/hooks/use-nexus-role";
+import { usePagination } from "@/hooks/use-pagination";
 import { getStoreAnalytics } from "@/lib/nexus-organizer.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +37,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TablePager } from "@/components/ui/table-pager";
+import { LeagueScopeTabs } from "@/components/organizer/league-scope-tabs";
 import { SkeletonLine, SkeletonBlock, TcgRankCardSkeleton } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/organizer/")({
@@ -67,8 +71,9 @@ function OrganizerAnalytics() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
 
-  const refresh = async (df?: string, dt?: string, gameId?: string | null) => {
+  const refresh = async (df?: string, dt?: string, gameId?: string | null, leagueId?: string | null) => {
     setLoading(true);
     try {
       const res = await fetchAnalytics({
@@ -76,6 +81,7 @@ function OrganizerAnalytics() {
           date_from: df || undefined,
           date_to: dt || undefined,
           game_id: gameId || undefined,
+          league_id: leagueId ?? null,
         },
       });
       setData(res);
@@ -95,14 +101,23 @@ function OrganizerAnalytics() {
   }, [player?.id]);
 
   const handleApplyRange = () => {
-    void refresh(dateFrom, dateTo, selectedGameId);
+    void refresh(dateFrom, dateTo, selectedGameId, selectedLeagueId);
   };
 
   const handleTabChange = (gameId: string) => {
     const gid = gameId === "all" ? null : gameId;
     setSelectedGameId(gid);
-    void refresh(dateFrom, dateTo, gid);
+    void refresh(dateFrom, dateTo, gid, selectedLeagueId);
   };
+
+  const handleLeagueScopeChange = (leagueId: string | null) => {
+    setSelectedLeagueId(leagueId);
+    void refresh(dateFrom, dateTo, selectedGameId, leagueId);
+  };
+
+  const topPlayersPage = usePagination(data?.top_players ?? []);
+  const atRiskPage = usePagination(data?.at_risk ?? []);
+  const classificationPage = usePagination(data?.classification ?? []);
 
   if (roleLoading || (loading && !data)) {
     return (
@@ -142,6 +157,12 @@ function OrganizerAnalytics() {
           <p className="text-sm text-muted-foreground">
             Visualiza la actividad y retención de tus jugadores.
           </p>
+          <Link
+            to="/organizer/players"
+            className="mt-1 inline-block text-xs font-semibold text-primary hover:underline"
+          >
+            Ver detalle completo de jugadores →
+          </Link>
         </div>
 
         <div className="flex flex-wrap items-end gap-2">
@@ -170,6 +191,13 @@ function OrganizerAnalytics() {
           </Button>
         </div>
       </div>
+
+      {/* Circuito Nacional vs Ligas Internas — nunca se mezclan */}
+      <LeagueScopeTabs
+        availableLeagues={data.available_leagues}
+        value={selectedLeagueId}
+        onChange={handleLeagueScopeChange}
+      />
 
       {/* Filtro por TCG */}
       {data.game_breakdown.length > 0 && (
@@ -325,26 +353,29 @@ function OrganizerAnalytics() {
           {data.top_players.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin datos en este periodo.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground border-b">
-                  <tr>
-                    <th className="text-left py-2 px-2">#</th>
-                    <th className="text-left py-2 px-2">Geek Tag</th>
-                    <th className="text-right py-2 px-2">Torneos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.top_players.map((p, i) => (
-                    <tr key={p.player_id} className="border-b last:border-0">
-                      <td className="py-2 px-2 font-semibold">{i + 1}</td>
-                      <td className="py-2 px-2">{p.geek_tag}</td>
-                      <td className="py-2 px-2 text-right">{p.tournaments}</td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b">
+                    <tr>
+                      <th className="text-left py-2 px-2">#</th>
+                      <th className="text-left py-2 px-2">Geek Tag</th>
+                      <th className="text-right py-2 px-2">Torneos</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {topPlayersPage.pageItems.map((p, i) => (
+                      <tr key={p.player_id} className="border-b last:border-0">
+                        <td className="py-2 px-2 font-semibold">{(topPlayersPage.page - 1) * topPlayersPage.pageSize + i + 1}</td>
+                        <td className="py-2 px-2">{p.geek_tag}</td>
+                        <td className="py-2 px-2 text-right">{p.tournaments}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <TablePager page={topPlayersPage.page} totalPages={topPlayersPage.totalPages} onPageChange={topPlayersPage.setPage} />
+            </>
           )}
         </div>
       </div>
@@ -361,24 +392,27 @@ function OrganizerAnalytics() {
         {data.at_risk.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay jugadores en riesgo actualmente.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground border-b">
-                <tr>
-                  <th className="text-left py-2 px-2">Geek Tag</th>
-                  <th className="text-right py-2 px-2">Días sin venir</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.at_risk.map((p) => (
-                  <tr key={p.player_id} className="border-b last:border-0">
-                    <td className="py-2 px-2">{p.geek_tag}</td>
-                    <td className="py-2 px-2 text-right">{p.days_since} días</td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2 px-2">Geek Tag</th>
+                    <th className="text-right py-2 px-2">Días sin venir</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {atRiskPage.pageItems.map((p) => (
+                    <tr key={p.player_id} className="border-b last:border-0">
+                      <td className="py-2 px-2">{p.geek_tag}</td>
+                      <td className="py-2 px-2 text-right">{p.days_since} días</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <TablePager page={atRiskPage.page} totalPages={atRiskPage.totalPages} onPageChange={atRiskPage.setPage} />
+          </>
         )}
       </div>
 
@@ -397,7 +431,7 @@ function OrganizerAnalytics() {
               </tr>
             </thead>
             <tbody>
-              {data.classification.map((c) => (
+              {classificationPage.pageItems.map((c) => (
                 <tr key={c.player_id} className="border-b last:border-0">
                   <td className="py-2 px-2">{c.geek_tag}</td>
                   <td className="py-2 px-2 text-right">{c.tournaments_in_range}</td>
@@ -429,6 +463,7 @@ function OrganizerAnalytics() {
             </tbody>
           </table>
         </div>
+        <TablePager page={classificationPage.page} totalPages={classificationPage.totalPages} onPageChange={classificationPage.setPage} />
       </div>
     </div>
   );

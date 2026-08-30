@@ -45,7 +45,30 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       .eq("store_id", player.home_store_id);
     if (se) failDb(se);
 
-    const gameIds = Array.from(new Set((schedules ?? []).map((s: any) => s.game_id)));
+    // Épica 4: horarios propios de ligas internas que NO comparten slot con el
+    // circuito nacional se agregan como entradas de calendario aparte; los que
+    // sí comparten (shares_national_slot) solo etiquetan la entrada nacional.
+    const { data: leagueSchedules, error: lse } = await admin
+      .from("store_league_schedules")
+      .select("id, league_id, game_id, day_of_week, start_time, shares_national_slot, national_schedule_id, store_leagues(name, status)")
+      .eq("store_id", player.home_store_id);
+    if (lse) failDb(lse);
+
+    const activeLeagueSchedules = (leagueSchedules ?? []).filter(
+      (s: any) => (Array.isArray(s.store_leagues) ? s.store_leagues[0] : s.store_leagues)?.status === "active",
+    );
+    const sharedLeagueNameByNationalId = new Map<string, string>();
+    activeLeagueSchedules
+      .filter((s: any) => s.shares_national_slot && s.national_schedule_id)
+      .forEach((s: any) => {
+        const name = (Array.isArray(s.store_leagues) ? s.store_leagues[0] : s.store_leagues)?.name ?? null;
+        if (name) sharedLeagueNameByNationalId.set(s.national_schedule_id, name);
+      });
+    const ownLeagueSchedules = activeLeagueSchedules.filter((s: any) => !s.shares_national_slot);
+
+    const gameIds = Array.from(
+      new Set([...(schedules ?? []).map((s: any) => s.game_id), ...ownLeagueSchedules.map((s: any) => s.game_id)]),
+    );
     const { data: gamesData } = gameIds.length
       ? await admin.from("games").select("id, name").in("id", gameIds)
       : { data: [] as any[] };
@@ -53,7 +76,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
 
     const { data: weekTournaments } = await admin
       .from("tournaments")
-      .select("id, store_id, game_id, tournament_date, status, rejection_reason")
+      .select("id, store_id, game_id, tournament_date, status, rejection_reason, league_id")
       .eq("store_id", player.home_store_id)
       .gte("tournament_date", mondayStr)
       .lte("tournament_date", sundayStr);
@@ -61,13 +84,17 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
     const tournamentMap = new Map<string, any>();
     (weekTournaments ?? []).forEach((t: any) => {
       const d = new Date(t.tournament_date + "T12:00:00");
-      tournamentMap.set(`${t.store_id}-${t.game_id}-${d.getDay()}`, t);
+      tournamentMap.set(`${t.store_id}-${t.game_id}-${d.getDay()}-${t.league_id ?? "national"}`, t);
     });
 
     const nowMs = Date.now();
-    const entries = (schedules ?? []).map((s: any) => {
+    const buildEntry = (
+      s: { store_id: string; game_id: string; day_of_week: number; start_time: string; stores?: any },
+      leagueId: string | null,
+      leagueName: string | null,
+    ) => {
       const store = s.stores;
-      const tournament = tournamentMap.get(`${s.store_id}-${s.game_id}-${s.day_of_week}`);
+      const tournament = tournamentMap.get(`${s.store_id}-${s.game_id}-${s.day_of_week}-${leagueId ?? "national"}`);
       const offset = s.day_of_week === 0 ? 6 : s.day_of_week - 1;
       const entryDate = new Date(monday);
       entryDate.setDate(monday.getDate() + offset);
@@ -91,7 +118,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       else if (isFuture) reportStatus = "upcoming";
       else reportStatus = "pending";
       return {
-        id: `${s.store_id}-${s.game_id}-${s.day_of_week}`,
+        id: `${s.store_id}-${s.game_id}-${s.day_of_week}-${leagueId ?? "national"}`,
         store_id: s.store_id,
         game_id: s.game_id,
         game_name: gameNamesMap.get(s.game_id) ?? "—",
@@ -111,8 +138,21 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
         report_status: reportStatus,
         tournament_id: tournament?.id ?? null,
         tournament_status: tournament?.status ?? null,
+        league_id: leagueId,
+        league_name: leagueName,
       };
-    });
+    };
+
+    const entries = [
+      ...(schedules ?? []).map((s: any) => buildEntry(s, null, sharedLeagueNameByNationalId.get(s.id) ?? null)),
+      ...ownLeagueSchedules.map((s: any) =>
+        buildEntry(
+          s,
+          s.league_id,
+          (Array.isArray(s.store_leagues) ? s.store_leagues[0] : s.store_leagues)?.name ?? null,
+        ),
+      ),
+    ];
 
     const elapsedEntries = entries.filter((e: any) => !e.is_future);
     const uploadedSoFar = elapsedEntries.filter((e: any) => e.report_status === "submitted").length;

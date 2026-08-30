@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Loader2 } from "lucide-react";
 import { getManagerHistory } from "@/lib/nexus-manager.functions";
+import { BlockSelect } from "@/components/ui/block-select";
 
 type HistorySearch = {
   action_type?: string;
@@ -154,15 +155,15 @@ function HistoryPage() {
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <select
-            value={filters.action_type}
-            onChange={(e) => load({ action_type: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todas las acciones</option>
-            <option value="approved">Aprobados</option>
-            <option value="rejected">Rechazados</option>
-          </select>
+          <BlockSelect
+            value={filters.action_type || null}
+            onChange={(v) => load({ action_type: v ?? "", page: 1 })}
+            placeholder="Todas las acciones"
+            options={[
+              { value: "approved", label: "Aprobados" },
+              { value: "rejected", label: "Rechazados" },
+            ]}
+          />
           <input
             type="date"
             value={filters.date_from}

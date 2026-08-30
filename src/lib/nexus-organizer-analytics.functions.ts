@@ -53,7 +53,13 @@ function classifyPlayer(
 export const getStoreAnalytics = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
   .inputValidator(
-    (d: { store_id?: string; date_from?: string; date_to?: string; game_id?: string }) =>
+    (d: {
+      store_id?: string;
+      date_from?: string;
+      date_to?: string;
+      game_id?: string;
+      league_id?: string | null;
+    }) =>
       z
         .object({
           store_id: z.string().uuid().optional(),
@@ -66,6 +72,9 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
             .regex(/^\d{4}-\d{2}-\d{2}$/)
             .optional(),
           game_id: z.string().uuid().optional(),
+          // undefined/null = Circuito Nacional (league_id IS NULL, default histórico);
+          // uuid = esa liga interna específica. Épica 4: nunca se mezclan.
+          league_id: z.string().uuid().nullable().optional(),
         })
         .parse(d),
   )
@@ -116,12 +125,24 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
         : new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
-    // Fetch all results for this store with tournament date + game_id + player info
-    const { data: tournamentsInStore } = await admin
+    // Épica 4: Circuito Nacional y ligas internas se analizan por separado —
+    // nunca se combinan sus jugadores/torneos en la misma métrica.
+    const { data: activeLeagues } = await admin
+      .from("store_leagues")
+      .select("id, name")
+      .eq("store_id", storeId)
+      .eq("status", "active")
+      .order("name");
+
+    let tournamentsQuery = admin
       .from("tournaments")
       .select("id, tournament_date, game_id")
       .eq("store_id", storeId)
       .in("status", ["APPROVED", "PUBLISHED"]);
+    tournamentsQuery = data.league_id
+      ? tournamentsQuery.eq("league_id", data.league_id)
+      : tournamentsQuery.is("league_id", null);
+    const { data: tournamentsInStore } = await tournamentsQuery;
 
     const tournamentIds = (tournamentsInStore ?? []).map((t) => t.id);
     const tournamentMap = new Map(
@@ -296,10 +317,12 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       }))
       .filter((p) => p.tournaments > 0)
       .sort((a, b) => b.tournaments - a.tournaments)
-      .slice(0, 10);
+      .slice(0, 100);
 
     return {
       store_id: storeId,
+      league_id: data.league_id ?? null,
+      available_leagues: activeLeagues ?? [],
       range: {
         start: rangeStart.toISOString().split("T")[0],
         end: rangeEnd.toISOString().split("T")[0],

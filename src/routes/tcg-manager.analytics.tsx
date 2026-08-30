@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { BlockSelect } from "@/components/ui/block-select";
 
 import {
   Users,
@@ -205,34 +206,29 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
-        <select
-          value={zone}
-          onChange={(e) => {
-            setZone(e.target.value);
-            setStoreId("");
-          }}
-          className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
-        >
-          <option value="">Todas las zonas</option>
-          {ZONES.map((z) => (
-            <option key={z} value={z}>
-              {z}
-            </option>
-          ))}
-        </select>
+        <div className="w-40">
+          <BlockSelect
+            value={zone || null}
+            onChange={(v) => {
+              setZone(v ?? "");
+              setStoreId("");
+            }}
+            placeholder="Todas las zonas"
+            options={ZONES.map((z) => ({ value: z, label: z }))}
+          />
+        </div>
         {overview && overview.store_ranking.length > 0 && (
-          <select
-            value={storeId}
-            onChange={(e) => setStoreId(e.target.value)}
-            className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
-          >
-            <option value="">Todas las tiendas</option>
-            {overview.store_ranking.map((s) => (
-              <option key={s.store_id} value={s.store_id}>
-                {s.store_name}
-              </option>
-            ))}
-          </select>
+          <div className="w-48">
+            <BlockSelect
+              value={storeId || null}
+              onChange={(v) => setStoreId(v ?? "")}
+              placeholder="Todas las tiendas"
+              options={overview.store_ranking.map((s) => ({
+                value: s.store_id,
+                label: s.store_name,
+              }))}
+            />
+          </div>
         )}
         <input
           type="date"

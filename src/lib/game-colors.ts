@@ -63,3 +63,15 @@ export const ZONE_COLORS: Record<string, ZoneColor> = {
 export function colorsForZone(zone: string): ZoneColor {
   return ZONE_COLORS[zone] ?? ZONE_COLORS[DEFAULT_ZONE];
 }
+
+// Épica 4: acento de borde para distinguir ligas internas del Circuito
+// Nacional (sin liga = sin acento). Color determinista por league_id para no
+// necesitar una tabla de colores por liga.
+const LEAGUE_ACCENTS = ["border-l-fuchsia-400", "border-l-teal-400", "border-l-rose-400", "border-l-lime-400", "border-l-violet-400"];
+
+export function leagueAccentClass(leagueId: string | null | undefined): string {
+  if (!leagueId) return "";
+  let hash = 0;
+  for (let i = 0; i < leagueId.length; i++) hash = (hash * 31 + leagueId.charCodeAt(i)) >>> 0;
+  return `border-l-4 ${LEAGUE_ACCENTS[hash % LEAGUE_ACCENTS.length]}`;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { BarChart3, Calendar, History, Loader2, Menu, Scale, Store, Trophy, Upload } from "lucide-react";
+import { BarChart3, Calendar, History, Loader2, Medal, Menu, Scale, Store, Trophy, Upload, Users } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { useBadgeCounts } from "@/hooks/use-badge-counts";
@@ -37,11 +37,13 @@ function OrganizerLayout() {
         onMobileClose={() => setMenuOpen(false)}
         items={[
           { to: "/organizer", label: "Analytics", icon: <BarChart3 size={16} />, exact: true },
+          { to: "/organizer/players", label: "Jugadores", icon: <Users size={16} /> },
           { to: "/organizer/store", label: "Mi Tienda", icon: <Store size={16} /> },
           { to: "/organizer/tournaments", label: "Mis Torneos", icon: <Trophy size={16} />, badge: counts?.pending ?? 0 },
           { to: "/organizer/history", label: "Historial de Torneos", icon: <History size={16} /> },
           { to: "/organizer/calendar", label: "Calendario", icon: <Calendar size={16} /> },
           { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
+          { to: "/organizer/leagues", label: "Ligas Internas", icon: <Medal size={16} /> },
           { to: "/organizer/appeals", label: "Apelaciones", icon: <Scale size={16} />, badge: counts?.appeals ?? 0 },
         ]}
       />

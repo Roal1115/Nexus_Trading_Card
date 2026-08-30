@@ -5,3 +5,4 @@ export * from "./nexus-organizer-stores.functions";
 export * from "./nexus-organizer-calendar.functions";
 export * from "./nexus-organizer-analytics.functions";
 export * from "./nexus-organizer-history.functions";
+export * from "./nexus-organizer-leagues.functions";

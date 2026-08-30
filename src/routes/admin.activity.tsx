@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Activity, Filter, Search } from "lucide-react";
 import { listAuditLog, type AuditLogRow } from "@/lib/nexus-admin.functions";
 import { useActivityLastSeen } from "@/hooks/use-badge-counts";
+import { BlockSelect } from "@/components/ui/block-select";
 
 export const Route = createFileRoute("/admin/activity")({
   head: () => ({ meta: [{ title: "Activity Center — Nexus" }] }),
@@ -140,39 +141,36 @@ function ActivityPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          <select
-            value={filters.action}
-            onChange={(e) => load({ action: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todas las acciones</option>
-            {Object.entries(ACTION_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v.icon} {v.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.actor_role}
-            onChange={(e) => load({ actor_role: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los roles</option>
-            <option value="admin">Admin</option>
-            <option value="tcg_manager">TCG Manager</option>
-            <option value="organizer">Organizador</option>
-          </select>
-          <select
-            value={filters.target_type}
-            onChange={(e) => load({ target_type: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los tipos</option>
-            <option value="tournament">Torneo</option>
-            <option value="player">Jugador</option>
-            <option value="store">Tienda</option>
-            <option value="season">Temporada</option>
-          </select>
+          <BlockSelect
+            value={filters.action || null}
+            onChange={(v) => load({ action: v ?? "", page: 1 })}
+            placeholder="Todas las acciones"
+            options={Object.entries(ACTION_LABELS).map(([k, v]) => ({
+              value: k,
+              label: `${v.icon} ${v.label}`,
+            }))}
+          />
+          <BlockSelect
+            value={filters.actor_role || null}
+            onChange={(v) => load({ actor_role: v ?? "", page: 1 })}
+            placeholder="Todos los roles"
+            options={[
+              { value: "admin", label: "Admin" },
+              { value: "tcg_manager", label: "TCG Manager" },
+              { value: "organizer", label: "Organizador" },
+            ]}
+          />
+          <BlockSelect
+            value={filters.target_type || null}
+            onChange={(v) => load({ target_type: v ?? "", page: 1 })}
+            placeholder="Todos los tipos"
+            options={[
+              { value: "tournament", label: "Torneo" },
+              { value: "player", label: "Jugador" },
+              { value: "store", label: "Tienda" },
+              { value: "season", label: "Temporada" },
+            ]}
+          />
           <div className="flex gap-2">
             <input
               type="date"

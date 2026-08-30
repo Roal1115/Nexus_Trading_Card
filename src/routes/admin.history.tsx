@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Info, ExternalLink, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { FileLink } from "@/components/ui/FileLink";
+import { BlockSelect } from "@/components/ui/block-select";
 import {
   getAdminTournamentHistory,
   getAdminFilterOptions,
@@ -253,49 +254,38 @@ function AdminHistoryPage() {
           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          <select
-            value={filters.status}
-            onChange={(e) => load({ status: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los estados</option>
-            <option value="DRAFT">DRAFT</option>
-            <option value="APPROVED">APPROVED</option>
-            <option value="PUBLISHED">PUBLISHED</option>
-            <option value="UNPUBLISHED">UNPUBLISHED</option>
-          </select>
-          <select
-            value={filters.game_id}
-            onChange={(e) => load({ game_id: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los TCG</option>
-            {opts.games.map((g) => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-          <select
-            value={filters.store_id}
-            onChange={(e) => load({ store_id: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todas las tiendas</option>
-            {opts.stores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}{s.city ? ` — ${s.city}` : ""}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.season_id}
-            onChange={(e) => load({ season_id: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todas las temporadas</option>
-            {opts.seasons.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          <BlockSelect
+            value={filters.status || null}
+            onChange={(v) => load({ status: v ?? "", page: 1 })}
+            placeholder="Todos los estados"
+            options={[
+              { value: "DRAFT", label: "DRAFT" },
+              { value: "APPROVED", label: "APPROVED" },
+              { value: "PUBLISHED", label: "PUBLISHED" },
+              { value: "UNPUBLISHED", label: "UNPUBLISHED" },
+            ]}
+          />
+          <BlockSelect
+            value={filters.game_id || null}
+            onChange={(v) => load({ game_id: v ?? "", page: 1 })}
+            placeholder="Todos los TCG"
+            options={opts.games.map((g) => ({ value: g.id, label: g.name }))}
+          />
+          <BlockSelect
+            value={filters.store_id || null}
+            onChange={(v) => load({ store_id: v ?? "", page: 1 })}
+            placeholder="Todas las tiendas"
+            options={opts.stores.map((s) => ({
+              value: s.id,
+              label: s.name + (s.city ? ` — ${s.city}` : ""),
+            }))}
+          />
+          <BlockSelect
+            value={filters.season_id || null}
+            onChange={(v) => load({ season_id: v ?? "", page: 1 })}
+            placeholder="Todas las temporadas"
+            options={opts.seasons.map((s) => ({ value: s.id, label: s.name }))}
+          />
           <input
             type="date"
             value={filters.date_from}

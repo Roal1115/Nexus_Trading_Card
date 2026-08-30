@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, ExternalLink, Info, Filter } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
+import { BlockSelect } from "@/components/ui/block-select";
 import { toast } from "sonner";
 import { SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useNexusRole } from "@/hooks/use-nexus-role";
@@ -256,28 +257,22 @@ function TournamentsPage() {
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          <select
-            value={filters.status}
-            onChange={(e) => updateFilter({ status: e.target.value })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los estados</option>
-            <option value="DRAFT">Borrador</option>
-            <option value="APPROVED">Aprobado</option>
-            <option value="PUBLISHED">Publicado</option>
-          </select>
-          <select
-            value={filters.game_id}
-            onChange={(e) => updateFilter({ game_id: e.target.value })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los TCG</option>
-            {gameOptions.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
+          <BlockSelect
+            value={filters.status || null}
+            onChange={(v) => updateFilter({ status: v ?? "" })}
+            placeholder="Todos los estados"
+            options={[
+              { value: "DRAFT", label: "Borrador" },
+              { value: "APPROVED", label: "Aprobado" },
+              { value: "PUBLISHED", label: "Publicado" },
+            ]}
+          />
+          <BlockSelect
+            value={filters.game_id || null}
+            onChange={(v) => updateFilter({ game_id: v ?? "" })}
+            placeholder="Todos los TCG"
+            options={gameOptions.map((g) => ({ value: g.id, label: g.name }))}
+          />
           <input
             type="date"
             value={filters.date_from}

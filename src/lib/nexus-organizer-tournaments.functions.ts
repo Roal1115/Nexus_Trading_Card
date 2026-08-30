@@ -257,6 +257,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       rows: Array<z.infer<typeof ResultRowSchema>>;
       tournament_id?: string;
       csv_url?: string | null;
+      league_id: string | null;
     }) =>
       z
         .object({
@@ -266,6 +267,8 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
           rows: z.array(ResultRowSchema).min(1).max(2000),
           tournament_id: z.string().uuid().optional(),
           csv_url: z.string().url().max(2048).nullable().optional(),
+          // null = Liga Semestral / Circuito Nacional (default), uuid = liga interna
+          league_id: z.string().uuid().nullable(),
         })
         .parse(d),
   )
@@ -321,35 +324,65 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: existing, error: dupErr } = await admin
+    // Si se eligió una liga interna, debe existir, estar activa y ser de esta tienda.
+    if (data.league_id) {
+      const { data: league, error: lge } = await admin
+        .from("store_leagues")
+        .select("id")
+        .eq("id", data.league_id)
+        .eq("store_id", data.store_id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (lge) failDb(lge);
+      if (!league) throw new Error("La liga interna seleccionada ya no está disponible.");
+    }
+
+    // Duplicado se checa por liga: el mismo TCG/día puede tener un torneo
+    // semestral (league_id null) y, aparte, uno por cada liga interna.
+    let dupQuery = admin
       .from("tournaments")
       .select("id")
       .eq("store_id", data.store_id)
       .eq("game_id", data.game_id)
-      .eq("tournament_date", data.tournament_date)
-      .maybeSingle();
+      .eq("tournament_date", data.tournament_date);
+    dupQuery = data.league_id ? dupQuery.eq("league_id", data.league_id) : dupQuery.is("league_id", null);
+    const { data: existing, error: dupErr } = await dupQuery.maybeSingle();
     if (dupErr) failDb(dupErr);
     if (existing) {
       return {
         ok: false as const,
         reason: "duplicate" as const,
-        message: "Ya existe un torneo registrado para esta tienda, juego y fecha.",
+        message: "Ya existe un torneo registrado para esta tienda, juego, fecha y liga.",
       };
     }
 
     const q = computeQualifying(data.tournament_date);
+    // Épica 4: los torneos de liga interna son control total del organizador
+    // — no pasan por la cola de aprobación del admin, se publican directo.
+    const now = new Date().toISOString();
     const insertPayload: TablesInsert<"tournaments"> = {
       store_id: data.store_id,
       game_id: data.game_id,
       tournament_date: data.tournament_date,
       ...q,
-      status: "DRAFT",
+      status: data.league_id ? "PUBLISHED" : "DRAFT",
       csv_url: data.csv_url ?? null,
+      league_id: data.league_id,
+      ...(data.league_id
+        ? { approved_at: now, approved_by: player.id, published_at: now }
+        : {}),
     };
     if (data.tournament_id) insertPayload.id = data.tournament_id;
     const { data: tournament, error: te } = await admin.from("tournaments").insert(insertPayload).select("id").single();
     if (te) failDb(te);
     const tournamentId = tournament.id;
+
+    if (data.league_id) {
+      const { error: lte } = await admin
+        .from("store_league_tournaments")
+        .upsert({ league_id: data.league_id, tournament_id: tournamentId }, { onConflict: "league_id,tournament_id" });
+      if (lte) failDb(lte);
+    }
 
     const cleanup = async (msg: string): Promise<never> => {
       await admin.from("tournament_results").delete().eq("tournament_id", tournamentId);

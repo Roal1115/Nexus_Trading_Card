@@ -1,0 +1,4 @@
+Item,Priority,Status,Notes
+Historial del jugador (pagina dedicada),Media,Por hacer,Ya existe el dato en RoundHistoryList/RoundsAccordionReadOnly - falta la vista dedicada
+Encuesta de Sponsors (beneficios),Alta,Bloqueado - definir con negocio,Falta definir que beneficio se obtiene y como se canjea
+Tiendas mas asistidas (stat jugador),Alta,Por hacer,Dato ya existe en attendance falta agregacion por store_id

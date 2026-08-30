@@ -10,6 +10,7 @@ import {
   DEFAULT_DOT_COLOR,
   colorClassForGame,
   dotColorForGame,
+  leagueAccentClass,
 } from "@/lib/game-colors";
 export {
   GAME_COLORS,
@@ -18,10 +19,11 @@ export {
   DEFAULT_DOT_COLOR,
   colorClassForGame,
   dotColorForGame,
+  leagueAccentClass,
 };
 
 export const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-export const HOURS = Array.from({ length: 10 }, (_, i) => i + 16); // 2pm a 10pm
+export const HOURS = Array.from({ length: 11 }, (_, i) => i + 13); // 1pm a 11pm
 
 export function useWeekNav() {
   const [weekStart, setWeekStart] = useState<Date>(() => sundayOfWeek(new Date()));
@@ -82,16 +84,20 @@ export function CalendarEntry({
   onClick: () => void;
 }) {
   const colorClass = colorClassForGame(entry.game_slug);
+  const accentClass = leagueAccentClass(entry.league_id);
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded border px-1.5 py-1 transition hover:brightness-110 ${colorClass} ${compact ? "py-0.5" : ""}`}
+      className={`w-full text-left rounded border px-1.5 py-1 transition hover:brightness-110 ${colorClass} ${accentClass} ${compact ? "py-0.5" : ""}`}
     >
       <p className={`font-semibold truncate ${compact ? "text-[9px]" : "text-[10px]"}`}>
         {entry.store_name}
         {attended && <CheckCircle2 size={8} className="inline text-emerald-400 ml-1" />}
       </p>
       {!compact && <p className="text-[9px] opacity-70 truncate">{entry.game_name}</p>}
+      {!compact && entry.league_name && (
+        <p className="text-[8px] font-semibold uppercase tracking-wide opacity-80 truncate">{entry.league_name}</p>
+      )}
     </button>
   );
 }

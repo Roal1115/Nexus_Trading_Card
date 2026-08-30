@@ -328,6 +328,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       .eq("game_id", t.game_id)
       .eq("tournament_date", t.tournament_date)
       .neq("id", t.id)
+      .is("league_id", null)
       .in("status", ["APPROVED", "PUBLISHED"]);
     for (const d of dups ?? []) {
       alerts.push({

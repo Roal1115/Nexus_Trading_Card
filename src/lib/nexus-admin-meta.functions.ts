@@ -88,6 +88,57 @@ export const closeSeason = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateSeason = createServerFn({ method: "POST" })
+  .middleware([requireNexusAdmin])
+  .inputValidator(
+    (d: {
+      season_id: string;
+      name: string;
+      slug: string;
+      start_date: string;
+      end_date: string;
+      status: "UPCOMING" | "ACTIVE" | "CLOSED";
+    }) =>
+      z
+        .object({
+          season_id: z.string().uuid(),
+          name: z.string().min(3).max(120),
+          slug: z
+            .string()
+            .min(3)
+            .max(80)
+            .regex(/^[a-z0-9-]+$/, "Slug inválido"),
+          start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          status: z.enum(["UPCOMING", "ACTIVE", "CLOSED"]),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (data.end_date < data.start_date) {
+      throw new Error("La fecha de fin debe ser posterior a la de inicio.");
+    }
+    if (data.status === "ACTIVE") {
+      const { error: de } = await admin.from("seasons").update({ is_active: false }).neq("id", data.season_id);
+      if (de) failDb(de);
+    }
+    const { error } = await admin
+      .from("seasons")
+      .update({
+        name: data.name,
+        slug: data.slug,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        status: data.status,
+        is_active: data.status === "ACTIVE",
+      })
+      .eq("id", data.season_id);
+    if (error) failDb(error);
+    await logAction(admin, player, "SEASON_UPDATED", "season", data.season_id, data.name);
+    return { ok: true };
+  });
+
 // ---------- Audit log ----------
 export const listAuditLog = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
