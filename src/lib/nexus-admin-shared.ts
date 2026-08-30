@@ -84,12 +84,19 @@ export async function recomputeSnapshot(
   filter: { year?: number; month?: number; season_id?: string },
   season_id?: string,
 ) {
+  // Épica 4: el leaderboard del Circuito Nacional (leaderboard_snapshots) solo
+  // se calcula con torneos SIN liga interna (league_id null) — por default
+  // ningún torneo de liga interna cuenta para el circuito padre. Si un
+  // organizador quiere que un torneo nacional también cuente para su liga
+  // interna, eso se hace al revés: agregándolo manualmente a la liga desde
+  // "Torneos y premios" (store_league_tournaments), sin tocar este cálculo.
   let q = admin
     .from("tournaments")
     .select("id, store_id, tournament_date, qualifying_year, qualifying_month")
     .eq("status", "PUBLISHED")
     .eq("game_id", game_id)
-    .eq("store_id", store_id);
+    .eq("store_id", store_id)
+    .is("league_id", null);
   if (filter.year != null) q = q.eq("qualifying_year", filter.year);
   if (filter.month != null) q = q.eq("qualifying_month", filter.month);
   if (filter.season_id != null) q = q.eq("season_id", filter.season_id);
