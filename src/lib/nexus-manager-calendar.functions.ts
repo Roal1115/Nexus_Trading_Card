@@ -162,6 +162,21 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       .gte("tournament_date", mondayStr)
       .lte("tournament_date", sundayStr);
 
+    // Excepciones puntuales (una fecha) al schedule nacional de esta semana —
+    // mismo mecanismo que /organizer/calendar usa para ligas internas.
+    const scheduleIds = (schedules ?? []).map((s: any) => s.id);
+    const { data: overrides } = scheduleIds.length
+      ? await admin
+          .from("store_schedule_overrides")
+          .select("national_schedule_id, occurrence_date, start_time, label")
+          .in("national_schedule_id", scheduleIds)
+          .gte("occurrence_date", mondayStr)
+          .lte("occurrence_date", sundayStr)
+      : { data: [] as any[] };
+    const overrideByScheduleAndDate = new Map<string, { start_time: string | null; label: string | null }>(
+      (overrides ?? []).map((o: any) => [`${o.national_schedule_id}_${o.occurrence_date}`, { start_time: o.start_time, label: o.label }]),
+    );
+
     // Map: storeId-gameId-dayOfWeek -> tournament
     const tournamentMap = new Map<string, any>();
     (weekTournaments ?? []).forEach((t: any) => {
@@ -186,8 +201,11 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       entryDate.setDate(monday.getDate() + offset);
       const entryDateStr = toLocalDateStr(entryDate);
 
+      const override = overrideByScheduleAndDate.get(`${s.id}_${entryDateStr}`);
+      const effectiveStartTime = override?.start_time || s.start_time;
+
       // Tournament timing
-      const [h, m] = String(s.start_time).split(":").map(Number);
+      const [h, m] = String(effectiveStartTime).split(":").map(Number);
       const tStart = new Date(entryDate);
       tStart.setHours(h, m, 0, 0);
       const tEnd = new Date(tStart);
@@ -217,6 +235,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
 
       return {
         id: `${s.store_id}-${s.game_id}-${s.day_of_week}`,
+        national_schedule_id: s.id,
         store_id: s.store_id,
         game_id: s.game_id,
         game_name: gameNamesMap.get(s.game_id) ?? "—",
@@ -228,7 +247,9 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
         instagram: store?.instagram ?? null,
         day_of_week: s.day_of_week,
         date: entryDateStr,
-        start_time: String(s.start_time).slice(0, 5),
+        start_time: String(effectiveStartTime).slice(0, 5),
+        override_label: override?.label ?? null,
+        is_override: Boolean(override),
         is_past: isPast,
         is_today: isToday,
         is_future: isFuture,
@@ -261,6 +282,82 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
           .length,
       },
     };
+  });
+
+// ---------- Excepciones puntuales al schedule nacional (una sola fecha) ----------
+
+export const upsertScheduleOverride = createServerFn({ method: "POST" })
+  .middleware([requireNexusManager])
+  .inputValidator(
+    (d: { national_schedule_id: string; occurrence_date: string; start_time?: string | null; label?: string | null }) =>
+      z
+        .object({
+          national_schedule_id: z.string().uuid(),
+          occurrence_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          start_time: z
+            .string()
+            .regex(/^\d{2}:\d{2}$/)
+            .nullable()
+            .optional(),
+          label: z.string().max(120).nullable().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { data: schedule, error: fe } = await admin
+      .from("store_schedules")
+      .select("store_id, game_id")
+      .eq("id", data.national_schedule_id)
+      .maybeSingle();
+    if (fe) failDb(fe);
+    if (!schedule) throw new Error("Horario no encontrado");
+    await assertManagerOwnsGame(admin, player, schedule.game_id);
+
+    const { error } = await admin.from("store_schedule_overrides").upsert(
+      {
+        national_schedule_id: data.national_schedule_id,
+        store_id: schedule.store_id,
+        occurrence_date: data.occurrence_date,
+        start_time: data.start_time || null,
+        label: data.label || null,
+      },
+      { onConflict: "national_schedule_id,occurrence_date" },
+    );
+    if (error) failDb(error);
+    return { ok: true };
+  });
+
+export const deleteScheduleOverride = createServerFn({ method: "POST" })
+  .middleware([requireNexusManager])
+  .inputValidator((d: { national_schedule_id: string; occurrence_date: string }) =>
+    z
+      .object({
+        national_schedule_id: z.string().uuid(),
+        occurrence_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    const { data: schedule, error: fe } = await admin
+      .from("store_schedules")
+      .select("game_id")
+      .eq("id", data.national_schedule_id)
+      .maybeSingle();
+    if (fe) failDb(fe);
+    if (!schedule) return { ok: true };
+    await assertManagerOwnsGame(admin, player, schedule.game_id);
+
+    const { error } = await admin
+      .from("store_schedule_overrides")
+      .delete()
+      .eq("national_schedule_id", data.national_schedule_id)
+      .eq("occurrence_date", data.occurrence_date);
+    if (error) failDb(error);
+    return { ok: true };
   });
 
 // ==================== Store Schedules (Manager) ====================

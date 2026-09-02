@@ -22,6 +22,8 @@ import {
   BarChart,
   Bar,
   Cell,
+  Legend,
+  ReferenceLine,
 } from "recharts";
 import { Link } from "@tanstack/react-router";
 import { useNexusRole } from "@/hooks/use-nexus-role";
@@ -36,10 +38,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TablePager } from "@/components/ui/table-pager";
-import { LeagueScopeTabs } from "@/components/organizer/league-scope-tabs";
-import { SkeletonLine, SkeletonBlock, TcgRankCardSkeleton } from "@/components/ui/skeleton-loader";
+import { ScopeFilters } from "@/components/organizer/scope-filters";
+import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/organizer/")({
   head: () => ({ meta: [{ title: "Analytics — Nexus" }] }),
@@ -104,10 +105,9 @@ function OrganizerAnalytics() {
     void refresh(dateFrom, dateTo, selectedGameId, selectedLeagueId);
   };
 
-  const handleTabChange = (gameId: string) => {
-    const gid = gameId === "all" ? null : gameId;
-    setSelectedGameId(gid);
-    void refresh(dateFrom, dateTo, gid, selectedLeagueId);
+  const handleGameChange = (gameId: string | null) => {
+    setSelectedGameId(gameId);
+    void refresh(dateFrom, dateTo, gameId, selectedLeagueId);
   };
 
   const handleLeagueScopeChange = (leagueId: string | null) => {
@@ -122,15 +122,77 @@ function OrganizerAnalytics() {
   if (roleLoading || (loading && !data)) {
     return (
       <div className="space-y-6 p-4 md:p-6">
-        <div className="space-y-2">
-          <SkeletonLine width="w-20" height="h-3" />
-          <SkeletonLine width="w-64" height="h-8" />
+        {/* Header + filtros */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div className="space-y-2">
+            <SkeletonLine width="w-20" height="h-3" />
+            <SkeletonLine width="w-64" height="h-8" />
+            <SkeletonLine width="w-48" height="h-4" />
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <SkeletonBlock className="h-9 w-32 rounded-md" />
+            <SkeletonBlock className="h-9 w-32 rounded-md" />
+            <SkeletonBlock className="h-9 w-20 rounded-md" />
+          </div>
         </div>
+
+        {/* Filtros: liga + tcg */}
+        <div className="flex flex-wrap items-end gap-3">
+          <SkeletonBlock className="h-16 w-full max-w-[220px] rounded-md" />
+          <SkeletonBlock className="h-16 w-full max-w-[220px] rounded-md" />
+        </div>
+
+        {/* Jugadores totales + Asistencias totales + Clasificación */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TcgRankCardSkeleton />
-          <SkeletonBlock className="h-40 w-full rounded-lg" />
+          <div className="grid grid-cols-2 gap-4">
+            <SkeletonBlock className="h-40 rounded-2xl" />
+            <SkeletonBlock className="h-40 rounded-2xl" />
+          </div>
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <SkeletonLine width="w-40" height="h-4" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonBlock key={i} className="h-24 rounded-lg" />
+              ))}
+            </div>
+          </div>
         </div>
-        <SkeletonBlock className="h-64 w-full rounded-lg" />
+
+        {/* Tendencia de asistencia */}
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <SkeletonLine width="w-40" height="h-4" />
+          <SkeletonBlock className="h-64 w-full rounded-lg" />
+        </div>
+
+        {/* Desglose por TCG + Top jugadores */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <SkeletonLine width="w-32" height="h-4" />
+            <SkeletonBlock className="h-52 w-full rounded-lg" />
+          </div>
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <SkeletonLine width="w-28" height="h-4" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonLine key={i} width="w-full" height="h-6" />
+            ))}
+          </div>
+        </div>
+
+        {/* Jugadores en riesgo */}
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <SkeletonLine width="w-48" height="h-4" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonLine key={i} width="w-full" height="h-6" />
+          ))}
+        </div>
+
+        {/* Detalle por jugador */}
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <SkeletonLine width="w-40" height="h-4" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonLine key={i} width="w-full" height="h-6" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -192,35 +254,33 @@ function OrganizerAnalytics() {
         </div>
       </div>
 
-      {/* Circuito Nacional vs Ligas Internas — nunca se mezclan */}
-      <LeagueScopeTabs
+      {/* Liga (Circuito Nacional vs. ligas internas, nunca se mezclan) + TCG */}
+      <ScopeFilters
         availableLeagues={data.available_leagues}
-        value={selectedLeagueId}
-        onChange={handleLeagueScopeChange}
+        selectedLeagueId={selectedLeagueId}
+        onLeagueChange={handleLeagueScopeChange}
+        games={data.game_breakdown}
+        selectedGameId={selectedGameId}
+        onGameChange={handleGameChange}
       />
 
-      {/* Filtro por TCG */}
-      {data.game_breakdown.length > 0 && (
-        <Tabs value={selectedGameId ?? "all"} onValueChange={handleTabChange}>
-          <TabsList className="flex flex-wrap h-auto">
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            {data.game_breakdown.map((g) => (
-              <TabsTrigger key={g.game_id} value={g.game_id}>
-                {g.game_name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      )}
-
-      {/* Jugadores totales + Clasificación de Jugadores */}
+      {/* Jugadores totales + Asistencias totales + Clasificación de Jugadores */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="glass col-span-1 flex flex-col items-center justify-center rounded-2xl p-6 sm:col-span-1">
-          <Users size={28} className="mb-2 text-primary" />
-          <div className="text-4xl font-bold text-white">{data.total_players}</div>
-          <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">
-            Jugadores totales en el periodo
-          </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="glass flex flex-col items-center justify-center rounded-2xl p-6">
+            <Users size={28} className="mb-2 text-primary" />
+            <div className="text-4xl font-bold text-white">{data.total_players}</div>
+            <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">
+              Jugadores únicos en el periodo
+            </p>
+          </div>
+          <div className="glass flex flex-col items-center justify-center rounded-2xl p-6">
+            <Trophy size={28} className="mb-2 text-primary" />
+            <div className="text-4xl font-bold text-white">{data.total_attendance}</div>
+            <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">
+              Asistencias totales (todas las inscripciones)
+            </p>
+          </div>
         </div>
 
         <div className="rounded-lg border bg-card p-4">
@@ -264,7 +324,11 @@ function OrganizerAnalytics() {
 
       {/* Tendencia de asistencia */}
       <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-semibold mb-3">Tendencia de Asistencia</h2>
+        <h2 className="text-sm font-semibold mb-1">Tendencia de Asistencia</h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          Total de jugadores únicos por semana — si hubo más de un torneo esa semana, suma los de ambos sin
+          duplicar jugadores repetidos.
+        </p>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={data.attendance_trend}>
             <defs>
@@ -287,18 +351,106 @@ function OrganizerAnalytics() {
               }}
               labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
               itemStyle={{ color: "#e5e7eb" }}
+              cursor={{ stroke: "#f97316", strokeWidth: 1, strokeOpacity: 0.35 }}
+              animationDuration={150}
+              animationEasing="ease-out"
+              labelFormatter={(label, payload) => {
+                const count = payload?.[0]?.payload?.tournament_count ?? 0;
+                const suffix = count > 1 ? ` · ${count} torneos esa semana` : count === 1 ? " · 1 torneo" : "";
+                return `${label}${suffix}`;
+              }}
             />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
             <Area
               type="monotone"
               dataKey="players"
-              name="Jugadores"
+              name="Jugadores únicos"
               stroke="#f97316"
               strokeWidth={2}
               fill="url(#attendanceGradient)"
               isAnimationActive
               animationDuration={1000}
+              activeDot={{ r: 6, style: { transition: "cx 150ms ease-out, cy 150ms ease-out" } }}
+            />
+            <Area
+              type="monotone"
+              dataKey="total_entries"
+              name="Asistencias totales"
+              stroke="#60a5fa"
+              strokeWidth={2}
+              fill="none"
+              isAnimationActive
+              animationDuration={1000}
+              activeDot={{ r: 6, style: { transition: "cx 150ms ease-out, cy 150ms ease-out" } }}
             />
           </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Jugadores nuevos vs. recurrentes por semana */}
+      <div className="rounded-lg border bg-card p-4">
+        <h2 className="text-sm font-semibold mb-1">Nuevos vs. Recurrentes</h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          Nuevo = primera vez que juega en esta tienda. Bajas (en negativo) = jugadores que cruzan el umbral de
+          inactivo ({data.settings.inactive_threshold_days} días sin venir) esa semana.
+        </p>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={data.attendance_trend} barCategoryGap="30%">
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" vertical={false} />
+            <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
+            <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+            <ReferenceLine y={0} stroke="#ffffff70" strokeWidth={1.5} />
+            <Tooltip
+              cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              contentStyle={{
+                background: "#1f2937",
+                border: "1px solid #4b5563",
+                borderRadius: 8,
+                fontSize: 12,
+                color: "#f9fafb",
+                padding: "8px 12px",
+              }}
+              labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+              itemStyle={{ color: "#e5e7eb" }}
+              formatter={(value, name) => {
+                const label = name === "new_players" ? "Nuevos" : name === "returning_players" ? "Recurrentes" : "Bajas";
+                return [name === "churned_players" ? Math.abs(Number(value)) : value, label];
+              }}
+            />
+            <Legend
+              wrapperStyle={{ fontSize: 11 }}
+              formatter={(value) =>
+                value === "new_players" ? "Nuevos" : value === "returning_players" ? "Recurrentes" : "Bajas"
+              }
+            />
+            <Bar
+              dataKey="new_players"
+              name="new_players"
+              stackId="a"
+              fill="#10B981"
+              stroke="#065f46"
+              strokeWidth={1}
+              radius={[0, 0, 4, 4]}
+            />
+            <Bar
+              dataKey="returning_players"
+              name="returning_players"
+              stackId="a"
+              fill="#f97316"
+              stroke="#9a3412"
+              strokeWidth={1}
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar
+              dataKey="churned_players"
+              name="churned_players"
+              stackId="a"
+              fill="#ef4444"
+              stroke="#7f1d1d"
+              strokeWidth={1}
+              radius={[0, 0, 4, 4]}
+            />
+          </BarChart>
         </ResponsiveContainer>
       </div>
 
@@ -327,9 +479,10 @@ function OrganizerAnalytics() {
                   itemStyle={{ color: "#e5e7eb" }}
                   cursor={false}
                 />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar
                   dataKey="players"
-                  name="Jugadores"
+                  name="Jugadores únicos"
                   radius={[4, 4, 0, 0]}
                   isAnimationActive
                   animationDuration={800}
@@ -339,6 +492,14 @@ function OrganizerAnalytics() {
                     <Cell key={i} fill="#f97316" style={{ fill: "#f97316" }} />
                   ))}
                 </Bar>
+                <Bar
+                  dataKey="total_entries"
+                  name="Asistencias totales"
+                  fill="#60a5fa"
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive
+                  animationDuration={800}
+                />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -361,6 +522,7 @@ function OrganizerAnalytics() {
                       <th className="text-left py-2 px-2">#</th>
                       <th className="text-left py-2 px-2">Geek Tag</th>
                       <th className="text-right py-2 px-2">Torneos</th>
+                      <th className="text-right py-2 px-2">Puntos</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -369,6 +531,7 @@ function OrganizerAnalytics() {
                         <td className="py-2 px-2 font-semibold">{(topPlayersPage.page - 1) * topPlayersPage.pageSize + i + 1}</td>
                         <td className="py-2 px-2">{p.geek_tag}</td>
                         <td className="py-2 px-2 text-right">{p.tournaments}</td>
+                        <td className="py-2 px-2 text-right">{p.points}</td>
                       </tr>
                     ))}
                   </tbody>

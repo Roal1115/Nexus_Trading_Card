@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Trophy } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Trophy, Users, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { usePagination } from "@/hooks/use-pagination";
@@ -10,9 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TablePager } from "@/components/ui/table-pager";
-import { LeagueScopeTabs } from "@/components/organizer/league-scope-tabs";
+import { ScopeFilters } from "@/components/organizer/scope-filters";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/organizer/players")({
@@ -78,10 +77,9 @@ function OrganizerPlayersPage() {
     void refresh(dateFrom, dateTo, selectedGameId, selectedLeagueId);
   };
 
-  const handleTabChange = (gameId: string) => {
-    const gid = gameId === "all" ? null : gameId;
-    setSelectedGameId(gid);
-    void refresh(dateFrom, dateTo, gid, selectedLeagueId);
+  const handleGameChange = (gameId: string | null) => {
+    setSelectedGameId(gameId);
+    void refresh(dateFrom, dateTo, gameId, selectedLeagueId);
   };
 
   const handleLeagueScopeChange = (leagueId: string | null) => {
@@ -152,26 +150,33 @@ function OrganizerPlayersPage() {
         </div>
       </div>
 
-      {/* Circuito Nacional vs Ligas Internas — nunca se mezclan */}
-      <LeagueScopeTabs
+      {/* Liga (Circuito Nacional vs. ligas internas, nunca se mezclan) + TCG */}
+      <ScopeFilters
         availableLeagues={data.available_leagues}
-        value={selectedLeagueId}
-        onChange={handleLeagueScopeChange}
+        selectedLeagueId={selectedLeagueId}
+        onLeagueChange={handleLeagueScopeChange}
+        games={data.game_breakdown}
+        selectedGameId={selectedGameId}
+        onGameChange={handleGameChange}
       />
 
-      {/* Filtro por TCG */}
-      {data.game_breakdown.length > 0 && (
-        <Tabs value={selectedGameId ?? "all"} onValueChange={handleTabChange}>
-          <TabsList className="flex flex-wrap h-auto">
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            {data.game_breakdown.map((g) => (
-              <TabsTrigger key={g.game_id} value={g.game_id}>
-                {g.game_name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      )}
+      {/* Promedios */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <Users className="h-4 w-4 text-primary" />
+            Jugadores promedio por torneo
+          </div>
+          <div className="mt-2 text-3xl font-bold">{data.avg_players_per_tournament}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <Star className="h-4 w-4 text-primary" />
+            Puntos por jugador en tienda
+          </div>
+          <div className="mt-2 text-3xl font-bold">{data.avg_points_per_player}</div>
+        </div>
+      </div>
 
       {/* Top jugadores */}
       <div className="rounded-lg border bg-card p-4">
@@ -190,6 +195,7 @@ function OrganizerPlayersPage() {
                     <th className="text-left py-2 px-2">#</th>
                     <th className="text-left py-2 px-2">Geek Tag</th>
                     <th className="text-right py-2 px-2">Torneos</th>
+                    <th className="text-right py-2 px-2">Puntos</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -198,6 +204,7 @@ function OrganizerPlayersPage() {
                       <td className="py-2 px-2 font-semibold">{(topPlayersPage.page - 1) * topPlayersPage.pageSize + i + 1}</td>
                       <td className="py-2 px-2">{p.geek_tag}</td>
                       <td className="py-2 px-2 text-right">{p.tournaments}</td>
+                      <td className="py-2 px-2 text-right">{p.points}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -18,21 +18,12 @@ export function todayInMexicoStr(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date());
 }
 
-// Dos convenciones de semana conviven a propósito:
-// - Calendario público (grid Dom–Sáb): sundayOfWeek.
-// - Semana de reporte manager/organizer (Lun–Dom): mondayOfWeek.
-// Siempre usar estos helpers — nunca recalcular a mano con getDay().
+// Convención de semana estandarizada en toda la app: Lun–Dom.
+// Siempre usar este helper — nunca recalcular a mano con getDay().
 export function mondayOfWeek(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
   d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-export function sundayOfWeek(date: Date): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
   d.setHours(0, 0, 0, 0);
   return d;
 }

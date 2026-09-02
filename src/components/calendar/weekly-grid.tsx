@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
-import { toLocalDateStr, sundayOfWeek } from "@/lib/utils";
+import { toLocalDateStr, mondayOfWeek } from "@/lib/utils";
 
 import {
   GAME_COLORS,
@@ -26,7 +26,7 @@ export const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 export const HOURS = Array.from({ length: 11 }, (_, i) => i + 13); // 1pm a 11pm
 
 export function useWeekNav() {
-  const [weekStart, setWeekStart] = useState<Date>(() => sundayOfWeek(new Date()));
+  const [weekStart, setWeekStart] = useState<Date>(() => mondayOfWeek(new Date()));
 
   const weekDates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -48,7 +48,7 @@ export function useWeekNav() {
     d.setDate(d.getDate() + 7);
     setWeekStart(d);
   };
-  const goToToday = () => setWeekStart(sundayOfWeek(new Date()));
+  const goToToday = () => setWeekStart(mondayOfWeek(new Date()));
 
   const weekLabel = `${weekDates[0].getDate()} ${weekDates[0].toLocaleString("es-MX", { month: "short" })} — ${weekDates[6].getDate()} ${weekDates[6].toLocaleString("es-MX", { month: "short", year: "numeric" })}`;
 

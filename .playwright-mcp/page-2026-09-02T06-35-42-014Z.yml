@@ -1,0 +1,70 @@
+- generic [ref=e2]:
+  - complementary [ref=e50]:
+    - link "Nexus Jugador" [ref=e51] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e59]:
+        - generic [ref=e60]: Nexus
+        - generic [ref=e61]: Jugador
+    - button "Colapsar menú" [ref=e62]
+    - generic [ref=e66]:
+      - button "One Piece Card Game" [ref=e68]
+      - button "Notificaciones" [ref=e71]
+    - navigation [ref=e77]:
+      - generic [ref=e78]:
+        - generic [ref=e79]: Explorar
+        - generic [ref=e80]:
+          - link "Ranking" [ref=e81] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=e90] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=e95] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=e101] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=e108]:
+        - generic [ref=e109]: Mi Carrera
+        - generic [ref=e110]:
+          - link "Mi Panel" [ref=e111] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=e119] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=e124] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=e136]:
+        - generic [ref=e137]: Cuenta
+        - generic [ref=e138]:
+          - link "Mi Perfil" [ref=e139] [cursor=pointer]:
+            - /url: /players/PLAYERALL
+          - link "Configuración" [ref=e146] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=e152]:
+      - generic [ref=e153]:
+        - generic [ref=e154]: Sesión
+        - generic [ref=e155]: PLAYERALL
+      - button "Cerrar sesión" [ref=e156]
+  - main [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - paragraph [ref=e21]: Nexus
+        - heading "Bienvenido de vuelta" [level=1] [ref=e22]
+        - paragraph [ref=e23]: Inicia sesión para seguir tu ranking.
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: Geek Tag o correo electrónico
+          - textbox "Geek Tag o jugador@nexus.gg" [ref=e27]: playerall@test.com
+        - generic [ref=e29]:
+          - generic [ref=e30]: Contraseña
+          - generic [ref=e31]:
+            - textbox "••••••••" [ref=e32]: "!Test1234"
+            - button "Mostrar contraseña" [ref=e33]
+        - button "Entrar a la Arena" [disabled] [ref=e37]
+        - generic [ref=e38]:
+          - button "¿Olvidaste tu contraseña?" [ref=e39]
+          - link "¿No tienes cuenta? Únete al Circuito →" [ref=e40] [cursor=pointer]:
+            - /url: /signup
+      - link "Continuar como invitado →" [ref=e41] [cursor=pointer]:
+        - /url: /
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e162]:
+        - generic [ref=e166]: ¡Bienvenido de vuelta a la Arena!

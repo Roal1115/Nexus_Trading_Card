@@ -245,6 +245,18 @@ function StoreProfilePage() {
             </a>
           )}
         </div>
+
+        {(store.address || store.city) && (
+          <iframe
+            title={`Mapa de ${store.name}`}
+            src={`https://www.google.com/maps?q=${encodeURIComponent(
+              [store.name, store.address, store.city, store.state].filter(Boolean).join(", "),
+            )}&output=embed`}
+            className="h-64 w-full rounded-xl border border-white/10"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        )}
       </header>
 
       <section id="calendario" className="glass space-y-4 scroll-mt-20 rounded-2xl p-6">

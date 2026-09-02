@@ -112,6 +112,14 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       .order("tournaments(tournament_date)", { ascending: false })
       .limit(100);
 
+    // Conteo exacto (no limitado a los 100 más recientes que trae `results`)
+    // para el hero — head:true no transfiere filas, solo el total.
+    const { count: totalTournamentsCount } = await admin
+      .from("tournament_results")
+      .select("id, tournaments!inner(status)", { count: "exact", head: true })
+      .eq("player_id", player.id)
+      .in("tournaments.status", ["APPROVED", "PUBLISHED"]);
+
     const tournamentIds = Array.from(new Set((results ?? []).map((r: any) => r.tournament_id)));
 
     const { data: maxPoints } = tournamentIds.length
@@ -185,6 +193,22 @@ export const getMyDashboard = createServerFn({ method: "POST" })
         tournament_status: (t?.status ?? null) as "APPROVED" | "PUBLISHED" | null,
       };
     });
+
+    // Tienda más visitada — calculado sobre los últimos 100 torneos (mismo
+    // set que `events`), no sobre el historial completo del jugador.
+    // ponytail: ceiling de 100, si un jugador veterano lo supera este stat
+    // deja de ser exacto. Subir el límite o mover a un count agrupado por
+    // store_id si eso empieza a importar.
+    const storeVisitCounts = new Map<string, { name: string; city: string; count: number }>();
+    for (const e of events) {
+      if (e.store === "—") continue;
+      const key = `${e.store}__${e.city}`;
+      const entry = storeVisitCounts.get(key) ?? { name: e.store, city: e.city, count: 0 };
+      entry.count++;
+      storeVisitCounts.set(key, entry);
+    }
+    const mostVisitedStore =
+      Array.from(storeVisitCounts.values()).sort((a, b) => b.count - a.count)[0] ?? null;
 
     // Top 3 decks por TCG desde tournament_round_results
     const allTcgGameIds = tcgStats.map((t) => t.game_id);
@@ -275,6 +299,8 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       events,
       is_profile_public: isProfilePublic,
       registered_game_ids: ((tcgIdRows ?? []) as any[]).map((t) => t.game_id),
+      totalTournamentsAttended: totalTournamentsCount ?? 0,
+      mostVisitedStore,
     };
   });
 
@@ -375,6 +401,33 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
     const { error } = await admin
       .from("players")
       .update({ is_profile_public: data.is_public } as any)
+      .eq("id", player.id);
+    if (error) failDb(error);
+    return { success: true };
+  });
+
+// Preferencia de TCG/zona — se pregunta una sola vez (ver preferences_prompted_at)
+// desde un prompt inline en /calendar, nunca un modal bloqueante. game_id/zone
+// nulos = el jugador la descartó sin elegir; igual queda marcado como "ya preguntado".
+export const setPlayerPreferences = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { game_id?: string | null; zone?: string | null }) =>
+    z
+      .object({
+        game_id: z.string().uuid().nullable().optional(),
+        zone: z.string().max(80).nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { error } = await admin
+      .from("players")
+      .update({
+        preferred_game_id: data.game_id ?? null,
+        preferred_zone: data.zone ?? null,
+        preferences_prompted_at: new Date().toISOString(),
+      } as any)
       .eq("id", player.id);
     if (error) failDb(error);
     return { success: true };

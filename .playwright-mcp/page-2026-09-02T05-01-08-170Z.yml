@@ -1,0 +1,37 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - complementary [ref=e6]:
+      - link "Nexus Panel" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e15]:
+          - generic [ref=e16]: Nexus
+          - generic [ref=e17]: Panel
+      - navigation [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: Organizador
+          - generic [ref=e21]:
+            - link "Analytics" [ref=e22] [cursor=pointer]:
+              - /url: /organizer
+            - link "Jugadores" [ref=e27] [cursor=pointer]:
+              - /url: /organizer/players
+            - link "Mi Tienda" [ref=e35] [cursor=pointer]:
+              - /url: /organizer/store
+            - link "Mis Torneos" [ref=e42] [cursor=pointer]:
+              - /url: /organizer/tournaments
+            - link "Historial de Torneos" [ref=e51] [cursor=pointer]:
+              - /url: /organizer/history
+            - link "Calendario" [ref=e58] [cursor=pointer]:
+              - /url: /organizer/calendar
+            - link "Subir Torneo" [ref=e63] [cursor=pointer]:
+              - /url: /organizer/new
+            - link "Ligas Internas" [ref=e69] [cursor=pointer]:
+              - /url: /organizer/leagues
+            - link "Apelaciones" [ref=e78] [cursor=pointer]:
+              - /url: /organizer/appeals
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - generic [ref=e87]: Sesión
+          - generic [ref=e88]: Organizador
+        - button "Cerrar sesión" [ref=e89]
+    - main [ref=e95]
+  - region "Notifications alt+T"

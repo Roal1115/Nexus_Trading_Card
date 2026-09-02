@@ -442,6 +442,86 @@ export const deleteLeagueSchedule = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Excepciones puntuales a un horario de liga (una sola fecha) ----------
+
+export const upsertLeagueScheduleOverride = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator(
+    (d: { league_schedule_id: string; occurrence_date: string; start_time?: string | null; label?: string | null }) =>
+      z
+        .object({
+          league_schedule_id: z.string().uuid(),
+          occurrence_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          start_time: z
+            .string()
+            .regex(/^\d{2}:\d{2}$/)
+            .nullable()
+            .optional(),
+          label: z.string().max(120).nullable().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    assertLeagueManager(player.role);
+
+    const { data: schedule, error: fe } = await admin
+      .from("store_league_schedules")
+      .select("store_id, store_leagues(status)")
+      .eq("id", data.league_schedule_id)
+      .maybeSingle();
+    if (fe) failDb(fe);
+    if (!schedule) throw new Error("Horario no encontrado");
+    await assertOwnsStore(admin, player, schedule.store_id);
+    const leagueStatus = (Array.isArray(schedule.store_leagues) ? schedule.store_leagues[0] : schedule.store_leagues)?.status;
+    if (leagueStatus === "archived") throw new Error("No se puede editar una liga archivada");
+
+    const { error } = await admin.from("store_league_schedule_overrides").upsert(
+      {
+        league_schedule_id: data.league_schedule_id,
+        store_id: schedule.store_id,
+        occurrence_date: data.occurrence_date,
+        start_time: data.start_time || null,
+        label: data.label || null,
+      },
+      { onConflict: "league_schedule_id,occurrence_date" },
+    );
+    if (error) failDb(error);
+    return { ok: true };
+  });
+
+export const deleteLeagueScheduleOverride = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator((d: { league_schedule_id: string; occurrence_date: string }) =>
+    z
+      .object({
+        league_schedule_id: z.string().uuid(),
+        occurrence_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    assertLeagueManager(player.role);
+
+    const { data: schedule, error: fe } = await admin
+      .from("store_league_schedules")
+      .select("store_id")
+      .eq("id", data.league_schedule_id)
+      .maybeSingle();
+    if (fe) failDb(fe);
+    if (!schedule) return { ok: true };
+    await assertOwnsStore(admin, player, schedule.store_id);
+
+    const { error } = await admin
+      .from("store_league_schedule_overrides")
+      .delete()
+      .eq("league_schedule_id", data.league_schedule_id)
+      .eq("occurrence_date", data.occurrence_date);
+    if (error) failDb(error);
+    return { ok: true };
+  });
+
 export const getActiveLeaguesForStore = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
   .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))

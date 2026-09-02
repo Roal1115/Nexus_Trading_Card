@@ -9,8 +9,24 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getOrganizerCalendar } from "@/lib/nexus-organizer.functions";
+import { toast } from "sonner";
+import {
+  getOrganizerCalendar,
+  upsertLeagueScheduleOverride,
+  deleteLeagueScheduleOverride,
+} from "@/lib/nexus-organizer.functions";
 import { BlockSelect } from "@/components/ui/block-select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/organizer/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -18,7 +34,7 @@ export const Route = createFileRoute("/organizer/calendar")({
 });
 
 const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const HOURS = [17, 18, 19, 20, 21, 22, 23];
+const HOURS = [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
 type CalEntry = {
   id: string;
@@ -34,6 +50,11 @@ type CalEntry = {
   is_today: boolean;
   is_future: boolean;
   report_status: "submitted" | "overdue" | "pending" | "upcoming";
+  league_id: string | null;
+  league_name: string | null;
+  league_schedule_id: string | null;
+  override_label: string | null;
+  is_override: boolean;
 };
 
 type CalData = {
@@ -50,19 +71,73 @@ type CalData = {
 
 function OrganizerCalendarPage() {
   const fetchCalendar = useServerFn(getOrganizerCalendar);
+  const upsertOverrideFn = useServerFn(upsertLeagueScheduleOverride);
+  const deleteOverrideFn = useServerFn(deleteLeagueScheduleOverride);
   const [calData, setCalData] = useState<CalData | null>(null);
   const [weekStart, setWeekStart] = useState<string>("");
   const [gameFilter, setGameFilter] = useState<string>("all");
 
-  useEffect(() => {
+  const [editingEntry, setEditingEntry] = useState<CalEntry | null>(null);
+  const [editForm, setEditForm] = useState({ label: "", start_time: "" });
+  const [savingOverride, setSavingOverride] = useState(false);
+
+  const reload = () => {
     fetchCalendar({ data: { ...(weekStart ? { week_start: weekStart } : {}) } } as any)
       .then((d: any) => {
         setCalData(d);
         if (!weekStart) setWeekStart(d.week_start);
       })
       .catch(() => void 0);
+  };
+
+  useEffect(() => {
+    reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
+
+  function openEdit(entry: CalEntry) {
+    setEditingEntry(entry);
+    setEditForm({ label: entry.override_label ?? "", start_time: entry.start_time });
+  }
+
+  async function handleSaveOverride() {
+    if (!editingEntry?.league_schedule_id) return;
+    setSavingOverride(true);
+    try {
+      await upsertOverrideFn({
+        data: {
+          league_schedule_id: editingEntry.league_schedule_id,
+          occurrence_date: editingEntry.date,
+          start_time: editForm.start_time || null,
+          label: editForm.label.trim() || null,
+        },
+      });
+      toast.success("Ocurrencia actualizada.");
+      setEditingEntry(null);
+      reload();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingOverride(false);
+    }
+  }
+
+  async function handleResetOverride() {
+    if (!editingEntry?.league_schedule_id) return;
+    setSavingOverride(true);
+    try {
+      await deleteOverrideFn({
+        data: { league_schedule_id: editingEntry.league_schedule_id, occurrence_date: editingEntry.date },
+      });
+      toast.success("Restablecido al horario normal.");
+      setEditingEntry(null);
+      reload();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingOverride(false);
+    }
+  }
 
   const navigateWeek = (dir: -1 | 1) => {
     if (!weekStart) return;
@@ -127,7 +202,7 @@ function OrganizerCalendarPage() {
           Calendario de mi tienda
         </h1>
         <p className="text-sm text-gray-400 mt-1">
-          Vista de solo lectura de los torneos programados en tu tienda.
+          Vista de los torneos programados en tu tienda. Los eventos de ligas internas (en ámbar) se pueden editar por fecha.
         </p>
       </div>
 
@@ -248,19 +323,31 @@ function OrganizerCalendarPage() {
                       className="min-h-[60px] p-1 border-l border-white/10"
                       style={{ minWidth: 0, overflow: "hidden" }}
                     >
-                      {cellEntries.map((e) => (
-                        <div
-                          key={e.id}
-                          className="w-full text-left rounded px-1.5 py-1 mb-0.5 bg-primary/10 border border-primary/30"
-                        >
-                          <div className="text-[10px] text-primary truncate">
-                            {e.game_name}
+                      {cellEntries.map((e) => {
+                        const isEditableLeague = Boolean(e.league_schedule_id);
+                        return (
+                          <div
+                            key={e.id}
+                            onClick={isEditableLeague ? () => openEdit(e) : undefined}
+                            className={`w-full text-left rounded px-1.5 py-1 mb-0.5 border ${
+                              e.league_id
+                                ? "bg-amber-500/10 border-amber-500/30"
+                                : "bg-primary/10 border-primary/30"
+                            } ${isEditableLeague ? "cursor-pointer transition hover:brightness-125" : ""}`}
+                          >
+                            <div className={`text-[10px] truncate ${e.league_id ? "text-amber-300" : "text-primary"}`}>
+                              {e.override_label || e.game_name}
+                            </div>
+                            <div className="text-[9px] text-gray-400 truncate">
+                              {e.start_time}
+                              {e.is_override && " · editado"}
+                            </div>
+                            {e.league_name && (
+                              <div className="text-[9px] text-amber-400/80 truncate">{e.league_name}</div>
+                            )}
                           </div>
-                          <div className="text-[9px] text-gray-400 truncate">
-                            {e.start_time}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -269,6 +356,65 @@ function OrganizerCalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* Editar una sola ocurrencia de un horario de liga interna */}
+      <Dialog open={editingEntry !== null} onOpenChange={(o) => !o && setEditingEntry(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingEntry?.league_name} — {editingEntry && DAY_NAMES[new Date(editingEntry.date + "T12:00:00").getDay()]}{" "}
+              {editingEntry?.date}
+            </DialogTitle>
+          </DialogHeader>
+          {editingEntry && (
+            <div className="space-y-4">
+              <p className="text-xs text-gray-400">
+                Este cambio aplica solo a esta fecha. El horario recurrente ({editingEntry.game_name}, todos los{" "}
+                {DAY_NAMES[editingEntry.day_of_week]}) no se modifica.
+              </p>
+              <div className="space-y-2">
+                <Label>Nombre especial (opcional)</Label>
+                <Input
+                  value={editForm.label}
+                  placeholder={editingEntry.game_name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, label: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Hora</Label>
+                <Input
+                  type="time"
+                  value={editForm.start_time}
+                  onChange={(e) => setEditForm((f) => ({ ...f, start_time: e.target.value }))}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+            {editingEntry?.is_override ? (
+              <button
+                onClick={handleResetOverride}
+                disabled={savingOverride}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-300 hover:text-red-200"
+              >
+                <Trash2 size={12} />
+                Restablecer al horario normal
+              </button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setEditingEntry(null)} disabled={savingOverride}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveOverride} disabled={savingOverride} className="gap-2">
+                {savingOverride ? <Loader2 className="animate-spin" size={16} /> : <Pencil size={16} />}
+                Guardar
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   Layers,
   Lock,
   Share2,
+  Store as StoreIcon,
   Swords,
   Target,
   TrendingUp,
@@ -200,6 +201,7 @@ function DashboardPage() {
   const top3Decks = activeStatsTcg ? (top3DecksByGame[activeStatsTcg] ?? []) : [];
 
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
+  const hasHistory = (data?.totalTournamentsAttended ?? 0) > 0;
 
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
@@ -231,7 +233,7 @@ function DashboardPage() {
       <aside className="hidden xl:block">
         <AdVertical sponsor={sponsor} />
       </aside>
-      <main className="min-w-0 pb-20">
+      <main className="min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-20">
         {/* Toggle de privacidad */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
           <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -262,113 +264,149 @@ function DashboardPage() {
           <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
 
           {/* Fila superior — Geek Tag + Ranks */}
-          <div className="relative flex flex-col items-start gap-6 p-8 sm:flex-row sm:items-end sm:justify-between sm:p-12">
+          <div className="relative flex flex-col flex-wrap items-start gap-6 p-8 sm:flex-row sm:items-end sm:justify-between sm:p-12">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                 Tu Geek Tag
               </p>
-              <h1 className="mt-2 break-all text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
+              <h1 className="mt-2 break-words text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
               <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
             </div>
-            <div className="flex gap-3 flex-wrap">
-              <div className="rounded-xl border border-primary/30 bg-black/40 px-5 py-4 text-center min-w-[120px]">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary mb-1">
-                  <Crown size={10} /> Global
-                </div>
-                <div className="font-mono text-4xl font-bold text-white">
-                  {loading
-                    ? "…"
-                    : activeTcg?.rank_position > 0
-                      ? `#${activeTcg.rank_position}`
-                      : "—"}
-                </div>
-                <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
+            {loading ? (
+              <div className="flex gap-3 flex-wrap">
+                <div className="h-24 w-32 animate-pulse rounded-xl bg-white/[0.06]" />
+                <div className="h-24 w-32 animate-pulse rounded-xl bg-white/[0.06]" />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-center min-w-[120px]">
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                  <Crown size={10} /> Mensual
-                </div>
-                <div className="font-mono text-4xl font-bold text-white">
-                  {loading
-                    ? "…"
-                    : activeTcg?.monthly_rank_position > 0
-                      ? `#${activeTcg.monthly_rank_position}`
-                      : "—"}
-                </div>
-                <p className="text-[10px] text-gray-500 mt-0.5">{data?.monthLabel ?? "Este mes"}</p>
+            ) : !hasHistory ? (
+              // Sin historial: un solo CTA en vez de 4 cards mostrando "—" —
+              // le dice al jugador qué hacer, no solo que no hay datos.
+              <div className="flex max-w-xs flex-col items-start gap-3 rounded-xl border border-primary/30 bg-black/40 px-5 py-4">
+                <p className="text-sm text-gray-300">
+                  Aún no has jugado ningún torneo. Busca uno cerca de ti y empieza tu ranking.
+                </p>
+                <Link
+                  to="/calendar"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
+                >
+                  Ver calendario de torneos →
+                </Link>
               </div>
-            </div>
-          </div>
+            ) : (
+              <div className="flex flex-col items-start gap-3">
+                {/* Rank global — el número que más le importa al jugador al entrar, así que es el foco visual */}
+                <div className="rounded-xl border border-primary/30 bg-black/40 px-6 py-5 text-center min-w-[140px]">
+                  <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary mb-1">
+                    <Crown size={10} /> Rank Global
+                  </div>
+                  <div className="font-mono text-5xl font-bold text-white">
+                    {activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : "—"}
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
+                </div>
 
-          {/* Franja inferior — Stats */}
-          <div className="relative border-t border-white/10 px-8 py-4 sm:px-12">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              {/* Izquierda — Tabs TCG + W-L */}
-              {loading ? (
-                <div className="flex items-center gap-4">
-                  <div className="h-6 w-16 rounded bg-white/[0.06] animate-pulse" />
-                  <div className="h-8 w-32 rounded bg-white/[0.06] animate-pulse" />
-                </div>
-              ) : globalRecord.total > 0 ? (
-                <div className="flex flex-wrap items-center gap-4">
-                  {statsGameIds.length > 1 && (
-                    <div className="flex gap-1">
-                      {statsGameIds.map((gid) => {
-                        const tcgName = tcgStats.find((t) => t.game_id === gid)?.game_name ?? gid;
-                        return (
-                          <button
-                            key={gid}
-                            onClick={() => setStatsTcg(gid)}
-                            className={`rounded px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
-                              activeStatsTcg === gid
-                                ? "bg-primary/20 text-primary"
-                                : "text-gray-500 hover:text-gray-300"
-                            }`}
-                          >
-                            {tcgName}
-                          </button>
-                        );
-                      })}
+                {/* Secundarios — mismo dato pero con menor peso visual */}
+                <div className="flex gap-2 flex-wrap">
+                  <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
+                    <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-gray-500 mb-0.5">
+                      <Crown size={9} /> Mensual
                     </div>
-                  )}
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-mono text-2xl font-bold text-emerald-400">
-                      {globalRecord.wins}W
-                    </span>
-                    <span className="font-mono text-lg text-gray-600">·</span>
-                    <span className="font-mono text-2xl font-bold text-red-400">
-                      {globalRecord.losses}L
-                    </span>
-                    <span className="ml-1 text-[10px] text-gray-600">
-                      {globalRecord.total} partidas
-                    </span>
+                    <div className="font-mono text-lg font-bold text-white">
+                      {activeTcg?.monthly_rank_position > 0 ? `#${activeTcg.monthly_rank_position}` : "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
+                    <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-gray-500 mb-0.5">
+                      <StoreIcon size={9} /> Tienda favorita
+                    </div>
+                    <div className="text-xs font-bold text-white leading-tight">
+                      {data?.mostVisitedStore?.name ?? "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
+                    <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-gray-500 mb-0.5">
+                      <Swords size={9} /> Torneos
+                    </div>
+                    <div className="font-mono text-lg font-bold text-white">
+                      {data?.totalTournamentsAttended ?? 0}
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <div className="text-xs text-gray-600">Sin partidas registradas aún.</div>
-              )}
-
-              {/* Derecha — CTA Ver mis stats */}
-              {loading ? (
-                <div className="h-10 w-36 rounded-xl bg-white/[0.06] animate-pulse" />
-              ) : (
-                <Link
-                  to="/my-stats"
-                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(232,106,34,0.4)]"
-                >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-                  <BarChart3
-                    size={15}
-                    className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                  />
-                  <span className="relative">Ver mis stats</span>
-                  <span className="relative text-[10px] font-normal opacity-60 group-hover:opacity-100 transition-opacity">
-                    →
-                  </span>
-                </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
+
+          {/* Franja inferior — Stats (oculta si aún no hay historial: el CTA
+              de arriba ya cubre ese caso, no hace falta repetirlo) */}
+          {(loading || hasHistory) && (
+            <div className="relative border-t border-white/10 px-8 py-4 sm:px-12">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Izquierda — Tabs TCG + W-L */}
+                {loading ? (
+                  <div className="flex items-center gap-4">
+                    <div className="h-6 w-16 rounded bg-white/[0.06] animate-pulse" />
+                    <div className="h-8 w-32 rounded bg-white/[0.06] animate-pulse" />
+                  </div>
+                ) : globalRecord.total > 0 ? (
+                  <div className="flex flex-wrap items-center gap-4">
+                    {statsGameIds.length > 1 && (
+                      <div className="flex gap-1">
+                        {statsGameIds.map((gid) => {
+                          const tcgName = tcgStats.find((t) => t.game_id === gid)?.game_name ?? gid;
+                          return (
+                            <button
+                              key={gid}
+                              onClick={() => setStatsTcg(gid)}
+                              className={`rounded px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
+                                activeStatsTcg === gid
+                                  ? "bg-primary/20 text-primary"
+                                  : "text-gray-500 hover:text-gray-300"
+                              }`}
+                            >
+                              {tcgName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-2xl font-bold text-emerald-400">
+                        {globalRecord.wins}W
+                      </span>
+                      <span className="font-mono text-lg text-gray-600">·</span>
+                      <span className="font-mono text-2xl font-bold text-red-400">
+                        {globalRecord.losses}L
+                      </span>
+                      <span className="ml-1 text-[10px] text-gray-600">
+                        {globalRecord.total} partidas
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-600">Sin partidas con resultados registrados aún.</div>
+                )}
+
+                {/* Derecha — CTA Ver mis stats */}
+                {loading ? (
+                  <div className="h-10 w-36 rounded-xl bg-white/[0.06] animate-pulse" />
+                ) : (
+                  <Link
+                    to="/my-stats"
+                    className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(232,106,34,0.4)]"
+                  >
+                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                    <BarChart3
+                      size={15}
+                      className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <span className="relative">Ver mis stats</span>
+                    <span className="relative text-[10px] font-normal opacity-60 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Links — Ver perfil + Compartir */}
           <div className="relative flex flex-wrap items-center gap-3 border-t border-white/5 px-8 py-3 sm:px-12">

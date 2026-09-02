@@ -425,6 +425,111 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          player_id: string
+          read_at: string | null
+          title: string
+          type: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          player_id: string
+          read_at?: string | null
+          title: string
+          type: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          player_id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_favorite_stores: {
+        Row: {
+          created_at: string
+          id: string
+          player_id: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          player_id: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          player_id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_favorite_stores_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_favorite_stores_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_favorite_stores_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_favorite_stores_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_games: {
         Row: {
           created_at: string
@@ -547,6 +652,9 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_profile_public: boolean
+          preferences_prompted_at: string | null
+          preferred_game_id: string | null
+          preferred_zone: string | null
           role: string
           work_schedule: string | null
         }
@@ -565,6 +673,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_profile_public?: boolean
+          preferences_prompted_at?: string | null
+          preferred_game_id?: string | null
+          preferred_zone?: string | null
           role?: string
           work_schedule?: string | null
         }
@@ -583,6 +694,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_profile_public?: boolean
+          preferences_prompted_at?: string | null
+          preferred_game_id?: string | null
+          preferred_zone?: string | null
           role?: string
           work_schedule?: string | null
         }
@@ -594,7 +708,41 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "players_preferred_game_id_fkey"
+            columns: ["preferred_game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       round_appeals: {
         Row: {
@@ -1227,6 +1375,318 @@ export type Database = {
           },
         ]
       }
+      store_league_prizes: {
+        Row: {
+          description: string
+          id: string
+          image_url: string | null
+          league_id: string
+          sort_order: number
+        }
+        Insert: {
+          description: string
+          id?: string
+          image_url?: string | null
+          league_id: string
+          sort_order?: number
+        }
+        Update: {
+          description?: string
+          id?: string
+          image_url?: string | null
+          league_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_league_prizes_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "store_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_league_schedule_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          league_schedule_id: string
+          occurrence_date: string
+          start_time: string | null
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          league_schedule_id: string
+          occurrence_date: string
+          start_time?: string | null
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          league_schedule_id?: string
+          occurrence_date?: string
+          start_time?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_league_schedule_overrides_league_schedule_id_fkey"
+            columns: ["league_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "store_league_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_league_schedule_overrides_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_league_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          game_id: string
+          id: string
+          league_id: string
+          national_schedule_id: string | null
+          shares_national_slot: boolean
+          start_time: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          game_id: string
+          id?: string
+          league_id: string
+          national_schedule_id?: string | null
+          shares_national_slot?: boolean
+          start_time: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          game_id?: string
+          id?: string
+          league_id?: string
+          national_schedule_id?: string | null
+          shares_national_slot?: boolean
+          start_time?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_league_schedules_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_league_schedules_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "store_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_league_schedules_national_schedule_id_fkey"
+            columns: ["national_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "store_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_league_schedules_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_league_tournaments: {
+        Row: {
+          added_at: string
+          league_id: string
+          tournament_id: string
+        }
+        Insert: {
+          added_at?: string
+          league_id: string
+          tournament_id: string
+        }
+        Update: {
+          added_at?: string
+          league_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_league_tournaments_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "store_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_league_tournaments_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_leagues: {
+        Row: {
+          active_weekdays: number[]
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+          status: string
+          store_id: string
+          winner_player_id: string | null
+          winner_points: number | null
+        }
+        Insert: {
+          active_weekdays?: number[]
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          name: string
+          start_date: string
+          status?: string
+          store_id: string
+          winner_player_id?: string | null
+          winner_points?: number | null
+        }
+        Update: {
+          active_weekdays?: number[]
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+          store_id?: string
+          winner_player_id?: string | null
+          winner_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_leagues_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_leagues_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_leagues_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_players_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_leagues_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_leagues_winner_player_id_fkey"
+            columns: ["winner_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_leagues_winner_player_id_fkey"
+            columns: ["winner_player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_leagues_winner_player_id_fkey"
+            columns: ["winner_player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_schedule_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          national_schedule_id: string
+          occurrence_date: string
+          start_time: string | null
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          national_schedule_id: string
+          occurrence_date: string
+          start_time?: string | null
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          national_schedule_id?: string
+          occurrence_date?: string
+          start_time?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_schedule_overrides_national_schedule_id_fkey"
+            columns: ["national_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "store_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_schedule_overrides_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_schedules: {
         Row: {
           created_at: string
@@ -1282,6 +1742,7 @@ export type Database = {
           google_maps_url: string | null
           id: string
           instagram: string | null
+          internal_leagues_enabled: boolean
           is_active: boolean | null
           latitude: number | null
           longitude: number | null
@@ -1304,6 +1765,7 @@ export type Database = {
           google_maps_url?: string | null
           id?: string
           instagram?: string | null
+          internal_leagues_enabled?: boolean
           is_active?: boolean | null
           latitude?: number | null
           longitude?: number | null
@@ -1326,6 +1788,7 @@ export type Database = {
           google_maps_url?: string | null
           id?: string
           instagram?: string | null
+          internal_leagues_enabled?: boolean
           is_active?: boolean | null
           latitude?: number | null
           longitude?: number | null
@@ -1564,6 +2027,62 @@ export type Database = {
           },
         ]
       }
+      tournament_rsvps: {
+        Row: {
+          created_at: string | null
+          id: string
+          player_id: string
+          status: string
+          tournament_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          player_id: string
+          status?: string
+          tournament_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          player_id?: string
+          status?: string
+          tournament_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_rsvps_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_rsvps_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_rsvps_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_rsvps_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournaments: {
         Row: {
           approved_at: string | null
@@ -1572,6 +2091,7 @@ export type Database = {
           csv_url: string | null
           game_id: string
           id: string
+          league_id: string | null
           published_at: string | null
           qualifying_month: number
           qualifying_semester: number
@@ -1594,6 +2114,7 @@ export type Database = {
           csv_url?: string | null
           game_id: string
           id?: string
+          league_id?: string | null
           published_at?: string | null
           qualifying_month: number
           qualifying_semester: number
@@ -1616,6 +2137,7 @@ export type Database = {
           csv_url?: string | null
           game_id?: string
           id?: string
+          league_id?: string | null
           published_at?: string | null
           qualifying_month?: number
           qualifying_semester?: number
@@ -1658,6 +2180,13 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournaments_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "store_leagues"
             referencedColumns: ["id"]
           },
           {
@@ -1785,6 +2314,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_vault_secret: { Args: { secret_name: string }; Returns: string }
       increment_sponsor_view: {
         Args: { p_sponsor_id: string }
         Returns: undefined
@@ -1822,12 +2352,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1851,11 +2381,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1876,11 +2406,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1901,11 +2431,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1918,11 +2448,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

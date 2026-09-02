@@ -66,6 +66,21 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       });
     const ownLeagueSchedules = activeLeagueSchedules.filter((s: any) => !s.shares_national_slot);
 
+    // Excepciones puntuales (una fecha) a los horarios de liga de esta semana —
+    // Épica 4: solo aplican a ligas internas, no al circuito nacional.
+    const ownScheduleIds = ownLeagueSchedules.map((s: any) => s.id);
+    const { data: overrides } = ownScheduleIds.length
+      ? await admin
+          .from("store_league_schedule_overrides")
+          .select("league_schedule_id, occurrence_date, start_time, label")
+          .in("league_schedule_id", ownScheduleIds)
+          .gte("occurrence_date", mondayStr)
+          .lte("occurrence_date", sundayStr)
+      : { data: [] as any[] };
+    const overrideByScheduleId = new Map<string, { start_time: string | null; label: string | null }>(
+      (overrides ?? []).map((o: any) => [o.league_schedule_id, { start_time: o.start_time, label: o.label }]),
+    );
+
     const gameIds = Array.from(
       new Set([...(schedules ?? []).map((s: any) => s.game_id), ...ownLeagueSchedules.map((s: any) => s.game_id)]),
     );
@@ -89,7 +104,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
 
     const nowMs = Date.now();
     const buildEntry = (
-      s: { store_id: string; game_id: string; day_of_week: number; start_time: string; stores?: any },
+      s: { id?: string; store_id: string; game_id: string; day_of_week: number; start_time: string; stores?: any },
       leagueId: string | null,
       leagueName: string | null,
     ) => {
@@ -99,7 +114,9 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       const entryDate = new Date(monday);
       entryDate.setDate(monday.getDate() + offset);
       const entryDateStr = toLocalDateStr(entryDate);
-      const [h, m] = String(s.start_time).split(":").map(Number);
+      const override = leagueId && s.id ? overrideByScheduleId.get(s.id) : undefined;
+      const effectiveStartTime = override?.start_time || s.start_time;
+      const [h, m] = String(effectiveStartTime).split(":").map(Number);
       const tStart = new Date(entryDate);
       tStart.setHours(h, m, 0, 0);
       const tEnd = new Date(tStart);
@@ -129,7 +146,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
         instagram: store?.instagram ?? null,
         day_of_week: s.day_of_week,
         date: entryDateStr,
-        start_time: String(s.start_time).slice(0, 5),
+        start_time: String(effectiveStartTime).slice(0, 5),
         is_past: isPast,
         is_today: isToday,
         is_future: isFuture,
@@ -140,6 +157,9 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
         tournament_status: tournament?.status ?? null,
         league_id: leagueId,
         league_name: leagueName,
+        league_schedule_id: leagueId ? (s.id ?? null) : null,
+        override_label: override?.label ?? null,
+        is_override: Boolean(override),
       };
     };
 

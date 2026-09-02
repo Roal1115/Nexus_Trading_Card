@@ -103,7 +103,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       zone?: string | null;
       store_id?: string | null;
       store_ids?: string[] | null;
-      week_start: string; // "YYYY-MM-DD" — domingo (el grid público es Dom–Sáb, ver sundayOfWeek en utils)
+      week_start: string; // "YYYY-MM-DD" — lunes (semana Lun–Dom, estandarizada con el resto de la app, ver mondayOfWeek en utils)
     }) =>
       z
         .object({
@@ -208,9 +208,65 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       }
     }
 
+    // Excepciones puntuales (una fecha) a horarios de liga — mismo dato que ve
+    // el organizador en /organizer/calendar, así ambas vistas quedan en sync.
+    // Reindexadas por (store_id, league_id, fecha): aplican también a un
+    // torneo ya subido para esa fecha, no solo a un slot proyectado.
+    const leagueScheduleStoreLeagueById = new Map(
+      (leagueSchedules ?? []).map((s: any) => [s.id, { store_id: s.store_id, league_id: s.league_id }]),
+    );
+    const ownLeagueScheduleIds = (leagueSchedules ?? [])
+      .filter((s: any) => !s.shares_national_slot)
+      .map((s: any) => s.id);
+    const { data: overrides } = ownLeagueScheduleIds.length
+      ? await admin
+          .from("store_league_schedule_overrides")
+          .select("league_schedule_id, occurrence_date, start_time, label")
+          .in("league_schedule_id", ownLeagueScheduleIds)
+          .gte("occurrence_date", fromDate)
+          .lte("occurrence_date", weekEndStr)
+      : { data: [] as any[] };
+    const overrideByStoreLeagueDate = new Map<string, { start_time: string | null; label: string | null }>();
+    for (const o of (overrides ?? []) as any[]) {
+      const sched = leagueScheduleStoreLeagueById.get(o.league_schedule_id);
+      if (!sched) continue;
+      overrideByStoreLeagueDate.set(`${sched.store_id}_${sched.league_id}_${o.occurrence_date}`, {
+        start_time: o.start_time,
+        label: o.label,
+      });
+    }
+
     const realTournamentKeys = new Set(
       (tournaments ?? []).map((t: any) => `${t.store_id}_${t.tournament_date}_${t.league_id ?? "national"}`),
     );
+
+    // Excepciones puntuales al schedule nacional — mismo dato que ve
+    // admin/tcg_manager en su calendario, así todas las vistas quedan en sync.
+    // Reindexadas por (store_id, game_id, fecha) en vez de schedule_id: así
+    // aplican tanto a un slot proyectado como a un torneo YA subido para esa
+    // fecha (que es el caso común — el override no vivía ahí antes y por eso
+    // no se reflejaba en /calendar).
+    const scheduleStoreGameById = new Map(
+      (schedules ?? []).map((s: any) => [s.id, { store_id: s.store_id, game_id: s.game_id }]),
+    );
+    const nationalScheduleIds = (schedules ?? []).map((s: any) => s.id);
+    const { data: nationalOverrides } = nationalScheduleIds.length
+      ? await admin
+          .from("store_schedule_overrides")
+          .select("national_schedule_id, occurrence_date, start_time, label")
+          .in("national_schedule_id", nationalScheduleIds)
+          .gte("occurrence_date", fromDate)
+          .lte("occurrence_date", weekEndStr)
+      : { data: [] as any[] };
+    const nationalOverrideByStoreGameDate = new Map<string, { start_time: string | null; label: string | null }>();
+    for (const o of (nationalOverrides ?? []) as any[]) {
+      const sched = scheduleStoreGameById.get(o.national_schedule_id);
+      if (!sched) continue;
+      nationalOverrideByStoreGameDate.set(`${sched.store_id}_${sched.game_id}_${o.occurrence_date}`, {
+        start_time: o.start_time,
+        label: o.label,
+      });
+    }
 
     const scheduledEvents: any[] = [];
     for (const s of (schedules ?? []) as any[]) {
@@ -220,12 +276,14 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         if (d.getDay() !== s.day_of_week) continue;
         if (realTournamentKeys.has(`${s.store_id}_${dateStr}_national`)) continue;
 
+        const nationalOverride = nationalOverrideByStoreGameDate.get(`${s.store_id}_${s.game_id}_${dateStr}`);
+
         scheduledEvents.push({
           id: `schedule_${s.id}_${dateStr}`,
           date: dateStr,
-          time: s.start_time,
+          time: nationalOverride?.start_time || s.start_time,
           game_id: s.game_id,
-          game_name: s.games?.name ?? "—",
+          game_name: nationalOverride?.label || (s.games?.name ?? "—"),
           game_slug: s.games?.slug ?? "",
           store_id: s.store_id,
           store_slug: s.stores?.slug ?? "",
@@ -256,12 +314,14 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         if (d.getDay() !== s.day_of_week) continue;
         if (realTournamentKeys.has(`${s.store_id}_${dateStr}_${s.league_id}`)) continue;
 
+        const override = overrideByStoreLeagueDate.get(`${s.store_id}_${s.league_id}_${dateStr}`);
+
         scheduledEvents.push({
           id: `league_schedule_${s.id}_${dateStr}`,
           date: dateStr,
-          time: s.start_time,
+          time: override?.start_time || s.start_time,
           game_id: s.game_id,
-          game_name: s.games?.name ?? "—",
+          game_name: override?.label || (s.games?.name ?? "—"),
           game_slug: s.games?.slug ?? "",
           store_id: s.store_id,
           store_slug: s.stores?.slug ?? "",
@@ -286,12 +346,19 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     }
 
     const allEvents = [
-      ...(tournaments ?? []).map((t: any) => ({
+      ...(tournaments ?? []).map((t: any) => {
+        // Un torneo ya subido también hereda la excepción puntual de esa
+        // fecha (nacional si league_id es null, de liga si no) — antes solo
+        // se aplicaba al slot proyectado y por eso no se veía en /calendar.
+        const tOverride = t.league_id
+          ? overrideByStoreLeagueDate.get(`${t.store_id}_${t.league_id}_${t.tournament_date}`)
+          : nationalOverrideByStoreGameDate.get(`${t.store_id}_${t.game_id}_${t.tournament_date}`);
+        return {
         id: t.id,
         date: t.tournament_date as string,
-        time: t.tournament_time as string | null,
+        time: tOverride?.start_time || t.tournament_time || null,
         game_id: t.game_id as string,
-        game_name: t.games?.name ?? "—",
+        game_name: tOverride?.label || (t.games?.name ?? "—"),
         game_slug: t.games?.slug ?? "",
         store_id: t.store_id as string,
         store_slug: t.stores?.slug ?? "",
@@ -311,7 +378,8 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         is_scheduled: false,
         league_id: t.league_id ?? null,
         league_name: t.store_leagues?.name ?? null,
-      })),
+        };
+      }),
       ...scheduledEvents,
     ].sort((a, b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date);

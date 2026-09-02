@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarPlus,
   CheckCircle2,
@@ -28,6 +28,7 @@ import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { publicCalendarQuery } from "@/lib/calendar-queries";
+import { CalendarPreferencesPrompt } from "@/components/calendar/preferences-prompt";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -38,7 +39,7 @@ function CalendarPage() {
   const fetchAttended = useServerFn(getMyAttendedTournamentIds);
   const fetchFavorites = useServerFn(getMyFavoriteStores);
   const { player } = useNexusRole();
-  const { activeTcg } = useTCG();
+  const { activeTcg, setActiveTcg, tcgs } = useTCG();
 
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
@@ -104,6 +105,31 @@ function CalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.id]);
 
+  // Seed de zona/TCG desde la preferencia guardada en la cuenta — solo una
+  // vez al cargar el player, y solo si el usuario no había tocado el filtro
+  // ya (evita pisar una elección manual hecha antes de que llegue el player).
+  const zoneSeededRef = useRef(false);
+  useEffect(() => {
+    if (!player || zoneSeededRef.current) return;
+    zoneSeededRef.current = true;
+    if (player.preferred_zone && filterZone === null) setFilterZone(player.preferred_zone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player]);
+
+  const tcgSeededRef = useRef(false);
+  useEffect(() => {
+    if (!player || tcgSeededRef.current || tcgs.length === 0) return;
+    tcgSeededRef.current = true;
+    // Solo si este dispositivo nunca eligió un TCG — no pisamos una elección
+    // ya guardada en este navegador (nexus.activeTcg vive fuera de la cuenta).
+    const hasDeviceChoice = typeof window !== "undefined" && !!window.localStorage.getItem("nexus.activeTcg");
+    if (!hasDeviceChoice && player.preferred_game_id) {
+      const match = tcgs.find((t) => t.id === player.preferred_game_id);
+      if (match) setActiveTcg(match);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player, tcgs]);
+
   useEffect(() => {
     if (!hasFavorites) return;
     const saved = window.localStorage.getItem("calendar:only-favorites");
@@ -160,6 +186,18 @@ function CalendarPage() {
           Torneos programados — {activeTcg?.name ?? "Todos los TCGs"}
         </p>
       </div>
+
+      <CalendarPreferencesPrompt
+        tcgs={tcgs}
+        zones={zones}
+        onSave={(gameId, zone) => {
+          if (gameId) {
+            const match = tcgs.find((t) => t.id === gameId);
+            if (match) setActiveTcg(match);
+          }
+          if (zone) setFilterZone(zone);
+        }}
+      />
 
       {/* Ad horizontal mobile */}
       <AdHorizontal sponsor={sponsor} />

@@ -18,6 +18,7 @@ import {
   getManagerCalendar,
 } from "@/lib/nexus-manager.functions";
 import { ZONE_COLORS } from "@/lib/game-colors";
+import { NationalScheduleEditSection } from "@/components/calendar/national-schedule-edit-section";
 
 
 export const Route = createFileRoute("/admin/calendar")({
@@ -51,6 +52,9 @@ type CalEntry = {
   tournament_status: string | null;
   organizer_tag: string | null;
   organizer_phone: string | null;
+  national_schedule_id: string;
+  override_label: string | null;
+  is_override: boolean;
 };
 type CalData = {
   week_start: string;
@@ -78,7 +82,7 @@ function AdminCalendarPage() {
   const [gameFilter, setGameFilter] = useState<string>("all");
   const [selectedEntry, setSelectedEntry] = useState<CalEntry | null>(null);
 
-  useEffect(() => {
+  const reload = () => {
     setLoading(true);
     fetchCalendar({
       data: { ...(weekStart ? { week_start: weekStart } : {}) },
@@ -88,6 +92,10 @@ function AdminCalendarPage() {
         if (!weekStart) setWeekStart(d.week_start);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
 
@@ -631,10 +639,19 @@ function AdminCalendarPage() {
               <div className="text-[10px] uppercase text-gray-500">TCG</div>
               <div className="mt-1 text-sm text-white">
                 {selectedEntry.game_name}
+                {selectedEntry.override_label && (
+                  <span className="ml-2 text-xs text-amber-400">"{selectedEntry.override_label}"</span>
+                )}
               </div>
             </div>
 
-
+            <NationalScheduleEditSection
+              entry={selectedEntry}
+              onSaved={() => {
+                reload();
+                setSelectedEntry(null);
+              }}
+            />
 
             <div className="rounded-lg border border-white/10 bg-black/30 p-3">
               <div className="text-[10px] uppercase text-gray-500">Horario</div>
@@ -717,7 +734,8 @@ function CalendarEntry({
       </div>
       {!compact && entry.game_name && (
         <div className="text-[9px] text-gray-400 truncate mt-0.5">
-          {entry.game_name}
+          {entry.override_label ?? entry.game_name}
+          {entry.is_override && <span className="ml-1 text-amber-400">· editado</span>}
         </div>
       )}
 

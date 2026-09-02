@@ -18,6 +18,9 @@ type PlayerRow = {
   email: string | null;
   role: AppRole;
   home_store_id: string | null;
+  preferred_game_id: string | null;
+  preferred_zone: string | null;
+  preferences_prompted_at: string | null;
 };
 
 type AuthContextValue = {
@@ -33,6 +36,10 @@ type AuthContextValue = {
   // render del cliente: antes de que authResolved sea true usa una lectura
   // síncrona de localStorage; después usa el estado de sesión real.
   probablyAuthed: boolean;
+  // Patch local optimista tras un write (ej. preferencias, privacidad) sin
+  // esperar a un refetch — evita que el contexto quede desincronizado del
+  // dato que el propio componente que escribió ya sabe que cambió.
+  updatePlayer: (patch: Partial<PlayerRow>) => void;
 };
 
 const AuthContext = createContext<AuthContextValue>({
@@ -42,6 +49,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   authResolved: false,
   probablyAuthed: false,
+  updatePlayer: () => {},
 });
 
 // Supabase persiste la sesión en localStorage bajo storageKey "nexus.auth"
@@ -98,7 +106,9 @@ export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
 
       const { data } = await nexus
         .from("players")
-        .select("id, geek_tag, email, role, home_store_id")
+        .select(
+          "id, geek_tag, email, role, home_store_id, preferred_game_id, preferred_zone, preferences_prompted_at",
+        )
         .eq("email", s.user.email)
         .maybeSingle();
 
@@ -136,8 +146,20 @@ export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
 
   const probablyAuthed = authResolved ? !!session : storedGuess;
 
+  const updatePlayer = (patch: Partial<PlayerRow>) => {
+    setPlayer((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
   const value = useMemo<AuthContextValue>(
-    () => ({ session, player, role: player?.role ?? null, loading, authResolved, probablyAuthed }),
+    () => ({
+      session,
+      player,
+      role: player?.role ?? null,
+      loading,
+      authResolved,
+      probablyAuthed,
+      updatePlayer,
+    }),
     [session, player, loading, authResolved, probablyAuthed],
   );
 

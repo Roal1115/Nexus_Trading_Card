@@ -152,9 +152,9 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     const { data: allResults } = tournamentIds.length
       ? await admin
           .from("tournament_results")
-          .select("player_id, tournament_id")
+          .select("player_id, tournament_id, points_earned")
           .in("tournament_id", tournamentIds)
-      : { data: [] as Array<{ player_id: string; tournament_id: string }> };
+      : { data: [] as Array<{ player_id: string; tournament_id: string; points_earned: number | null }> };
 
     // Build per-player list of tournament dates (all-time, for inactivity calc)
     let playerDatesAll = new Map<string, string[]>();
@@ -205,16 +205,21 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
 
     const gameBreakdown = storeGameIds.map((gameId) => {
       const players = new Set<string>();
+      let totalEntries = 0;
       for (const r of allResults ?? []) {
         const t = tournamentMap.get(r.tournament_id);
         if (!t || t.game_id !== gameId) continue;
         const dt = new Date(t.tournament_date + "T12:00:00");
-        if (dt >= rangeStart && dt <= rangeEnd) players.add(r.player_id);
+        if (dt >= rangeStart && dt <= rangeEnd) {
+          players.add(r.player_id);
+          totalEntries++;
+        }
       }
       return {
         game_id: gameId,
         game_name: gameNameMap.get(gameId) ?? "—",
         players: players.size,
+        total_entries: totalEntries,
       };
     });
 
@@ -235,22 +240,99 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     }
 
 
+    // Total attendance = suma de inscripciones (no jugadores únicos), respetando
+    // el filtro de game_id ya aplicado a allResults/tournamentMap arriba.
+    const resultsInGame = data.game_id
+      ? (allResults ?? []).filter((r) => tournamentMap.get(r.tournament_id)?.game_id === data.game_id)
+      : (allResults ?? []);
+
     // ---------- 3. Attendance trend (weekly) ----------
+    // playerDatesAll ya trae TODO el historial del jugador en esta tienda (sin
+    // filtro de rango, solo de liga/TCG), así que su primera fecha ahí mismo
+    // es su "primera vez" — no hace falta otra query para nuevo vs recurrente.
+    const firstDateByPlayer = new Map<string, string>();
+    for (const [pid, dates] of playerDatesAll.entries()) {
+      if (dates[0]) firstDateByPlayer.set(pid, dates[0]);
+    }
+
     const weeks = getWeekRanges(rangeStart, rangeEnd);
-    const attendanceTrend = weeks.map((w) => {
+
+    // Jugadores "perdidos" por semana (barra negativa): un jugador se cuenta
+    // UNA sola vez, en la semana en que su última visita cumple
+    // inactive_threshold_days — no en cada semana siguiente que sigue inactivo.
+    const churnedCountByWeekIndex = new Array(weeks.length).fill(0);
+    for (const dates of playerDatesAll.values()) {
+      const lastDate = dates[dates.length - 1];
+      if (!lastDate) continue;
+      const churnDate = new Date(lastDate + "T12:00:00");
+      churnDate.setDate(churnDate.getDate() + inactiveThresholdDays);
+      const weekIdx = weeks.findIndex((w) => churnDate >= w.start && churnDate <= w.end);
+      if (weekIdx >= 0) churnedCountByWeekIndex[weekIdx]++;
+    }
+
+    const attendanceTrend = weeks.map((w, wIdx) => {
       const players = new Set<string>();
+      let newPlayers = 0;
+      let returningPlayers = 0;
+      let totalEntries = 0;
       for (const [pid, dates] of playerDatesAll.entries()) {
         const has = dates.some((d) => {
           const dt = new Date(d + "T12:00:00");
           return dt >= w.start && dt <= w.end;
         });
-        if (has) players.add(pid);
+        if (has) {
+          players.add(pid);
+          const firstDate = firstDateByPlayer.get(pid);
+          const firstDt = firstDate ? new Date(firstDate + "T12:00:00") : null;
+          if (firstDt && firstDt >= w.start && firstDt <= w.end) newPlayers++;
+          else returningPlayers++;
+        }
+      }
+      const tournamentIdsThisWeek = new Set<string>();
+      for (const r of resultsInGame) {
+        const t = tournamentMap.get(r.tournament_id);
+        if (!t) continue;
+        const dt = new Date(t.tournament_date + "T12:00:00");
+        if (dt >= w.start && dt <= w.end) {
+          totalEntries++;
+          tournamentIdsThisWeek.add(r.tournament_id);
+        }
       }
       return {
         week_start: w.start.toISOString().split("T")[0],
         players: players.size,
+        new_players: newPlayers,
+        returning_players: returningPlayers,
+        churned_players: -churnedCountByWeekIndex[wIdx],
+        total_entries: totalEntries,
+        // "players" es el total ÚNICO de la semana, no de un torneo — si una
+        // tienda corre 2+ torneos la misma semana, este número deduplica
+        // entre ellos. tournament_count deja eso visible en el tooltip.
+        tournament_count: tournamentIdsThisWeek.size,
       };
     });
+
+    let totalAttendance = 0;
+    let totalPoints = 0;
+    const tournamentIdsInRange = new Set<string>();
+    const pointsByPlayerInRange = new Map<string, number>();
+    for (const r of resultsInGame) {
+      const t = tournamentMap.get(r.tournament_id);
+      if (!t) continue;
+      const dt = new Date(t.tournament_date + "T12:00:00");
+      if (dt >= rangeStart && dt <= rangeEnd) {
+        totalAttendance++;
+        totalPoints += r.points_earned ?? 0;
+        tournamentIdsInRange.add(r.tournament_id);
+        pointsByPlayerInRange.set(r.player_id, (pointsByPlayerInRange.get(r.player_id) ?? 0) + (r.points_earned ?? 0));
+      }
+    }
+    // Promedio de jugadores por torneo: asistencia total entre torneos con al
+    // menos un resultado en el rango — un torneo sin resultados aún no cuenta.
+    const avgPlayersPerTournament =
+      tournamentIdsInRange.size > 0 ? totalAttendance / tournamentIdsInRange.size : 0;
+    // Puntos por jugador en tienda: puntos totales entre jugadores únicos del rango.
+    const avgPointsPerPlayer = playersInRange.size > 0 ? totalPoints / playersInRange.size : 0;
 
     // ---------- 4. Player classification (range + current) ----------
     const currentRangeEnd = today;
@@ -314,6 +396,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
           const dt = new Date(d + "T12:00:00");
           return dt >= rangeStart && dt <= rangeEnd;
         }).length,
+        points: pointsByPlayerInRange.get(pid) ?? 0,
       }))
       .filter((p) => p.tournaments > 0)
       .sort((a, b) => b.tournaments - a.tournaments)
@@ -332,6 +415,9 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
         at_risk_threshold_days: atRiskThresholdDays,
       },
       total_players: playersInRange.size,
+      total_attendance: totalAttendance,
+      avg_players_per_tournament: Math.round(avgPlayersPerTournament * 10) / 10,
+      avg_points_per_player: Math.round(avgPointsPerPlayer * 10) / 10,
       game_breakdown: gameBreakdown,
       attendance_trend: attendanceTrend,
       category_summary: categorySummary,
