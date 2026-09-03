@@ -22,6 +22,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { requireNexusUser } from "./nexus-auth.middleware";
+import { todayInMexicoStr } from "./utils";
 
 const tournamentIdSchema = z.object({ tournament_id: z.string().uuid() });
 
