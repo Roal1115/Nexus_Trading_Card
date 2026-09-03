@@ -62,7 +62,7 @@ export const createRsvp = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
-    // Validar torneo existente y futuro
+    // Validar torneo existente y futuro (por fecha, no por status)
     const { data: t, error: te } = await (admin as any)
       .from("tournaments")
       .select("id, status, tournament_date")
@@ -70,7 +70,7 @@ export const createRsvp = createServerFn({ method: "POST" })
       .maybeSingle();
     if (te) failDb(te);
     if (!t) throw new Error("Torneo no encontrado");
-    if ((t as any).status === "PUBLISHED") {
+    if (todayInMexicoStr() > String((t as any).tournament_date)) {
       throw new Error("Este torneo ya fue jugado");
     }
 
