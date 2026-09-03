@@ -14,6 +14,7 @@ import {
   Layers,
   Lock,
   Share2,
+  ShieldQuestion,
   Store as StoreIcon,
   Swords,
   Target,
@@ -21,23 +22,40 @@ import {
   X,
 } from "lucide-react";
 
+// Medallero: #1 oro, #2 plata, #3 bronce — mismo tratamiento en Rank Global
+// del Hero, la columna Posición del historial, y la tabla del modal de
+// detalle. null = fuera del podio, se queda con el estilo neutro existente.
+type RankTier = "gold" | "silver" | "bronze" | null;
+function rankTier(rank: number | null | undefined): RankTier {
+  if (rank === 1) return "gold";
+  if (rank === 2) return "silver";
+  if (rank === 3) return "bronze";
+  return null;
+}
+const RANK_TIER_TEXT: Record<Exclude<RankTier, null>, string> = {
+  gold: "text-yellow-400",
+  silver: "text-gray-300",
+  bronze: "text-amber-600",
+};
+const RANK_TIER_BOX: Record<Exclude<RankTier, null>, string> = {
+  gold: "border-yellow-500/40 bg-yellow-500/[0.06]",
+  silver: "border-gray-400/40 bg-gray-400/[0.06]",
+  bronze: "border-amber-700/40 bg-amber-900/[0.06]",
+};
+
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { toggleProfilePrivacy } from "@/lib/nexus-player.functions";
 import { myDashboardQuery, tournamentDetailQuery } from "@/lib/dashboard-queries";
 import { playerAchievementsQuery } from "@/lib/player-profile-queries";
+import { shareProfileWithCard } from "@/lib/share-card";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
 import { RoundsAccordionReadOnly } from "@/components/tournament-tracker/RoundsAccordionReadOnly";
 import { motion, AnimatePresence } from "framer-motion";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import {
-  TcgRankCardSkeleton,
-  TournamentRowSkeleton,
-  SkeletonLine,
-  SkeletonBlock,
-} from "@/components/ui/skeleton-loader";
+import { TournamentRowSkeleton, SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/dashboard")({
   // Best effort (no relanza). En SSR (carga fresca) casi siempre falla: el
@@ -74,6 +92,20 @@ function DashboardPage() {
     id: string;
     game_id: string;
   } | null>(null);
+  // Editar el tracker DENTRO del modal de detalle — antes la única forma de
+  // registrar rondas era cerrar este panel de solo-lectura y abrir el
+  // Performance Tracker como otro modal completamente aparte, perdiendo el
+  // contexto del torneo. PerformanceTrackerModal ya tenía un modo
+  // `embedded` (sin overlay/X propios) para esto, simplemente nunca se usaba.
+  const [editingTrackerInModal, setEditingTrackerInModal] = useState(false);
+  // Se incrementa cada vez que se sale del modo edición — fuerza a
+  // RoundsAccordionReadOnly a re-montar y volver a pedir las rondas
+  // (su fetch solo corre en mount/cambio de tournamentId).
+  const [roundsReloadKey, setRoundsReloadKey] = useState(0);
+  const exitTrackerEditMode = () => {
+    setEditingTrackerInModal(false);
+    setRoundsReloadKey((k) => k + 1);
+  };
 
   const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
   const [isPublic, setIsPublic] = useState(true);
@@ -109,6 +141,7 @@ function DashboardPage() {
     enabled: !!gaPlayer?.geek_tag,
   });
   const achievements = achievementsQuery.data ?? null;
+  const achievementsLoading = !!gaPlayer?.geek_tag && achievementsQuery.isPending;
 
   useEffect(() => {
     if (data && typeof (data as any).is_profile_public === "boolean") {
@@ -139,11 +172,13 @@ function DashboardPage() {
   const loadingDetail = !!selectedTournamentId && tournamentDetailQ.isPending;
 
   const openTournament = (tournament_id: string) => {
+    setEditingTrackerInModal(false);
     setSelectedTournamentId(tournament_id);
   };
 
   const closeModal = () => {
     setSelectedTournamentId(null);
+    setEditingTrackerInModal(false);
   };
 
   useEffect(() => {
@@ -170,37 +205,34 @@ function DashboardPage() {
   const tag = gaPlayer.geek_tag;
   const handleShareProfile = async () => {
     const url = `https://mxntcg.lovable.app/players/${tag}`;
-    const shareData = {
+    await shareProfileWithCard({
+      url,
       title: `${tag} — Nexus`,
       text: `Mira mi ranking competitivo en Nexus 🏆`,
-      url,
-    };
-
-    // Web Share API disponible en mobile (Android/iOS) y algunos desktop
-    if (navigator.share && navigator.canShare?.(shareData)) {
-      try {
-        await navigator.share(shareData);
-      } catch (err: any) {
-        // Usuario canceló — no es un error real
-        if (err?.name !== "AbortError") {
-          // Fallback a clipboard si falla
-          navigator.clipboard.writeText(url);
-          setCopiedProfile(true);
-          setTimeout(() => setCopiedProfile(false), 2000);
-        }
-      }
-    } else {
-      // Fallback para desktop donde Web Share API no está disponible
-      navigator.clipboard.writeText(url);
-      setCopiedProfile(true);
-      setTimeout(() => setCopiedProfile(false), 2000);
-    }
+      cardData: {
+        geekTag: tag,
+        subtitle: storeCity ?? null,
+        rankLabel: activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : null,
+        rankCaption: activeTcg?.game_name ?? null,
+        statsLine: globalRecord.total > 0 ? `${globalRecord.wins}W · ${globalRecord.losses}L` : null,
+        footerLine:
+          (data?.totalTournamentsAttended ?? 0) > 0
+            ? `${data?.totalTournamentsAttended} torneos jugados`
+            : null,
+      },
+      onCopied: () => {
+        setCopiedProfile(true);
+        setTimeout(() => setCopiedProfile(false), 2000);
+      },
+    });
   };
 
   const tcgStats = data?.tcgStats ?? [];
 
   const top3DecksByGame = (data as any)?.top3DecksByGame ?? {};
   const globalRecord = (data as any)?.globalRecord ?? { wins: 0, losses: 0, total: 0 };
+  const winRate =
+    globalRecord.total > 0 ? Math.round((globalRecord.wins / globalRecord.total) * 100) : null;
 
   // Inicializar statsTcg al primer TCG disponible
   const statsGameIds = Object.keys(top3DecksByGame);
@@ -241,33 +273,8 @@ function DashboardPage() {
         <AdVertical sponsor={sponsor} />
       </aside>
       <main className="min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-20">
-        {/* Toggle de privacidad */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span className="uppercase tracking-widest">Visibilidad del perfil:</span>
-            <span
-              className={`inline-flex items-center gap-1 font-semibold ${isPublic ? "text-emerald-400" : "text-gray-300"}`}
-            >
-              {isPublic ? (
-                <>
-                  <Globe size={12} /> Público
-                </>
-              ) : (
-                <>
-                  <Lock size={12} /> Privado
-                </>
-              )}
-            </span>
-          </div>
-          <button
-            onClick={handleTogglePrivacy}
-            className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition"
-          >
-            {isPublic ? "Hacer privado" : "Hacer público"}
-          </button>
-        </div>
         {/* Hero */}
-        <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40">
+        <section className="relative mt-6 mb-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40">
           <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
 
           {/* Fila superior — Geek Tag + Ranks */}
@@ -280,9 +287,19 @@ function DashboardPage() {
               <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
             </div>
             {loading ? (
-              <div className="flex gap-3 flex-wrap">
-                <div className="h-24 w-32 animate-pulse rounded-xl bg-white/[0.06]" />
-                <div className="h-24 w-32 animate-pulse rounded-xl bg-white/[0.06]" />
+              // Mismo layout final: caja de Rank Global + fila de hasta 5
+              // chips (Mensual/Tienda/Torneos/Puntos/Ganados) — antes eran
+              // 2 bloques genéricos que no se parecían al resultado real.
+              <div className="flex flex-col items-start gap-3">
+                <div className="h-[104px] w-[140px] animate-pulse rounded-xl bg-white/[0.06]" />
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-[54px] w-[100px] animate-pulse rounded-lg bg-white/[0.06]"
+                    />
+                  ))}
+                </div>
               </div>
             ) : !hasHistory ? (
               // Sin historial: un solo CTA en vez de 4 cards mostrando "—" —
@@ -300,16 +317,32 @@ function DashboardPage() {
               </div>
             ) : (
               <div className="flex flex-col items-start gap-3">
-                {/* Rank global — el número que más le importa al jugador al entrar, así que es el foco visual */}
-                <div className="rounded-xl border border-primary/30 bg-black/40 px-6 py-5 text-center min-w-[140px]">
-                  <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-primary mb-1">
-                    <Crown size={10} /> Rank Global
-                  </div>
-                  <div className="font-mono text-5xl font-bold text-white">
-                    {activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : "—"}
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
-                </div>
+                {/* Rank global — el número que más le importa al jugador al entrar, así que es el foco visual.
+                    Top 3 del leaderboard se colorea como medallero (oro/plata/bronce). */}
+                {(() => {
+                  const tier = rankTier(activeTcg?.rank_position);
+                  return (
+                    <div
+                      className={`rounded-xl border px-6 py-5 text-center min-w-[140px] ${
+                        tier ? RANK_TIER_BOX[tier] : "border-primary/30 bg-black/40"
+                      }`}
+                    >
+                      <div
+                        className={`flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest mb-1 ${
+                          tier ? RANK_TIER_TEXT[tier] : "text-primary"
+                        }`}
+                      >
+                        <Crown size={10} /> Rank Global
+                      </div>
+                      <div
+                        className={`font-mono text-5xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-white"}`}
+                      >
+                        {activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : "—"}
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{semesterLabel}</p>
+                    </div>
+                  );
+                })()}
 
                 {/* Secundarios — mismo dato pero con menor peso visual */}
                 <div className="flex gap-2 flex-wrap">
@@ -337,6 +370,30 @@ function DashboardPage() {
                       {data?.totalTournamentsAttended ?? 0}
                     </div>
                   </div>
+                  {/* Con un solo TCG, "Mis Rankings" de abajo sería un
+                      duplicado exacto del Rank Global de arriba — en vez de
+                      repetir la sección completa, sus datos únicos (Puntos/
+                      Ganados) se pliegan aquí y la sección se oculta. */}
+                  {tcgStats.length === 1 && activeTcg && (
+                    <>
+                      <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
+                        <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-gray-500 mb-0.5">
+                          <Target size={9} className="text-primary" /> Puntos
+                        </div>
+                        <div className="font-mono text-lg font-bold text-white">
+                          {Number(activeTcg.total_points ?? 0).toFixed(0)}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
+                        <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-gray-500 mb-0.5">
+                          <Award size={9} className="text-primary" /> Ganados
+                        </div>
+                        <div className="font-mono text-lg font-bold text-white">
+                          {activeTcg.tournaments_won ?? 0}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -386,6 +443,11 @@ function DashboardPage() {
                       <span className="ml-1 text-[10px] text-gray-600">
                         {globalRecord.total} partidas
                       </span>
+                      {winRate != null && (
+                        <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-xs font-bold text-primary">
+                          {winRate}% WR
+                        </span>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -415,7 +477,11 @@ function DashboardPage() {
             </div>
           )}
 
-          {/* Links — Ver perfil + Compartir */}
+          {/* Links — Ver perfil + Compartir + Visibilidad. Antes la
+              visibilidad vivía en una barra de ancho completo por encima de
+              todo el Hero — la única config de cuenta que competía por
+              atención antes que el propio nombre del jugador. Vive aquí
+              junto a las otras acciones sobre el perfil, mismo peso visual. */}
           <div className="relative flex flex-wrap items-center gap-3 border-t border-white/5 px-8 py-3 sm:px-12">
             <Link
               to="/players/$playerTag"
@@ -438,72 +504,108 @@ function DashboardPage() {
                 </>
               )}
             </button>
+            <button
+              onClick={handleTogglePrivacy}
+              title={isPublic ? "Perfil público — clic para hacer privado" : "Perfil privado — clic para hacer público"}
+              className={`ml-auto inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
+                isPublic
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                  : "border-white/15 bg-white/5 text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              {isPublic ? <Globe size={12} /> : <Lock size={12} />}
+              {isPublic ? "Público" : "Privado"}
+            </button>
           </div>
         </section>
 
-        {achievements && achievements.unlocked_count > 0 && (
-          <section className="mb-6 rounded-2xl border border-white/10 bg-black/30 p-5">
-            <Link
-              to="/players/$playerTag/achievements"
-              params={{ playerTag: tag }}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary">
-                  {achievements.total_count > 0
-                    ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
-                    : 0}
-                  %
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    {achievements.unlocked_count}
-                    <span className="text-gray-500"> / {achievements.total_count} achievements</span>
-                  </p>
-                  <p className="text-xs text-gray-500">{achievements.total_lp} Legacy Points</p>
+        {/* Achievements + Performance Tracker — antes eran dos cards de
+            ancho completo apiladas (cada una con su propio header), ahora
+            son tiles de igual altura en una sola fila. Mismo contenido,
+            mitad del alto vertical antes de llegar a Torneos Recientes. */}
+        {(gaPlayer || achievementsLoading || (achievements && achievements.unlocked_count > 0)) && (
+          <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {achievementsLoading ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="h-10 w-10 flex-shrink-0 animate-pulse rounded-full bg-white/[0.06]" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-3.5 w-32 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-white/[0.06]" />
                 </div>
               </div>
-              <span className="text-xs font-semibold text-primary">Ver todos →</span>
-            </Link>
+            ) : (
+              achievements &&
+              achievements.unlocked_count > 0 && (
+              <Link
+                to="/players/$playerTag/achievements"
+                params={{ playerTag: tag }}
+                className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary transition group-hover:scale-105">
+                    {achievements.total_count > 0
+                      ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
+                      : 0}
+                    %
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">
+                      {achievements.unlocked_count}
+                      <span className="text-gray-500"> / {achievements.total_count} achievements</span>
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {achievements.total_lp} Legacy Points
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight
+                  size={16}
+                  className="flex-shrink-0 text-gray-500 transition group-hover:text-primary"
+                />
+              </Link>
+              )
+            )}
+
+            {gaPlayer && (
+              <Link
+                to="/sessions"
+                className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition group-hover:scale-105">
+                    <Layers size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">Performance Tracker</p>
+                    <p className="truncate text-xs text-gray-500">
+                      Registra tus partidas en torneos y prácticas
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight
+                  size={16}
+                  className="flex-shrink-0 text-gray-500 transition group-hover:text-primary"
+                />
+              </Link>
+            )}
           </section>
         )}
 
-        {gaPlayer && (
+        {/* Mis Rankings — con exactamente 1 TCG, sus datos ya se plegaron
+            en la franja de stats del Hero (ver arriba); repetir la sección
+            sería mostrar el mismo Rank Global dos veces con otro estilo.
+            No se sabe cuántos TCGs tiene el jugador hasta que `data` llega,
+            así que la sección entera espera a que termine de cargar en vez
+            de mostrar un skeleton de 2 cards que después puede desaparecer
+            (el caso más común, 1 solo TCG) — ese "fantasma" era justo el
+            layout viejo que quedaba pegado en la carga. */}
+        {!loading && tcgStats.length !== 1 && (
           <section className="mt-6">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Mis Sesiones</h2>
-              <Link to="/sessions" className="text-xs font-medium text-primary hover:underline">
-                Ver todas →
-              </Link>
-            </div>
-            <Link
-              to="/sessions"
-              className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:scale-105">
-                <Layers size={24} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">Performance Tracker</p>
-                <p className="text-xs text-gray-400">
-                  Registra tus partidas durante torneos y prácticas
-                </p>
-              </div>
-              <ChevronRight
-                size={18}
-                className="ml-auto text-gray-500 transition group-hover:text-primary"
-              />
-            </Link>
-          </section>
-        )}
-
-        {/* Mis Rankings */}
-        <section className="mt-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">
-              Mis Rankings
-              <TooltipInfo
-                text={`¿Cómo se calculan tus puntos?
+              <h2 className="text-lg font-semibold text-white">
+                Mis Rankings
+                <TooltipInfo
+                  text={`¿Cómo se calculan tus puntos?
 
 Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
 (tus match points ÷ match points del 1er lugar) × 100
@@ -512,32 +614,91 @@ Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma se
 
 Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
 Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
-              />
-            </h2>
-          </div>
-          {loading ? (
-            <div className="flex flex-wrap gap-4">
-              {[1, 2].map((i) => (
-                <TcgRankCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : tcgStats.length === 0 ? (
-            <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">
-              Aún no tienes rankings en esta temporada.
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-4">
-              {tcgStats.map((tcg) => (
-                <TcgRankCard
-                  key={tcg.game_id}
-                  tcg={tcg}
-                  semesterLabel={semesterLabel}
-                  monthLabel={data?.monthLabel ?? "Este mes"}
                 />
+              </h2>
+            </div>
+            {tcgStats.length === 0 ? (
+              <div className="glass rounded-2xl p-8 text-center text-sm text-gray-500">
+                Aún no tienes rankings en esta temporada.
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-4">
+                {tcgStats.map((tcg) => (
+                  <TcgRankCard
+                    key={tcg.game_id}
+                    tcg={tcg}
+                    semesterLabel={semesterLabel}
+                    monthLabel={data?.monthLabel ?? "Este mes"}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Top Decks — usa el mismo selector de TCG que la franja W/L del
+            Hero (statsTcg/setStatsTcg): antes ese selector no tenía efecto
+            visible porque top3Decks se calculaba pero nunca se pintaba. */}
+        {top3Decks.length > 0 && (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Mis Decks Top</h2>
+              {statsGameIds.length > 1 && (
+                <div className="flex gap-1 rounded-lg bg-black/40 p-1">
+                  {statsGameIds.map((gid) => {
+                    const tcgName = tcgStats.find((t) => t.game_id === gid)?.game_name ?? gid;
+                    return (
+                      <button
+                        key={gid}
+                        onClick={() => setStatsTcg(gid)}
+                        className={`rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
+                          activeStatsTcg === gid
+                            ? "bg-primary text-primary-foreground"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        {tcgName}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="glass grid grid-cols-1 gap-3 rounded-2xl border border-white/10 p-4 sm:grid-cols-3">
+              {top3Decks.map((deck: any, i: number) => (
+                <div
+                  key={deck.id}
+                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-3"
+                >
+                  <div className="relative flex-shrink-0">
+                    {deck.image ? (
+                      <img
+                        src={deck.image}
+                        alt={deck.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-16 w-11 rounded-md border border-white/10 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-11 items-center justify-center rounded-md border border-white/10 bg-black/30">
+                        <ShieldQuestion size={16} className="text-gray-600" />
+                      </div>
+                    )}
+                    <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {i + 1}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">{deck.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {deck.count} torneo{deck.count !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Recent */}
         <section className="glass mt-6 overflow-hidden rounded-2xl">
@@ -638,7 +799,9 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                           <div className="flex flex-col items-end leading-none">
                             <span
                               className={`font-mono-stat text-sm font-semibold ${
-                                t.placement <= 3 ? "text-primary" : "text-white"
+                                rankTier(t.placement)
+                                  ? RANK_TIER_TEXT[rankTier(t.placement)!]
+                                  : "text-white"
                               }`}
                             >
                               #{t.placement}
@@ -756,7 +919,11 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                           </button>
                           <div className="flex flex-col items-end leading-none">
                             <span
-                              className={`font-mono-stat text-sm font-semibold ${t.placement <= 3 ? "text-primary" : "text-white"}`}
+                              className={`font-mono-stat text-sm font-semibold ${
+                                rankTier(t.placement)
+                                  ? RANK_TIER_TEXT[rankTier(t.placement)!]
+                                  : "text-white"
+                              }`}
                             >
                               #{t.placement}
                             </span>
@@ -1005,7 +1172,9 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                   >
                                     <td className="px-3 py-2">
                                       <span
-                                        className={`font-mono-stat text-sm font-semibold ${r.rank <= 3 ? "text-primary" : "text-white"}`}
+                                        className={`font-mono-stat text-sm font-semibold ${
+                                          rankTier(r.rank) ? RANK_TIER_TEXT[rankTier(r.rank)!] : "text-white"
+                                        }`}
                                       >
                                         {String(r.rank).padStart(2, "0")}
                                       </span>
@@ -1046,13 +1215,35 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                         </div>
                       </div>
                       <div className="min-h-0 min-w-0 max-h-[50vh] overflow-y-auto border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[calc(90vh-80px)] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:sticky lg:top-0">
-                        <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-white">
-                          Performance Tracker
-                        </h3>
-                        <RoundsAccordionReadOnly
-                          tournamentId={tournamentDetail.tournament_id}
-                          gameId={tournamentDetail.game_id}
-                        />
+                        <div className="mb-4 flex items-center justify-between">
+                          <h3 className="text-sm font-bold uppercase tracking-widest text-white">
+                            Performance Tracker
+                          </h3>
+                          {editingTrackerInModal && (
+                            <button
+                              type="button"
+                              onClick={exitTrackerEditMode}
+                              className="text-[10px] font-semibold text-gray-400 hover:text-white"
+                            >
+                              Listo
+                            </button>
+                          )}
+                        </div>
+                        {editingTrackerInModal ? (
+                          <PerformanceTrackerModal
+                            embedded
+                            tournamentId={tournamentDetail.tournament_id}
+                            gameId={tournamentDetail.game_id}
+                            onClose={exitTrackerEditMode}
+                          />
+                        ) : (
+                          <RoundsAccordionReadOnly
+                            key={roundsReloadKey}
+                            tournamentId={tournamentDetail.tournament_id}
+                            gameId={tournamentDetail.game_id}
+                            onAddTracker={() => setEditingTrackerInModal(true)}
+                          />
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -1159,6 +1350,7 @@ function TcgRankCard({
         ? `#${tcg.monthly_rank_position}`
         : "—";
   const points = tab === "global" ? tcg.total_points : tcg.monthly_total_points;
+  const tier = rankTier(tab === "global" ? tcg.rank_position : tcg.monthly_rank_position);
 
   return (
     <div className="glass flex w-full flex-col gap-3 rounded-2xl border border-white/10 p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
@@ -1185,7 +1377,11 @@ function TcgRankCard({
           <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
             <Crown size={10} /> {tab === "global" ? "Rank Global" : "Rank Mes"}
           </div>
-          <p className="mt-1 font-mono-stat text-3xl font-bold text-white">{rankValue}</p>
+          <p
+            className={`mt-1 font-mono-stat text-3xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-white"}`}
+          >
+            {rankValue}
+          </p>
           <p className="text-[10px] text-gray-500">
             {tab === "global" ? semesterLabel : monthLabel}
           </p>

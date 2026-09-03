@@ -226,6 +226,23 @@ export const publishTournaments = createServerFn({ method: "POST" })
       );
     }
 
+    // Achievements: se recalculan aquí (evento "resultados se vuelven
+    // oficiales"), no en cada lectura del dashboard/perfil — antes
+    // getPlayerAchievements llamaba el RPC en cada fetch, caro en la
+    // página de más tráfico de la app. La función sigue siendo idempotente
+    // (ON CONFLICT DO NOTHING), así que llamarla aquí es seguro aunque un
+    // jugador ya esté al día.
+    const publishableIds = publishable.map((t) => t.id);
+    const { data: affectedResults } = publishableIds.length
+      ? await admin.from("tournament_results").select("player_id").in("tournament_id", publishableIds)
+      : { data: [] as Array<{ player_id: string }> };
+    const affectedPlayerIds = Array.from(
+      new Set((affectedResults ?? []).map((r: any) => r.player_id)),
+    );
+    for (const pid of affectedPlayerIds) {
+      await admin.rpc("recompute_player_achievements" as any, { p_player_id: pid });
+    }
+
     for (const t of publishable) {
       await logAction(
         admin,

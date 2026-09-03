@@ -1,0 +1,147 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "Trading Card Nexus" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e15]: Trading Card
+        - generic [ref=e16]: Nexus
+    - generic [ref=e18]:
+      - complementary [ref=e19]
+      - main [ref=e20]:
+        - generic [ref=e23]:
+          - generic [ref=e24]: P
+          - generic [ref=e25]:
+            - paragraph [ref=e26]: Player Tag
+            - heading "PLAYERALL" [level=1] [ref=e27]
+            - paragraph [ref=e28]: Monterrey
+            - paragraph [ref=e29]: Miembro desde agosto de 2026
+            - button "Compartir perfil" [ref=e30]
+        - generic [ref=e37]:
+          - heading "Rankings actuales" [level=2] [ref=e38]
+          - generic [ref=e40]:
+            - generic [ref=e41]: One Piece Card Game
+            - generic [ref=e44]:
+              - generic [ref=e45]:
+                - paragraph [ref=e46]: Rank
+                - paragraph [ref=e49]: "#17"
+              - generic [ref=e50]:
+                - paragraph [ref=e51]: Puntos
+                - paragraph [ref=e56]: "450"
+            - generic [ref=e57]:
+              - generic [ref=e58]: 18 jugados
+              - generic [ref=e59]: ·
+              - generic [ref=e60]: 2 ganados
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - heading "Historial de torneos" [level=2] [ref=e67]
+            - generic [ref=e68]: 19 torneos
+          - generic [ref=e69]:
+            - button "Todas las ligas" [ref=e70]
+            - button "Circuito Nacional" [ref=e71]
+            - button "Prueba Verano liga interna" [ref=e72]
+          - table [ref=e74]:
+            - rowgroup [ref=e75]:
+              - row [ref=e76]:
+                - columnheader "Fecha" [ref=e77]
+                - columnheader "TCG" [ref=e78]
+                - columnheader "Tienda" [ref=e79]
+                - columnheader "V / D" [ref=e80]
+                - columnheader "Posición" [ref=e81]
+                - columnheader "Pts Arena" [ref=e82]
+            - rowgroup [ref=e83]:
+              - row [ref=e84]:
+                - cell "30 ago 2026" [ref=e85]
+                - cell [ref=e86]:
+                  - text: One Piece Card Game
+                  - link "Prueba Verano liga interna" [ref=e87] [cursor=pointer]:
+                    - /url: /stores/geek-collector#liga-interna
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e88]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e89]: · Monterrey
+                - cell "4 / 1" [ref=e90]
+                - cell "#11" [ref=e91]
+                - cell "+25.00" [ref=e93]
+              - row [ref=e94]:
+                - cell "29 ago 2026" [ref=e95]
+                - cell "One Piece Card Game" [ref=e96]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e97]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e98]: · Monterrey
+                - cell "4 / 1" [ref=e99]
+                - cell "#9" [ref=e100]
+                - cell "+25.00" [ref=e102]
+              - row [ref=e103]:
+                - cell "26 ago 2026" [ref=e104]
+                - cell "One Piece Card Game" [ref=e105]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e106]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e107]: · Monterrey
+                - cell "4 / 1" [ref=e108]
+                - cell "#15" [ref=e109]
+                - cell "+25.00" [ref=e111]
+              - row [ref=e112]:
+                - cell "22 ago 2026" [ref=e113]
+                - cell "One Piece Card Game" [ref=e114]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e115]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e116]: · Monterrey
+                - cell "4 / 1" [ref=e117]
+                - cell "#16" [ref=e118]
+                - cell "+25.00" [ref=e120]
+              - row [ref=e121]:
+                - cell "19 ago 2026" [ref=e122]
+                - cell "One Piece Card Game" [ref=e123]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e124]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e125]: · Monterrey
+                - cell "4 / 1" [ref=e126]
+                - cell "#9" [ref=e127]
+                - cell "+25.00" [ref=e129]
+              - row [ref=e130]:
+                - cell "15 ago 2026" [ref=e131]
+                - cell "One Piece Card Game" [ref=e132]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e133]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e134]: · Monterrey
+                - cell "4 / 1" [ref=e135]
+                - cell "#16" [ref=e136]
+                - cell "+25.00" [ref=e138]
+              - row [ref=e139]:
+                - cell "12 ago 2026" [ref=e140]
+                - cell "One Piece Card Game" [ref=e141]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e142]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e143]: · Monterrey
+                - cell "4 / 1" [ref=e144]
+                - cell "#15" [ref=e145]
+                - cell "+25.00" [ref=e147]
+              - row [ref=e148]:
+                - cell "8 ago 2026" [ref=e149]
+                - cell "One Piece Card Game" [ref=e150]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e151]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e152]: · Monterrey
+                - cell "4 / 1" [ref=e153]
+                - cell "#10" [ref=e154]
+                - cell "+25.00" [ref=e156]
+              - row [ref=e157]:
+                - cell "5 ago 2026" [ref=e158]
+                - cell "One Piece Card Game" [ref=e159]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e160]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e161]: · Monterrey
+                - cell "4 / 1" [ref=e162]
+                - cell "#15" [ref=e163]
+                - cell "+25.00" [ref=e165]
+              - row [ref=e166]:
+                - cell "1 ago 2026" [ref=e167]
+                - cell "One Piece Card Game" [ref=e168]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=e169]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=e170]: · Monterrey
+                - cell "4 / 1" [ref=e171]
+                - cell "#16" [ref=e172]
+                - cell "+25.00" [ref=e174]
+          - button "Ver más torneos" [ref=e176]
+      - complementary [ref=e177]
+  - region "Notifications alt+T"

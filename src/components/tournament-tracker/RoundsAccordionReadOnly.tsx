@@ -7,6 +7,8 @@ import { confirmRoundResult } from "@/lib/nexus-tournament-tracker.functions";
 // En lucide-react agrega:
 import {
   ChevronDown,
+  Pencil,
+  Plus,
   ShieldQuestion,
   Swords,
   TrendingDown,
@@ -361,9 +363,15 @@ function RoundAccordionItem({
 export function RoundsAccordionReadOnly({
   tournamentId,
   gameId,
+  onAddTracker,
 }: {
   tournamentId: string;
   gameId: string;
+  // Cuando se pasa, habilita el flujo "editar tracker sin salir del modal
+  // de detalle" — antes la única forma de registrar rondas era cerrar este
+  // panel de solo-lectura y abrir el Performance Tracker como otro modal
+  // aparte, perdiendo el contexto del torneo que se estaba viendo.
+  onAddTracker?: () => void;
 }) {
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const [loading, setLoading] = useState(true);
@@ -408,15 +416,38 @@ export function RoundsAccordionReadOnly({
 
   if (rounds.length === 0) {
     return (
-      <p className="py-6 text-center text-sm text-gray-400">
-        Aún no has registrado rondas para este torneo.
-      </p>
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <p className="text-sm text-gray-400">Aún no has registrado rondas para este torneo.</p>
+        {onAddTracker && (
+          <button
+            type="button"
+            onClick={onAddTracker}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <Plus size={14} /> Agregar Tracker
+          </button>
+        )}
+      </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {summary && <SummaryCard summary={summary} leader={leader} />}
+      {summary && (
+        <div className="relative">
+          <SummaryCard summary={summary} leader={leader} />
+          {onAddTracker && (
+            <button
+              type="button"
+              onClick={onAddTracker}
+              title="Editar rondas de este torneo"
+              className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-semibold text-gray-300 transition hover:border-primary/40 hover:text-primary"
+            >
+              <Pencil size={11} /> Editar
+            </button>
+          )}
+        </div>
+      )}
       <div className="space-y-2">
         {rounds.map((r) => (
           <RoundAccordionItem

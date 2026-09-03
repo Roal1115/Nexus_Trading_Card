@@ -1,0 +1,420 @@
+- generic:
+  - generic:
+    - generic [aria-hidden]:
+      - complementary:
+        - link:
+          - /url: /
+          - generic:
+            - generic: Nexus
+            - generic: Jugador
+        - button
+        - generic:
+          - generic:
+            - button: One Piece Card Game
+          - button:
+            - generic: Notificaciones
+            - generic: "1"
+        - navigation:
+          - generic:
+            - generic: Explorar
+            - generic:
+              - link:
+                - /url: /
+                - generic: Ranking
+              - link:
+                - /url: /calendar
+                - generic: Calendario
+              - link:
+                - /url: /meta
+                - generic: Meta
+              - link:
+                - /url: /stores
+                - generic: Tiendas
+          - generic:
+            - generic: Mi Carrera
+            - generic:
+              - link:
+                - /url: /dashboard
+                - generic: Mi Panel
+              - link:
+                - /url: /my-stats
+                - generic: Mis Stats
+              - link:
+                - /url: /sessions
+                - generic: Sesiones
+          - generic:
+            - generic: Cuenta
+            - generic:
+              - link:
+                - /url: /players/PLAYERALL
+                - generic: Mi Perfil
+              - link:
+                - /url: /settings
+                - generic: Configuración
+        - generic:
+          - generic:
+            - generic: Sesión
+            - generic: PLAYERALL
+          - button:
+            - generic: Cerrar sesión
+    - generic [aria-hidden]:
+      - generic:
+        - generic:
+          - complementary
+          - main:
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Tu Geek Tag
+                  - heading [level=1]: PLAYERALL
+                  - paragraph: Monterrey
+                - generic:
+                  - generic:
+                    - generic: Rank Global
+                    - generic: "#17"
+                    - paragraph: TestLigaMockUp
+                  - generic:
+                    - generic:
+                      - generic: Mensual
+                      - generic: —
+                    - generic:
+                      - generic: Tienda favorita
+                      - generic: "Tienda Mock #1"
+                    - generic:
+                      - generic: Torneos
+                      - generic: "19"
+                    - generic:
+                      - generic: Puntos
+                      - generic: "450"
+                    - generic:
+                      - generic: Ganados
+                      - generic: "2"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: 78W
+                      - generic: ·
+                      - generic: 17L
+                      - generic: 95 partidas
+                      - generic: 82% WR
+                  - link:
+                    - /url: /my-stats
+                    - generic: Ver mis stats
+                    - generic: →
+              - generic:
+                - link:
+                  - /url: /players/PLAYERALL
+                  - text: Ver mi perfil público →
+                - button: Compartir mi perfil
+                - button: Público
+            - generic:
+              - link:
+                - /url: /players/PLAYERALL/achievements
+                - generic:
+                  - generic: 16%
+                  - generic:
+                    - paragraph:
+                      - text: "12"
+                      - generic: / 77 achievements
+                    - paragraph: 380 Legacy Points
+              - link:
+                - /url: /sessions
+                - generic:
+                  - generic:
+                    - paragraph: Performance Tracker
+                    - paragraph: Registra tus partidas en torneos y prácticas
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=2]: Torneos Recientes
+                - generic: 19 torneos jugados
+              - generic:
+                - table:
+                  - rowgroup:
+                    - row:
+                      - columnheader: Fecha
+                      - columnheader: Tienda
+                      - columnheader: TCG
+                      - columnheader: V / D
+                      - columnheader: Posición
+                      - columnheader: Pts Arena
+                      - columnheader
+                  - rowgroup:
+                    - row:
+                      - cell: 2026-08-30
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#11"
+                          - generic: ▼2
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-29
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#9"
+                          - generic: ▲6
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-26
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#15"
+                          - generic: ▲1
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-22
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#16"
+                          - generic: ▼7
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-19
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#9"
+                          - generic: ▲7
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-15
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#16"
+                          - generic: ▼1
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-12
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#15"
+                          - generic: ▼5
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-08
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#10"
+                          - generic: ▲5
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-05
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#15"
+                          - generic: ▲1
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell: 2026-08-01
+                      - cell:
+                        - text: "Tienda Mock #1"
+                        - generic: · Monterrey
+                      - cell: One Piece Card Game
+                      - cell: 4 / 1
+                      - cell:
+                        - generic:
+                          - generic: "#16"
+                          - generic: ▼7
+                      - cell: "+25.00"
+                      - cell:
+                        - generic:
+                          - button:
+                            - generic: Tracker
+                    - row:
+                      - cell:
+                        - button: Ver más torneos
+          - complementary
+    - region "Notifications alt+T"
+  - dialog [active] [ref=f2e499]:
+    - generic [ref=f2e500]:
+      - generic [ref=f2e501]:
+        - paragraph [ref=f2e502]: Detalle del Torneo
+        - heading "One Piece Card Game" [level=2] [ref=f2e503]
+      - button "Cerrar" [ref=f2e504]
+    - generic [ref=f2e509]:
+      - generic [ref=f2e510]:
+        - generic [ref=f2e511]:
+          - generic [ref=f2e512]:
+            - paragraph [ref=f2e513]: Tienda
+            - paragraph [ref=f2e514]: "Tienda Mock #1"
+            - paragraph [ref=f2e515]: Monterrey, Nuevo Leon
+          - generic [ref=f2e516]:
+            - paragraph [ref=f2e517]: Fecha
+            - paragraph [ref=f2e518]: 30 de agosto de 2026
+            - paragraph [ref=f2e519]: S2 2026
+          - generic [ref=f2e520]:
+            - paragraph [ref=f2e521]: Editorial
+            - paragraph [ref=f2e522]: Bandai
+          - generic [ref=f2e523]:
+            - paragraph [ref=f2e524]: Participantes
+            - paragraph [ref=f2e525]: "12"
+            - paragraph [ref=f2e526]: "Tu posición: #11"
+        - generic [ref=f2e527]:
+          - heading "Resultados del torneo" [level=3] [ref=f2e528]
+          - table [ref=f2e530]:
+            - rowgroup [ref=f2e531]:
+              - row [ref=f2e532]:
+                - columnheader "#" [ref=f2e533]
+                - columnheader "Geek Tag" [ref=f2e534]
+                - columnheader "V / D" [ref=f2e535]
+                - columnheader "OMW%" [ref=f2e536]
+                - columnheader "Pts Arena" [ref=f2e537]
+            - rowgroup [ref=f2e538]:
+              - row [ref=f2e539] [cursor=pointer]:
+                - cell "01" [ref=f2e540]
+                - cell "Bryanberu | Mandarinas" [ref=f2e541]
+                - cell "5 / 0" [ref=f2e542]
+                - cell "38.5%" [ref=f2e543]
+                - cell "100.00" [ref=f2e544]
+              - row [ref=f2e545] [cursor=pointer]:
+                - cell "02" [ref=f2e546]
+                - cell "EL GEORCH | Mandarinas" [ref=f2e547]
+                - cell "4 / 1" [ref=f2e548]
+                - cell "54.5%" [ref=f2e549]
+                - cell "80.00" [ref=f2e550]
+              - row [ref=f2e551] [cursor=pointer]:
+                - cell "03" [ref=f2e552]
+                - cell "JESUS RIOS /Smile" [ref=f2e553]
+                - cell "4 / 1" [ref=f2e554]
+                - cell "35.9%" [ref=f2e555]
+                - cell "80.00" [ref=f2e556]
+              - row [ref=f2e557] [cursor=pointer]:
+                - cell "04" [ref=f2e558]
+                - cell "One2p" [ref=f2e559]
+                - cell "3 / 2" [ref=f2e560]
+                - cell "39.4%" [ref=f2e561]
+                - cell "60.00" [ref=f2e562]
+              - row [ref=f2e563] [cursor=pointer]:
+                - cell "05" [ref=f2e564]
+                - cell "Capu | Smile" [ref=f2e565]
+                - cell "2 / 3" [ref=f2e566]
+                - cell "65.9%" [ref=f2e567]
+                - cell "40.00" [ref=f2e568]
+              - row [ref=f2e569] [cursor=pointer]:
+                - cell "06" [ref=f2e570]
+                - cell "Scooby32" [ref=f2e571]
+                - cell "2 / 3" [ref=f2e572]
+                - cell "46.6%" [ref=f2e573]
+                - cell "40.00" [ref=f2e574]
+              - row [ref=f2e575] [cursor=pointer]:
+                - cell "07" [ref=f2e576]
+                - cell "AC UDT | Bruno" [ref=f2e577]
+                - cell "2 / 3" [ref=f2e578]
+                - cell "38.1%" [ref=f2e579]
+                - cell "40.00" [ref=f2e580]
+              - row [ref=f2e581] [cursor=pointer]:
+                - cell "08" [ref=f2e582]
+                - cell "Pato | Mandarinas" [ref=f2e583]
+                - cell "1 / 3" [ref=f2e584]
+                - cell "61.2%" [ref=f2e585]
+                - cell "26.67" [ref=f2e586]
+              - row [ref=f2e587] [cursor=pointer]:
+                - cell "09" [ref=f2e588]
+                - cell "Andrés | Mandarinas" [ref=f2e589]
+                - cell "1 / 4" [ref=f2e590]
+                - cell "58.0%" [ref=f2e591]
+                - cell "20.00" [ref=f2e592]
+              - row [ref=f2e593] [cursor=pointer]:
+                - cell "10" [ref=f2e594]
+                - cell "Umichin" [ref=f2e595]
+                - cell "1 / 4" [ref=f2e596]
+                - cell "50.6%" [ref=f2e597]
+                - cell "20.00" [ref=f2e598]
+              - row [ref=f2e599]:
+                - cell "11" [ref=f2e600]
+                - cell "PLAYERALLTú" [ref=f2e601]
+                - cell "4 / 1" [ref=f2e603]
+                - cell "0.0%" [ref=f2e604]
+                - cell "25.00" [ref=f2e605]
+              - row [ref=f2e606] [cursor=pointer]:
+                - cell "12" [ref=f2e607]
+                - cell "PLAYERACHIVMENTS" [ref=f2e608]
+                - cell "3 / 2" [ref=f2e609]
+                - cell "0.0%" [ref=f2e610]
+                - cell "20.00" [ref=f2e611]
+      - generic [ref=f2e612]:
+        - heading "Performance Tracker" [level=3] [ref=f2e614]
+        - generic [ref=f2e661]:
+          - paragraph [ref=f2e662]: Aún no has registrado rondas para este torneo.
+          - button "Agregar Tracker" [ref=f2e663]

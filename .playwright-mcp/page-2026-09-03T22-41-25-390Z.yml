@@ -1,0 +1,37 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Trading Card Nexus" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e15]: Trading Card
+          - generic [ref=e16]: Nexus
+        - button "One Piece Card Game" [ref=e44]
+        - link "Iniciar sesión" [ref=e48] [cursor=pointer]:
+          - /url: /login
+    - main [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - paragraph [ref=e21]: Nexus
+          - heading "Bienvenido de vuelta" [level=1] [ref=e22]
+          - paragraph [ref=e23]: Inicia sesión para seguir tu ranking.
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]: Geek Tag o correo electrónico
+            - textbox "Geek Tag o jugador@nexus.gg" [ref=e27]
+          - generic [ref=e29]:
+            - generic [ref=e30]: Contraseña
+            - generic [ref=e31]:
+              - textbox "••••••••" [ref=e32]
+              - button "Mostrar contraseña" [ref=e33]
+          - button "Entrar a la Arena" [disabled] [ref=e37]
+          - generic [ref=e38]:
+            - button "¿Olvidaste tu contraseña?" [ref=e39]
+            - link "¿No tienes cuenta? Únete al Circuito →" [ref=e40] [cursor=pointer]:
+              - /url: /signup
+        - link "Continuar como invitado →" [ref=e41] [cursor=pointer]:
+          - /url: /
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e49]:
+        - generic [ref=e53]: Ocurrió un error. Verifica tu conexión e intenta de nuevo
