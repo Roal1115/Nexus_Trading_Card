@@ -69,11 +69,24 @@ type PageViewResult = Awaited<ReturnType<typeof getStorePageViewAnalytics>>;
 function StorePageViewsCard() {
   const fetchPageViews = useServerFn(getStorePageViewAnalytics);
   const [data, setData] = useState<PageViewResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    setError(null);
     fetchPageViews({ data: { days: 30 } })
-      .then(setData)
-      .catch(() => setData(null));
+      .then((res) => {
+        if (!cancelled) setData(res);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setData(null);
+          setError((e as Error)?.message || "No se pudieron cargar las visitas.");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [fetchPageViews]);
 
   return (
@@ -85,7 +98,9 @@ function StorePageViewsCard() {
       <p className="text-xs text-muted-foreground mb-3">
         Vistas de /stores/{"{tu-tienda}"} en los últimos {data?.days ?? 30} días, por sección.
       </p>
-      {data === null ? (
+      {error ? (
+        <p className="text-sm text-muted-foreground">{error}</p>
+      ) : data === null ? (
         <SkeletonBlock className="h-40 rounded-md" />
       ) : data.total_views === 0 ? (
         <p className="text-sm text-muted-foreground">Sin visitas registradas en este periodo.</p>
