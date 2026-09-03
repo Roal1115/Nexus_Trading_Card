@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Crown, Lock, Share2, Target, TrendingUp, Trophy } from "lucide-react";
 import { playerProfileQuery, playerAchievementsQuery } from "@/lib/player-profile-queries";
+import { shareProfileWithCard } from "@/lib/share-card";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
@@ -227,27 +228,27 @@ function PublicProfilePage() {
               <button
                 onClick={async () => {
                   const url = `https://mxntcg.lovable.app/players/${profile.geek_tag}`;
-                  const shareData = {
+                  const topRanking = profile.rankings?.[0] as any;
+                  await shareProfileWithCard({
+                    url,
                     title: `${profile.geek_tag} — Nexus`,
                     text: `Mira el ranking de ${profile.geek_tag} en Nexus 🏆`,
-                    url,
-                  };
-
-                  if (navigator.share && navigator.canShare?.(shareData)) {
-                    try {
-                      await navigator.share(shareData);
-                    } catch (err: any) {
-                      if (err?.name !== "AbortError") {
-                        navigator.clipboard.writeText(url);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }
-                    }
-                  } else {
-                    navigator.clipboard.writeText(url);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }
+                    cardData: {
+                      geekTag: profile.geek_tag,
+                      subtitle: profile.store_city ?? null,
+                      rankLabel: topRanking?.rank_position > 0 ? `#${topRanking.rank_position}` : null,
+                      rankCaption: topRanking?.game_name ?? null,
+                      statsLine: topRanking
+                        ? `${Number(topRanking.total_points).toFixed(0)} pts · ${topRanking.tournaments_won} ganados`
+                        : null,
+                      footerLine:
+                        tournaments.length > 0 ? `${tournaments.length} torneos jugados` : null,
+                    },
+                    onCopied: () => {
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    },
+                  });
                 }}
                 className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
               >

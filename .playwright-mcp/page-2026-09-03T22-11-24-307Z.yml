@@ -1,0 +1,274 @@
+- generic [ref=f1e2]:
+  - complementary [ref=f1e23]:
+    - link "Nexus Jugador" [ref=f1e24] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f1e32]:
+        - generic [ref=f1e33]: Nexus
+        - generic [ref=f1e34]: Jugador
+    - button "Colapsar menú" [ref=f1e35]
+    - generic [ref=f1e39]:
+      - button "One Piece Card Game" [ref=f1e41]
+      - button "Notificaciones" [ref=f1e44]:
+        - generic [ref=f1e50]: "1"
+    - navigation [ref=f1e51]:
+      - generic [ref=f1e52]:
+        - generic [ref=f1e53]: Explorar
+        - generic [ref=f1e54]:
+          - link "Ranking" [ref=f1e55] [cursor=pointer]:
+            - /url: /
+          - link "Calendario" [ref=f1e64] [cursor=pointer]:
+            - /url: /calendar
+          - link "Meta" [ref=f1e69] [cursor=pointer]:
+            - /url: /meta
+          - link "Tiendas" [ref=f1e75] [cursor=pointer]:
+            - /url: /stores
+      - generic [ref=f1e82]:
+        - generic [ref=f1e83]: Mi Carrera
+        - generic [ref=f1e84]:
+          - link "Mi Panel" [ref=f1e85] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Mis Stats" [ref=f1e93] [cursor=pointer]:
+            - /url: /my-stats
+          - link "Sesiones" [ref=f1e98] [cursor=pointer]:
+            - /url: /sessions
+      - generic [ref=f1e110]:
+        - generic [ref=f1e111]: Cuenta
+        - generic [ref=f1e112]:
+          - link "Mi Perfil" [ref=f1e113] [cursor=pointer]:
+            - /url: /players/PLAYERALL
+          - link "Configuración" [ref=f1e120] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f1e126]:
+      - generic [ref=f1e127]:
+        - generic [ref=f1e128]: Sesión
+        - generic [ref=f1e129]: PLAYERALL
+      - button "Cerrar sesión" [ref=f1e130]
+  - generic [ref=f1e136]:
+    - complementary [ref=f1e137]
+    - main [ref=f1e138]:
+      - generic [ref=f1e139]:
+        - generic [ref=f1e141]:
+          - generic [ref=f1e142]:
+            - paragraph [ref=f1e143]: Tu Geek Tag
+            - heading "PLAYERALL" [level=1] [ref=f1e144]
+            - paragraph [ref=f1e145]: Monterrey
+          - generic [ref=f1e146]:
+            - generic [ref=f1e147]:
+              - generic [ref=f1e148]: Rank Global
+              - generic [ref=f1e151]: "#17"
+              - paragraph [ref=f1e152]: TestLigaMockUp
+            - generic [ref=f1e153]:
+              - generic [ref=f1e154]:
+                - generic [ref=f1e155]: Mensual
+                - generic [ref=f1e158]: —
+              - generic [ref=f1e159]:
+                - generic [ref=f1e160]: Tienda favorita
+                - generic [ref=f1e165]: "Tienda Mock #1"
+              - generic [ref=f1e166]:
+                - generic [ref=f1e167]: Torneos
+                - generic [ref=f1e177]: "19"
+              - generic [ref=f1e178]:
+                - generic [ref=f1e179]: Puntos
+                - generic [ref=f1e184]: "450"
+              - generic [ref=f1e185]:
+                - generic [ref=f1e186]: Ganados
+                - generic [ref=f1e190]: "2"
+        - generic [ref=f1e192]:
+          - generic [ref=f1e194]:
+            - generic [ref=f1e195]: 78W
+            - generic [ref=f1e196]: ·
+            - generic [ref=f1e197]: 17L
+            - generic [ref=f1e198]: 95 partidas
+            - generic [ref=f1e199]: 82% WR
+          - link "Ver mis stats →" [ref=f1e200] [cursor=pointer]:
+            - /url: /my-stats
+            - generic [ref=f1e204]: Ver mis stats
+            - generic [ref=f1e205]: →
+        - generic [ref=f1e206]:
+          - link "Ver mi perfil público →" [ref=f1e207] [cursor=pointer]:
+            - /url: /players/PLAYERALL
+          - button "Compartir mi perfil" [ref=f1e208]
+          - button "Privado" [active] [ref=f1e467]
+      - link "16% 12 / 77 achievements 380 Legacy Points Ver todos →" [ref=f1e220] [cursor=pointer]:
+        - /url: /players/PLAYERALL/achievements
+        - generic [ref=f1e221]:
+          - generic [ref=f1e222]: 16%
+          - generic [ref=f1e223]:
+            - paragraph [ref=f1e224]:
+              - text: "12"
+              - generic [ref=f1e225]: / 77 achievements
+            - paragraph [ref=f1e226]: 380 Legacy Points
+        - generic [ref=f1e227]: Ver todos →
+      - generic [ref=f1e228]:
+        - generic [ref=f1e229]:
+          - heading "Mis Sesiones" [level=2] [ref=f1e230]
+          - link "Ver todas →" [ref=f1e231] [cursor=pointer]:
+            - /url: /sessions
+        - link [ref=f1e232] [cursor=pointer]:
+          - /url: /sessions
+          - generic [ref=f1e238]:
+            - paragraph [ref=f1e239]: Performance Tracker
+            - paragraph [ref=f1e240]: Registra tus partidas durante torneos y prácticas
+      - generic [ref=f1e243]:
+        - generic [ref=f1e244]:
+          - heading "Torneos Recientes" [level=2] [ref=f1e249]
+          - generic [ref=f1e250]: 19 torneos jugados
+        - table [ref=f1e252]:
+          - rowgroup [ref=f1e253]:
+            - row [ref=f1e254]:
+              - columnheader "Fecha" [ref=f1e255]
+              - columnheader "Tienda" [ref=f1e256]
+              - columnheader "TCG" [ref=f1e257]
+              - columnheader "V / D" [ref=f1e258]
+              - columnheader "Posición" [ref=f1e259]
+              - columnheader "Pts Arena" [ref=f1e260]
+              - columnheader [ref=f1e261]
+          - rowgroup [ref=f1e262]:
+            - row [ref=f1e263] [cursor=pointer]:
+              - cell "2026-08-30" [ref=f1e264]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e265]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e266]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e267]
+              - cell "4 / 1" [ref=f1e268]
+              - cell "#11 ▼2" [ref=f1e269]:
+                - generic [ref=f1e270]:
+                  - generic [ref=f1e271]: "#11"
+                  - generic [ref=f1e471]: ▼2
+              - cell "+25.00" [ref=f1e273]
+              - cell [ref=f1e274]:
+                - button "Tracker" [ref=f1e276]
+            - row [ref=f1e283] [cursor=pointer]:
+              - cell "2026-08-29" [ref=f1e284]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e285]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e286]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e287]
+              - cell "4 / 1" [ref=f1e288]
+              - cell "#9 ▲6" [ref=f1e289]:
+                - generic [ref=f1e290]:
+                  - generic [ref=f1e291]: "#9"
+                  - generic [ref=f1e472]: ▲6
+              - cell "+25.00" [ref=f1e293]
+              - cell [ref=f1e294]:
+                - button "Tracker" [ref=f1e296]
+            - row [ref=f1e303] [cursor=pointer]:
+              - cell "2026-08-26" [ref=f1e304]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e305]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e306]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e307]
+              - cell "4 / 1" [ref=f1e308]
+              - cell "#15 ▲1" [ref=f1e309]:
+                - generic [ref=f1e310]:
+                  - generic [ref=f1e311]: "#15"
+                  - generic [ref=f1e473]: ▲1
+              - cell "+25.00" [ref=f1e313]
+              - cell [ref=f1e314]:
+                - button "Tracker" [ref=f1e316]
+            - row [ref=f1e323] [cursor=pointer]:
+              - cell "2026-08-22" [ref=f1e324]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e325]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e326]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e327]
+              - cell "4 / 1" [ref=f1e328]
+              - cell "#16 ▼7" [ref=f1e329]:
+                - generic [ref=f1e330]:
+                  - generic [ref=f1e331]: "#16"
+                  - generic [ref=f1e474]: ▼7
+              - cell "+25.00" [ref=f1e333]
+              - cell [ref=f1e334]:
+                - button "Tracker" [ref=f1e336]
+            - row [ref=f1e343] [cursor=pointer]:
+              - cell "2026-08-19" [ref=f1e344]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e345]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e346]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e347]
+              - cell "4 / 1" [ref=f1e348]
+              - cell "#9 ▲7" [ref=f1e349]:
+                - generic [ref=f1e350]:
+                  - generic [ref=f1e351]: "#9"
+                  - generic [ref=f1e475]: ▲7
+              - cell "+25.00" [ref=f1e353]
+              - cell [ref=f1e354]:
+                - button "Tracker" [ref=f1e356]
+            - row [ref=f1e363] [cursor=pointer]:
+              - cell "2026-08-15" [ref=f1e364]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e365]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e366]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e367]
+              - cell "4 / 1" [ref=f1e368]
+              - cell "#16 ▼1" [ref=f1e369]:
+                - generic [ref=f1e370]:
+                  - generic [ref=f1e371]: "#16"
+                  - generic [ref=f1e476]: ▼1
+              - cell "+25.00" [ref=f1e373]
+              - cell [ref=f1e374]:
+                - button "Tracker" [ref=f1e376]
+            - row [ref=f1e383] [cursor=pointer]:
+              - cell "2026-08-12" [ref=f1e384]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e385]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e386]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e387]
+              - cell "4 / 1" [ref=f1e388]
+              - cell "#15 ▼5" [ref=f1e389]:
+                - generic [ref=f1e390]:
+                  - generic [ref=f1e391]: "#15"
+                  - generic [ref=f1e477]: ▼5
+              - cell "+25.00" [ref=f1e393]
+              - cell [ref=f1e394]:
+                - button "Tracker" [ref=f1e396]
+            - row [ref=f1e403] [cursor=pointer]:
+              - cell "2026-08-08" [ref=f1e404]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e405]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e406]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e407]
+              - cell "4 / 1" [ref=f1e408]
+              - cell "#10 ▲5" [ref=f1e409]:
+                - generic [ref=f1e410]:
+                  - generic [ref=f1e411]: "#10"
+                  - generic [ref=f1e478]: ▲5
+              - cell "+25.00" [ref=f1e413]
+              - cell [ref=f1e414]:
+                - button "Tracker" [ref=f1e416]
+            - row [ref=f1e423] [cursor=pointer]:
+              - cell "2026-08-05" [ref=f1e424]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e425]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e426]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e427]
+              - cell "4 / 1" [ref=f1e428]
+              - cell "#15 ▲1" [ref=f1e429]:
+                - generic [ref=f1e430]:
+                  - generic [ref=f1e431]: "#15"
+                  - generic [ref=f1e479]: ▲1
+              - cell "+25.00" [ref=f1e433]
+              - cell [ref=f1e434]:
+                - button "Tracker" [ref=f1e436]
+            - row [ref=f1e443] [cursor=pointer]:
+              - cell "2026-08-01" [ref=f1e444]
+              - 'cell "Tienda Mock #1 · Monterrey" [ref=f1e445]':
+                - text: "Tienda Mock #1"
+                - generic [ref=f1e446]: · Monterrey
+              - cell "One Piece Card Game" [ref=f1e447]
+              - cell "4 / 1" [ref=f1e448]
+              - cell "#16 ▼7" [ref=f1e449]:
+                - generic [ref=f1e450]:
+                  - generic [ref=f1e451]: "#16"
+                  - generic [ref=f1e480]: ▼7
+              - cell "+25.00" [ref=f1e453]
+              - cell [ref=f1e454]:
+                - button "Tracker" [ref=f1e456]
+            - row [ref=f1e463]:
+              - cell [ref=f1e464]:
+                - button "Ver más torneos" [ref=f1e465]
+    - complementary [ref=f1e466]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f1e481]:
+        - generic [ref=f1e485]: Perfil ahora es privado

@@ -596,9 +596,14 @@ export const getPublicProfile = createServerFn({ method: "POST" })
   });
 
 // Catálogo Season I de achievements (ver supabase/migrations/20260902100000).
-// Recalcula (idempotente) y devuelve el estado por Road para el hub y el
-// perfil. Secret/Classified: si no están desbloqueados, se ocultan el
-// requirement_text real y el trigger_logic — solo se expone que existen.
+// Devuelve el estado por Road para el hub y el perfil. El recálculo
+// (recompute_player_achievements) YA NO corre aquí en cada lectura — corre
+// en publishTournaments, el evento real donde los resultados se vuelven
+// oficiales (ver nexus-admin-tournaments.functions.ts). Dashboard y perfil
+// público son la lectura de más tráfico de la app; recalcular ahí en cada
+// fetch escalaba mal. Secret/Classified: si no están desbloqueados, se
+// ocultan el requirement_text real y el trigger_logic — solo se expone que
+// existen.
 export const getPlayerAchievements = createServerFn({ method: "POST" })
   .middleware([optionalNexusUser])
   .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
@@ -622,8 +627,6 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
         roads: [] as any[],
       };
     }
-
-    await admin.rpc("recompute_player_achievements" as any, { p_player_id: t.id });
 
     const [{ data: defs }, { data: unlocks }] = await Promise.all([
       admin
