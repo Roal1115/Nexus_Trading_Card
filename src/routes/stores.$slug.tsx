@@ -117,8 +117,10 @@ function StoreProfilePage() {
   const ligaSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!store?.id || loggedSectionsRef.current.has("profile")) return;
-    loggedSectionsRef.current.add("profile");
+    if (!store?.id) return;
+    const key = `${store.id}:profile`;
+    if (loggedSectionsRef.current.has(key)) return;
+    loggedSectionsRef.current.add(key);
     logView({ data: { store_id: store.id, section: "profile" } }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store?.id]);
@@ -134,8 +136,9 @@ function StoreProfilePage() {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const match = targets.find((t) => t.el === entry.target);
-          if (!match || loggedSectionsRef.current.has(match.section)) continue;
-          loggedSectionsRef.current.add(match.section);
+          const key = `${store.id}:${match?.section}`;
+          if (!match || loggedSectionsRef.current.has(key)) continue;
+          loggedSectionsRef.current.add(key);
           logView({ data: { store_id: store.id!, section: match.section } }).catch(() => {});
           observer.unobserve(entry.target);
         }
