@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { toggleProfilePrivacy } from "@/lib/nexus-player.functions";
 import { myDashboardQuery, tournamentDetailQuery } from "@/lib/dashboard-queries";
+import { playerAchievementsQuery } from "@/lib/player-profile-queries";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
@@ -102,6 +103,12 @@ function DashboardPage() {
   });
   const data = dashboardQuery.data ?? null;
   const loading = !!gaPlayer && dashboardQuery.isPending;
+
+  const achievementsQuery = useQuery({
+    ...playerAchievementsQuery(gaPlayer?.geek_tag ?? ""),
+    enabled: !!gaPlayer?.geek_tag,
+  });
+  const achievements = achievementsQuery.data ?? null;
 
   useEffect(() => {
     if (data && typeof (data as any).is_profile_public === "boolean") {
@@ -433,6 +440,33 @@ function DashboardPage() {
             </button>
           </div>
         </section>
+
+        {achievements && achievements.unlocked_count > 0 && (
+          <section className="mb-6 rounded-2xl border border-white/10 bg-black/30 p-5">
+            <Link
+              to="/players/$playerTag/achievements"
+              params={{ playerTag: tag }}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary">
+                  {achievements.total_count > 0
+                    ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
+                    : 0}
+                  %
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {achievements.unlocked_count}
+                    <span className="text-gray-500"> / {achievements.total_count} achievements</span>
+                  </p>
+                  <p className="text-xs text-gray-500">{achievements.total_lp} Legacy Points</p>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-primary">Ver todos →</span>
+            </Link>
+          </section>
+        )}
 
         {gaPlayer && (
           <section className="mt-6">

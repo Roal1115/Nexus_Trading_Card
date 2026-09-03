@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Crown, Lock, Share2, Target, TrendingUp, Trophy } from "lucide-react";
-import { playerProfileQuery } from "@/lib/player-profile-queries";
+import { playerProfileQuery, playerAchievementsQuery } from "@/lib/player-profile-queries";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
@@ -84,6 +84,12 @@ function PublicProfilePage() {
   const profile = profileQuery.data ?? null;
   const loading = profileQuery.isPending;
   const notFound = profileQuery.isError;
+
+  const achievementsQuery = useQuery({
+    ...playerAchievementsQuery(playerTag),
+    enabled: !!profile && !profile.is_private,
+  });
+  const achievements = achievementsQuery.data ?? null;
 
   const tournaments: any[] =
     profile && !profile.is_private ? ((profile as any).tournaments ?? []) : [];
@@ -298,6 +304,34 @@ function PublicProfilePage() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Achievements teaser */}
+        {achievements && achievements.unlocked_count > 0 && (
+          <section className="glass mt-6 rounded-2xl border border-white/10 p-5">
+            <Link
+              to="/players/$playerTag/achievements"
+              params={{ playerTag }}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary">
+                  {achievements.total_count > 0
+                    ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
+                    : 0}
+                  %
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {achievements.unlocked_count}
+                    <span className="text-gray-500"> / {achievements.total_count} achievements</span>
+                  </p>
+                  <p className="text-xs text-gray-500">{achievements.total_lp} Legacy Points</p>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-primary">Ver todos →</span>
+            </Link>
           </section>
         )}
 

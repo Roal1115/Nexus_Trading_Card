@@ -595,6 +595,90 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     };
   });
 
+// Catálogo Season I de achievements (ver supabase/migrations/20260902100000).
+// Recalcula (idempotente) y devuelve el estado por Road para el hub y el
+// perfil. Secret/Classified: si no están desbloqueados, se ocultan el
+// requirement_text real y el trigger_logic — solo se expone que existen.
+export const getPlayerAchievements = createServerFn({ method: "POST" })
+  .middleware([optionalNexusUser])
+  .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+
+    const { data: target } = await admin
+      .from("players")
+      .select("id, geek_tag, is_profile_public" as any)
+      .eq("geek_tag", data.player_tag)
+      .maybeSingle();
+
+    if (!target) throw new Error("Jugador no encontrado");
+    const t = target as any;
+    if (!(t.is_profile_public ?? true)) {
+      return {
+        geek_tag: t.geek_tag as string,
+        total_lp: 0,
+        unlocked_count: 0,
+        total_count: 0,
+        roads: [] as any[],
+      };
+    }
+
+    await admin.rpc("recompute_player_achievements" as any, { p_player_id: t.id });
+
+    const [{ data: defs }, { data: unlocks }] = await Promise.all([
+      admin
+        .from("achievement_definitions" as any)
+        .select(
+          "key, road, item_type, name, visibility, requirement_text, tier, base_lp, reward_type, reward_detail, icon_direction, sort_order",
+        )
+        .order("sort_order"),
+      admin
+        .from("player_achievements" as any)
+        .select("achievement_key, unlocked_at")
+        .eq("player_id", t.id),
+    ]);
+
+    const unlockedMap = new Map(((unlocks ?? []) as any[]).map((u) => [u.achievement_key, u.unlocked_at]));
+    const isSecret = (visibility: string) => /secret|classified/i.test(visibility);
+
+    const byRoad = new Map<string, any[]>();
+    for (const ad of (defs ?? []) as any[]) {
+      const unlockedAt = unlockedMap.get(ad.key) ?? null;
+      const secret = isSecret(ad.visibility) && !unlockedAt;
+      if (!byRoad.has(ad.road)) byRoad.set(ad.road, []);
+      byRoad.get(ad.road)!.push({
+        key: ad.key,
+        item_type: ad.item_type,
+        name: secret ? "???" : ad.name,
+        requirement_text: secret ? "Requisito oculto." : ad.requirement_text,
+        tier: ad.tier,
+        base_lp: ad.base_lp,
+        reward_type: ad.reward_type,
+        reward_detail: secret ? null : ad.reward_detail,
+        unlocked: !!unlockedAt,
+        unlocked_at: unlockedAt,
+        is_secret: isSecret(ad.visibility),
+      });
+    }
+
+    const unlockedCount = (unlocks ?? []).length;
+    const totalLp = ((defs ?? []) as any[])
+      .filter((ad) => unlockedMap.has(ad.key))
+      .reduce((sum, ad) => sum + (ad.base_lp ?? 0), 0);
+
+    return {
+      geek_tag: t.geek_tag as string,
+      total_lp: totalLp,
+      unlocked_count: unlockedCount,
+      total_count: (defs ?? []).length,
+      roads: Array.from(byRoad.entries()).map(([road, items]) => ({
+        road,
+        items,
+        unlocked_of_total: `${items.filter((i) => i.unlocked).length}/${items.length}`,
+      })),
+    };
+  });
+
 export const getMyStats = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
   .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))

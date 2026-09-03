@@ -63,6 +63,7 @@ import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
 import { Route as SessionsTournamentTournamentIdRouteImport } from './routes/sessions.tournament.$tournamentId'
+import { Route as PlayersPlayerTagAchievementsRouteImport } from './routes/players.$playerTag_.achievements'
 import { Route as OrganizerTournamentsIdRouteImport } from './routes/organizer.tournaments.$id'
 import { Route as OrganizerLeaguesLeagueIdRouteImport } from './routes/organizer.leagues_.$leagueId'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
@@ -341,6 +342,12 @@ const SessionsTournamentTournamentIdRoute =
     path: '/tournament/$tournamentId',
     getParentRoute: () => SessionsRoute,
   } as any)
+const PlayersPlayerTagAchievementsRoute =
+  PlayersPlayerTagAchievementsRouteImport.update({
+    id: '/players/$playerTag_/achievements',
+    path: '/players/$playerTag/achievements',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const OrganizerTournamentsIdRoute = OrganizerTournamentsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -426,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
+  '/players/$playerTag/achievements': typeof PlayersPlayerTagAchievementsRoute
   '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/players/$playerTag/season/$seasonId': typeof PlayersPlayerTagSeasonSeasonIdRoute
@@ -482,6 +490,7 @@ export interface FileRoutesByTo {
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
+  '/players/$playerTag/achievements': typeof PlayersPlayerTagAchievementsRoute
   '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/players/$playerTag/season/$seasonId': typeof PlayersPlayerTagSeasonSeasonIdRoute
@@ -544,6 +553,7 @@ export interface FileRoutesById {
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/organizer/leagues_/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
+  '/players/$playerTag_/achievements': typeof PlayersPlayerTagAchievementsRoute
   '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/players/$playerTag_/season/$seasonId': typeof PlayersPlayerTagSeasonSeasonIdRoute
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id'
     | '/organizer/leagues/$leagueId'
     | '/organizer/tournaments/$id'
+    | '/players/$playerTag/achievements'
     | '/sessions/tournament/$tournamentId'
     | '/tcg-manager/tournaments/$id'
     | '/players/$playerTag/season/$seasonId'
@@ -663,6 +674,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id'
     | '/organizer/leagues/$leagueId'
     | '/organizer/tournaments/$id'
+    | '/players/$playerTag/achievements'
     | '/sessions/tournament/$tournamentId'
     | '/tcg-manager/tournaments/$id'
     | '/players/$playerTag/season/$seasonId'
@@ -724,6 +736,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id'
     | '/organizer/leagues_/$leagueId'
     | '/organizer/tournaments/$id'
+    | '/players/$playerTag_/achievements'
     | '/sessions/tournament/$tournamentId'
     | '/tcg-manager/tournaments/$id'
     | '/players/$playerTag_/season/$seasonId'
@@ -748,6 +761,7 @@ export interface RootRouteChildren {
   DocsFeaturesRoute: typeof DocsFeaturesRoute
   PlayersPlayerTagRoute: typeof PlayersPlayerTagRoute
   TournamentsIdRoute: typeof TournamentsIdRoute
+  PlayersPlayerTagAchievementsRoute: typeof PlayersPlayerTagAchievementsRoute
   PlayersPlayerTagSeasonSeasonIdRoute: typeof PlayersPlayerTagSeasonSeasonIdRoute
 }
 
@@ -1131,6 +1145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionsTournamentTournamentIdRouteImport
       parentRoute: typeof SessionsRoute
     }
+    '/players/$playerTag_/achievements': {
+      id: '/players/$playerTag_/achievements'
+      path: '/players/$playerTag/achievements'
+      fullPath: '/players/$playerTag/achievements'
+      preLoaderRoute: typeof PlayersPlayerTagAchievementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/organizer/tournaments/$id': {
       id: '/organizer/tournaments/$id'
       path: '/$id'
@@ -1334,6 +1355,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsFeaturesRoute: DocsFeaturesRoute,
   PlayersPlayerTagRoute: PlayersPlayerTagRoute,
   TournamentsIdRoute: TournamentsIdRoute,
+  PlayersPlayerTagAchievementsRoute: PlayersPlayerTagAchievementsRoute,
   PlayersPlayerTagSeasonSeasonIdRoute: PlayersPlayerTagSeasonSeasonIdRoute,
 }
 export const routeTree = rootRouteImport

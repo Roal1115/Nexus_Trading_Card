@@ -41,16 +41,17 @@ export function CalendarPreferencesPrompt({
   }
 
   return (
-    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-sm font-semibold text-white">¿Qué buscas?</p>
-        <p className="text-xs text-gray-400">Elige tu TCG y zona favoritos para ver justo lo que te interesa.</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
+      <p className="text-sm font-semibold text-white">¿Qué buscas?</p>
+      <p className="mt-0.5 text-xs text-gray-400">
+        Elige tu TCG y zona favoritos para ver justo lo que te interesa.
+      </p>
+
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <select
           value={gameId}
           onChange={(e) => setGameId(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-white outline-none focus:border-primary"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-white outline-none focus:border-primary sm:flex-1"
         >
           <option value="">TCG</option>
           {tcgs.map((t) => (
@@ -62,7 +63,7 @@ export function CalendarPreferencesPrompt({
         <select
           value={zone}
           onChange={(e) => setZone(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-white outline-none focus:border-primary"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-white outline-none focus:border-primary sm:flex-1"
         >
           <option value="">Zona</option>
           {zones.map((z) => (
@@ -71,20 +72,23 @@ export function CalendarPreferencesPrompt({
             </option>
           ))}
         </select>
-        <button
-          onClick={() => persist(gameId || null, zone || null)}
-          disabled={saving || (!gameId && !zone)}
-          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-primary-foreground disabled:opacity-40"
-        >
-          Guardar
-        </button>
-        <button
-          onClick={() => persist(null, null)}
-          disabled={saving}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300"
-        >
-          <X size={12} /> Ahora no
-        </button>
+
+        <div className="flex items-center gap-3 sm:flex-shrink-0">
+          <button
+            onClick={() => persist(gameId || null, zone || null)}
+            disabled={saving || (!gameId && !zone)}
+            className="flex-1 rounded-lg bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground disabled:opacity-40 sm:flex-none"
+          >
+            Guardar
+          </button>
+          <button
+            onClick={() => persist(null, null)}
+            disabled={saving}
+            className="flex flex-shrink-0 items-center gap-1 text-xs text-gray-500 hover:text-gray-300"
+          >
+            <X size={12} /> Ahora no
+          </button>
+        </div>
       </div>
     </div>
   );
