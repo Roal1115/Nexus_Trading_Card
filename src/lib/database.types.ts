@@ -1642,6 +1642,35 @@ export type Database = {
           },
         ]
       }
+      store_page_views: {
+        Row: {
+          id: string
+          section: string
+          store_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          section: string
+          store_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          section?: string
+          store_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_page_views_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_schedule_overrides: {
         Row: {
           created_at: string

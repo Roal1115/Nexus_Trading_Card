@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, ChevronLeft, ChevronRight, Medal, Gift, Star, Trophy } from "lucide-react";
 import { useWeekNav, useCalendarGrid, WeeklyGrid, dotColorForGame } from "@/components/calendar/weekly-grid";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
-import { getStoreActiveLeague } from "@/lib/nexus-public.functions";
+import { getStoreActiveLeague, logStorePageView } from "@/lib/nexus-public.functions";
 import { getMyFavoriteStores, toggleFavoriteStore } from "@/lib/nexus-player.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { AdVertical } from "@/components/ads/AdVertical";
@@ -106,6 +106,48 @@ function StoreProfilePage() {
       .finally(() => setLeagueLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store?.slug]);
+
+  // Visitas a la página: registra "profile" al entrar, y "calendario" /
+  // "liga_interna" cuando esas secciones realmente entran a la vista —
+  // la página es un solo scroll con anchors, no rutas separadas, así que
+  // IntersectionObserver es la única forma honesta de saber qué se mira.
+  const logView = useServerFn(logStorePageView);
+  const loggedSectionsRef = useRef(new Set<string>());
+  const calendarioSectionRef = useRef<HTMLElement | null>(null);
+  const ligaSectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!store?.id || loggedSectionsRef.current.has("profile")) return;
+    loggedSectionsRef.current.add("profile");
+    logView({ data: { store_id: store.id, section: "profile" } }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store?.id]);
+
+  useEffect(() => {
+    if (!store?.id) return;
+    const targets: Array<{ el: HTMLElement | null; section: "calendario" | "liga_interna" }> = [
+      { el: calendarioSectionRef.current, section: "calendario" },
+      { el: ligaSectionRef.current, section: "liga_interna" },
+    ];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const match = targets.find((t) => t.el === entry.target);
+          if (!match || loggedSectionsRef.current.has(match.section)) continue;
+          loggedSectionsRef.current.add(match.section);
+          logView({ data: { store_id: store.id!, section: match.section } }).catch(() => {});
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.4 },
+    );
+    for (const t of targets) {
+      if (t.el) observer.observe(t.el);
+    }
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store?.id, league, leagueLoading]);
 
   const calendarGrid = useCalendarGrid(events, weekDates);
   const gamesInSchedule = Array.from(
@@ -259,7 +301,11 @@ function StoreProfilePage() {
         )}
       </header>
 
-      <section id="calendario" className="glass space-y-4 scroll-mt-20 rounded-2xl p-6">
+      <section
+        id="calendario"
+        ref={calendarioSectionRef}
+        className="glass space-y-4 scroll-mt-20 rounded-2xl p-6"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-white">Calendario de torneos</h2>
           <div className="flex items-center gap-2">
@@ -371,7 +417,11 @@ function StoreProfilePage() {
       ) : null}
 
       {!leagueLoading && league && (
-        <section id="liga-interna" className="glass space-y-4 scroll-mt-20 rounded-2xl p-6">
+        <section
+          id="liga-interna"
+          ref={ligaSectionRef}
+          className="glass space-y-4 scroll-mt-20 rounded-2xl p-6"
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Liga Interna</p>

@@ -50,6 +50,57 @@ function classifyPlayer(
   return allWeeksCovered ? "recurrente" : "ocasional";
 }
 
+export const getStorePageViewAnalytics = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator((d: { store_id?: string; days?: number }) =>
+    z
+      .object({
+        store_id: z.string().uuid().optional(),
+        days: z.number().int().min(1).max(365).default(30),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    let storeId = player.home_store_id;
+    if (data.store_id) {
+      if (player.role === "admin") {
+        storeId = data.store_id;
+      } else if (data.store_id !== player.home_store_id) {
+        throw new Error("No tienes permiso para ver analytics de esta tienda");
+      }
+    }
+    if (!storeId) {
+      throw new Error("Esta tienda no tiene página pública registrada aún");
+    }
+
+    const since = new Date();
+    since.setDate(since.getDate() - data.days);
+
+    const { data: rows, error } = await admin
+      .from("store_page_views")
+      .select("section")
+      .eq("store_id", storeId)
+      .gte("viewed_at", since.toISOString());
+    if (error) failDb(error);
+
+    const counts = { profile: 0, calendario: 0, liga_interna: 0 };
+    for (const row of (rows ?? []) as Array<{ section: keyof typeof counts }>) {
+      counts[row.section] = (counts[row.section] ?? 0) + 1;
+    }
+
+    return {
+      days: data.days,
+      total_views: rows?.length ?? 0,
+      by_section: [
+        { section: "profile", label: "Perfil de tienda", views: counts.profile },
+        { section: "calendario", label: "Calendario", views: counts.calendario },
+        { section: "liga_interna", label: "Liga interna / leaderboard", views: counts.liga_interna },
+      ],
+    };
+  });
+
 export const getStoreAnalytics = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
   .inputValidator(

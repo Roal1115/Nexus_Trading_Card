@@ -2,6 +2,48 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { toLocalDateStr, todayInMexicoStr } from "./utils";
+import { getClientIp } from "./rate-limit.server";
+
+// ─── Dedupe de vistas de tienda por IP+sección ────────────────────────────
+// ponytail: mismo patrón que registerAdView (dedupe en memoria del worker,
+// se reinicia con cada isolate) — suficiente para que el conteo no se dispare
+// por refresh/scroll repetido; migrar a tabla con constraint único si se
+// vuelve algo facturable o cross-isolate.
+const PAGE_VIEW_DEDUPE_MS = 30 * 60 * 1000;
+const recentPageViews = new Map<string, number>();
+
+function isDuplicatePageView(key: string): boolean {
+  const now = Date.now();
+  if (recentPageViews.size > 5000) {
+    for (const [k, t] of recentPageViews) {
+      if (now - t > PAGE_VIEW_DEDUPE_MS) recentPageViews.delete(k);
+    }
+  }
+  const last = recentPageViews.get(key);
+  if (last && now - last < PAGE_VIEW_DEDUPE_MS) return true;
+  recentPageViews.set(key, now);
+  return false;
+}
+
+// Registra una visita a una sección de la página pública de una tienda.
+// No requiere sesión — es la página pública /stores/$slug.
+export const logStorePageView = createServerFn({ method: "POST" })
+  .inputValidator((d: { store_id: string; section: "profile" | "calendario" | "liga_interna" }) =>
+    z
+      .object({
+        store_id: z.string().uuid(),
+        section: z.enum(["profile", "calendario", "liga_interna"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    if (isDuplicatePageView(`storeview_${getClientIp()}_${data.store_id}_${data.section}`)) {
+      return { success: true };
+    }
+    const admin = getNexusAdmin();
+    await admin.from("store_page_views").insert({ store_id: data.store_id, section: data.section });
+    return { success: true };
+  });
 
 export const getPublicStoresList = createServerFn({ method: "POST" }).handler(async () => {
   const admin = getNexusAdmin();

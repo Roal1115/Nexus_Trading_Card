@@ -9,6 +9,7 @@ import {
   HelpCircle,
   AlertTriangle,
   Trophy,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -28,7 +29,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { usePagination } from "@/hooks/use-pagination";
-import { getStoreAnalytics } from "@/lib/nexus-organizer.functions";
+import { getStoreAnalytics, getStorePageViewAnalytics } from "@/lib/nexus-organizer.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,61 @@ const CATEGORY_COLORS: Record<string, string> = {
   una_vez: "#60a5fa",
   inactivo: "#6b7280",
 };
+
+type PageViewResult = Awaited<ReturnType<typeof getStorePageViewAnalytics>>;
+
+function StorePageViewsCard() {
+  const fetchPageViews = useServerFn(getStorePageViewAnalytics);
+  const [data, setData] = useState<PageViewResult | null>(null);
+
+  useEffect(() => {
+    fetchPageViews({ data: { days: 30 } })
+      .then(setData)
+      .catch(() => setData(null));
+  }, [fetchPageViews]);
+
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex items-center gap-2 mb-1">
+        <Eye className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold">Visitas a tu página</h2>
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        Vistas de /stores/{"{tu-tienda}"} en los últimos {data?.days ?? 30} días, por sección.
+      </p>
+      {data === null ? (
+        <SkeletonBlock className="h-40 rounded-md" />
+      ) : data.total_views === 0 ? (
+        <p className="text-sm text-muted-foreground">Sin visitas registradas en este periodo.</p>
+      ) : (
+        <>
+          <p className="text-2xl font-bold mb-3">{data.total_views}</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={data.by_section} layout="vertical" margin={{ left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" horizontal={false} />
+              <XAxis type="number" stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+              <YAxis type="category" dataKey="label" stroke="#d1d5db" fontSize={11} width={150} tick={{ fill: "#d1d5db" }} />
+              <Tooltip
+                contentStyle={{
+                  background: "#1f2937",
+                  border: "1px solid #4b5563",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: "#f9fafb",
+                  padding: "8px 12px",
+                }}
+                labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
+                itemStyle={{ color: "#e5e7eb" }}
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              />
+              <Bar dataKey="views" name="Vistas" fill="#60a5fa" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={800} />
+            </BarChart>
+          </ResponsiveContainer>
+        </>
+      )}
+    </div>
+  );
+}
 
 function OrganizerAnalytics() {
   const { player, loading: roleLoading } = useNexusRole();
@@ -453,6 +509,9 @@ function OrganizerAnalytics() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Visitas a la página pública de la tienda */}
+      <StorePageViewsCard />
 
       {/* Desglose por TCG + Top jugadores */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
