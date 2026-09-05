@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone, ChevronLeft, ChevronRight, Medal, Gift, Star, Trophy } from "lucide-react";
 import { useWeekNav, useCalendarGrid, WeeklyGrid, dotColorForGame } from "@/components/calendar/weekly-grid";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
-import { getStoreActiveLeague, logStorePageView } from "@/lib/nexus-public.functions";
+import { getStoreActiveLeagues, logStorePageView } from "@/lib/nexus-public.functions";
 import { getMyFavoriteStores, toggleFavoriteStore } from "@/lib/nexus-player.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { AdVertical } from "@/components/ads/AdVertical";
@@ -93,16 +93,16 @@ function StoreProfilePage() {
   });
   const events = calendarData?.events ?? [];
 
-  const fetchActiveLeague = useServerFn(getStoreActiveLeague);
-  const [league, setLeague] = useState<any>(null);
+  const fetchActiveLeagues = useServerFn(getStoreActiveLeagues);
+  const [leagues, setLeagues] = useState<any[]>([]);
   const [leagueLoading, setLeagueLoading] = useState(true);
 
   useEffect(() => {
     if (!store?.slug) return;
     setLeagueLoading(true);
-    fetchActiveLeague({ data: { slug: store.slug } })
-      .then((res: any) => setLeague(res.league))
-      .catch(() => setLeague(null))
+    fetchActiveLeagues({ data: { slug: store.slug } })
+      .then((res: any) => setLeagues(res.leagues ?? []))
+      .catch(() => setLeagues([]))
       .finally(() => setLeagueLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store?.slug]);
@@ -150,7 +150,7 @@ function StoreProfilePage() {
     }
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store?.id, league, leagueLoading]);
+  }, [store?.id, leagues, leagueLoading]);
 
   const calendarGrid = useCalendarGrid(events, weekDates);
   const gamesInSchedule = Array.from(
@@ -187,7 +187,7 @@ function StoreProfilePage() {
         <Link to="/stores" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary">
           <ArrowLeft size={12} /> Volver al directorio
         </Link>
-        {league && (
+        {leagues.length > 0 && (
           <a
             href="#liga-interna"
             className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary hover:bg-primary/20"
@@ -419,110 +419,124 @@ function StoreProfilePage() {
         </section>
       ) : null}
 
-      {!leagueLoading && league && (
-        <section
-          id="liga-interna"
-          ref={ligaSectionRef}
-          className="glass space-y-4 scroll-mt-20 rounded-2xl p-6"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Liga Interna</p>
-              <h2 className="mt-1 text-lg font-bold text-white">{league.name}</h2>
-              <p className="text-xs text-gray-500">
-                {league.start_date} — {league.end_date}
-              </p>
-            </div>
-            {(() => {
-              const daysLeft = Math.ceil((new Date(league.end_date + "T23:59:59").getTime() - Date.now()) / 86_400_000);
-              if (daysLeft < 0) return null;
-              return (
-                <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  {daysLeft === 0 ? "Último día" : `${daysLeft} días restantes`}
-                </span>
-              );
-            })()}
-          </div>
-
-          <div className="flex items-center gap-2 text-sm font-semibold text-white">
-            <Medal size={16} className="text-primary" />
-            Leaderboard
-          </div>
-          {league.standings.length === 0 ? (
-            <p className="text-sm text-gray-400">Aún no hay resultados registrados en esta liga.</p>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-white/10">
-              <table className="w-full text-sm">
-                <thead className="bg-black/80 text-left text-[10px] uppercase tracking-wider text-gray-400">
-                  <tr>
-                    <th className="px-3 py-2">#</th>
-                    <th className="px-3 py-2">Tag</th>
-                    <th className="px-3 py-2 text-right">Pts</th>
-                    <th className="px-3 py-2 text-right" title="Torneos jugados">
-                      Trn
-                    </th>
-                    <th className="px-3 py-2 text-right" title="Victorias">
-                      W
-                    </th>
-                    <th className="px-3 py-2 text-right" title="Opponent Match Win %">
-                      OMW%
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {league.standings.map((s: any, i: number) => {
-                    const medalColor = i === 0 ? "text-amber-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-orange-400" : "";
-                    return (
-                      <tr
-                        key={s.player_id}
-                        className={`border-t border-white/5 transition hover:bg-white/5 ${i < 3 ? "bg-primary/[0.03]" : ""}`}
-                      >
-                        <td className="px-3 py-2">
-                          {i < 3 ? (
-                            <Trophy size={14} className={medalColor} />
-                          ) : (
-                            <span className="font-mono text-xs text-gray-400">{i + 1}</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2">
-                          <Link
-                            to="/players/$playerTag"
-                            params={{ playerTag: s.geek_tag }}
-                            className={`font-medium hover:text-primary hover:underline ${i < 3 ? "font-semibold text-white" : "text-white"}`}
-                          >
-                            {s.geek_tag}
-                          </Link>
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono font-semibold text-white">{s.total_points}</td>
-                        <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">{s.tournaments_played}</td>
-                        <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">{s.tournaments_won}</td>
-                        <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">{s.omw_percentage}%</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {league.prizes.length > 0 && (
-            <div className="space-y-3 border-t border-white/10 pt-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Gift size={16} className="text-primary" />
-                Premios y Recompensas
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {league.prizes.map((p: any) => (
-                  <div key={p.id} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
-                    {p.image_url && (
-                      <img src={p.image_url} alt="" className="h-12 w-12 rounded object-cover" />
-                    )}
-                    <p className="text-sm text-gray-300">{p.description}</p>
+      {!leagueLoading && leagues.length > 0 && (
+        <section id="liga-interna" ref={ligaSectionRef} className="scroll-mt-20 space-y-4">
+          {/* Una sección por Liga Interna activa — una tienda puede correr
+              una liga por TCG en paralelo (One Piece, Riftbound, etc.), así
+              que ya no asumimos que hay una sola. */}
+          {leagues.map((league: any) => (
+            <section key={league.id} className="glass space-y-4 rounded-2xl p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Liga Interna</p>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-300">
+                      {league.game_name}
+                    </span>
                   </div>
-                ))}
+                  <h2 className="mt-1 text-lg font-bold text-white">{league.name}</h2>
+                  <p className="text-xs text-gray-500">
+                    {league.start_date} — {league.end_date}
+                  </p>
+                </div>
+                {(() => {
+                  const daysLeft = Math.ceil(
+                    (new Date(league.end_date + "T23:59:59").getTime() - Date.now()) / 86_400_000,
+                  );
+                  if (daysLeft < 0) return null;
+                  return (
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                      {daysLeft === 0 ? "Último día" : `${daysLeft} días restantes`}
+                    </span>
+                  );
+                })()}
               </div>
-            </div>
-          )}
+
+              <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Medal size={16} className="text-primary" />
+                Leaderboard
+              </div>
+              {league.standings.length === 0 ? (
+                <p className="text-sm text-gray-400">Aún no hay resultados registrados en esta liga.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-white/10">
+                  <table className="w-full text-sm">
+                    <thead className="bg-black/80 text-left text-[10px] uppercase tracking-wider text-gray-400">
+                      <tr>
+                        <th className="px-3 py-2">#</th>
+                        <th className="px-3 py-2">Tag</th>
+                        <th className="px-3 py-2 text-right">Pts</th>
+                        <th className="px-3 py-2 text-right" title="Torneos jugados">
+                          Trn
+                        </th>
+                        <th className="px-3 py-2 text-right" title="Victorias">
+                          W
+                        </th>
+                        <th className="px-3 py-2 text-right" title="Opponent Match Win %">
+                          OMW%
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {league.standings.map((s: any, i: number) => {
+                        const medalColor =
+                          i === 0 ? "text-amber-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-orange-400" : "";
+                        return (
+                          <tr
+                            key={s.player_id}
+                            className={`border-t border-white/5 transition hover:bg-white/5 ${i < 3 ? "bg-primary/[0.03]" : ""}`}
+                          >
+                            <td className="px-3 py-2">
+                              {i < 3 ? (
+                                <Trophy size={14} className={medalColor} />
+                              ) : (
+                                <span className="font-mono text-xs text-gray-400">{i + 1}</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2">
+                              <Link
+                                to="/players/$playerTag"
+                                params={{ playerTag: s.geek_tag }}
+                                className={`font-medium hover:text-primary hover:underline ${i < 3 ? "font-semibold text-white" : "text-white"}`}
+                              >
+                                {s.geek_tag}
+                              </Link>
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono font-semibold text-white">{s.total_points}</td>
+                            <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">{s.tournaments_played}</td>
+                            <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">{s.tournaments_won}</td>
+                            <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">{s.omw_percentage}%</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {league.prizes.length > 0 && (
+                <div className="space-y-3 border-t border-white/10 pt-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <Gift size={16} className="text-primary" />
+                    Premios y Recompensas
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {league.prizes.map((p: any) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3"
+                      >
+                        {p.image_url && (
+                          <img src={p.image_url} alt="" className="h-12 w-12 rounded object-cover" />
+                        )}
+                        <p className="text-sm text-gray-300">{p.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          ))}
         </section>
       )}
 

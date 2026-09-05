@@ -427,20 +427,22 @@ export function TournamentUploadForm({
 
   useEffect(() => {
     setLeagueChoice(NATIONAL_LEAGUE_VALUE);
-    if (!storeId || isManager) {
+    // Sin gameId todavía no sabemos qué ligas mostrar — una liga es de UN
+    // TCG, así que el dropdown solo tiene sentido una vez elegido el juego.
+    if (!storeId || !gameId || isManager) {
       setActiveLeagues([]);
       return;
     }
     (async () => {
       try {
-        const res: any = await fetchActiveLeagues({ data: { store_id: storeId } });
+        const res: any = await fetchActiveLeagues({ data: { store_id: storeId, game_id: gameId } });
         setActiveLeagues(res.leagues ?? []);
       } catch {
         setActiveLeagues([]);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, isManager]);
+  }, [storeId, gameId, isManager]);
 
   const qualifying = useMemo(() => {
     if (!date) return null;

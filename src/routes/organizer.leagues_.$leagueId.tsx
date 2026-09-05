@@ -11,7 +11,6 @@ import {
   Calendar,
   X,
   Save,
-  Search,
   ChevronRight,
   Check,
 } from "lucide-react";
@@ -61,6 +60,8 @@ type Prize = { description: string; image_url: string | null };
 type League = {
   id: string;
   name: string;
+  game_id: string | null;
+  game_name: string | null;
   status: "active" | "archived";
   start_date: string;
   end_date: string;
@@ -70,7 +71,7 @@ type League = {
   store_league_tournaments: { tournament_id: string }[];
   store_league_prizes: Array<{ id: string; description: string; image_url: string | null; sort_order: number }>;
 };
-type Tournament = { id: string; game_name: string; tournament_date: string; status: string };
+type Tournament = { id: string; game_id: string; game_name: string; tournament_date: string; status: string };
 type NationalSchedule = { id: string; game_id: string; game_name: string; day_of_week: number; start_time: string };
 type LeagueSchedule = {
   id: string;
@@ -128,14 +129,19 @@ function OrganizerLeagueDetailPage() {
   const [step, setStep] = useState<StepId>("general");
 
   // General
-  const [generalForm, setGeneralForm] = useState({ name: "", start_date: "", end_date: "", active_weekdays: [] as number[] });
+  const [generalForm, setGeneralForm] = useState({
+    name: "",
+    game_id: "",
+    start_date: "",
+    end_date: "",
+    active_weekdays: [] as number[],
+  });
   const [generalSaving, setGeneralSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
 
   // Torneos
   const [selectedTournamentIds, setSelectedTournamentIds] = useState<Set<string>>(new Set());
   const [tournamentsSaving, setTournamentsSaving] = useState(false);
-  const [tournamentSearch, setTournamentSearch] = useState("");
   const [tournamentScope, setTournamentScope] = useState<"range" | "all">("range");
 
   // Premios
@@ -163,6 +169,7 @@ function OrganizerLeagueDetailPage() {
       if (found) {
         setGeneralForm({
           name: found.name,
+          game_id: found.game_id ?? "",
           start_date: found.start_date,
           end_date: found.end_date,
           active_weekdays: found.active_weekdays,
@@ -208,8 +215,14 @@ function OrganizerLeagueDetailPage() {
 
   async function handleSaveGeneral() {
     if (!league || !storeId) return;
-    if (!generalForm.name || !generalForm.start_date || !generalForm.end_date || generalForm.active_weekdays.length === 0) {
-      toast.error("Completa nombre, fechas y al menos un día activo.");
+    if (
+      !generalForm.name ||
+      !generalForm.game_id ||
+      !generalForm.start_date ||
+      !generalForm.end_date ||
+      generalForm.active_weekdays.length === 0
+    ) {
+      toast.error("Completa nombre, TCG, fechas y al menos un día activo.");
       return;
     }
     setGeneralSaving(true);
@@ -341,13 +354,15 @@ function OrganizerLeagueDetailPage() {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   const visibleTournaments = useMemo(() => {
-    const search = tournamentSearch.trim().toLowerCase();
+    // Una liga es de un solo TCG — la lista de torneos elegibles se filtra
+    // por game_id, no por texto (antes había que "buscar por juego" a mano
+    // en una lista mezclada de todos los TCG de la tienda).
     return tournaments.filter((t) => {
-      if (search && !t.game_name.toLowerCase().includes(search)) return false;
+      if (league?.game_id && t.game_id !== league.game_id) return false;
       if (tournamentScope === "range" && league && !isWithinLeagueRange(t, league)) return false;
       return true;
     });
-  }, [tournaments, tournamentSearch, tournamentScope, league]);
+  }, [tournaments, tournamentScope, league]);
 
   const tournamentGroups = useMemo(() => {
     const groups = new Map<string, Tournament[]>();
@@ -468,6 +483,30 @@ function OrganizerLeagueDetailPage() {
                   disabled={isArchived}
                   onChange={(e) => setGeneralForm((f) => ({ ...f, name: e.target.value }))}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>TCG (juego)</Label>
+                <Select
+                  value={generalForm.game_id}
+                  onValueChange={(v) => setGeneralForm((f) => ({ ...f, game_id: v }))}
+                  disabled={isArchived}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un TCG" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gamesList.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {generalForm.game_id !== (league.game_id ?? "") && (
+                  <p className="text-xs text-amber-400">
+                    Cambiar el TCG desmarca todos los torneos ya seleccionados para esta liga.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -661,15 +700,6 @@ function OrganizerLeagueDetailPage() {
               </p>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="relative flex-1 min-w-[160px]">
-                  <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <Input
-                    value={tournamentSearch}
-                    onChange={(e) => setTournamentSearch(e.target.value)}
-                    placeholder="Buscar por juego..."
-                    className="pl-8"
-                  />
-                </div>
                 <div className="flex rounded-lg border border-white/10 p-0.5 text-xs">
                   <button
                     onClick={() => setTournamentScope("range")}

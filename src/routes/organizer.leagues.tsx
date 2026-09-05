@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,8 @@ const ALL_WEEKDAYS = WEEKDAYS.map((d) => d.value);
 type League = {
   id: string;
   name: string;
+  game_id: string | null;
+  game_name: string | null;
   status: "active" | "archived";
   start_date: string;
   end_date: string;
@@ -47,7 +50,7 @@ type League = {
   store_league_prizes: Array<{ id: string; description: string; image_url: string | null; sort_order: number }>;
 };
 
-const emptyForm = { name: "", start_date: "", end_date: "", active_weekdays: ALL_WEEKDAYS as number[] };
+const emptyForm = { name: "", game_id: "", start_date: "", end_date: "", active_weekdays: ALL_WEEKDAYS as number[] };
 
 function OrganizerLeaguesPage() {
   const navigate = useNavigate();
@@ -57,6 +60,7 @@ function OrganizerLeaguesPage() {
   const archiveFn = useServerFn(archiveStoreLeague);
 
   const [storeId, setStoreId] = useState<string | null>(null);
+  const [games, setGames] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(true);
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -84,6 +88,7 @@ function OrganizerLeaguesPage() {
         const overview: any = await fetchOverview();
         const sid = overview.homeStore?.id ?? null;
         setStoreId(sid);
+        setGames(overview.games ?? []);
         if (sid) await refresh(sid);
         else setLoading(false);
       } catch (e) {
@@ -99,8 +104,15 @@ function OrganizerLeaguesPage() {
   }
 
   async function handleCreate() {
-    if (!storeId || !form.name || !form.start_date || !form.end_date || form.active_weekdays.length === 0) {
-      toast.error("Completa nombre, fechas y al menos un día activo.");
+    if (
+      !storeId ||
+      !form.name ||
+      !form.game_id ||
+      !form.start_date ||
+      !form.end_date ||
+      form.active_weekdays.length === 0
+    ) {
+      toast.error("Completa nombre, TCG, fechas y al menos un día activo.");
       return;
     }
     setSubmitting(true);
@@ -171,6 +183,24 @@ function OrganizerLeaguesPage() {
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="Liga de Verano 2026"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>TCG (juego) *</Label>
+                <Select value={form.game_id} onValueChange={(v) => setForm((f) => ({ ...f, game_id: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un TCG" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {games.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  Cada liga interna es de un solo TCG — solo podrás agregarle torneos de ese juego.
+                </p>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -250,6 +280,7 @@ function OrganizerLeaguesPage() {
                     <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                       <tr>
                         <th className="px-4 py-3">Nombre</th>
+                        <th className="px-4 py-3">TCG</th>
                         <th className="px-4 py-3">Vigencia</th>
                         <th className="px-4 py-3">Torneos</th>
                         <th className="px-4 py-3">Premios</th>
@@ -268,6 +299,11 @@ function OrganizerLeaguesPage() {
                               <Trophy size={14} className="text-primary" />
                               {l.name}
                             </Link>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant="outline" className="border-primary/40 text-primary">
+                              {l.game_name ?? "—"}
+                            </Badge>
                           </td>
                           <td className="px-4 py-3 text-gray-300">
                             {l.start_date} — {l.end_date}
@@ -313,6 +349,7 @@ function OrganizerLeaguesPage() {
                     <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                       <tr>
                         <th className="px-4 py-3">Nombre</th>
+                        <th className="px-4 py-3">TCG</th>
                         <th className="px-4 py-3">Vigencia</th>
                         <th className="px-4 py-3">Ganador</th>
                         <th className="px-4 py-3">Puntos</th>
@@ -325,6 +362,11 @@ function OrganizerLeaguesPage() {
                             <Link to="/organizer/leagues/$leagueId" params={{ leagueId: l.id }} className="hover:text-primary">
                               {l.name}
                             </Link>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant="outline" className="border-white/20 text-gray-300">
+                              {l.game_name ?? "—"}
+                            </Badge>
                           </td>
                           <td className="px-4 py-3 text-gray-300">
                             {l.start_date} — {l.end_date}

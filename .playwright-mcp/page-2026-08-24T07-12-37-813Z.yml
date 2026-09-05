@@ -1,7 +1,0 @@
-- generic [ref=f1e2]:
-  - banner [ref=f1e4]:
-    - link "Trading Card Nexus" [ref=f1e7] [cursor=pointer]:
-      - /url: /
-      - generic [ref=f1e15]: Trading Card
-      - generic [ref=f1e16]: Nexus
-  - region "Notifications alt+T"

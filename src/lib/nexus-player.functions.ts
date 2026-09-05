@@ -406,6 +406,118 @@ export const toggleProfilePrivacy = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+// Title equipable: solo achievements con title_text no-null son equipables.
+// null desequipa. Se valida que el jugador ya lo haya desbloqueado — el
+// catálogo/reward_detail es texto libre, la única fuente de verdad de "lo
+// tengo" es player_achievements.
+export const setEquippedTitle = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { achievement_key: string | null }) =>
+    z.object({ achievement_key: z.string().nullable() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    if (data.achievement_key !== null) {
+      const { data: def } = await admin
+        .from("achievement_definitions" as any)
+        .select("title_text")
+        .eq("key", data.achievement_key)
+        .maybeSingle();
+      if (!(def as any)?.title_text) throw new Error("Ese achievement no tiene un title equipable");
+
+      const { data: unlock } = await admin
+        .from("player_achievements" as any)
+        .select("id")
+        .eq("player_id", player.id)
+        .eq("achievement_key", data.achievement_key)
+        .maybeSingle();
+      if (!unlock) throw new Error("Todavía no desbloqueaste ese achievement");
+    }
+
+    const { error } = await admin
+      .from("players")
+      .update({ equipped_title_key: data.achievement_key } as any)
+      .eq("id", player.id);
+    if (error) failDb(error);
+    return { success: true };
+  });
+
+// Badge equipable: mismo patrón que Title pero sin columna de parseo — el
+// label sale de achievement_definitions.name (ya es un nombre limpio) y la
+// elegibilidad es reward_type ilike '%badge%' (Badge, Animated Badge,
+// Champion Badge). null desequipa.
+export const setEquippedBadge = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { achievement_key: string | null }) =>
+    z.object({ achievement_key: z.string().nullable() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    if (data.achievement_key !== null) {
+      const { data: def } = await admin
+        .from("achievement_definitions" as any)
+        .select("reward_type")
+        .eq("key", data.achievement_key)
+        .maybeSingle();
+      if (!/badge/i.test((def as any)?.reward_type ?? ""))
+        throw new Error("Ese achievement no tiene un badge equipable");
+
+      const { data: unlock } = await admin
+        .from("player_achievements" as any)
+        .select("id")
+        .eq("player_id", player.id)
+        .eq("achievement_key", data.achievement_key)
+        .maybeSingle();
+      if (!unlock) throw new Error("Todavía no desbloqueaste ese achievement");
+    }
+
+    const { error } = await admin
+      .from("players")
+      .update({ equipped_badge_key: data.achievement_key } as any)
+      .eq("id", player.id);
+    if (error) failDb(error);
+    return { success: true };
+  });
+
+// Nameplate equipable: mismo patrón que Badge — label sale de
+// achievement_definitions.name, elegibilidad por reward_type ilike
+// '%nameplate%'. null desequipa.
+export const setEquippedNameplate = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { achievement_key: string | null }) =>
+    z.object({ achievement_key: z.string().nullable() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    if (data.achievement_key !== null) {
+      const { data: def } = await admin
+        .from("achievement_definitions" as any)
+        .select("reward_type")
+        .eq("key", data.achievement_key)
+        .maybeSingle();
+      if (!/nameplate/i.test((def as any)?.reward_type ?? ""))
+        throw new Error("Ese achievement no tiene un nameplate equipable");
+
+      const { data: unlock } = await admin
+        .from("player_achievements" as any)
+        .select("id")
+        .eq("player_id", player.id)
+        .eq("achievement_key", data.achievement_key)
+        .maybeSingle();
+      if (!unlock) throw new Error("Todavía no desbloqueaste ese achievement");
+    }
+
+    const { error } = await admin
+      .from("players")
+      .update({ equipped_nameplate_key: data.achievement_key } as any)
+      .eq("id", player.id);
+    if (error) failDb(error);
+    return { success: true };
+  });
+
 // Preferencia de TCG/zona — se pregunta una sola vez (ver preferences_prompted_at)
 // desde un prompt inline en /calendar, nunca un modal bloqueante. game_id/zone
 // nulos = el jugador la descartó sin elegir; igual queda marcado como "ya preguntado".
@@ -438,6 +550,15 @@ export const setPlayerPreferences = createServerFn({ method: "POST" })
 // siempre lo ven completo aunque esté marcado privado. Antes exigía sesión
 // (requireNexusUser) para CUALQUIER perfil, público o no — el bloqueo vivía
 // en el fetch, no en la privacidad real del dato.
+type EquippedNameplate = {
+  key: string;
+  name: string;
+  tier: string;
+  requirement_text: string;
+  base_lp: number;
+  reward_detail: string | null;
+};
+
 export const getPublicProfile = createServerFn({ method: "POST" })
   .middleware([optionalNexusUser])
   .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
@@ -447,13 +568,37 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     const { data: target } = await admin
       .from("players")
       .select(
-        "id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public" as any,
+        "id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public, equipped_title_key, equipped_badge_key, equipped_nameplate_key" as any,
       )
       .eq("geek_tag", data.player_tag)
       .maybeSingle();
 
     if (!target) throw new Error("Jugador no encontrado");
     const t = target as any;
+
+    // Un solo round-trip para title+badge+nameplate equipados (antes eran
+    // awaits secuenciales) — misma tabla, N keys, un in().
+    const equippedKeys = [
+      t.equipped_title_key,
+      t.equipped_badge_key,
+      t.equipped_nameplate_key,
+    ].filter(Boolean) as string[];
+    const { data: equippedDefs } = equippedKeys.length
+      ? await admin
+          .from("achievement_definitions" as any)
+          .select("key, title_text, name, tier, requirement_text, base_lp, reward_detail")
+          .in("key", equippedKeys)
+      : { data: [] as any[] };
+    const equippedDefMap = new Map(((equippedDefs ?? []) as any[]).map((d) => [d.key, d]));
+    const equippedTitle = t.equipped_title_key
+      ? (equippedDefMap.get(t.equipped_title_key) ?? null)
+      : null;
+    const equippedBadge = t.equipped_badge_key
+      ? (equippedDefMap.get(t.equipped_badge_key) ?? null)
+      : null;
+    const equippedNameplate = t.equipped_nameplate_key
+      ? (equippedDefMap.get(t.equipped_nameplate_key) ?? null)
+      : null;
 
     const isOwner = viewer?.id === t.id;
     const isSuperior = viewer?.role === "admin" || viewer?.role === "tcg_manager";
@@ -464,6 +609,9 @@ export const getPublicProfile = createServerFn({ method: "POST" })
       return {
         is_private: true as const,
         geek_tag: t.geek_tag as string,
+        equipped_title: null as string | null,
+        equipped_badge: null as string | null,
+        equipped_nameplate: null as EquippedNameplate | null,
         display_name: null as string | null,
         avatar_url: null as string | null,
         store_name: null as string | null,
@@ -472,6 +620,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         is_owner: false,
         rankings: [] as any[],
         tournaments: [] as any[],
+        main_leader: null as { name: string; image: string | null; count: number } | null,
       };
     }
 
@@ -520,7 +669,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     );
     const tournamentIds = results.map((r: any) => r.tournament_id);
 
-    const [storesRes, gamesRes, maxPtsRes] = await Promise.all([
+    const [storesRes, gamesRes, maxPtsRes, deckRoundsRes] = await Promise.all([
       tStoreIds.length
         ? admin.from("stores").select("id, name, city, slug").in("id", tStoreIds)
         : Promise.resolve({ data: [] as any[] }),
@@ -534,6 +683,15 @@ export const getPublicProfile = createServerFn({ method: "POST" })
             .in("tournament_id", tournamentIds)
             .eq("rank", 1)
         : Promise.resolve({ data: [] as any[] }),
+      // Leader más jugado (Playstyle): mismo enfoque que getMyDashboard pero
+      // top-1 en vez de top-3 — el perfil público solo necesita "con qué
+      // juega más", no un ranking completo de mazos.
+      admin
+        .from("tournament_round_results")
+        .select("player_leader_id")
+        .eq("player_id", t.id)
+        .eq("is_bye", false)
+        .not("player_leader_id", "is", null),
     ]);
 
     const storeMap = new Map(((storesRes.data ?? []) as any[]).map((s: any) => [s.id, s]));
@@ -541,6 +699,37 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     const maxPtsMap = new Map(
       ((maxPtsRes.data ?? []) as any[]).map((m: any) => [m.tournament_id, m.match_points ?? 0]),
     );
+
+    const leaderUsage = new Map<string, number>();
+    for (const r of (deckRoundsRes.data ?? []) as any[]) {
+      const id = r.player_leader_id;
+      leaderUsage.set(id, (leaderUsage.get(id) ?? 0) + 1);
+    }
+    const topLeaderEntry = Array.from(leaderUsage.entries()).sort((a, b) => b[1] - a[1])[0];
+    let mainLeader: { name: string; image: string | null; count: number } | null = null;
+    if (topLeaderEntry) {
+      const { data: leaderRow } = await admin
+        .from("deck_identifiers")
+        .select("base_name, card_image, canonical_leader_id")
+        .eq("id", topLeaderEntry[0])
+        .maybeSingle();
+      let resolved = leaderRow as any;
+      if (resolved?.canonical_leader_id) {
+        const { data: canon } = await admin
+          .from("deck_identifiers")
+          .select("base_name, card_image")
+          .eq("id", resolved.canonical_leader_id)
+          .maybeSingle();
+        if (canon) resolved = canon;
+      }
+      if (resolved) {
+        mainLeader = {
+          name: resolved.base_name,
+          image: resolved.card_image ?? null,
+          count: topLeaderEntry[1],
+        };
+      }
+    }
 
     const tournaments = results.map((r: any) => {
       const tr = r.tournaments;
@@ -576,12 +765,25 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     return {
       is_private: false as const,
       geek_tag: t.geek_tag as string,
+      equipped_title: (equippedTitle?.title_text ?? null) as string | null,
+      equipped_badge: (equippedBadge?.name ?? null) as string | null,
+      equipped_nameplate: (equippedNameplate
+        ? {
+            key: t.equipped_nameplate_key as string,
+            name: equippedNameplate.name,
+            tier: equippedNameplate.tier,
+            requirement_text: equippedNameplate.requirement_text,
+            base_lp: equippedNameplate.base_lp,
+            reward_detail: equippedNameplate.reward_detail,
+          }
+        : null) as EquippedNameplate | null,
       display_name: t.display_name as string | null,
       avatar_url: t.avatar_url as string | null,
       store_name: ((storeRes.data as any)?.name ?? null) as string | null,
       store_city: ((storeRes.data as any)?.city ?? null) as string | null,
       member_since: t.created_at as string | null,
       is_owner: isOwner,
+      main_leader: mainLeader,
       rankings: snaps.map((s: any) => ({
         game_id: s.game_id,
         game_name: gamesMap.get(s.game_id) ?? "—",
@@ -608,22 +810,29 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
   .middleware([optionalNexusUser])
   .inputValidator((d: { player_tag: string }) => z.object({ player_tag: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player: viewer } = context;
 
     const { data: target } = await admin
       .from("players")
-      .select("id, geek_tag, is_profile_public" as any)
+      .select(
+        "id, geek_tag, is_profile_public, equipped_title_key, equipped_badge_key, equipped_nameplate_key" as any,
+      )
       .eq("geek_tag", data.player_tag)
       .maybeSingle();
 
     if (!target) throw new Error("Jugador no encontrado");
     const t = target as any;
-    if (!(t.is_profile_public ?? true)) {
+    const isOwner = viewer?.id === t.id;
+    if (!(t.is_profile_public ?? true) && !isOwner) {
       return {
         geek_tag: t.geek_tag as string,
         total_lp: 0,
         unlocked_count: 0,
         total_count: 0,
+        is_owner: isOwner,
+        equipped_title_key: null as string | null,
+        equipped_badge_key: null as string | null,
+        equipped_nameplate_key: null as string | null,
         roads: [] as any[],
       };
     }
@@ -632,7 +841,7 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
       admin
         .from("achievement_definitions" as any)
         .select(
-          "key, road, item_type, name, visibility, requirement_text, tier, base_lp, reward_type, reward_detail, icon_direction, sort_order",
+          "key, road, item_type, name, visibility, requirement_text, tier, base_lp, reward_type, reward_detail, title_text, icon_direction, sort_order",
         )
         .order("sort_order"),
       admin
@@ -658,6 +867,7 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
         base_lp: ad.base_lp,
         reward_type: ad.reward_type,
         reward_detail: secret ? null : ad.reward_detail,
+        title_text: ad.title_text,
         unlocked: !!unlockedAt,
         unlocked_at: unlockedAt,
         is_secret: isSecret(ad.visibility),
@@ -674,6 +884,10 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
       total_lp: totalLp,
       unlocked_count: unlockedCount,
       total_count: (defs ?? []).length,
+      is_owner: isOwner,
+      equipped_title_key: (t.equipped_title_key ?? null) as string | null,
+      equipped_badge_key: (t.equipped_badge_key ?? null) as string | null,
+      equipped_nameplate_key: (t.equipped_nameplate_key ?? null) as string | null,
       roads: Array.from(byRoad.entries()).map(([road, items]) => ({
         road,
         items,

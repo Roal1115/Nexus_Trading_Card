@@ -445,7 +445,59 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     };
   });
 
-export const getStoreActiveLeague = createServerFn({ method: "POST" })
+type LeagueStanding = {
+  player_id: string;
+  geek_tag: string;
+  total_points: number;
+  tournaments_played: number;
+  tournaments_won: number;
+  omw_percentage: number;
+};
+
+async function computeLeagueStandings(admin: any, tournamentIds: string[]): Promise<LeagueStanding[]> {
+  if (!tournamentIds.length) return [];
+  const { data: results } = await admin
+    .from("tournament_results")
+    .select("player_id, points_earned, rank, omw_percentage")
+    .in("tournament_id", tournamentIds);
+
+  type Agg = { points: number; played: number; won: number; omw_sum: number; omw_count: number };
+  const agg = new Map<string, Agg>();
+  for (const r of (results ?? []) as any[]) {
+    const a = agg.get(r.player_id) ?? { points: 0, played: 0, won: 0, omw_sum: 0, omw_count: 0 };
+    a.points += r.points_earned ?? 0;
+    a.played += 1;
+    if (r.rank === 1) a.won += 1;
+    if (r.omw_percentage != null) {
+      a.omw_sum += Number(r.omw_percentage);
+      a.omw_count += 1;
+    }
+    agg.set(r.player_id, a);
+  }
+
+  const playerIds = Array.from(agg.keys());
+  const { data: players } = playerIds.length
+    ? await admin.from("players").select("id, geek_tag").in("id", playerIds)
+    : { data: [] as any[] };
+  const tagById = new Map<string, string>((players ?? []).map((p: any) => [p.id, p.geek_tag]));
+
+  return Array.from(agg.entries())
+    .map(([player_id, a]) => ({
+      player_id,
+      geek_tag: tagById.get(player_id) ?? "—",
+      total_points: a.points,
+      tournaments_played: a.played,
+      tournaments_won: a.won,
+      omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
+    }))
+    .sort((a, b) => b.total_points - a.total_points)
+    .slice(0, 25);
+}
+
+// Una liga por TCG: la tienda puede tener varias ligas internas activas en
+// paralelo (una para One Piece, otra para Riftbound, etc.) — antes solo se
+// traía la más reciente (.limit(1)) sin importar el juego.
+export const getStoreActiveLeagues = createServerFn({ method: "POST" })
   .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data }) => {
     const admin = getNexusAdmin();
@@ -455,78 +507,35 @@ export const getStoreActiveLeague = createServerFn({ method: "POST" })
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();
-    if (!store) return { league: null };
+    if (!store) return { leagues: [] };
 
-    const { data: league, error } = await admin
+    const { data: leagues, error } = await admin
       .from("store_leagues")
-      .select("id, name, start_date, end_date, store_league_tournaments(tournament_id), store_league_prizes(id, description, image_url, sort_order)")
+      .select(
+        "id, name, start_date, end_date, game_id, games(name), store_league_tournaments(tournament_id), store_league_prizes(id, description, image_url, sort_order)",
+      )
       .eq("store_id", store.id)
       .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("created_at", { ascending: false });
     if (error) failDb(error);
-    if (!league) return { league: null };
 
-    const tournamentIds = (league.store_league_tournaments ?? []).map((t: any) => t.tournament_id);
-    type Standing = {
-      player_id: string;
-      geek_tag: string;
-      total_points: number;
-      tournaments_played: number;
-      tournaments_won: number;
-      omw_percentage: number;
-    };
-    let standings: Standing[] = [];
-    if (tournamentIds.length) {
-      const { data: results } = await admin
-        .from("tournament_results")
-        .select("player_id, points_earned, rank, omw_percentage")
-        .in("tournament_id", tournamentIds);
+    const result = await Promise.all(
+      (leagues ?? []).map(async (league: any) => {
+        const tournamentIds = (league.store_league_tournaments ?? []).map((t: any) => t.tournament_id);
+        return {
+          id: league.id,
+          name: league.name,
+          game_id: league.game_id,
+          game_name: (Array.isArray(league.games) ? league.games[0] : league.games)?.name ?? "—",
+          start_date: league.start_date,
+          end_date: league.end_date,
+          prizes: (league.store_league_prizes ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+          standings: await computeLeagueStandings(admin, tournamentIds),
+        };
+      }),
+    );
 
-      type Agg = { points: number; played: number; won: number; omw_sum: number; omw_count: number };
-      const agg = new Map<string, Agg>();
-      for (const r of (results ?? []) as any[]) {
-        const a = agg.get(r.player_id) ?? { points: 0, played: 0, won: 0, omw_sum: 0, omw_count: 0 };
-        a.points += r.points_earned ?? 0;
-        a.played += 1;
-        if (r.rank === 1) a.won += 1;
-        if (r.omw_percentage != null) {
-          a.omw_sum += Number(r.omw_percentage);
-          a.omw_count += 1;
-        }
-        agg.set(r.player_id, a);
-      }
-
-      const playerIds = Array.from(agg.keys());
-      const { data: players } = playerIds.length
-        ? await admin.from("players").select("id, geek_tag").in("id", playerIds)
-        : { data: [] as any[] };
-      const tagById = new Map((players ?? []).map((p: any) => [p.id, p.geek_tag]));
-
-      standings = Array.from(agg.entries())
-        .map(([player_id, a]) => ({
-          player_id,
-          geek_tag: tagById.get(player_id) ?? "—",
-          total_points: a.points,
-          tournaments_played: a.played,
-          tournaments_won: a.won,
-          omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
-        }))
-        .sort((a, b) => b.total_points - a.total_points)
-        .slice(0, 25);
-    }
-
-    return {
-      league: {
-        id: league.id,
-        name: league.name,
-        start_date: league.start_date,
-        end_date: league.end_date,
-        prizes: (league.store_league_prizes ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order),
-        standings,
-      },
-    };
+    return { leagues: result };
   });
 
 export const getPublicTournament = createServerFn({ method: "POST" })
