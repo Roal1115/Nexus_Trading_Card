@@ -58,18 +58,18 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { TournamentRowSkeleton, SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/dashboard")({
-  // Best effort (no relanza). En SSR (carga fresca) casi siempre falla: el
-  // token del usuario vive en localStorage del navegador, inaccesible en el
-  // request del servidor — esta app no usa auth por cookie. El valor real
-  // de este loader es el hover/intent en SPA (nav ya logueada en cliente,
-  // donde attachNexusAuth sí puede adjuntar el token), igual que Player
-  // Profile y Meta.
-  loader: async ({ context }) => {
-    try {
-      return await context.queryClient.ensureQueryData(myDashboardQuery());
-    } catch {
-      return undefined;
-    }
+  // NO se espera esta promesa a propósito: getMyDashboard es una query
+  // pesada (rankings + torneos + stats), y un loader que hace `await` acá
+  // bloquea la transición de ruta entera hasta que termine — justo el caso
+  // real de "login -> navigate('/dashboard')", donde antes se quedaban
+  // varios segundos parados en /login. El componente ya tiene su propio
+  // useQuery + skeleton (ver dashboardQuery.isPending más abajo), así que
+  // esto queda como prefetch en background: si termina antes de montar el
+  // componente, initialData ya está tibio; si no, el propio useQuery lo
+  // recoge (misma queryKey, sin duplicar el fetch).
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(myDashboardQuery()).catch(() => {});
+    return undefined;
   },
   head: () => ({ meta: [{ title: "Mi Panel — Nexus" }] }),
   component: DashboardPage,
