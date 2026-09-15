@@ -344,7 +344,11 @@ function StoreTournamentsPage() {
                         className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3"
                       >
                         {p.image_url && (
-                          <img src={p.image_url} alt="" className="h-12 w-12 rounded object-cover" />
+                          <img
+                            src={p.image_url}
+                            alt=""
+                            className="h-12 w-12 rounded object-cover"
+                          />
                         )}
                         <p className="text-sm text-gray-300">{p.description}</p>
                       </div>
