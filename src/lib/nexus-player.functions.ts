@@ -621,6 +621,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         rankings: [] as any[],
         tournaments: [] as any[],
         main_leader: null as { name: string; image: string | null; count: number } | null,
+        total_tournaments_won: 0,
       };
     }
 
@@ -754,7 +755,9 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         tcg: gamesMap.get(tr?.game_id) ?? "—",
         game_id: tr?.game_id ?? null,
         league_id: tr?.league_id ?? null,
-        league_name: (Array.isArray(tr?.store_leagues) ? tr.store_leagues[0] : tr?.store_leagues)?.name ?? null,
+        league_name:
+          (Array.isArray(tr?.store_leagues) ? tr.store_leagues[0] : tr?.store_leagues)?.name ??
+          null,
         placement: r.rank,
         pointsEarned: Number(r.points_earned ?? 0).toFixed(2),
         wins: calcWins,
@@ -784,6 +787,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
       member_since: t.created_at as string | null,
       is_owner: isOwner,
       main_leader: mainLeader,
+      total_tournaments_won: results.filter((r: any) => r.rank === 1).length,
       rankings: snaps.map((s: any) => ({
         game_id: s.game_id,
         game_name: gamesMap.get(s.game_id) ?? "—",
@@ -850,7 +854,9 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
         .eq("player_id", t.id),
     ]);
 
-    const unlockedMap = new Map(((unlocks ?? []) as any[]).map((u) => [u.achievement_key, u.unlocked_at]));
+    const unlockedMap = new Map(
+      ((unlocks ?? []) as any[]).map((u) => [u.achievement_key, u.unlocked_at]),
+    );
     const isSecret = (visibility: string) => /secret|classified/i.test(visibility);
 
     const byRoad = new Map<string, any[]>();
@@ -920,6 +926,7 @@ export const getMyStats = createServerFn({ method: "POST" })
         game_name: (game as any)?.name ?? "TCG",
         game_slug: (game as any)?.slug ?? "",
         total_rounds_in_meta: 0,
+        total_tournaments_won: 0,
         leaders: [],
       };
     }
@@ -1024,6 +1031,53 @@ export const getMyStats = createServerFn({ method: "POST" })
     );
 
     const resolveId = (id: string): string => variantToCanonical.get(id) ?? id;
+
+    // 8b. Torneos ganados (rank=1) por leader canónico — el campeón pudo variar
+    // de arte ronda a ronda, así que se toma el leader más usado en ese torneo.
+    const TOURNAMENT_ID_BATCH_SIZE = 150;
+    const tIdBatches: string[][] = [];
+    for (let i = 0; i < tcgTournamentIds.length; i += TOURNAMENT_ID_BATCH_SIZE) {
+      tIdBatches.push(tcgTournamentIds.slice(i, i + TOURNAMENT_ID_BATCH_SIZE));
+    }
+    const wonResultsBatches = await Promise.all(
+      tIdBatches.map((batch) =>
+        admin
+          .from("tournament_results")
+          .select("tournament_id")
+          .eq("player_id", player.id)
+          .eq("rank", 1)
+          .in("tournament_id", batch),
+      ),
+    );
+    const wonTournamentIds = new Set(
+      wonResultsBatches.flatMap((r) => ((r.data ?? []) as any[]).map((row) => row.tournament_id)),
+    );
+
+    const tournamentsWonByLeader = new Map<string, number>();
+    if (wonTournamentIds.size > 0) {
+      const roundsByWonTournament = new Map<string, any[]>();
+      for (const r of allRounds) {
+        if (!wonTournamentIds.has(r.tournament_id)) continue;
+        if (!roundsByWonTournament.has(r.tournament_id))
+          roundsByWonTournament.set(r.tournament_id, []);
+        roundsByWonTournament.get(r.tournament_id)!.push(r);
+      }
+      for (const tRounds of roundsByWonTournament.values()) {
+        const counts = new Map<string, number>();
+        for (const r of tRounds) {
+          if (!r.player_leader_id) continue;
+          const cid = resolveId(r.player_leader_id);
+          counts.set(cid, (counts.get(cid) ?? 0) + 1);
+        }
+        const topLeaderId = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
+        if (topLeaderId) {
+          tournamentsWonByLeader.set(
+            topLeaderId,
+            (tournamentsWonByLeader.get(topLeaderId) ?? 0) + 1,
+          );
+        }
+      }
+    }
 
     // 9. Agrupar rondas por leader canónico del player
     const byLeader = new Map<string, any[]>();
@@ -1156,6 +1210,7 @@ export const getMyStats = createServerFn({ method: "POST" })
               ? Math.round((secondWins / secondRounds.length) * 100 * 10) / 10
               : null,
           has_uncertain_data: hasUncertain,
+          tournaments_won: tournamentsWonByLeader.get(leaderId) ?? 0,
           matchups,
         };
       })
@@ -1173,6 +1228,7 @@ export const getMyStats = createServerFn({ method: "POST" })
       game_name: (game as any)?.name ?? "TCG",
       game_slug: (game as any)?.slug ?? "",
       total_rounds_in_meta: totalMetaRounds ?? 0,
+      total_tournaments_won: wonTournamentIds.size,
       leaders: leaderStats,
     };
   });

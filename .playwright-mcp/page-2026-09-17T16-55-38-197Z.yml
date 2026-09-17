@@ -1,0 +1,71 @@
+- generic [ref=f15e2]:
+  - generic [ref=f15e15]:
+    - paragraph [ref=f15e16]: The Circuit · Auditoría de Funciones, Nivel 03
+    - heading [level=1] [ref=f15e17]:
+      - text: Lo que
+      - emphasis [ref=f15e18]: The Circuit
+      - text: le daa cada lado de la mesa
+    - paragraph [ref=f15e19]: Cinco audiencias, un solo registro compartido. Cada tarjeta es una captura real de la plataforma en producción — no un mockup — trazada desde el inventario de funciones, de ruta a base de datos.
+    - generic [ref=f15e20]:
+      - generic [ref=f15e21]: 22 funciones verificadas
+      - generic [ref=f15e22]: 21 en vivo · 1 parcial
+      - generic [ref=f15e23]: One Piece · Riftbound
+  - generic [ref=f15e24]:
+    - generic [ref=f15e25]:
+      - generic [ref=f15e26]:
+        - heading "Jugadores" [level=2] [ref=f15e27]
+        - generic [ref=f15e28]: Identidad y Stats
+      - paragraph [ref=f15e29]: "Convierte cada partida en progreso: historial, achievements y ranking en un solo perfil público."
+      - img "Perfil real de jugador en The Circuit" [ref=f15e36]
+      - list [ref=f15e37]:
+        - listitem [ref=f15e38]: Una identidad competitiva pública
+        - listitem [ref=f15e39]: Stats oficiales y casuales combinados
+        - listitem [ref=f15e40]: Un ranking nacional donde te puedes ver
+    - generic [ref=f15e41]:
+      - generic [ref=f15e42]:
+        - heading "Tiendas Locales" [level=2] [ref=f15e43]
+        - generic [ref=f15e44]: Operar y Crecer
+      - paragraph [ref=f15e45]: Tu tienda, en el mapa. Torneos, ligas y comunidad, todo en una página pública.
+      - img "Perfil real de tienda en The Circuit" [ref=f15e52]
+      - list [ref=f15e53]:
+        - listitem [ref=f15e54]: Corré ligas sin perderlas en el ruido nacional
+        - listitem [ref=f15e55]: Un frente público que se actualiza solo
+        - listitem [ref=f15e56]: Historial de actividad por evento
+    - generic [ref=f15e57]:
+      - generic [ref=f15e58]:
+        - heading "Organizadores" [level=2] [ref=f15e59]
+        - generic [ref=f15e60]: Operar
+      - paragraph [ref=f15e61]: Ligas internas con leaderboard y premios, listas sin hojas de cálculo.
+      - img "Liga interna real con leaderboard y premios" [ref=f15e68]
+      - list [ref=f15e69]:
+        - listitem [ref=f15e70]: Un solo flujo de borrador a resultado publicado
+        - listitem [ref=f15e71]: Premios y recompensas vinculados al standing
+    - generic [ref=f15e72]:
+      - generic [ref=f15e73]:
+        - heading "Circuitos Nacionales" [level=2] [ref=f15e74]
+        - generic [ref=f15e75]: Gobernar
+      - paragraph [ref=f15e76]: De lo local a lo nacional. Resultados verificados y ranking por temporada.
+      - img "Ranking nacional real del circuito" [ref=f15e83]
+      - list [ref=f15e84]:
+        - listitem [ref=f15e85]: Ranking mensual y semestral verificado
+        - listitem [ref=f15e86]: Un filtro de aprobación antes de contar nacional
+    - generic [ref=f15e87]:
+      - generic [ref=f15e88]:
+        - heading "Comunidades TCG" [level=2] [ref=f15e89]
+        - generic [ref=f15e90]: Descubrir el Meta
+      - paragraph [ref=f15e91]: Más que torneos. Datos públicos del meta para armar mazos y crecer la escena.
+      - img "Meta leaderboard real con win rates por líder" [ref=f15e98]
+      - list [ref=f15e99]:
+        - listitem [ref=f15e100]: Datos públicos del meta, no solo resultados
+        - listitem [ref=f15e101]: Pensado para sumar un tercer juego sin reescribir nada
+    - generic [ref=f15e102]:
+      - paragraph [ref=f15e103]: Un ecosistema conectado
+      - heading "Mismas partidas. Más oportunidades." [level=3] [ref=f15e104]: Mismas partidas.Más oportunidades.
+      - paragraph [ref=f15e105]: The Circuit conecta jugadores, tiendas, organizadores y circuitos nacionales en una sola plataforma — con datos reales, no maquetas.
+      - generic [ref=f15e106]:
+        - generic [ref=f15e107]: ⚫ ONE PIECE
+        - generic [ref=f15e108]: ⚫ RIFTBOUND
+      - generic [ref=f15e109]: Y esto es solo el inicio.
+  - contentinfo [ref=f15e110]:
+    - generic [ref=f15e111]: The Circuit
+    - generic [ref=f15e116]: Capturas reales de producción — base para la página pública de Funciones.

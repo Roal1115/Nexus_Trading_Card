@@ -1,0 +1,70 @@
+- generic [ref=f8e2]:
+  - generic [ref=f8e3]:
+    - banner [ref=f8e4]:
+      - link "Trading Card Nexus" [ref=f8e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f8e15]: Trading Card
+        - generic [ref=f8e16]: Nexus
+    - generic [ref=f8e18]:
+      - complementary [ref=f8e19]
+      - main [ref=f8e20]:
+        - generic [ref=f8e23]:
+          - generic [ref=f8e24]: W
+          - generic [ref=f8e25]:
+            - paragraph [ref=f8e26]: Player Tag
+            - heading "Wololol" [level=1] [ref=f8e27]
+            - generic [ref=f8e28]:
+              - generic [ref=f8e29]: UNDEFEATED
+              - generic [ref=f8e33]: Founding Player
+            - paragraph [ref=f8e40]: Miembro desde junio de 2026
+            - generic [ref=f8e41]:
+              - generic [ref=f8e42]:
+                - paragraph [ref=f8e43]: Torneos Ganados
+                - paragraph [ref=f8e44]: "🏆 #1"
+              - generic [ref=f8e45]:
+                - paragraph [ref=f8e46]: Win rate
+                - paragraph [ref=f8e47]:
+                  - text: 100%
+                  - generic [ref=f8e48]: (5V-0D)
+              - generic [ref=f8e49]:
+                - paragraph [ref=f8e50]: Últimos resultados
+                - generic "#1 — 2026-09-03" [ref=f8e52]: "1"
+            - button "Compartir perfil" [ref=f8e53]
+        - generic [ref=f8e60]:
+          - heading "Standing" [level=2] [ref=f8e61]
+          - generic [ref=f8e63]:
+            - generic [ref=f8e64]: One Piece Card Game
+            - generic [ref=f8e67]:
+              - generic [ref=f8e68]:
+                - paragraph [ref=f8e69]: Rank
+                - paragraph [ref=f8e72]: "#24"
+              - generic [ref=f8e73]:
+                - paragraph [ref=f8e74]: Puntos
+                - paragraph [ref=f8e79]: "100"
+            - generic [ref=f8e80]:
+              - generic [ref=f8e81]: 1 jugados
+              - generic [ref=f8e82]: ·
+              - generic [ref=f8e83]: 1 ganados
+        - generic [ref=f8e85]:
+          - generic [ref=f8e86]:
+            - heading "Historial de torneos" [level=2] [ref=f8e91]
+            - generic [ref=f8e92]: 1 torneos
+          - table [ref=f8e94]:
+            - rowgroup [ref=f8e95]:
+              - row [ref=f8e96]:
+                - columnheader "Fecha" [ref=f8e97]
+                - columnheader "Tienda" [ref=f8e98]
+                - columnheader "V / D" [ref=f8e99]
+                - columnheader "Posición" [ref=f8e100]
+                - columnheader "Pts Arena" [ref=f8e101]
+            - rowgroup [ref=f8e102]:
+              - row [ref=f8e103] [cursor=pointer]:
+                - cell "3 sep 2026" [ref=f8e104]
+                - 'cell "Tienda Mock #1 · Monterrey" [ref=f8e105]':
+                  - text: "Tienda Mock #1"
+                  - generic [ref=f8e106]: · Monterrey
+                - cell "5 / 0" [ref=f8e107]
+                - cell "#1" [ref=f8e108]
+                - cell "+100.00" [ref=f8e110]
+      - complementary [ref=f8e111]
+  - region "Notifications alt+T"

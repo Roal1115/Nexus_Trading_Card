@@ -55,7 +55,7 @@ async function fetchRoundsBatched(
 async function fetchMetaRounds(
   admin: ReturnType<typeof getNexusAdmin>,
   data: MetaFilters,
-): Promise<Round[]> {
+): Promise<{ rounds: Round[]; tournamentIds: string[] }> {
   // Rondas de torneos publicados
   let tournamentQuery = admin
     .from("tournaments")
@@ -87,7 +87,71 @@ async function fetchMetaRounds(
     fetchRoundsBatched(admin, "standalone_round_results", "session_id", sessionIds),
   ]);
 
-  return [...tournamentRounds, ...sessionRounds];
+  return { rounds: [...tournamentRounds, ...sessionRounds], tournamentIds };
+}
+
+async function fetchInBatches<T>(
+  ids: string[],
+  fetcher: (batch: string[]) => PromiseLike<{ data: T[] | null }>,
+): Promise<T[]> {
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += ID_BATCH_SIZE) batches.push(ids.slice(i, i + ID_BATCH_SIZE));
+  const results = await Promise.all(batches.map(fetcher));
+  return results.flatMap((r) => r.data ?? []);
+}
+
+// Torneos ganados (rank=1) por líder canónico — el campeón de un torneo pudo
+// jugar variantes de arte distintas ronda a ronda, así que se toma el leader
+// más usado por ese jugador en ese torneo específico.
+async function computeTournamentWinsByLeader(
+  admin: ReturnType<typeof getNexusAdmin>,
+  tournamentIds: string[],
+  resolve: (id: string) => string,
+): Promise<Map<string, number>> {
+  if (tournamentIds.length === 0) return new Map();
+
+  const champions = await fetchInBatches<{ tournament_id: string; player_id: string }>(
+    tournamentIds,
+    (batch) =>
+      admin
+        .from("tournament_results")
+        .select("tournament_id, player_id")
+        .in("tournament_id", batch)
+        .eq("rank", 1),
+  );
+  if (champions.length === 0) return new Map();
+
+  const wonTournamentIds = Array.from(new Set(champions.map((c) => c.tournament_id)));
+  const champRounds = await fetchInBatches<{
+    tournament_id: string;
+    player_id: string;
+    player_leader_id: string;
+  }>(wonTournamentIds, (batch) =>
+    admin
+      .from("tournament_round_results")
+      .select("tournament_id, player_id, player_leader_id")
+      .in("tournament_id", batch)
+      .eq("is_bye", false)
+      .not("player_leader_id", "is", null),
+  );
+
+  const leaderCountsByTournamentPlayer = new Map<string, Map<string, number>>();
+  for (const r of champRounds) {
+    const key = `${r.tournament_id}|${r.player_id}`;
+    const counts = leaderCountsByTournamentPlayer.get(key) ?? new Map<string, number>();
+    const canonicalId = resolve(r.player_leader_id);
+    counts.set(canonicalId, (counts.get(canonicalId) ?? 0) + 1);
+    leaderCountsByTournamentPlayer.set(key, counts);
+  }
+
+  const winsByLeader = new Map<string, number>();
+  for (const c of champions) {
+    const counts = leaderCountsByTournamentPlayer.get(`${c.tournament_id}|${c.player_id}`);
+    if (!counts || counts.size === 0) continue;
+    const topLeaderId = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0][0];
+    winsByLeader.set(topLeaderId, (winsByLeader.get(topLeaderId) ?? 0) + 1);
+  }
+  return winsByLeader;
 }
 
 // Resuelve arte alternativo → líder canónico y regresa info de cada líder
@@ -125,7 +189,7 @@ export const getMetaStats = createServerFn({ method: "POST" })
   .inputValidator((d: MetaFilters) => filtersSchema.parse(d))
   .handler(async ({ data }) => {
     const admin = getNexusAdmin();
-    const allRounds = await fetchMetaRounds(admin, data);
+    const { rounds: allRounds, tournamentIds } = await fetchMetaRounds(admin, data);
     const totalRounds = allRounds.length;
 
     const leaderMap = new Map<
@@ -182,6 +246,8 @@ export const getMetaStats = createServerFn({ method: "POST" })
       }
     }
 
+    const winsByLeader = await computeTournamentWinsByLeader(admin, tournamentIds, resolve);
+
     const leaders = Array.from(canonicalMap.entries())
       .filter(([, v]) => v.total >= MIN_ROUNDS)
       .map(([canonicalId, stats]) => {
@@ -202,6 +268,7 @@ export const getMetaStats = createServerFn({ method: "POST" })
             stats.second > 0 ? Math.round((stats.secondWins / stats.second) * 1000) / 10 : null,
           first_rounds: stats.first,
           second_rounds: stats.second,
+          tournaments_won: winsByLeader.get(canonicalId) ?? 0,
         };
       })
       .sort((a, b) => b.play_rate - a.play_rate);
@@ -213,7 +280,7 @@ export const getMetaMatchups = createServerFn({ method: "POST" })
   .inputValidator((d: MetaFilters) => filtersSchema.parse(d))
   .handler(async ({ data }) => {
     const admin = getNexusAdmin();
-    const allRounds = await fetchMetaRounds(admin, data);
+    const { rounds: allRounds } = await fetchMetaRounds(admin, data);
 
     const ids = new Set<string>();
     for (const r of allRounds) {
@@ -223,23 +290,54 @@ export const getMetaMatchups = createServerFn({ method: "POST" })
     const { info, resolve } = await resolveLeaders(admin, Array.from(ids));
 
     // Celda a|b = rondas de a contra b (desde la perspectiva de a)
-    const cells = new Map<string, { wins: number; total: number }>();
+    type Cell = {
+      wins: number;
+      total: number;
+      firstWins: number;
+      first: number;
+      secondWins: number;
+      second: number;
+    };
+    const emptyCell = (): Cell => ({
+      wins: 0,
+      total: 0,
+      firstWins: 0,
+      first: 0,
+      secondWins: 0,
+      second: 0,
+    });
+    const cells = new Map<string, Cell>();
     const totals = new Map<string, number>();
     for (const r of allRounds) {
       if (!r.player_leader_id || !r.opponent_leader_id || r.won_match === null) continue;
       const a = resolve(r.player_leader_id);
       const b = resolve(r.opponent_leader_id);
       const key = `${a}|${b}`;
-      const cell = cells.get(key) ?? { wins: 0, total: 0 };
+      const cell = cells.get(key) ?? emptyCell();
       cell.total++;
       if (r.won_match) cell.wins++;
+      if (r.turn_order === "first") {
+        cell.first++;
+        if (r.won_match) cell.firstWins++;
+      } else if (r.turn_order === "second") {
+        cell.second++;
+        if (r.won_match) cell.secondWins++;
+      }
       cells.set(key, cell);
       totals.set(a, (totals.get(a) ?? 0) + 1);
       // La perspectiva del rival también cuenta como dato del matchup inverso
+      // (si a jugó primero, b jugó segundo en esa misma ronda, y viceversa)
       const invKey = `${b}|${a}`;
-      const inv = cells.get(invKey) ?? { wins: 0, total: 0 };
+      const inv = cells.get(invKey) ?? emptyCell();
       inv.total++;
       if (!r.won_match) inv.wins++;
+      if (r.turn_order === "first") {
+        inv.second++;
+        if (!r.won_match) inv.secondWins++;
+      } else if (r.turn_order === "second") {
+        inv.first++;
+        if (!r.won_match) inv.firstWins++;
+      }
       cells.set(invKey, inv);
       totals.set(b, (totals.get(b) ?? 0) + 1);
     }
@@ -259,18 +357,41 @@ export const getMetaMatchups = createServerFn({ method: "POST" })
         };
       });
 
-    const matchups: Record<string, { wins: number; total: number; win_rate: number }> = {};
-    for (const a of leaders) {
-      for (const b of leaders) {
-        if (a.leader_id === b.leader_id) continue;
-        const cell = cells.get(`${a.leader_id}|${b.leader_id}`);
-        if (!cell || cell.total < MIN_MATCHUP_ROUNDS) continue;
-        matchups[`${a.leader_id}|${b.leader_id}`] = {
-          wins: cell.wins,
-          total: cell.total,
-          win_rate: Math.round((cell.wins / cell.total) * 1000) / 10,
-        };
+    const matchups: Record<
+      string,
+      {
+        wins: number;
+        total: number;
+        win_rate: number;
+        first_total: number;
+        first_win_rate: number | null;
+        second_total: number;
+        second_win_rate: number | null;
       }
+    > = {};
+    // Todo par de líderes elegibles (mismo umbral que el leaderboard, no solo el
+    // Top 10 de la matriz) queda disponible — el explorador de cualquier líder
+    // lee de esta misma respuesta sin una query aparte.
+    const eligibleIds = new Set(
+      Array.from(totals.entries())
+        .filter(([, total]) => total >= MIN_ROUNDS)
+        .map(([id]) => id),
+    );
+    for (const [key, cell] of cells.entries()) {
+      if (cell.total < MIN_MATCHUP_ROUNDS) continue;
+      const [a, b] = key.split("|");
+      if (a === b || !eligibleIds.has(a) || !eligibleIds.has(b)) continue;
+      matchups[key] = {
+        wins: cell.wins,
+        total: cell.total,
+        win_rate: Math.round((cell.wins / cell.total) * 1000) / 10,
+        first_total: cell.first,
+        first_win_rate:
+          cell.first > 0 ? Math.round((cell.firstWins / cell.first) * 1000) / 10 : null,
+        second_total: cell.second,
+        second_win_rate:
+          cell.second > 0 ? Math.round((cell.secondWins / cell.second) * 1000) / 10 : null,
+      };
     }
 
     return { leaders, matchups };

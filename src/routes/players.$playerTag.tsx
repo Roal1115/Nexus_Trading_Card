@@ -348,8 +348,21 @@ function PublicProfilePage() {
                   forma reciente — hoy la única forma de saber "qué tan
                   bueno es este jugador ahora mismo" era leer manualmente
                   las 10 filas del historial. */}
-              {(record.total > 0 || profile.main_leader || recentForm.length > 0) && (
+              {(record.total > 0 ||
+                profile.main_leader ||
+                recentForm.length > 0 ||
+                !!profile.total_tournaments_won) && (
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                  {!!profile.total_tournaments_won && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                        Torneos Ganados
+                      </p>
+                      <p className="font-mono-stat text-lg font-bold text-white">
+                        🏆 #{profile.total_tournaments_won}
+                      </p>
+                    </div>
+                  )}
                   {record.winRate != null && (
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-gray-500">

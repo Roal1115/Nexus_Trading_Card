@@ -122,6 +122,8 @@ const STAT_TOOLTIPS: Record<string, string> = {
   "Play Rate":
     "Porcentaje de rondas del meta total que jugaste con este leader. Indica qué tan frecuentemente lo usas vs el resto de jugadores.",
   "Total Games": "Total de rondas registradas con este leader (excluye byes).",
+  "Torneos Ganados":
+    "Torneos oficiales donde terminaste en 1er lugar jugando principalmente con este leader.",
   "1st Winrate":
     "Win Rate cuando tú juegas primero (tu turno 1). En One Piece, jugar primero o segundo impacta significativamente la estrategia.",
   "2nd Winrate": "Win Rate cuando juegas segundo (oponente tiene turno 1).",
@@ -912,6 +914,12 @@ function StatsPage() {
         </Link>
         <h1 className="text-2xl font-bold text-white">Mis Stats</h1>
 
+        {!!displayStats?.total_tournaments_won && (
+          <span className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+            🏆 Torneos Ganados #{displayStats.total_tournaments_won}
+          </span>
+        )}
+
         {/* TCG: contexto, no filtro — oculto si solo hay uno */}
         {games.length > 1 && (
           <div className="ml-auto flex gap-1.5 overflow-x-auto">
@@ -1238,6 +1246,13 @@ function StatsPage() {
                       {/* Stats grid */}
                       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                         <StatCard label="Total Games" value={`${selectedLeader.total_games}`} />
+                        <StatCard
+                          label="Torneos Ganados"
+                          value={`${selectedLeader.tournaments_won}`}
+                          sub={
+                            selectedLeader.tournaments_won > 0 ? "🏆 con este leader" : undefined
+                          }
+                        />
                         <StatCard
                           label="WR Confirmado"
                           value={`${selectedLeader.wtd_win_rate}%`}

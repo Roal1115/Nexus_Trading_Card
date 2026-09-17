@@ -1,0 +1,72 @@
+- generic [ref=e2]:
+  - generic [ref=e15]:
+    - paragraph [ref=e16]: The Circuit · Feature Audit, Level 03
+    - heading [level=1] [ref=e17]:
+      - text: What
+      - emphasis [ref=e18]: The Circuit
+      - text: giveseach side of the table
+    - paragraph [ref=e19]: Five audiences, one shared record. Every line below is a capability already running in production — not a roadmap pitch — traced from the platform's route-to-database feature inventory.
+    - generic [ref=e20]:
+      - generic [ref=e21]: 22 verified capabilities
+      - generic [ref=e22]: 21 live · 1 partial
+      - generic [ref=e23]: One Piece · Riftbound
+  - generic [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - heading "Players" [level=2] [ref=e27]
+        - generic [ref=e28]: Identity & Stats
+      - generic [ref=e29]:
+        - generic [ref=e30]: A public competitive identity
+        - generic [ref=e31]: A shareable profile with achievements, equipped cosmetics, and season history turns tournament participation into a lasting record, not a one-off result sheet.
+      - generic [ref=e32]:
+        - generic [ref=e33]: Stats that don't stop at sanctioned play
+        - generic [ref=e34]: The standalone tracker folds casual reps into a player's official win rate automatically once a store uploads matching results — no manual re-entry.
+      - generic [ref=e35]:
+        - generic [ref=e36]: A national ranking you can see yourself on
+        - generic [ref=e37]: Leaderboard filters by game, store/zone, and season make "where do I stand" answerable, not buried in a spreadsheet.
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - heading "Local Game Stores" [level=2] [ref=e40]
+        - generic [ref=e41]: Run & Grow
+      - generic [ref=e42]:
+        - generic [ref=e43]: Run leagues without losing them in national noise
+        - generic [ref=e44]: Internal leagues get their own schedule, prizes and history while staying cleanly separated from circuit totals.
+      - generic [ref=e45]:
+        - generic [ref=e46]: A public storefront that updates itself
+        - generic [ref=e47]: Directory listing, weekly schedule and tournament history are generated from the same data organizers already enter.
+      - generic [ref=e48]:
+        - generic [ref=e49]: Attendance and engagement trends
+        - generic [ref=e50]: View and participation analytics show whether an event or league is actually growing traffic, not just running.
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - heading "Tournament Organizers" [level=2] [ref=e53]
+        - generic [ref=e54]: Operate
+      - generic [ref=e55]:
+        - generic [ref=e56]: One flow from draft to published result
+        - generic [ref=e57]: Create, run, and upload results in the same system that feeds player stats, the meta dashboard, and the national leaderboard.
+      - generic [ref=e58]:
+        - generic [ref=e59]: Built-in dispute handling
+        - generic [ref=e60]: Appeals are logged and resolved in-platform rather than over chat threads that leave no record.
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - heading "National Circuits" [level=2] [ref=e63]
+        - generic [ref=e64]: Govern
+      - generic [ref=e65]:
+        - generic [ref=e66]: A real approval gate before results count nationally
+        - generic [ref=e67]: A dedicated manager tier reviews and publishes results before they enter the national leaderboard — a checkpoint most single-store tools skip.
+      - generic [ref=e68]:
+        - generic [ref=e69]: Season-based ranking cycles
+        - generic [ref=e70]: Rankings resolve to defined seasons rather than an ever-scrolling all-time list, supporting qualification periods and resets.
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - heading "TCG Communities" [level=2] [ref=e73]
+        - generic [ref=e74]: Discover the Meta
+      - generic [ref=e75]:
+        - generic [ref=e76]: Public metagame data, not just tournament results
+        - generic [ref=e77]: Leader popularity and matchup win rates are visible to anyone — a deckbuilding reference, not just an events calendar.
+      - generic [ref=e78]:
+        - generic [ref=e79]: Built to add a third game without a rewrite
+        - generic [ref=e80]: Game is a filter column threaded through leaders, decks and stats rather than a hardcoded ruleset, so a new TCG is a data problem, not an engineering one.
+  - contentinfo [ref=e81]:
+    - generic [ref=e82]: The Circuit
+    - generic [ref=e87]: Factual capability & why it matters — groundwork for the public Features page.

@@ -1,0 +1,551 @@
+- generic [ref=f5e2]:
+  - generic [ref=f5e3]:
+    - banner [ref=f5e4]:
+      - generic [ref=f5e5]:
+        - link "Trading Card Nexus" [ref=f5e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f5e15]: Trading Card
+          - generic [ref=f5e16]: Nexus
+        - link "Iniciar sesión" [ref=f5e18] [cursor=pointer]:
+          - /url: /login
+    - generic [ref=f5e20]:
+      - banner [ref=f5e21]:
+        - paragraph [ref=f5e22]: Meta
+        - heading "Meta Leaderboard" [level=1] [ref=f5e26]
+        - paragraph [ref=f5e27]: Win rates y play rates calculados desde torneos oficiales publicados.
+      - generic [ref=f5e28]:
+        - generic [ref=f5e29]:
+          - generic [ref=f5e30]:
+            - generic [ref=f5e31]: Zona
+            - combobox [ref=f5e32] [cursor=pointer]:
+              - generic: Todas las zonas
+          - generic [ref=f5e35]:
+            - generic [ref=f5e36]: Tienda
+            - combobox [ref=f5e37] [cursor=pointer]:
+              - generic: Todas las tiendas
+          - generic [ref=f5e40]:
+            - generic [ref=f5e41]: Desde
+            - textbox [ref=f5e43]:
+              - /placeholder: mm/dd/yy
+          - generic [ref=f5e44]:
+            - generic [ref=f5e45]: Hasta
+            - textbox [ref=f5e47]:
+              - /placeholder: mm/dd/yy
+        - generic [ref=f5e48]:
+          - button "Limpiar filtros" [ref=f5e49]
+          - button "Aplicar filtros" [ref=f5e50]
+      - generic [ref=f5e53]:
+        - generic [ref=f5e54]:
+          - generic [ref=f5e55]: "#"
+          - generic [ref=f5e56]: Leader
+          - generic [ref=f5e57]: Set
+          - generic [ref=f5e58]: Colores
+          - generic [ref=f5e59]: Play Rate
+          - generic [ref=f5e60]: Win Rate
+          - generic [ref=f5e61]: 1st WR
+          - generic [ref=f5e62]: 2nd WR
+          - generic [ref=f5e63]: Rondas
+        - button "#1 Monkey.D.Luffy Monkey.D.Luffy EB02-010 Green Purple 19.3% 44.7% 44.9% 44.4% 94" [ref=f5e64] [cursor=pointer]:
+          - generic [ref=f5e65]: "#1"
+          - generic [ref=f5e66]:
+            - img "Monkey.D.Luffy" [ref=f5e67]
+            - generic [ref=f5e68]: Monkey.D.Luffy
+          - generic [ref=f5e69]: EB02-010
+          - generic [ref=f5e70]:
+            - generic "Green" [ref=f5e71]
+            - generic "Purple" [ref=f5e72]
+          - generic [ref=f5e73]: 19.3%
+          - generic [ref=f5e74]: 44.7%
+          - generic [ref=f5e75]: 44.9%
+          - generic [ref=f5e76]: 44.4%
+          - generic [ref=f5e77]: "94"
+        - button "#2 Donquixote Rosinante Donquixote Rosinante OP05-022 Blue Green 16.6% 45.7% 43.6% 47.6% 81" [ref=f5e78] [cursor=pointer]:
+          - generic [ref=f5e79]: "#2"
+          - generic [ref=f5e80]:
+            - img "Donquixote Rosinante" [ref=f5e81]
+            - generic [ref=f5e82]: Donquixote Rosinante
+          - generic [ref=f5e83]: OP05-022
+          - generic [ref=f5e84]:
+            - generic "Blue" [ref=f5e85]
+            - generic "Green" [ref=f5e86]
+          - generic [ref=f5e87]: 16.6%
+          - generic [ref=f5e88]: 45.7%
+          - generic [ref=f5e89]: 43.6%
+          - generic [ref=f5e90]: 47.6%
+          - generic [ref=f5e91]: "81"
+        - button "#3 Jewelry Bonney Jewelry Bonney OP07-019 Green 15% 53.4% 56.8% 50% 73" [ref=f5e92] [cursor=pointer]:
+          - generic [ref=f5e93]: "#3"
+          - generic [ref=f5e94]:
+            - img "Jewelry Bonney" [ref=f5e95]
+            - generic [ref=f5e96]: Jewelry Bonney
+          - generic [ref=f5e97]: OP07-019
+          - generic "Green" [ref=f5e99]
+          - generic [ref=f5e100]: 15%
+          - generic [ref=f5e101]: 53.4%
+          - generic [ref=f5e102]: 56.8%
+          - generic [ref=f5e103]: 50%
+          - generic [ref=f5e104]: "73"
+        - button "#4 King King OP08-057 Blue Purple 14% 52.9% 45.5% 60% 68" [ref=f5e105] [cursor=pointer]:
+          - generic [ref=f5e106]: "#4"
+          - generic [ref=f5e107]:
+            - img "King" [ref=f5e108]
+            - generic [ref=f5e109]: King
+          - generic [ref=f5e110]: OP08-057
+          - generic [ref=f5e111]:
+            - generic "Blue" [ref=f5e112]
+            - generic "Purple" [ref=f5e113]
+          - generic [ref=f5e114]: 14%
+          - generic [ref=f5e115]: 52.9%
+          - generic [ref=f5e116]: 45.5%
+          - generic [ref=f5e117]: 60%
+          - generic [ref=f5e118]: "68"
+        - button "#5 Dracule Mihawk Dracule Mihawk OP14-020 Green 3.3% 68.8% 66.7% 70% 16" [ref=f5e119] [cursor=pointer]:
+          - generic [ref=f5e120]: "#5"
+          - generic [ref=f5e121]:
+            - img "Dracule Mihawk" [ref=f5e122]
+            - generic [ref=f5e123]: Dracule Mihawk
+          - generic [ref=f5e124]: OP14-020
+          - generic "Green" [ref=f5e126]
+          - generic [ref=f5e127]: 3.3%
+          - generic [ref=f5e128]: 68.8%
+          - generic [ref=f5e129]: 66.7%
+          - generic [ref=f5e130]: 70%
+          - generic [ref=f5e131]: "16"
+        - button "#6 Donquixote Doflamingo Donquixote Doflamingo OP14-060 Purple 3.3% 43.8% 33.3% 50% 16" [ref=f5e132] [cursor=pointer]:
+          - generic [ref=f5e133]: "#6"
+          - generic [ref=f5e134]:
+            - img "Donquixote Doflamingo" [ref=f5e135]
+            - generic [ref=f5e136]: Donquixote Doflamingo
+          - generic [ref=f5e137]: OP14-060
+          - generic "Purple" [ref=f5e139]
+          - generic [ref=f5e140]: 3.3%
+          - generic [ref=f5e141]: 43.8%
+          - generic [ref=f5e142]: 33.3%
+          - generic [ref=f5e143]: 50%
+          - generic [ref=f5e144]: "16"
+        - button "#7 Crocodile Crocodile ST03-001 Blue 3.3% 62.5% 50% 75% 16" [ref=f5e145] [cursor=pointer]:
+          - generic [ref=f5e146]: "#7"
+          - generic [ref=f5e147]:
+            - img "Crocodile" [ref=f5e148]
+            - generic [ref=f5e149]: Crocodile
+          - generic [ref=f5e150]: ST03-001
+          - generic "Blue" [ref=f5e152]
+          - generic [ref=f5e153]: 3.3%
+          - generic [ref=f5e154]: 62.5%
+          - generic [ref=f5e155]: 50%
+          - generic [ref=f5e156]: 75%
+          - generic [ref=f5e157]: "16"
+        - button "#8 Ace & Newgate Ace & Newgate ST22-001 Blue 3.3% 50% 45.5% 60% 16" [ref=f5e158] [cursor=pointer]:
+          - generic [ref=f5e159]: "#8"
+          - generic [ref=f5e160]:
+            - img "Ace & Newgate" [ref=f5e161]
+            - generic [ref=f5e162]: Ace & Newgate
+          - generic [ref=f5e163]: ST22-001
+          - generic "Blue" [ref=f5e165]
+          - generic [ref=f5e166]: 3.3%
+          - generic [ref=f5e167]: 50%
+          - generic [ref=f5e168]: 45.5%
+          - generic [ref=f5e169]: 60%
+          - generic [ref=f5e170]: "16"
+        - button "#9 Enel Enel OP05-098 Yellow 3.1% 40% 18.2% 100% 15" [ref=f5e171] [cursor=pointer]:
+          - generic [ref=f5e172]: "#9"
+          - generic [ref=f5e173]:
+            - img "Enel" [ref=f5e174]
+            - generic [ref=f5e175]: Enel
+          - generic [ref=f5e176]: OP05-098
+          - generic "Yellow" [ref=f5e178]
+          - generic [ref=f5e179]: 3.1%
+          - generic [ref=f5e180]: 40%
+          - generic [ref=f5e181]: 18.2%
+          - generic [ref=f5e182]: 100%
+          - generic [ref=f5e183]: "15"
+        - button "#10 Charlotte Katakuri Charlotte Katakuri OP11-062 Purple 3.1% 40% 36.4% 50% 15" [ref=f5e184] [cursor=pointer]:
+          - generic [ref=f5e185]: "#10"
+          - generic [ref=f5e186]:
+            - img "Charlotte Katakuri" [ref=f5e187]
+            - generic [ref=f5e188]: Charlotte Katakuri
+          - generic [ref=f5e189]: OP11-062
+          - generic "Purple" [ref=f5e191]
+          - generic [ref=f5e192]: 3.1%
+          - generic [ref=f5e193]: 40%
+          - generic [ref=f5e194]: 36.4%
+          - generic [ref=f5e195]: 50%
+          - generic [ref=f5e196]: "15"
+        - button "#11 Boa Hancock Boa Hancock OP07-038 Blue 3.1% 40% 0% 54.5% 15" [ref=f5e197] [cursor=pointer]:
+          - generic [ref=f5e198]: "#11"
+          - generic [ref=f5e199]:
+            - img "Boa Hancock" [ref=f5e200]
+            - generic [ref=f5e201]: Boa Hancock
+          - generic [ref=f5e202]: OP07-038
+          - generic "Blue" [ref=f5e204]
+          - generic [ref=f5e205]: 3.1%
+          - generic [ref=f5e206]: 40%
+          - generic [ref=f5e207]: 0%
+          - generic [ref=f5e208]: 54.5%
+          - generic [ref=f5e209]: "15"
+        - button "#12 Gol.D.Roger Gol.D.Roger OP13-003 Purple Red 2.9% 50% 60% 44.4% 14" [ref=f5e210] [cursor=pointer]:
+          - generic [ref=f5e211]: "#12"
+          - generic [ref=f5e212]:
+            - img "Gol.D.Roger" [ref=f5e213]
+            - generic [ref=f5e214]: Gol.D.Roger
+          - generic [ref=f5e215]: OP13-003
+          - generic [ref=f5e216]:
+            - generic "Purple" [ref=f5e217]
+            - generic "Red" [ref=f5e218]
+          - generic [ref=f5e219]: 2.9%
+          - generic [ref=f5e220]: 50%
+          - generic [ref=f5e221]: 60%
+          - generic [ref=f5e222]: 44.4%
+          - generic [ref=f5e223]: "14"
+        - button "#13 Eustass\"Captain\"Kid Eustass\"Captain\"Kid ST02-001 Green 2.3% 36.4% 0% 66.7% 11" [ref=f5e224] [cursor=pointer]:
+          - generic [ref=f5e225]: "#13"
+          - generic [ref=f5e226]:
+            - img "Eustass\"Captain\"Kid" [ref=f5e227]
+            - generic [ref=f5e228]: Eustass"Captain"Kid
+          - generic [ref=f5e229]: ST02-001
+          - generic "Green" [ref=f5e231]
+          - generic [ref=f5e232]: 2.3%
+          - generic [ref=f5e233]: 36.4%
+          - generic [ref=f5e234]: 0%
+          - generic [ref=f5e235]: 66.7%
+          - generic [ref=f5e236]: "11"
+        - button "#14 Buggy Buggy OP16-041 Blue 1.6% 75% 100% 60% 8" [ref=f5e237] [cursor=pointer]:
+          - generic [ref=f5e238]: "#14"
+          - generic [ref=f5e239]:
+            - img "Buggy" [ref=f5e240]
+            - generic [ref=f5e241]: Buggy
+          - generic [ref=f5e242]: OP16-041
+          - generic "Blue" [ref=f5e244]
+          - generic [ref=f5e245]: 1.6%
+          - generic [ref=f5e246]: 75%
+          - generic [ref=f5e247]: 100%
+          - generic [ref=f5e248]: 60%
+          - generic [ref=f5e249]: "8"
+        - button "#15 Gecko Moria Gecko Moria OP06-080 Black 1.6% 50% 40% 66.7% 8" [ref=f5e250] [cursor=pointer]:
+          - generic [ref=f5e251]: "#15"
+          - generic [ref=f5e252]:
+            - img "Gecko Moria" [ref=f5e253]
+            - generic [ref=f5e254]: Gecko Moria
+          - generic [ref=f5e255]: OP06-080
+          - generic "Black" [ref=f5e257]
+          - generic [ref=f5e258]: 1.6%
+          - generic [ref=f5e259]: 50%
+          - generic [ref=f5e260]: 40%
+          - generic [ref=f5e261]: 66.7%
+          - generic [ref=f5e262]: "8"
+        - button "#16 Charlotte Linlin Charlotte Linlin ST07-001 Yellow 1.6% 50% 25% 75% 8" [ref=f5e263] [cursor=pointer]:
+          - generic [ref=f5e264]: "#16"
+          - generic [ref=f5e265]:
+            - img "Charlotte Linlin" [ref=f5e266]
+            - generic [ref=f5e267]: Charlotte Linlin
+          - generic [ref=f5e268]: ST07-001
+          - generic "Yellow" [ref=f5e270]
+          - generic [ref=f5e271]: 1.6%
+          - generic [ref=f5e272]: 50%
+          - generic [ref=f5e273]: 25%
+          - generic [ref=f5e274]: 75%
+          - generic [ref=f5e275]: "8"
+        - button "#17 Sengoku Sengoku OP16-060 Purple 1% 60% 66.7% 50% 5" [ref=f5e276] [cursor=pointer]:
+          - generic [ref=f5e277]: "#17"
+          - generic [ref=f5e278]:
+            - img "Sengoku" [ref=f5e279]
+            - generic [ref=f5e280]: Sengoku
+          - generic [ref=f5e281]: OP16-060
+          - generic "Purple" [ref=f5e283]
+          - generic [ref=f5e284]: 1%
+          - generic [ref=f5e285]: 60%
+          - generic [ref=f5e286]: 66.7%
+          - generic [ref=f5e287]: 50%
+          - generic [ref=f5e288]: "5"
+      - paragraph [ref=f5e289]: Solo se muestran leaders con mínimo 5 rondas registradas (torneos oficiales + sessions). · 487 rondas totales en el meta.
+      - generic [ref=f5e290]:
+        - generic [ref=f5e291]:
+          - paragraph [ref=f5e292]: Matchups
+          - heading "Matriz de enfrentamientos" [level=2] [ref=f5e302]
+          - paragraph [ref=f5e303]: Win rate del líder de la fila contra el líder de la columna. Mínimo 3 rondas por matchup · Top 10 líderes por popularidad.
+        - generic [ref=f5e304]:
+          - searchbox "Explorar un líder" [ref=f5e306]
+          - generic [ref=f5e307]:
+            - table [ref=f5e308]:
+              - rowgroup [ref=f5e309]:
+                - row [ref=f5e310]:
+                  - columnheader [ref=f5e311]
+                  - columnheader [ref=f5e312] [cursor=pointer]:
+                    - img "Dracule Mihawk" [ref=f5e313]
+                  - columnheader [ref=f5e314] [cursor=pointer]:
+                    - img "Crocodile" [ref=f5e315]
+                  - columnheader [ref=f5e316] [cursor=pointer]:
+                    - img "Monkey.D.Luffy" [ref=f5e317]
+                  - columnheader [ref=f5e318] [cursor=pointer]:
+                    - img "Donquixote Rosinante" [ref=f5e319]
+                  - columnheader [ref=f5e320] [cursor=pointer]:
+                    - img "Charlotte Linlin" [ref=f5e321]
+                  - columnheader [ref=f5e322] [cursor=pointer]:
+                    - img "Jewelry Bonney" [ref=f5e323]
+                  - columnheader [ref=f5e324] [cursor=pointer]:
+                    - img "King" [ref=f5e325]
+                  - columnheader [ref=f5e326] [cursor=pointer]:
+                    - img "Sakazuki" [ref=f5e327]
+                  - columnheader [ref=f5e328] [cursor=pointer]:
+                    - img "Kaido" [ref=f5e329]
+                  - columnheader [ref=f5e330] [cursor=pointer]:
+                    - img "Donquixote Doflamingo" [ref=f5e331]
+              - rowgroup [ref=f5e332]:
+                - row [ref=f5e333]:
+                  - rowheader "Mihawk OP14 Green" [ref=f5e334] [cursor=pointer]:
+                    - generic [ref=f5e335]:
+                      - generic [ref=f5e336]: Mihawk
+                      - generic [ref=f5e337]: OP14
+                      - generic "Green" [ref=f5e339]
+                  - cell "—" [ref=f5e340]
+                  - cell "·" [ref=f5e341]
+                  - cell "70% 20 rondas" [ref=f5e342] [cursor=pointer]:
+                    - generic [ref=f5e343]: 70%
+                    - generic [ref=f5e344]: 20 rondas
+                  - cell "55.6% 18 rondas" [ref=f5e345] [cursor=pointer]:
+                    - generic [ref=f5e346]: 55.6%
+                    - generic [ref=f5e347]: 18 rondas
+                  - cell "·" [ref=f5e348]
+                  - cell "50% 14 rondas" [ref=f5e349] [cursor=pointer]:
+                    - generic [ref=f5e350]: 50%
+                    - generic [ref=f5e351]: 14 rondas
+                  - cell "41.7% 12 rondas" [ref=f5e352] [cursor=pointer]:
+                    - generic [ref=f5e353]: 41.7%
+                    - generic [ref=f5e354]: 12 rondas
+                  - cell "·" [ref=f5e355]
+                  - cell "·" [ref=f5e356]
+                  - cell "33.3% 6 rondas" [ref=f5e357] [cursor=pointer]:
+                    - generic [ref=f5e358]: 33.3%
+                    - generic [ref=f5e359]: 6 rondas
+                - row [ref=f5e360]:
+                  - rowheader "Crocodile ST03 Blue" [ref=f5e361] [cursor=pointer]:
+                    - generic [ref=f5e362]:
+                      - generic [ref=f5e363]: Crocodile
+                      - generic [ref=f5e364]: ST03
+                      - generic "Blue" [ref=f5e366]
+                  - cell "·" [ref=f5e367]
+                  - cell "—" [ref=f5e368]
+                  - cell "38.9% 18 rondas" [ref=f5e369] [cursor=pointer]:
+                    - generic [ref=f5e370]: 38.9%
+                    - generic [ref=f5e371]: 18 rondas
+                  - cell "21.4% 14 rondas" [ref=f5e372] [cursor=pointer]:
+                    - generic [ref=f5e373]: 21.4%
+                    - generic [ref=f5e374]: 14 rondas
+                  - cell "·" [ref=f5e375]
+                  - cell "27.8% 18 rondas" [ref=f5e376] [cursor=pointer]:
+                    - generic [ref=f5e377]: 27.8%
+                    - generic [ref=f5e378]: 18 rondas
+                  - cell "35.7% 14 rondas" [ref=f5e379] [cursor=pointer]:
+                    - generic [ref=f5e380]: 35.7%
+                    - generic [ref=f5e381]: 14 rondas
+                  - cell "·" [ref=f5e382]
+                  - cell "·" [ref=f5e383]
+                  - cell "100% 4 rondas" [ref=f5e384] [cursor=pointer]:
+                    - generic [ref=f5e385]: 100%
+                    - generic [ref=f5e386]: 4 rondas
+                - row [ref=f5e387]:
+                  - rowheader "Luffy EB02 Green Purple" [ref=f5e388] [cursor=pointer]:
+                    - generic [ref=f5e389]:
+                      - generic [ref=f5e390]: Luffy
+                      - generic [ref=f5e391]: EB02
+                      - generic [ref=f5e392]:
+                        - generic "Green" [ref=f5e393]
+                        - generic "Purple" [ref=f5e394]
+                  - cell "30% 20 rondas" [ref=f5e395] [cursor=pointer]:
+                    - generic [ref=f5e396]: 30%
+                    - generic [ref=f5e397]: 20 rondas
+                  - cell "61.1% 18 rondas" [ref=f5e398] [cursor=pointer]:
+                    - generic [ref=f5e399]: 61.1%
+                    - generic [ref=f5e400]: 18 rondas
+                  - cell "—" [ref=f5e401]
+                  - cell "·" [ref=f5e402]
+                  - cell "40% 15 rondas" [ref=f5e403] [cursor=pointer]:
+                    - generic [ref=f5e404]: 40%
+                    - generic [ref=f5e405]: 15 rondas
+                  - cell "·" [ref=f5e406]
+                  - cell "·" [ref=f5e407]
+                  - cell "20% 15 rondas" [ref=f5e408] [cursor=pointer]:
+                    - generic [ref=f5e409]: 20%
+                    - generic [ref=f5e410]: 15 rondas
+                  - cell "58.8% 17 rondas" [ref=f5e411] [cursor=pointer]:
+                    - generic [ref=f5e412]: 58.8%
+                    - generic [ref=f5e413]: 17 rondas
+                  - cell "·" [ref=f5e414]
+                - row [ref=f5e415]:
+                  - rowheader "Rosinante OP05 Blue Green" [ref=f5e416] [cursor=pointer]:
+                    - generic [ref=f5e417]:
+                      - generic [ref=f5e418]: Rosinante
+                      - generic [ref=f5e419]: OP05
+                      - generic [ref=f5e420]:
+                        - generic "Blue" [ref=f5e421]
+                        - generic "Green" [ref=f5e422]
+                  - cell "44.4% 18 rondas" [ref=f5e423] [cursor=pointer]:
+                    - generic [ref=f5e424]: 44.4%
+                    - generic [ref=f5e425]: 18 rondas
+                  - cell "78.6% 14 rondas" [ref=f5e426] [cursor=pointer]:
+                    - generic [ref=f5e427]: 78.6%
+                    - generic [ref=f5e428]: 14 rondas
+                  - cell "·" [ref=f5e429]
+                  - cell "—" [ref=f5e430]
+                  - cell "37.5% 16 rondas" [ref=f5e431] [cursor=pointer]:
+                    - generic [ref=f5e432]: 37.5%
+                    - generic [ref=f5e433]: 16 rondas
+                  - cell "·" [ref=f5e434]
+                  - cell "·" [ref=f5e435]
+                  - cell "31.6% 19 rondas" [ref=f5e436] [cursor=pointer]:
+                    - generic [ref=f5e437]: 31.6%
+                    - generic [ref=f5e438]: 19 rondas
+                  - cell "46.7% 15 rondas" [ref=f5e439] [cursor=pointer]:
+                    - generic [ref=f5e440]: 46.7%
+                    - generic [ref=f5e441]: 15 rondas
+                  - cell "·" [ref=f5e442]
+                - row [ref=f5e443]:
+                  - rowheader "Linlin ST07 Yellow" [ref=f5e444] [cursor=pointer]:
+                    - generic [ref=f5e445]:
+                      - generic [ref=f5e446]: Linlin
+                      - generic [ref=f5e447]: ST07
+                      - generic "Yellow" [ref=f5e449]
+                  - cell "·" [ref=f5e450]
+                  - cell "·" [ref=f5e451]
+                  - cell "60% 15 rondas" [ref=f5e452] [cursor=pointer]:
+                    - generic [ref=f5e453]: 60%
+                    - generic [ref=f5e454]: 15 rondas
+                  - cell "62.5% 16 rondas" [ref=f5e455] [cursor=pointer]:
+                    - generic [ref=f5e456]: 62.5%
+                    - generic [ref=f5e457]: 16 rondas
+                  - cell "—" [ref=f5e458]
+                  - cell "47.1% 17 rondas" [ref=f5e459] [cursor=pointer]:
+                    - generic [ref=f5e460]: 47.1%
+                    - generic [ref=f5e461]: 17 rondas
+                  - cell "53.3% 15 rondas" [ref=f5e462] [cursor=pointer]:
+                    - generic [ref=f5e463]: 53.3%
+                    - generic [ref=f5e464]: 15 rondas
+                  - cell "·" [ref=f5e465]
+                  - cell "·" [ref=f5e466]
+                  - cell "·" [ref=f5e467]
+                - row [ref=f5e468]:
+                  - rowheader "Bonney OP07 Green" [ref=f5e469] [cursor=pointer]:
+                    - generic [ref=f5e470]:
+                      - generic [ref=f5e471]: Bonney
+                      - generic [ref=f5e472]: OP07
+                      - generic "Green" [ref=f5e474]
+                  - cell "50% 14 rondas" [ref=f5e475] [cursor=pointer]:
+                    - generic [ref=f5e476]: 50%
+                    - generic [ref=f5e477]: 14 rondas
+                  - cell "72.2% 18 rondas" [ref=f5e478] [cursor=pointer]:
+                    - generic [ref=f5e479]: 72.2%
+                    - generic [ref=f5e480]: 18 rondas
+                  - cell "·" [ref=f5e481]
+                  - cell "·" [ref=f5e482]
+                  - cell "52.9% 17 rondas" [ref=f5e483] [cursor=pointer]:
+                    - generic [ref=f5e484]: 52.9%
+                    - generic [ref=f5e485]: 17 rondas
+                  - cell "—" [ref=f5e486]
+                  - cell "·" [ref=f5e487]
+                  - cell "36.4% 11 rondas" [ref=f5e488] [cursor=pointer]:
+                    - generic [ref=f5e489]: 36.4%
+                    - generic [ref=f5e490]: 11 rondas
+                  - cell "46.2% 13 rondas" [ref=f5e491] [cursor=pointer]:
+                    - generic [ref=f5e492]: 46.2%
+                    - generic [ref=f5e493]: 13 rondas
+                  - cell "·" [ref=f5e494]
+                - row [ref=f5e495]:
+                  - rowheader "King OP08 Blue Purple" [ref=f5e496] [cursor=pointer]:
+                    - generic [ref=f5e497]:
+                      - generic [ref=f5e498]: King
+                      - generic [ref=f5e499]: OP08
+                      - generic [ref=f5e500]:
+                        - generic "Blue" [ref=f5e501]
+                        - generic "Purple" [ref=f5e502]
+                  - cell "58.3% 12 rondas" [ref=f5e503] [cursor=pointer]:
+                    - generic [ref=f5e504]: 58.3%
+                    - generic [ref=f5e505]: 12 rondas
+                  - cell "64.3% 14 rondas" [ref=f5e506] [cursor=pointer]:
+                    - generic [ref=f5e507]: 64.3%
+                    - generic [ref=f5e508]: 14 rondas
+                  - cell "·" [ref=f5e509]
+                  - cell "·" [ref=f5e510]
+                  - cell "46.7% 15 rondas" [ref=f5e511] [cursor=pointer]:
+                    - generic [ref=f5e512]: 46.7%
+                    - generic [ref=f5e513]: 15 rondas
+                  - cell "·" [ref=f5e514]
+                  - cell "—" [ref=f5e515]
+                  - cell "50% 14 rondas" [ref=f5e516] [cursor=pointer]:
+                    - generic [ref=f5e517]: 50%
+                    - generic [ref=f5e518]: 14 rondas
+                  - cell "46.2% 13 rondas" [ref=f5e519] [cursor=pointer]:
+                    - generic [ref=f5e520]: 46.2%
+                    - generic [ref=f5e521]: 13 rondas
+                  - cell "·" [ref=f5e522]
+                - row [ref=f5e523]:
+                  - rowheader "Sakazuki OP05 Blue Black" [ref=f5e524] [cursor=pointer]:
+                    - generic [ref=f5e525]:
+                      - generic [ref=f5e526]: Sakazuki
+                      - generic [ref=f5e527]: OP05
+                      - generic [ref=f5e528]:
+                        - generic "Blue" [ref=f5e529]
+                        - generic "Black" [ref=f5e530]
+                  - cell "·" [ref=f5e531]
+                  - cell "·" [ref=f5e532]
+                  - cell "80% 15 rondas" [ref=f5e533] [cursor=pointer]:
+                    - generic [ref=f5e534]: 80%
+                    - generic [ref=f5e535]: 15 rondas
+                  - cell "68.4% 19 rondas" [ref=f5e536] [cursor=pointer]:
+                    - generic [ref=f5e537]: 68.4%
+                    - generic [ref=f5e538]: 19 rondas
+                  - cell "·" [ref=f5e539]
+                  - cell "63.6% 11 rondas" [ref=f5e540] [cursor=pointer]:
+                    - generic [ref=f5e541]: 63.6%
+                    - generic [ref=f5e542]: 11 rondas
+                  - cell "50% 14 rondas" [ref=f5e543] [cursor=pointer]:
+                    - generic [ref=f5e544]: 50%
+                    - generic [ref=f5e545]: 14 rondas
+                  - cell "—" [ref=f5e546]
+                  - cell "·" [ref=f5e547]
+                  - cell "·" [ref=f5e548]
+                - row [ref=f5e549]:
+                  - rowheader "Kaido ST04 Purple" [ref=f5e550] [cursor=pointer]:
+                    - generic [ref=f5e551]:
+                      - generic [ref=f5e552]: Kaido
+                      - generic [ref=f5e553]: ST04
+                      - generic "Purple" [ref=f5e555]
+                  - cell "·" [ref=f5e556]
+                  - cell "·" [ref=f5e557]
+                  - cell "41.2% 17 rondas" [ref=f5e558] [cursor=pointer]:
+                    - generic [ref=f5e559]: 41.2%
+                    - generic [ref=f5e560]: 17 rondas
+                  - cell "53.3% 15 rondas" [ref=f5e561] [cursor=pointer]:
+                    - generic [ref=f5e562]: 53.3%
+                    - generic [ref=f5e563]: 15 rondas
+                  - cell "·" [ref=f5e564]
+                  - cell "53.8% 13 rondas" [ref=f5e565] [cursor=pointer]:
+                    - generic [ref=f5e566]: 53.8%
+                    - generic [ref=f5e567]: 13 rondas
+                  - cell "53.8% 13 rondas" [ref=f5e568] [cursor=pointer]:
+                    - generic [ref=f5e569]: 53.8%
+                    - generic [ref=f5e570]: 13 rondas
+                  - cell "·" [ref=f5e571]
+                  - cell "—" [ref=f5e572]
+                  - cell "·" [ref=f5e573]
+                - row [ref=f5e574]:
+                  - rowheader "Doflamingo OP14 Purple" [ref=f5e575] [cursor=pointer]:
+                    - generic [ref=f5e576]:
+                      - generic [ref=f5e577]: Doflamingo
+                      - generic [ref=f5e578]: OP14
+                      - generic "Purple" [ref=f5e580]
+                  - cell "66.7% 6 rondas" [ref=f5e581] [cursor=pointer]:
+                    - generic [ref=f5e582]: 66.7%
+                    - generic [ref=f5e583]: 6 rondas
+                  - cell "0% 4 rondas" [ref=f5e584] [cursor=pointer]:
+                    - generic [ref=f5e585]: 0%
+                    - generic [ref=f5e586]: 4 rondas
+                  - cell "·" [ref=f5e587]
+                  - cell "·" [ref=f5e588]
+                  - cell "·" [ref=f5e589]
+                  - cell "·" [ref=f5e590]
+                  - cell "·" [ref=f5e591]
+                  - cell "·" [ref=f5e592]
+                  - cell "·" [ref=f5e593]
+                  - cell "—" [ref=f5e594]
+            - paragraph [ref=f5e595]: "Click en un líder para resaltar su fila y columna · click en una celda para ver el detalle del matchup · verde: favorable para la fila · rojo: desfavorable."
+  - region "Notifications alt+T"

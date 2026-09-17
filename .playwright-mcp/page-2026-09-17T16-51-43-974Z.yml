@@ -1,0 +1,92 @@
+- generic [ref=f6e2]:
+  - generic [ref=f6e3]:
+    - banner [ref=f6e4]:
+      - link "Trading Card Nexus" [ref=f6e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f6e15]: Trading Card
+        - generic [ref=f6e16]: Nexus
+    - generic [ref=f6e18]:
+      - complementary [ref=f6e19]
+      - main [ref=f6e20]:
+        - link "Volver al directorio" [ref=f6e22] [cursor=pointer]:
+          - /url: /stores
+        - generic [ref=f6e25]:
+          - generic [ref=f6e27]:
+            - paragraph [ref=f6e28]: Zona Monterrey
+            - 'heading "Tienda Mock #1" [level=1] [ref=f6e29]'
+          - paragraph [ref=f6e30]: Tu tienda especializada en juegos de cartas coleccionables y productos geek. Ofrecemos los mejores productos de Magic, Pokémon, Yu-Gi-Oh! y más.
+          - generic [ref=f6e31]: One Piece Card Game
+          - generic [ref=f6e33]:
+            - link "Cómo llegar" [ref=f6e35] [cursor=pointer]:
+              - /url: https://maps.app.goo.gl/zNH3PWtt6RAhABby9
+            - generic [ref=f6e38]:
+              - link [ref=f6e39] [cursor=pointer]:
+                - /url: https://instagram.com/geek.collectormx
+              - link [ref=f6e43] [cursor=pointer]:
+                - /url: https://geekcollector.com/
+              - link [ref=f6e47] [cursor=pointer]:
+                - /url: https://x.com/geekcollectormx
+              - link [ref=f6e50] [cursor=pointer]:
+                - /url: https://twitch.tv/geekcollectormty
+        - generic [ref=f6e54]:
+          - heading "Ubicación y horario" [level=2] [ref=f6e55]
+          - generic [ref=f6e56]:
+            - paragraph [ref=f6e57]: Alfonso Reyes 255, Monterrey, Nuevo Leon
+            - paragraph [ref=f6e61]: Lun-Dom 13:00-23:00
+            - paragraph [ref=f6e65]: "+528120802420"
+          - button "Ver mapa" [ref=f6e68]
+        - generic [ref=f6e75]:
+          - heading "Calendario de torneos" [level=2] [ref=f6e76]
+          - generic [ref=f6e77]:
+            - button [ref=f6e78]
+            - generic [ref=f6e81]: 14 sep — 20 sep 2026
+            - button [ref=f6e82]
+            - button "Hoy" [ref=f6e85]
+        - table [ref=f6e99]:
+          - rowgroup [ref=f6e100]:
+            - row [ref=f6e101]:
+              - columnheader "#" [ref=f6e102]
+              - columnheader "Tag" [ref=f6e103]
+              - columnheader "Pts" [ref=f6e104]
+              - columnheader "Trn" [ref=f6e105]
+              - columnheader "W" [ref=f6e106]
+              - columnheader "OMW%" [ref=f6e107]
+          - rowgroup [ref=f6e108]:
+            - row [ref=f6e109]:
+              - cell [ref=f6e110]
+              - cell [ref=f6e112]
+              - cell [ref=f6e114]
+              - cell [ref=f6e117]
+              - cell [ref=f6e120]
+              - cell [ref=f6e123]
+            - row [ref=f6e126]:
+              - cell [ref=f6e127]
+              - cell [ref=f6e129]
+              - cell [ref=f6e131]
+              - cell [ref=f6e134]
+              - cell [ref=f6e137]
+              - cell [ref=f6e140]
+            - row [ref=f6e143]:
+              - cell [ref=f6e144]
+              - cell [ref=f6e146]
+              - cell [ref=f6e148]
+              - cell [ref=f6e151]
+              - cell [ref=f6e154]
+              - cell [ref=f6e157]
+            - row [ref=f6e160]:
+              - cell [ref=f6e161]
+              - cell [ref=f6e163]
+              - cell [ref=f6e165]
+              - cell [ref=f6e168]
+              - cell [ref=f6e171]
+              - cell [ref=f6e174]
+            - row [ref=f6e177]:
+              - cell [ref=f6e178]
+              - cell [ref=f6e180]
+              - cell [ref=f6e182]
+              - cell [ref=f6e185]
+              - cell [ref=f6e188]
+              - cell [ref=f6e191]
+        - heading "Historial de torneos" [level=2] [ref=f6e196]
+      - complementary [ref=f6e202]
+  - region "Notifications alt+T"
