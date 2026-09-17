@@ -8,7 +8,9 @@ import { failDb } from "./nexus-admin.server";
 // filtra aquí explícitamente en cada handler que toca store_leagues.
 function assertLeagueManager(role: string) {
   if (role !== "organizer" && role !== "admin") {
-    throw new Error("No autorizado: las ligas internas son solo para organizadores y administradores");
+    throw new Error(
+      "No autorizado: las ligas internas son solo para organizadores y administradores",
+    );
   }
 }
 
@@ -89,7 +91,8 @@ export const createStoreLeague = createServerFn({ method: "POST" })
     assertLeagueManager(player.role);
     await assertOwnsStore(admin, player, data.store_id);
     await assertLeaguesEnabled(admin, data.store_id);
-    if (data.end_date < data.start_date) throw new Error("La fecha de fin no puede ser anterior a la de inicio");
+    if (data.end_date < data.start_date)
+      throw new Error("La fecha de fin no puede ser anterior a la de inicio");
 
     const { data: league, error } = await admin
       .from("store_leagues")
@@ -133,7 +136,8 @@ export const updateStoreLeague = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     assertLeagueManager(player.role);
-    if (data.end_date < data.start_date) throw new Error("La fecha de fin no puede ser anterior a la de inicio");
+    if (data.end_date < data.start_date)
+      throw new Error("La fecha de fin no puede ser anterior a la de inicio");
 
     const { data: league, error: fe } = await admin
       .from("store_leagues")
@@ -207,13 +211,21 @@ export const setLeagueTournaments = createServerFn({ method: "POST" })
       }
     }
 
-    const { error: de } = await admin.from("store_league_tournaments").delete().eq("league_id", data.league_id);
+    const { error: de } = await admin
+      .from("store_league_tournaments")
+      .delete()
+      .eq("league_id", data.league_id);
     if (de) failDb(de);
 
     if (data.tournament_ids.length) {
       const { error: ie } = await admin
         .from("store_league_tournaments")
-        .insert(data.tournament_ids.map((tournament_id) => ({ league_id: data.league_id, tournament_id })));
+        .insert(
+          data.tournament_ids.map((tournament_id) => ({
+            league_id: data.league_id,
+            tournament_id,
+          })),
+        );
       if (ie) failDb(ie);
     }
     return { ok: true };
@@ -250,7 +262,10 @@ export const setLeaguePrizes = createServerFn({ method: "POST" })
     if (!league) throw new Error("Liga no encontrada");
     await assertOwnsStore(admin, player, league.store_id);
 
-    const { error: de } = await admin.from("store_league_prizes").delete().eq("league_id", data.league_id);
+    const { error: de } = await admin
+      .from("store_league_prizes")
+      .delete()
+      .eq("league_id", data.league_id);
     if (de) failDb(de);
 
     if (data.prizes.length) {
@@ -366,7 +381,9 @@ export const listLeagueScheduleData = createServerFn({ method: "POST" })
         .eq("store_id", data.store_id),
       admin
         .from("store_league_schedules")
-        .select("id, league_id, game_id, day_of_week, start_time, shares_national_slot, national_schedule_id, games(name)")
+        .select(
+          "id, league_id, game_id, day_of_week, start_time, shares_national_slot, national_schedule_id, games(name)",
+        )
         .eq("store_id", data.store_id),
     ]);
     if (nationalRes.error) failDb(nationalRes.error);
@@ -432,7 +449,8 @@ export const createLeagueSchedule = createServerFn({ method: "POST" })
     await assertLeaguesEnabled(admin, league.store_id);
 
     if (data.shares_national_slot) {
-      if (!data.national_schedule_id) throw new Error("Falta el horario del circuito nacional a vincular");
+      if (!data.national_schedule_id)
+        throw new Error("Falta el horario del circuito nacional a vincular");
       const { data: national, error: ne } = await admin
         .from("store_schedules")
         .select("id")
@@ -464,7 +482,9 @@ export const createLeagueSchedule = createServerFn({ method: "POST" })
 
 export const deleteLeagueSchedule = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
-  .inputValidator((d: { schedule_id: string }) => z.object({ schedule_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { schedule_id: string }) =>
+    z.object({ schedule_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     assertLeagueManager(player.role);
@@ -478,7 +498,10 @@ export const deleteLeagueSchedule = createServerFn({ method: "POST" })
     if (!schedule) return { ok: true };
     await assertOwnsStore(admin, player, schedule.store_id);
 
-    const { error } = await admin.from("store_league_schedules").delete().eq("id", data.schedule_id);
+    const { error } = await admin
+      .from("store_league_schedules")
+      .delete()
+      .eq("id", data.schedule_id);
     if (error) failDb(error);
     return { ok: true };
   });
@@ -488,7 +511,12 @@ export const deleteLeagueSchedule = createServerFn({ method: "POST" })
 export const upsertLeagueScheduleOverride = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
   .inputValidator(
-    (d: { league_schedule_id: string; occurrence_date: string; start_time?: string | null; label?: string | null }) =>
+    (d: {
+      league_schedule_id: string;
+      occurrence_date: string;
+      start_time?: string | null;
+      label?: string | null;
+    }) =>
       z
         .object({
           league_schedule_id: z.string().uuid(),
@@ -514,7 +542,9 @@ export const upsertLeagueScheduleOverride = createServerFn({ method: "POST" })
     if (fe) failDb(fe);
     if (!schedule) throw new Error("Horario no encontrado");
     await assertOwnsStore(admin, player, schedule.store_id);
-    const leagueStatus = (Array.isArray(schedule.store_leagues) ? schedule.store_leagues[0] : schedule.store_leagues)?.status;
+    const leagueStatus = (
+      Array.isArray(schedule.store_leagues) ? schedule.store_leagues[0] : schedule.store_leagues
+    )?.status;
     if (leagueStatus === "archived") throw new Error("No se puede editar una liga archivada");
 
     const { error } = await admin.from("store_league_schedule_overrides").upsert(
@@ -583,11 +613,14 @@ export const getActiveLeaguesForStore = createServerFn({ method: "POST" })
     // Filtrado por game_id: el dropdown de "a qué liga pertenece" en /organizer/new
     // solo debe ofrecer ligas del MISMO TCG que el torneo que se está subiendo —
     // antes mostraba todas las ligas de la tienda sin importar el juego.
+    // Las ligas legacy sin game_id (creadas antes de la regla "una liga por TCG")
+    // se incluyen igual: un `.eq` nunca matchea NULL en Postgres/PostgREST, así
+    // que excluirlas las dejaba invisibles para siempre en torneos ya corriendo.
     const { data: leagues, error } = await admin
       .from("store_leagues")
       .select("id, name")
       .eq("store_id", data.store_id)
-      .eq("game_id" as any, data.game_id)
+      .or(`game_id.eq.${data.game_id},game_id.is.null`)
       .eq("status", "active")
       .order("name");
     if (error) failDb(error);

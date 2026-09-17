@@ -17,6 +17,9 @@ export const httpUrlSchema = z
   .trim()
   .optional()
   .or(z.literal(""))
+  // Managers routinely type "www.mitienda.com" with no scheme. Auto-prepend
+  // https:// instead of rejecting the save, so legacy-style input still works.
+  .transform((v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v))
   .refine((v) => !v || /^https?:\/\//i.test(v), {
     message: "La URL debe iniciar con http:// o https://",
   });
