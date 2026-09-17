@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,6 +10,7 @@ import {
 } from "@/lib/nexus-auth-helpers.functions";
 import { nexus } from "@/integrations/nexus/client";
 import { motion } from "framer-motion";
+import { homeRouteForRole, useNexusRole } from "@/hooks/use-nexus-role";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — Nexus" }] }),
@@ -36,6 +37,7 @@ function translateAuthError(msg: string): string {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { authResolved, session, role } = useNexusRole();
   const doLogin = useServerFn(loginWithIdentifier);
   const doResend = useServerFn(resendConfirmation);
   const doReset = useServerFn(sendPasswordReset);
@@ -47,6 +49,14 @@ function LoginPage() {
   // Email enmascarado (j*****@gmail.com) — el email real nunca llega al cliente
   const [needsConfirm, setNeedsConfirm] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
+
+  // Ya hay sesión (llegó por bookmark/refresh a /login): sácalo a su panel
+  // en vez de mostrarle el formulario de nuevo.
+  useEffect(() => {
+    if (authResolved && session) {
+      navigate({ to: homeRouteForRole(role), replace: true });
+    }
+  }, [authResolved, session, role, navigate]);
 
   const startCooldown = () => {
     setCooldown(true);
@@ -84,10 +94,7 @@ function LoginPage() {
     }
 
     toast.success("¡Bienvenido de vuelta a la Arena!");
-    if (res.role === "admin") navigate({ to: "/admin" });
-    else if (res.role === "tcg_manager") navigate({ to: "/tcg-manager" });
-    else if (res.role === "organizer") navigate({ to: "/organizer" });
-    else navigate({ to: "/dashboard" });
+    navigate({ to: homeRouteForRole(res.role ?? null) });
   };
 
   const resend = async () => {
@@ -115,9 +122,7 @@ function LoginPage() {
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
       <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Nexus
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Nexus</p>
           <h1 className="mt-2 text-3xl font-bold text-white">
             {forgotMode ? "Recupera tu acceso" : "Bienvenido de vuelta"}
           </h1>
@@ -163,26 +168,26 @@ function LoginPage() {
 
             {!forgotMode && (
               <div className="animate-in fade-in-0 slide-in-from-top-1 duration-200">
-              <Field label="Contraseña">
-                <div className="relative">
-                  <input
-                    type={showPass ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    className="input-base pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass((s) => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-                    aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  >
-                    {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                </div>
-              </Field>
+                <Field label="Contraseña">
+                  <div className="relative">
+                    <input
+                      type={showPass ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="••••••••"
+                      className="input-base pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                      aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    >
+                      {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </Field>
               </div>
             )}
 

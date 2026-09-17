@@ -129,11 +129,7 @@ export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: sub } = nexus.auth.onAuthStateChange((event, s) => {
       if (!mountedRef.current) return;
-      if (
-        event === "SIGNED_IN" ||
-        event === "SIGNED_OUT" ||
-        event === "TOKEN_REFRESHED"
-      ) {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
         loadPlayer(s);
       }
     });
@@ -172,7 +168,7 @@ export function useNexusRole() {
 
 export function homeRouteForRole(role: AppRole | null): string {
   if (role === "admin") return "/admin";
-  if (role === "tcg_manager") return "/tcg-manager";
+  if (role === "tcg_manager") return "/tcg-manager/analytics";
   if (role === "organizer") return "/organizer";
   return "/dashboard";
 }
