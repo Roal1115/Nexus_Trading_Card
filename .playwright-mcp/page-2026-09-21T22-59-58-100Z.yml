@@ -1,0 +1,12 @@
+- generic [ref=e192]:
+  - img "TCG Rank-In Logo" [ref=e193] [cursor=pointer]
+  - heading "Verify Identity" [level=2] [ref=e194]
+  - paragraph [ref=e195]:
+    - text: "We sent a 6-digit code to:"
+    - strong [ref=e196]: circuit-teardown-test@mailinator.com
+  - generic [ref=e197]:
+    - generic [ref=e198]:
+      - generic [ref=e199]: Verification Code
+      - textbox "000000" [ref=e200]
+    - button "Confirm Access" [disabled] [ref=e201]
+    - generic [ref=e202]: Didn't receive it? Resend Code

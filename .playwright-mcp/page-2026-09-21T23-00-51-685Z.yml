@@ -1,0 +1,17 @@
+- generic [ref=f6e6]:
+  - img "TCG Rank-In Logo" [ref=f6e7] [cursor=pointer]
+  - heading "Verify Identity" [level=2] [ref=f6e8]
+  - paragraph [ref=f6e9]:
+    - text: "We sent a 6-digit code to:"
+    - strong [ref=f6e10]: circuit-teardown-test@mailinator.com
+  - generic [ref=f6e18]:
+    - img "Rank-In Logo" [ref=f6e19]
+    - heading "Account Verified" [level=2] [ref=f6e20]
+    - generic [ref=f6e21]: Welcome to the network! Your identity is active. Redirecting to login...
+    - button "CONFIRM & CLOSE" [ref=f6e22] [cursor=pointer]
+  - generic [ref=f6e11]:
+    - generic [ref=f6e12]:
+      - generic [ref=f6e13]: Verification Code
+      - textbox "000000" [ref=f6e14]: "763496"
+    - button "Confirm Access" [ref=f6e15] [cursor=pointer]
+    - generic [ref=f6e16]: Didn't receive it? Resend Code

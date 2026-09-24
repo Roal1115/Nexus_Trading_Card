@@ -1,0 +1,162 @@
+- generic [ref=f7e3]:
+  - banner [ref=f7e4]:
+    - generic [ref=f7e5]:
+      - img "TCG Rank-In" [ref=f7e6] [cursor=pointer]
+      - generic [ref=f7e7]:
+        - heading "Command Center" [level=1] [ref=f7e8]
+        - generic [ref=f7e9]: PLAYER TERMINAL
+      - generic [ref=f7e11]:
+        - generic [ref=f7e12]: "ACTIVE TCG:"
+        - generic "Cambiar TCG activo o compartir enlace" [ref=f7e14] [cursor=pointer]:
+          - generic [ref=f7e15]: Yu-Gi-Oh! TCG
+          - generic [ref=f7e16]: ▼
+    - generic [ref=f7e17]:
+      - button "Tickets" [ref=f7e18] [cursor=pointer]
+      - button "Log Out" [ref=f7e19] [cursor=pointer]
+  - main [ref=f7e20]:
+    - generic [ref=f7e21]:
+      - heading "TCG Identity Verification (Yu-Gi-Oh! TCG)" [level=2] [ref=f7e22]
+      - generic [ref=f7e23]:
+        - paragraph [ref=f7e24]:
+          - text: Verify your identity for
+          - strong [ref=f7e25]: Yu-Gi-Oh! TCG
+          - text: to unlock rankings and compete.
+        - generic [ref=f7e26]:
+          - generic [ref=f7e27]:
+            - text: TARGET TCG
+            - paragraph [ref=f7e28]: Yu-Gi-Oh! TCG
+          - generic [ref=f7e29]:
+            - generic [ref=f7e30]: Player ID (Game Official ID)
+            - textbox "Ingresa tu Konami ID, Bandai ID, etc." [ref=f7e31]
+          - generic [ref=f7e32]:
+            - generic [ref=f7e33]: Verification Note (Why is this you?)
+            - textbox "Provide your full name, ID, and a description of tournaments played and stores visited..." [ref=f7e34]
+          - generic [ref=f7e35]:
+            - generic [ref=f7e36]:
+              - generic [ref=f7e37]: 📸 📸 Player ID / Game Screenshot
+              - generic [ref=f7e38]:
+                - button "Choose File" [ref=f7e39] [cursor=pointer]
+                - generic [ref=f7e40]: 📁
+                - generic [ref=f7e41]: SUBIR FOTO 1
+                - generic [ref=f7e42]: JPG, PNG, HEIC (iPhone)
+            - generic [ref=f7e43]:
+              - generic [ref=f7e44]: 📸 📸 Tournament Screenshot
+              - generic [ref=f7e45]:
+                - button "Choose File" [ref=f7e46] [cursor=pointer]
+                - generic [ref=f7e47]: 📁
+                - generic [ref=f7e48]: SUBIR FOTO 2
+                - generic [ref=f7e49]: JPG, PNG, HEIC (iPhone)
+          - button "VERIFY FOR YU-GI-OH! TCG" [disabled] [ref=f7e50] [cursor=pointer]
+    - generic [ref=f7e51]:
+      - generic [ref=f7e53]:
+        - img "Rank-In Logo" [ref=f7e55]
+        - generic [ref=f7e56]:
+          - generic [ref=f7e57]:
+            - heading "Deck Builder (Yu-Gi-Oh! & Genesys)" [level=3] [ref=f7e58]
+            - generic [ref=f7e59]: TCG · OCG · GENESYS
+          - paragraph [ref=f7e60]: Build your decks, verify competitive legality with official Konami banlists, and simulate opening hands.
+      - button "Open Deck Builder →" [ref=f7e62] [cursor=pointer]
+    - heading "Identity & Stats Overview" [level=2] [ref=f7e63]
+    - generic [ref=f7e64]:
+      - generic [ref=f7e65]:
+        - generic [ref=f7e67]:
+          - heading [level=3] [ref=f7e68]:
+            - img "Rank-In" [ref=f7e69]
+            - text: Duelist ID
+          - generic [ref=f7e70]: UNVERIFIED
+        - generic [ref=f7e71]:
+          - generic [ref=f7e72] [cursor=pointer]:
+            - generic [ref=f7e73]: 👾
+            - generic [ref=f7e74]: 📸
+          - generic [ref=f7e76]:
+            - heading "circuittester" [level=3] [ref=f7e77]
+            - paragraph [ref=f7e78]: "TERMINAL: #001287"
+            - paragraph [ref=f7e80]: CARACAS
+        - generic [ref=f7e81]:
+          - generic [ref=f7e82]:
+            - generic [ref=f7e83]: 🛡️
+            - generic [ref=f7e84]:
+              - paragraph [ref=f7e85]: RANK TIER
+              - paragraph [ref=f7e86]: Wood
+          - generic [ref=f7e87]:
+            - paragraph [ref=f7e88]: GLOBAL POWER
+            - paragraph [ref=f7e89]: "0"
+        - generic [ref=f7e90]:
+          - paragraph [ref=f7e91]: REGIONAL POINT BREAKDOWN
+          - paragraph [ref=f7e93]: No regional activity recorded yet.
+      - generic [ref=f7e94]:
+        - heading "👤 KYC Duelist Identity" [level=3] [ref=f7e95]:
+          - generic [ref=f7e96]: 👤
+          - text: KYC Duelist Identity
+        - generic [ref=f7e97]:
+          - generic [ref=f7e98]:
+            - generic [ref=f7e99]: Battle Alias (LOCKED)
+            - textbox [ref=f7e100]: circuittester
+          - generic [ref=f7e101]: Assigned Region (LOCKED)
+          - combobox [disabled] [ref=f7e102]:
+            - option "Select Region"
+            - option "CARACAS" [selected]
+            - option "VALENCIA"
+            - option "MARACAIBO"
+            - option "PUERTO ORDAZ"
+            - option "TACHIRA"
+            - option "SUCRE"
+            - option "TRUJILLO"
+          - paragraph [ref=f7e103]: ⚠️ Next region change available in 91 days.Submit a dispute ticket?
+          - generic [ref=f7e104]: Yu-Gi-Oh! TCG Official ID (LOCKED 🔒)
+          - textbox "No ID linked" [disabled] [ref=f7e105]
+          - paragraph [ref=f7e106]: 🔒 Your Official Game ID is locked and cannot be changed here. Contact an admin or store if you need to update it.
+          - button "UPDATE & SYNC PROFILE" [ref=f7e107] [cursor=pointer]
+        - generic [ref=f7e108]:
+          - generic [ref=f7e109]:
+            - generic [ref=f7e110]: 🔒
+            - paragraph [ref=f7e111]: LEGAL IDENTITY (READ-ONLY)
+          - generic [ref=f7e112]:
+            - generic [ref=f7e113]:
+              - generic [ref=f7e114]: FIRST NAME
+              - paragraph [ref=f7e115]: Rodrigo
+            - generic [ref=f7e116]:
+              - generic [ref=f7e117]: LAST NAME
+              - paragraph [ref=f7e118]: Sargento
+          - generic [ref=f7e119]:
+            - generic [ref=f7e120]: DATE OF BIRTH
+            - paragraph [ref=f7e121]: 1995-05-15
+    - generic [ref=f7e123]:
+      - generic [ref=f7e124]:
+        - generic [ref=f7e125]: "0"
+        - generic [ref=f7e126]: TOURNAMENTS
+      - generic [ref=f7e127]:
+        - generic [ref=f7e128]: "0"
+        - generic [ref=f7e129]: TOTAL WINS
+      - generic [ref=f7e130]:
+        - generic [ref=f7e131]: "0"
+        - generic [ref=f7e132]: TOP CUTS
+      - generic [ref=f7e133]:
+        - generic [ref=f7e134]: "0"
+        - generic [ref=f7e135]: AVG POSITION
+    - generic [ref=f7e137]:
+      - generic "Click to expand/collapse Achievements & Tournament Log" [ref=f7e138] [cursor=pointer]:
+        - heading "🏆 Achievements & Tournament Log" [level=2] [ref=f7e139]
+        - generic [ref=f7e140]: ►
+      - generic [ref=f7e141]:
+        - generic [ref=f7e142]:
+          - generic [ref=f7e143]: "YEAR:"
+          - combobox [ref=f7e144] [cursor=pointer]:
+            - option "All Years"
+            - option "2026" [selected]
+        - button "► Expand Log" [ref=f7e145] [cursor=pointer]
+    - generic [ref=f7e147]:
+      - generic [ref=f7e148]:
+        - heading "⚔️ Performance Ledger (Immutable Record)" [level=2] [ref=f7e149]
+        - generic [ref=f7e150]:
+          - button "2026" [ref=f7e151] [cursor=pointer]
+          - button "2025" [ref=f7e152] [cursor=pointer]
+      - generic [ref=f7e153]:
+        - generic [ref=f7e155]:
+          - generic [ref=f7e156]:
+            - text: "Annual:"
+            - strong [ref=f7e157]: 0 pts
+          - generic [ref=f7e158]:
+            - text: "Season:"
+            - strong [ref=f7e159]: 0 pts
+        - generic [ref=f7e160]: No records found for 2026.

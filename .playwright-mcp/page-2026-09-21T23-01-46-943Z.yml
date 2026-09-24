@@ -1,0 +1,320 @@
+- generic [ref=f9e3]:
+  - navigation [ref=f9e4]:
+    - img "TCG Rank-In Logo" [ref=f9e6] [cursor=pointer]
+    - list [ref=f9e7]:
+      - listitem [ref=f9e8]:
+        - button "EVENTS" [ref=f9e9] [cursor=pointer]
+      - listitem [ref=f9e11]:
+        - button "STORES" [ref=f9e12] [cursor=pointer]
+      - listitem [ref=f9e14]:
+        - button "PLAYER GUIDE" [ref=f9e15] [cursor=pointer]
+      - listitem [ref=f9e17]:
+        - button "SEASON" [ref=f9e18] [cursor=pointer]
+      - listitem [ref=f9e20]:
+        - button "LEADERBOARD" [ref=f9e21] [cursor=pointer]
+      - listitem [ref=f9e23]:
+        - button "TOP 8" [ref=f9e24] [cursor=pointer]
+      - listitem [ref=f9e26]:
+        - button "MATCHMAKING" [ref=f9e27] [cursor=pointer]
+      - listitem [ref=f9e29]:
+        - button "FAQ" [ref=f9e30] [cursor=pointer]
+      - listitem [ref=f9e33]:
+        - generic "Cambiar TCG activo o compartir enlace" [ref=f9e35] [cursor=pointer]:
+          - generic [ref=f9e36]: Yu-Gi-Oh! TCG
+          - generic [ref=f9e37]: ▼
+      - listitem [ref=f9e39]:
+        - button "DASHBOARD" [ref=f9e40] [cursor=pointer]
+  - main [ref=f9e43]:
+    - generic [ref=f9e44]:
+      - heading "Official Store Directory" [level=1] [ref=f9e45]
+      - paragraph [ref=f9e46]: Find and visit the official TCG Rank-In partner stores. Discover active communities and join local tournaments near you.
+    - generic [ref=f9e47]:
+      - textbox "🔍 Search for a store, region or city..." [ref=f9e49]
+      - generic [ref=f9e50]:
+        - button "🌍 All Regions 11" [ref=f9e51] [cursor=pointer]:
+          - generic [ref=f9e52]: 🌍 All Regions
+          - generic [ref=f9e53]: "11"
+        - button "📍 CARACAS 5" [ref=f9e54] [cursor=pointer]:
+          - generic [ref=f9e55]: 📍 CARACAS
+          - generic [ref=f9e56]: "5"
+        - button "📍 MARACAIBO 1" [ref=f9e57] [cursor=pointer]:
+          - generic [ref=f9e58]: 📍 MARACAIBO
+          - generic [ref=f9e59]: "1"
+        - button "📍 PUERTO ORDAZ 1" [ref=f9e60] [cursor=pointer]:
+          - generic [ref=f9e61]: 📍 PUERTO ORDAZ
+          - generic [ref=f9e62]: "1"
+        - button "📍 SUCRE 1" [ref=f9e63] [cursor=pointer]:
+          - generic [ref=f9e64]: 📍 SUCRE
+          - generic [ref=f9e65]: "1"
+        - button "📍 TACHIRA 1" [ref=f9e66] [cursor=pointer]:
+          - generic [ref=f9e67]: 📍 TACHIRA
+          - generic [ref=f9e68]: "1"
+        - button "📍 TRUJILLO 1" [ref=f9e69] [cursor=pointer]:
+          - generic [ref=f9e70]: 📍 TRUJILLO
+          - generic [ref=f9e71]: "1"
+        - button "📍 VALENCIA 1" [ref=f9e72] [cursor=pointer]:
+          - generic [ref=f9e73]: 📍 VALENCIA
+          - generic [ref=f9e74]: "1"
+      - generic [ref=f9e76]:
+        - text: Showing
+        - strong [ref=f9e77]: "11"
+        - text: of
+        - strong [ref=f9e78]: "11"
+        - text: official stores
+    - generic [ref=f9e79]:
+      - generic "View La Última Frontera (LUF) on Google Maps" [ref=f9e80] [cursor=pointer]:
+        - iframe [ref=f9e82]:
+          - generic [ref=f10e1]:
+            - link "Maps (opens in new tab)" [ref=f10e4] [cursor=pointer]:
+              - /url: about:invalid#zClosurez
+              - text: Maps
+            - generic [ref=f10e9]:
+              - region "Map" [ref=f10e10]
+              - generic [ref=f10e11]:
+                - generic [ref=f10e12] [cursor=pointer]
+                - iframe [aria-hidden] [ref=f10e16]
+        - generic [ref=f9e84]:
+          - generic [ref=f9e85]:
+            - img "La Última Frontera (LUF)" [ref=f9e87]
+            - generic [ref=f9e88]:
+              - generic [ref=f9e89]: 🏆 Top Store
+              - generic [ref=f9e90]: 📍 CARACAS
+          - heading "La Última Frontera (LUF)" [level=3] [ref=f9e91]
+          - generic [ref=f9e92]:
+            - generic [ref=f9e93]: 📍
+            - generic [ref=f9e94]: Local 62, CC Centro Plaza, Nivel C3, Local 62, Los Palos Grandes, Mun Chacao, Caracas Nivel C3, Caracas 1060, Miranda
+          - generic [ref=f9e95]:
+            - generic [ref=f9e96]: 📞
+            - generic [ref=f9e97]: "04242914725"
+          - generic [ref=f9e98]:
+            - button "Maps" [ref=f9e99]
+            - button "WhatsApp" [ref=f9e102]
+            - button "Instagram" [ref=f9e105]
+            - button "Website" [ref=f9e108]
+      - generic "View Hobbie´s Place on Google Maps" [ref=f9e111] [cursor=pointer]:
+        - iframe [ref=f9e113]:
+          - link "Maps (opens in new tab)" [ref=f11e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e115]:
+          - generic [ref=f9e116]:
+            - img "Hobbie´s Place" [ref=f9e118]
+            - generic [ref=f9e119]:
+              - generic [ref=f9e120]: 🥈 Elite Store
+              - generic [ref=f9e121]: 📍 VALENCIA
+          - heading "Hobbie´s Place" [level=3] [ref=f9e122]
+          - generic [ref=f9e123]:
+            - generic [ref=f9e124]: 📍
+            - generic [ref=f9e125]: 6X4R+CWC, Av. Bolivar Nte., Valencia 2001, Carabobo
+          - generic [ref=f9e126]:
+            - generic [ref=f9e127]: 📞
+            - generic [ref=f9e128]: "02418256537"
+          - generic [ref=f9e129]:
+            - button "Maps" [ref=f9e130]
+            - button "WhatsApp" [ref=f9e133]
+            - button "Instagram" [ref=f9e136]
+            - button "Website" [ref=f9e139]
+      - generic "View Miticas TCG on Google Maps" [ref=f9e142] [cursor=pointer]:
+        - iframe [ref=f9e144]:
+          - link "Maps (opens in new tab)" [ref=f12e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e146]:
+          - generic [ref=f9e147]:
+            - img "Miticas TCG" [ref=f9e149]
+            - generic [ref=f9e150]:
+              - generic [ref=f9e151]: 🥉 Pro Store
+              - generic [ref=f9e152]: 📍 CARACAS
+          - heading "Miticas TCG" [level=3] [ref=f9e153]
+          - generic [ref=f9e154]:
+            - generic [ref=f9e155]: 📍
+            - generic [ref=f9e156]: Piso 4, Oficina 401, Torre Bazar Bolivar, Av Francisco de Miranda, con Av. República Dominicana, Caracas 1071, Miranda
+          - generic [ref=f9e157]:
+            - button "Maps" [ref=f9e158]
+            - button "WhatsApp" [ref=f9e161]
+            - button "Instagram" [ref=f9e164]
+            - button "Website" [ref=f9e167]
+      - generic "View Geekorium on Google Maps" [ref=f9e170] [cursor=pointer]:
+        - iframe [ref=f9e172]:
+          - link "Maps (opens in new tab)" [ref=f13e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e174]:
+          - generic [ref=f9e175]:
+            - img "Geekorium" [ref=f9e177]
+            - generic [ref=f9e178]:
+              - generic [ref=f9e179]: 🏬 Official Store
+              - generic [ref=f9e180]: 📍 CARACAS
+          - heading "Geekorium" [level=3] [ref=f9e181]
+          - generic [ref=f9e182]:
+            - generic [ref=f9e183]: 📍
+            - generic [ref=f9e184]: F4RM+5HH, Avenida Francisco de Miranda, Caracas 1060, Distrito Capital
+          - generic [ref=f9e185]:
+            - button "Maps" [ref=f9e186]
+            - button "Instagram" [ref=f9e189]
+            - button "Website" [ref=f9e192]
+      - generic "View Game Halla (GH) on Google Maps" [ref=f9e195] [cursor=pointer]:
+        - iframe [ref=f9e197]:
+          - link "Maps (opens in new tab)" [ref=f14e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e199]:
+          - generic [ref=f9e200]:
+            - img "Game Halla (GH)" [ref=f9e202]
+            - generic [ref=f9e203]:
+              - generic [ref=f9e204]: 🏬 Official Store
+              - generic [ref=f9e205]: 📍 CARACAS
+          - heading "Game Halla (GH)" [level=3] [ref=f9e206]
+          - generic [ref=f9e207]:
+            - generic [ref=f9e208]: 📍
+            - generic [ref=f9e209]: Av. Este 12, Caracas 1014, Distrito Capital
+          - generic [ref=f9e210]:
+            - generic [ref=f9e211]: 📞
+            - generic [ref=f9e212]: "04126129571"
+          - generic [ref=f9e213]:
+            - button "Maps" [ref=f9e214]
+            - button "WhatsApp" [ref=f9e217]
+            - button "Instagram" [ref=f9e220]
+            - button "Facebook" [ref=f9e223]
+      - generic "View La Última Frontera (LUF) San Antonio on Google Maps" [ref=f9e226] [cursor=pointer]:
+        - iframe [ref=f9e228]:
+          - link "Maps (opens in new tab)" [ref=f15e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e230]:
+          - generic [ref=f9e231]:
+            - img "La Última Frontera (LUF) San Antonio" [ref=f9e233]
+            - generic [ref=f9e234]:
+              - generic [ref=f9e235]: 🏬 Official Store
+              - generic [ref=f9e236]: 📍 CARACAS
+          - heading "La Última Frontera (LUF) San Antonio" [level=3] [ref=f9e237]
+          - generic [ref=f9e238]:
+            - generic [ref=f9e239]: 📍
+            - generic [ref=f9e240]: San Antonio de Los Altos
+          - generic [ref=f9e241]:
+            - generic [ref=f9e242]: 📞
+            - generic [ref=f9e243]: "04242914725"
+          - generic [ref=f9e244]:
+            - button "Maps" [ref=f9e245]
+            - button "WhatsApp" [ref=f9e248]
+            - button "Instagram" [ref=f9e251]
+            - button "Website" [ref=f9e254]
+      - generic "View Club Pokémon Táchira on Google Maps" [ref=f9e257] [cursor=pointer]:
+        - generic [ref=f9e259]:
+          - generic [ref=f9e260]:
+            - img "Club Pokémon Táchira" [ref=f9e262]
+            - generic [ref=f9e263]:
+              - generic [ref=f9e264]: 🏬 Official Store
+              - generic [ref=f9e265]: 📍 TACHIRA
+          - heading "Club Pokémon Táchira" [level=3] [ref=f9e266]
+          - generic [ref=f9e267]:
+            - generic [ref=f9e268]: 📍
+            - generic [ref=f9e269]: TACHIRA
+          - generic [ref=f9e270]:
+            - button "Maps" [ref=f9e271]
+            - button "WhatsApp" [ref=f9e274]
+            - button "Instagram" [ref=f9e277]
+            - button "Website" [ref=f9e280]
+      - generic "View Oracle Gaming on Google Maps" [ref=f9e283] [cursor=pointer]:
+        - iframe [ref=f9e285]:
+          - link "Maps (opens in new tab)" [ref=f16e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e287]:
+          - generic [ref=f9e288]:
+            - img "Oracle Gaming" [ref=f9e290]
+            - generic [ref=f9e291]:
+              - generic [ref=f9e292]: 🏬 Official Store
+              - generic [ref=f9e293]: 📍 MARACAIBO
+          - heading "Oracle Gaming" [level=3] [ref=f9e294]
+          - generic [ref=f9e295]:
+            - generic [ref=f9e296]: 📍
+            - generic [ref=f9e297]: al lado de Librería Aeropuerto, Avenida Circunvalación 2, Frente a URBE Local, 52 Avenida 15P, Maracaibo 4005, Zulia
+          - generic [ref=f9e298]:
+            - button "Maps" [ref=f9e299]
+            - button "WhatsApp" [ref=f9e302]
+            - button "Instagram" [ref=f9e305]
+      - generic "View Joy´s Store on Google Maps" [ref=f9e308] [cursor=pointer]:
+        - iframe [ref=f9e310]:
+          - link "Maps (opens in new tab)" [ref=f17e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e312]:
+          - generic [ref=f9e313]:
+            - img "Joy´s Store" [ref=f9e315]
+            - generic [ref=f9e316]:
+              - generic [ref=f9e317]: 🏬 Official Store
+              - generic [ref=f9e318]: 📍 PUERTO ORDAZ
+          - heading "Joy´s Store" [level=3] [ref=f9e319]
+          - generic [ref=f9e320]:
+            - generic [ref=f9e321]: 📍
+            - generic [ref=f9e322]: C.C. Babilonia-Piso M1
+          - generic [ref=f9e323]:
+            - button "Maps" [ref=f9e324]
+            - button "WhatsApp" [ref=f9e327]
+            - button "Instagram" [ref=f9e330]
+      - generic "View Team Yugioh SUCRE on Google Maps" [ref=f9e333] [cursor=pointer]:
+        - generic [ref=f9e335]:
+          - generic [ref=f9e336]:
+            - img "Team Yugioh SUCRE" [ref=f9e338]
+            - generic [ref=f9e339]:
+              - generic [ref=f9e340]: 🏬 Official Store
+              - generic [ref=f9e341]: 📍 SUCRE
+          - heading "Team Yugioh SUCRE" [level=3] [ref=f9e342]
+          - generic [ref=f9e343]:
+            - generic [ref=f9e344]: 📍
+            - generic [ref=f9e345]: SUCRE
+          - button "Maps" [ref=f9e347]
+      - generic "View Jack’s Geek Store on Google Maps" [ref=f9e350] [cursor=pointer]:
+        - iframe [ref=f9e352]:
+          - link "Maps (opens in new tab)" [ref=f18e4] [cursor=pointer]:
+            - /url: about:invalid#zClosurez
+            - text: Maps
+        - generic [ref=f9e354]:
+          - generic [ref=f9e355]:
+            - img "Jack’s Geek Store" [ref=f9e357]
+            - generic [ref=f9e358]:
+              - generic [ref=f9e359]: 🏬 Official Store
+              - generic [ref=f9e360]: 📍 TRUJILLO
+          - heading "Jack’s Geek Store" [level=3] [ref=f9e361]
+          - generic [ref=f9e362]:
+            - generic [ref=f9e363]: 📍
+            - generic [ref=f9e364]: C.C. Aeroclub, Local 67. San Rafael de Carvajal. Edo. Trujillo
+          - generic [ref=f9e365]:
+            - button "Maps" [ref=f9e366]
+            - button "Instagram" [ref=f9e369]
+  - contentinfo [ref=f9e372]:
+    - generic [ref=f9e373]:
+      - generic [ref=f9e374]:
+        - img "TCG Rank-In Logo" [ref=f9e375]
+        - paragraph [ref=f9e376]: "Rank-In (also known as Rankin or Rank In) is the official platform for competitive TCG rankings and tournament tracking. Find the latest standings for Yu-Gi-Oh! TCG (yugioh rank), Pokémon TCG (pokemon rank), One Piece TCG (one piece rank), Digimon TCG (digimon rank), Gundam TCG (gundam rank), Magic: The Gathering (mtg rank), and other trading card games."
+      - generic [ref=f9e377]:
+        - heading "Official Community" [level=4] [ref=f9e378]
+        - generic [ref=f9e379]:
+          - link "Official Instagram" [ref=f9e380] [cursor=pointer]:
+            - /url: https://www.instagram.com/rankintcg?igsh=MWNyOGZ2YmZrZzhiNw%3D%3D
+          - link "Official Facebook" [ref=f9e383] [cursor=pointer]:
+            - /url: https://www.facebook.com/people/Rank-In/61579028017579/?rdid=6mwztCPQgaOkj29p&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18zSZ9DvHC%2F
+        - paragraph [ref=f9e386]: Join the Rank-In community today to receive instant updates on all our tournaments!
+      - generic [ref=f9e387]:
+        - heading "Portals" [level=4] [ref=f9e388]
+        - list [ref=f9e389]:
+          - listitem [ref=f9e390]:
+            - link "Circuit Rulebooks" [ref=f9e391] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f9e392]:
+            - link "Official Stores Backend Access" [ref=f9e393] [cursor=pointer]:
+              - /url: /login
+    - generic [ref=f9e394]:
+      - generic [ref=f9e395]:
+        - generic [ref=f9e396]: © 2026 TCG Rank-In Database. All rights reserved.
+        - generic [ref=f9e397]:
+          - text: "For technical assistance, contact us at:"
+          - link "admin@rank-in-support.net" [ref=f9e398] [cursor=pointer]:
+            - /url: mailto:admin@rank-in-support.net
+      - generic [ref=f9e399]:
+        - generic [ref=f9e400]: "Viewing:"
+        - button "🇻🇪 VE ▼" [ref=f9e402] [cursor=pointer]:
+          - generic [ref=f9e403]: 🇻🇪
+          - generic [ref=f9e404]: VE
+          - generic [ref=f9e405]: ▼

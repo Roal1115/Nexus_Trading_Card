@@ -289,7 +289,6 @@ export const getLeaderboard = createServerFn({ method: "POST" })
           cities: Set<string>;
           omw_sum: number;
           omw_count: number;
-          best_rank: number | null;
         }
       >();
       for (const r of raws) {
@@ -302,7 +301,6 @@ export const getLeaderboard = createServerFn({ method: "POST" })
             cities: new Set(),
             omw_sum: 0,
             omw_count: 0,
-            best_rank: null,
           };
           agg.set(r.player_id, a);
         }
@@ -312,10 +310,6 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         if (r.omw_percentage != null) {
           a.omw_sum += Number(r.omw_percentage);
           a.omw_count += 1;
-        }
-        if (r.rank_position != null) {
-          a.best_rank =
-            a.best_rank == null ? r.rank_position : Math.min(a.best_rank, r.rank_position);
         }
         const city = r.store_id ? storeMap.get(r.store_id)?.city : null;
         if (city) a.cities.add(city);
@@ -330,17 +324,11 @@ export const getLeaderboard = createServerFn({ method: "POST" })
           tournaments_won: a.won,
           tournaments_played: a.played,
           omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
-          best_rank: a.best_rank,
         }))
-        .sort((x, y) => {
-          if (x.best_rank != null && y.best_rank != null && x.best_rank !== y.best_rank) {
-            return x.best_rank - y.best_rank;
-          }
-          return y.points - x.points;
-        });
+        .sort((x, y) => y.points - x.points || y.omw_percentage - x.omw_percentage);
 
       return sorted.map((r, i) => {
-        const currentRank = r.best_rank ?? i + 1;
+        const currentRank = i + 1;
         const prevRank = prevRankMap.get(r.player_id) ?? null;
         // positivo = subió (era 5, ahora es 2 → delta +3)
         // negativo = bajó (era 2, ahora es 5 → delta -3)

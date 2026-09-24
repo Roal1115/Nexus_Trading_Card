@@ -1,0 +1,344 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Trading Card Nexus" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e15]: Trading Card
+          - generic [ref=e16]: Nexus
+        - generic [ref=e142]:
+          - button "One Piece Card Game" [active] [ref=e143]
+          - generic [ref=e442]:
+            - button "Dragon Ball Super Card Game" [ref=e443]
+            - button "Gundam Card Game" [ref=e444]
+            - 'button "Magic: The Gathering" [ref=e445]'
+            - button "One Piece Card Game" [ref=e446]
+            - button "Pokémon TCG" [ref=e447]
+            - button "Riftbound" [ref=e448]
+        - link "Iniciar sesión" [ref=e147] [cursor=pointer]:
+          - /url: /login
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - paragraph [ref=e22]: Temporada III · Patrocinado por Bandai · Wizards · TPCI
+        - heading "Circuito Nacional" [level=1] [ref=e23]
+        - paragraph [ref=e24]: El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al Mundial.
+      - generic [ref=e26]:
+        - generic [ref=e27] [cursor=pointer]:
+          - combobox [ref=e28]:
+            - generic [ref=e29]: TCG
+            - generic: Todos
+          - combobox [ref=e33]:
+            - generic [ref=e34]: Ciudad
+            - generic: Todas
+          - combobox [ref=e38]:
+            - generic [ref=e39]: Tienda
+            - generic: Todas las tiendas
+          - combobox [ref=e43]:
+            - generic [ref=e44]: Mes
+            - generic: Más reciente
+        - textbox "Buscar Geek Tag…" [ref=e49]
+      - tablist "Periodo del ranking" [ref=e51]:
+        - tab "Mensual" [selected] [ref=e52] [cursor=pointer]
+        - tab "Semestral" [ref=e53] [cursor=pointer]
+      - generic [ref=e54]:
+        - generic [ref=e57]:
+          - heading "Ranking Mensual" [level=2] [ref=e65]
+          - generic [ref=e66]: SEPTIEMBRE 2026
+        - generic [ref=e67]:
+          - generic [ref=e68]: "#"
+          - generic [ref=e69]: Tag
+          - generic [ref=e70]: Ciudad
+          - generic [ref=e71]: Pts
+          - generic "Torneos jugados" [ref=e72]: Trn
+          - generic "Victorias" [ref=e73]: W
+          - generic "Opponent Match Win %" [ref=e74]: OMW%
+        - generic [ref=e76]:
+          - link "01 NEW FonderKROS | Mandarina Monterrey 146.67 2 0 67.3%" [ref=e148] [cursor=pointer]:
+            - /url: /players/FonderKROS%20|%20Mandarina
+            - generic [ref=e149]:
+              - generic [ref=e150]:
+                - generic [ref=e151]: "01"
+                - generic [ref=e152]: NEW
+              - generic [ref=e153]: FonderKROS | Mandarina
+              - generic [ref=e161]: Monterrey
+              - generic [ref=e162]: "146.67"
+              - generic [ref=e163]: "2"
+              - generic [ref=e164]: "0"
+              - generic [ref=e165]: 67.3%
+          - link "02 NEW Capu | Smile Monterrey 100 1 1 58.6%" [ref=e166] [cursor=pointer]:
+            - /url: /players/Capu%20|%20Smile
+            - generic [ref=e167]:
+              - generic [ref=e168]:
+                - generic [ref=e169]: "02"
+                - generic [ref=e170]: NEW
+              - generic [ref=e171]: Capu | Smile
+              - generic [ref=e173]: Monterrey
+              - generic [ref=e174]: "100"
+              - generic [ref=e175]: "1"
+              - generic [ref=e176]: "1"
+              - generic [ref=e177]: 58.6%
+          - link "03 NEW Azexes Monterrey 100 1 1 55.6%" [ref=e178] [cursor=pointer]:
+            - /url: /players/Azexes
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - generic [ref=e181]: "03"
+                - generic [ref=e182]: NEW
+              - generic [ref=e183]: Azexes
+              - generic [ref=e185]: Monterrey
+              - generic [ref=e186]: "100"
+              - generic [ref=e187]: "1"
+              - generic [ref=e188]: "1"
+              - generic [ref=e189]: 55.6%
+          - link "04 NEW Martin Cañez | Noreste Monterrey 80 1 0 60%" [ref=e190] [cursor=pointer]:
+            - /url: /players/Martin%20Ca%C3%B1ez%20|%20Noreste
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - generic [ref=e193]: "04"
+                - generic [ref=e194]: NEW
+              - generic [ref=e195]: Martin Cañez | Noreste
+              - generic [ref=e197]: Monterrey
+              - generic [ref=e198]: "80"
+              - generic [ref=e199]: "1"
+              - generic [ref=e200]: "0"
+              - generic [ref=e201]: 60%
+          - link "05 NEW Crioni | Noreste Monterrey 80 1 0 46.6%" [ref=e202] [cursor=pointer]:
+            - /url: /players/Crioni%20|%20Noreste
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - generic [ref=e205]: "05"
+                - generic [ref=e206]: NEW
+              - generic [ref=e207]: Crioni | Noreste
+              - generic [ref=e209]: Monterrey
+              - generic [ref=e210]: "80"
+              - generic [ref=e211]: "1"
+              - generic [ref=e212]: "0"
+              - generic [ref=e213]: 46.6%
+          - link "06 NEW Alonso Guerrero Monterrey 66.67 1 0 55.4%" [ref=e214] [cursor=pointer]:
+            - /url: /players/Alonso%20Guerrero
+            - generic [ref=e215]:
+              - generic [ref=e216]:
+                - generic [ref=e217]: "06"
+                - generic [ref=e218]: NEW
+              - generic [ref=e219]: Alonso Guerrero
+              - generic [ref=e221]: Monterrey
+              - generic [ref=e222]: "66.67"
+              - generic [ref=e223]: "1"
+              - generic [ref=e224]: "0"
+              - generic [ref=e225]: 55.4%
+          - link "07 NEW David Flores Monterrey 66.67 1 0 44.4%" [ref=e226] [cursor=pointer]:
+            - /url: /players/David%20Flores
+            - generic [ref=e227]:
+              - generic [ref=e228]:
+                - generic [ref=e229]: "07"
+                - generic [ref=e230]: NEW
+              - generic [ref=e231]: David Flores
+              - generic [ref=e233]: Monterrey
+              - generic [ref=e234]: "66.67"
+              - generic [ref=e235]: "1"
+              - generic [ref=e236]: "0"
+              - generic [ref=e237]: 44.4%
+          - link "08 NEW AlexVillanueva Monterrey 66.67 1 0 44.3%" [ref=e238] [cursor=pointer]:
+            - /url: /players/AlexVillanueva
+            - generic [ref=e239]:
+              - generic [ref=e240]:
+                - generic [ref=e241]: "08"
+                - generic [ref=e242]: NEW
+              - generic [ref=e243]: AlexVillanueva
+              - generic [ref=e245]: Monterrey
+              - generic [ref=e246]: "66.67"
+              - generic [ref=e247]: "1"
+              - generic [ref=e248]: "0"
+              - generic [ref=e249]: 44.3%
+          - link "09 NEW Scooby32 Monterrey 66.67 1 0 44.2%" [ref=e250] [cursor=pointer]:
+            - /url: /players/Scooby32
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - generic [ref=e253]: "09"
+                - generic [ref=e254]: NEW
+              - generic [ref=e255]: Scooby32
+              - generic [ref=e257]: Monterrey
+              - generic [ref=e258]: "66.67"
+              - generic [ref=e259]: "1"
+              - generic [ref=e260]: "0"
+              - generic [ref=e261]: 44.2%
+          - link "10 NEW Wiil | Okama Monterrey 60 1 0 60%" [ref=e262] [cursor=pointer]:
+            - /url: /players/Wiil%20|%20Okama
+            - generic [ref=e263]:
+              - generic [ref=e264]:
+                - generic [ref=e265]: "10"
+                - generic [ref=e266]: NEW
+              - generic [ref=e267]: Wiil | Okama
+              - generic [ref=e269]: Monterrey
+              - generic [ref=e270]: "60"
+              - generic [ref=e271]: "1"
+              - generic [ref=e272]: "0"
+              - generic [ref=e273]: 60%
+          - link "11 NEW rickyacg | Smile Monterrey 60 1 0 58.6%" [ref=e274] [cursor=pointer]:
+            - /url: /players/rickyacg%20|%20Smile
+            - generic [ref=e275]:
+              - generic [ref=e276]:
+                - generic [ref=e277]: "11"
+                - generic [ref=e278]: NEW
+              - generic [ref=e279]: rickyacg | Smile
+              - generic [ref=e281]: Monterrey
+              - generic [ref=e282]: "60"
+              - generic [ref=e283]: "1"
+              - generic [ref=e284]: "0"
+              - generic [ref=e285]: 58.6%
+          - link "12 NEW JESUS RIOS / SMILE Monterrey 60 1 0 56%" [ref=e286] [cursor=pointer]:
+            - /url: /players/JESUS%20RIOS%20%2F%20SMILE
+            - generic [ref=e287]:
+              - generic [ref=e288]:
+                - generic [ref=e289]: "12"
+                - generic [ref=e290]: NEW
+              - generic [ref=e291]: JESUS RIOS / SMILE
+              - generic [ref=e293]: Monterrey
+              - generic [ref=e294]: "60"
+              - generic [ref=e295]: "1"
+              - generic [ref=e296]: "0"
+              - generic [ref=e297]: 56%
+          - link "13 NEW Manny | Smile Monterrey 60 1 0 53.2%" [ref=e298] [cursor=pointer]:
+            - /url: /players/Manny%20|%20Smile
+            - generic [ref=e299]:
+              - generic [ref=e300]:
+                - generic [ref=e301]: "13"
+                - generic [ref=e302]: NEW
+              - generic [ref=e303]: Manny | Smile
+              - generic [ref=e305]: Monterrey
+              - generic [ref=e306]: "60"
+              - generic [ref=e307]: "1"
+              - generic [ref=e308]: "0"
+              - generic [ref=e309]: 53.2%
+          - link "14 NEW Voltaire Monterrey 60 1 0 49.2%" [ref=e310] [cursor=pointer]:
+            - /url: /players/Voltaire
+            - generic [ref=e311]:
+              - generic [ref=e312]:
+                - generic [ref=e313]: "14"
+                - generic [ref=e314]: NEW
+              - generic [ref=e315]: Voltaire
+              - generic [ref=e317]: Monterrey
+              - generic [ref=e318]: "60"
+              - generic [ref=e319]: "1"
+              - generic [ref=e320]: "0"
+              - generic [ref=e321]: 49.2%
+          - link "15 NEW EdgarArizpe | 7W⚡ Monterrey 60 1 0 45.2%" [ref=e322] [cursor=pointer]:
+            - /url: /players/EdgarArizpe%20|%207W%E2%9A%A1
+            - generic [ref=e323]:
+              - generic [ref=e324]:
+                - generic [ref=e325]: "15"
+                - generic [ref=e326]: NEW
+              - generic [ref=e327]: EdgarArizpe | 7W⚡
+              - generic [ref=e329]: Monterrey
+              - generic [ref=e330]: "60"
+              - generic [ref=e331]: "1"
+              - generic [ref=e332]: "0"
+              - generic [ref=e333]: 45.2%
+          - link "16 NEW a33 | Smile Monterrey 40 1 0 58.6%" [ref=e334] [cursor=pointer]:
+            - /url: /players/a33%20|%20Smile
+            - generic [ref=e335]:
+              - generic [ref=e336]:
+                - generic [ref=e337]: "16"
+                - generic [ref=e338]: NEW
+              - generic [ref=e339]: a33 | Smile
+              - generic [ref=e341]: Monterrey
+              - generic [ref=e342]: "40"
+              - generic [ref=e343]: "1"
+              - generic [ref=e344]: "0"
+              - generic [ref=e345]: 58.6%
+          - link "17 NEW Mrlinkjoel | SMILE C Monterrey 40 1 0 56%" [ref=e346] [cursor=pointer]:
+            - /url: /players/Mrlinkjoel%20|%20SMILE%20C
+            - generic [ref=e347]:
+              - generic [ref=e348]:
+                - generic [ref=e349]: "17"
+                - generic [ref=e350]: NEW
+              - generic [ref=e351]: Mrlinkjoel | SMILE C
+              - generic [ref=e353]: Monterrey
+              - generic [ref=e354]: "40"
+              - generic [ref=e355]: "1"
+              - generic [ref=e356]: "0"
+              - generic [ref=e357]: 56%
+          - link "18 NEW AC | GZEUStcg Monterrey 40 1 0 54.6%" [ref=e358] [cursor=pointer]:
+            - /url: /players/AC%20|%20GZEUStcg
+            - generic [ref=e359]:
+              - generic [ref=e360]:
+                - generic [ref=e361]: "18"
+                - generic [ref=e362]: NEW
+              - generic [ref=e363]: AC | GZEUStcg
+              - generic [ref=e365]: Monterrey
+              - generic [ref=e366]: "40"
+              - generic [ref=e367]: "1"
+              - generic [ref=e368]: "0"
+              - generic [ref=e369]: 54.6%
+          - link "19 NEW Iknoy | Smile Monterrey 40 1 0 50.6%" [ref=e370] [cursor=pointer]:
+            - /url: /players/Iknoy%20|%20Smile
+            - generic [ref=e371]:
+              - generic [ref=e372]:
+                - generic [ref=e373]: "19"
+                - generic [ref=e374]: NEW
+              - generic [ref=e375]: Iknoy | Smile
+              - generic [ref=e377]: Monterrey
+              - generic [ref=e378]: "40"
+              - generic [ref=e379]: "1"
+              - generic [ref=e380]: "0"
+              - generic [ref=e381]: 50.6%
+          - link "20 NEW Pepe Tamez || cochinos Monterrey 40 1 0 49.2%" [ref=e382] [cursor=pointer]:
+            - /url: /players/Pepe%20Tamez%20||%20cochinos
+            - generic [ref=e383]:
+              - generic [ref=e384]:
+                - generic [ref=e385]: "20"
+                - generic [ref=e386]: NEW
+              - generic [ref=e387]: Pepe Tamez || cochinos
+              - generic [ref=e389]: Monterrey
+              - generic [ref=e390]: "40"
+              - generic [ref=e391]: "1"
+              - generic [ref=e392]: "0"
+              - generic [ref=e393]: 49.2%
+          - link "21 NEW JUANBLF Monterrey 40 1 0 45.2%" [ref=e394] [cursor=pointer]:
+            - /url: /players/JUANBLF
+            - generic [ref=e395]:
+              - generic [ref=e396]:
+                - generic [ref=e397]: "21"
+                - generic [ref=e398]: NEW
+              - generic [ref=e399]: JUANBLF
+              - generic [ref=e401]: Monterrey
+              - generic [ref=e402]: "40"
+              - generic [ref=e403]: "1"
+              - generic [ref=e404]: "0"
+              - generic [ref=e405]: 45.2%
+          - link "22 NEW Dogtor Monterrey 33.33 1 0 83.4%" [ref=e406] [cursor=pointer]:
+            - /url: /players/Dogtor
+            - generic [ref=e407]:
+              - generic [ref=e408]:
+                - generic [ref=e409]: "22"
+                - generic [ref=e410]: NEW
+              - generic [ref=e411]: Dogtor
+              - generic [ref=e413]: Monterrey
+              - generic [ref=e414]: "33.33"
+              - generic [ref=e415]: "1"
+              - generic [ref=e416]: "0"
+              - generic [ref=e417]: 83.4%
+          - link "23 NEW HoracioDC Monterrey 33.33 1 0 66.7%" [ref=e418] [cursor=pointer]:
+            - /url: /players/HoracioDC
+            - generic [ref=e419]:
+              - generic [ref=e420]:
+                - generic [ref=e421]: "23"
+                - generic [ref=e422]: NEW
+              - generic [ref=e423]: HoracioDC
+              - generic [ref=e425]: Monterrey
+              - generic [ref=e426]: "33.33"
+              - generic [ref=e427]: "1"
+              - generic [ref=e428]: "0"
+              - generic [ref=e429]: 66.7%
+          - link "24 NEW Kroozz | Smile Monterrey 20 1 0 64%" [ref=e430] [cursor=pointer]:
+            - /url: /players/Kroozz%20|%20Smile
+            - generic [ref=e431]:
+              - generic [ref=e432]:
+                - generic [ref=e433]: "24"
+                - generic [ref=e434]: NEW
+              - generic [ref=e435]: Kroozz | Smile
+              - generic [ref=e437]: Monterrey
+              - generic [ref=e438]: "20"
+              - generic [ref=e439]: "1"
+              - generic [ref=e440]: "0"
+              - generic [ref=e441]: 64%
+  - region "Notifications alt+T"

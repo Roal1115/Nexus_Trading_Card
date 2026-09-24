@@ -1,0 +1,26 @@
+- generic [ref=f6e23]:
+  - generic [ref=f6e26]:
+    - img "TCG Rank-In Logo" [ref=f6e27] [cursor=pointer]
+    - heading "Network Entrance" [level=2] [ref=f6e28]
+    - paragraph [ref=f6e29]: AUTHORIZED ACCESS PORTAL
+    - button [ref=f6e31] [cursor=pointer]:
+      - img "Google" [ref=f6e32]
+      - text: Continue with Google
+    - generic [ref=f6e33]: OR
+    - generic [ref=f6e35]:
+      - generic [ref=f6e36]:
+        - generic [ref=f6e37]: Email Address
+        - textbox "Enter your assigned email" [ref=f6e38]
+      - generic [ref=f6e39]:
+        - generic [ref=f6e40]: Access Password
+        - generic [ref=f6e41]:
+          - textbox "Enter your secret key" [ref=f6e42]
+          - button [ref=f6e43] [cursor=pointer]
+      - generic [ref=f6e46]:
+        - checkbox "Remember connection in this terminal" [checked] [ref=f6e47] [cursor=pointer]
+        - generic [ref=f6e48] [cursor=pointer]: Remember connection in this terminal
+      - button "Initialize Connection" [ref=f6e49] [cursor=pointer]
+      - generic [ref=f6e50]: Forgot your secret key?
+      - generic [ref=f6e51]: Don't have an identity? Create one
+      - generic [ref=f6e52]: Are you a store owner or tournament organizer? Activate your store
+  - button "← Return to Network" [ref=f6e53] [cursor=pointer]

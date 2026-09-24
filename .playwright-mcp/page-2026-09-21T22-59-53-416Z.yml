@@ -1,0 +1,73 @@
+- generic [ref=e120]:
+  - img "TCG Rank-In Logo" [ref=e121] [cursor=pointer]
+  - heading "Create Identity" [level=2] [ref=e122]
+  - generic [ref=e123]:
+    - generic [ref=e124] [cursor=pointer]:
+      - heading "Player" [level=3] [ref=e125]
+      - paragraph [ref=e126]: Join the network & rank up.
+    - generic "Activate Your Store" [ref=e127] [cursor=pointer]:
+      - heading "Official Store" [level=3] [ref=e128]
+      - paragraph [ref=e129]: Host tournaments & grow.
+      - generic [ref=e130]: Apply
+  - button [ref=e132] [cursor=pointer]:
+    - img "Google" [ref=e133]
+    - text: Continue with Google
+  - generic [ref=e134]: OR
+  - generic [ref=e136]:
+    - generic [ref=e137]:
+      - generic [ref=e138]:
+        - generic [ref=e139]: First Name (Legal)
+        - textbox "Your first name" [ref=e140]: Rodrigo
+      - generic [ref=e141]:
+        - generic [ref=e142]: Last Name (Legal)
+        - textbox "Your last name" [ref=e143]: Sargento
+      - generic [ref=e144]:
+        - generic [ref=e145]: Date of Birth
+        - textbox [ref=e146]: 1995-05-15
+      - generic [ref=e147]:
+        - generic [ref=e148]: Home Country
+        - combobox [ref=e149]:
+          - option "Select Country"
+          - option "cl Chile"
+          - option "co Colombia"
+          - option "ec Ecuador"
+          - option "mx Mexico"
+          - option "pe Peru"
+          - option "🇺🇸 United States"
+          - option "🇻🇪 Venezuela" [selected]
+      - generic [ref=e150]:
+        - generic [ref=e151]: Local Region
+        - combobox [ref=e152]:
+          - option "CARACAS" [selected]
+          - option "VALENCIA"
+          - option "MARACAIBO"
+          - option "PUERTO ORDAZ"
+          - option "TACHIRA"
+          - option "SUCRE"
+          - option "TRUJILLO"
+      - generic [ref=e153]:
+        - generic [ref=e154]: Nickname / Battle Alias
+        - textbox "Your public handle" [ref=e155]: circuittester
+      - generic [ref=e156]:
+        - generic [ref=e157]: Email Address
+        - textbox "Enter your email" [ref=e158]: circuit-teardown-test@mailinator.com
+        - paragraph [ref=e187]: ✓ Valid email format
+      - generic [ref=e159]:
+        - generic [ref=e160]: Password
+        - generic [ref=e161]:
+          - textbox "Create a strong password" [ref=e162]: TeardownTest1!
+          - button [ref=e163] [cursor=pointer]
+        - generic [ref=e166]:
+          - paragraph [ref=e167]: • At least 8 characters
+          - paragraph [ref=e168]: • One uppercase letter
+          - paragraph [ref=e169]: • One lowercase letter
+          - paragraph [ref=e170]: • One number
+          - paragraph [ref=e171]: • One special character (@$!%*#?&)
+      - generic [ref=e172]:
+        - generic [ref=e173]: Confirm Password
+        - generic [ref=e174]:
+          - textbox "Repeat your password" [ref=e175]: TeardownTest1!
+          - button [ref=e176] [cursor=pointer]
+        - paragraph [ref=e188]: ✓ Passwords match
+    - button "Generate Identity" [ref=e179] [cursor=pointer]
+    - generic [ref=e180]: Already have an identity? Initialize Connection

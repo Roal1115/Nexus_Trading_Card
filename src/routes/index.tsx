@@ -229,9 +229,7 @@ function PeriodSegmentedControl({
           aria-selected={period === o.value}
           onClick={() => onChange(o.value)}
           className={`rounded px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-            period === o.value
-              ? "bg-primary/15 text-primary"
-              : "text-gray-400 hover:text-gray-200"
+            period === o.value ? "bg-primary/15 text-primary" : "text-gray-400 hover:text-gray-200"
           }`}
         >
           {o.label}
@@ -334,11 +332,7 @@ function LeaderboardPage() {
   }, [stores, city]);
 
   useEffect(() => {
-    if (
-      storeId !== ALL &&
-      stores.length > 0 &&
-      !visibleStores.some((s) => s.id === storeId)
-    ) {
+    if (storeId !== ALL && stores.length > 0 && !visibleStores.some((s) => s.id === storeId)) {
       patchSearch({ store: undefined }, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -675,6 +669,9 @@ function LeaderboardTable({
               const r = rows[virtualRow.index];
               const rank = r.rank_position;
               const podium = rank > 0 && rank <= 3;
+              const isFirst = rank === 1;
+              const isSecond = rank === 2;
+              const isThird = rank === 3;
               const isMe = !!myGeekTag && r.geek_tag === myGeekTag;
               return (
                 <Link
@@ -690,12 +687,18 @@ function LeaderboardTable({
                     width: "100%",
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className={`block border-b border-white/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
-                    isMe
-                      ? "bg-primary/15 hover:bg-primary/20"
-                      : podium
-                        ? "bg-primary/5 hover:bg-primary/10"
-                        : "hover:bg-white/5"
+                  className={`block border-b transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
+                    isFirst
+                      ? "border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/15"
+                      : isSecond
+                        ? "border-slate-300/30 bg-slate-300/10 hover:bg-slate-300/15"
+                        : isThird
+                          ? "border-orange-700/30 bg-orange-700/10 hover:bg-orange-700/15"
+                          : isMe
+                            ? "border-white/5 bg-primary/15 hover:bg-primary/20"
+                            : podium
+                              ? "border-white/5 bg-primary/5 hover:bg-primary/10"
+                              : "border-white/5 hover:bg-white/5"
                   }`}
                 >
                   {/* Desktop */}

@@ -1,0 +1,64 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - banner [ref=f1e4]:
+      - link "Trading Card Nexus" [ref=f1e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f1e15]: Trading Card
+        - generic [ref=f1e16]: Nexus
+    - main [ref=f1e19]:
+      - generic [ref=f1e22]:
+        - generic [ref=f1e23]: A
+        - generic [ref=f1e24]:
+          - paragraph [ref=f1e25]: Player Tag
+          - heading "Azexes" [level=1] [ref=f1e26]
+          - paragraph [ref=f1e27]: Miembro desde septiembre de 2026
+          - generic [ref=f1e28]:
+            - generic [ref=f1e29]:
+              - paragraph [ref=f1e30]: Torneos Ganados
+              - paragraph [ref=f1e31]: "🏆 #1"
+            - generic [ref=f1e32]:
+              - paragraph [ref=f1e33]: Win rate
+              - paragraph [ref=f1e34]:
+                - text: 100%
+                - generic [ref=f1e35]: (3V-0D)
+            - generic [ref=f1e36]:
+              - paragraph [ref=f1e37]: Últimos resultados
+              - generic "#1 — 2026-09-21" [ref=f1e39]: "1"
+          - button "Compartir perfil" [ref=f1e40]
+      - generic [ref=f1e47]:
+        - heading "Standing" [level=2] [ref=f1e48]
+        - generic [ref=f1e50]:
+          - generic [ref=f1e51]: One Piece Card Game
+          - generic [ref=f1e54]:
+            - generic [ref=f1e55]:
+              - paragraph [ref=f1e56]: Rank
+              - paragraph [ref=f1e59]: "#1"
+            - generic [ref=f1e60]:
+              - paragraph [ref=f1e61]: Puntos
+              - paragraph [ref=f1e66]: "100"
+          - generic [ref=f1e67]:
+            - generic [ref=f1e68]: 1 jugados
+            - generic [ref=f1e69]: ·
+            - generic [ref=f1e70]: 1 ganados
+      - generic [ref=f1e72]:
+        - generic [ref=f1e73]:
+          - heading "Historial de torneos" [level=2] [ref=f1e78]
+          - generic [ref=f1e79]: 1 torneos
+        - table [ref=f1e81]:
+          - rowgroup [ref=f1e82]:
+            - row [ref=f1e83]:
+              - columnheader "Fecha" [ref=f1e84]
+              - columnheader "Tienda" [ref=f1e85]
+              - columnheader "V / D" [ref=f1e86]
+              - columnheader "Posición" [ref=f1e87]
+              - columnheader "Pts Arena" [ref=f1e88]
+          - rowgroup [ref=f1e89]:
+            - row [ref=f1e90] [cursor=pointer]:
+              - cell "21 sep 2026" [ref=f1e91]
+              - cell "Geek Collector · Monterrey" [ref=f1e92]:
+                - text: Geek Collector
+                - generic [ref=f1e93]: · Monterrey
+              - cell "3 / 0" [ref=f1e94]
+              - cell "#1" [ref=f1e95]
+              - cell "+100.00" [ref=f1e97]
+  - region "Notifications alt+T"

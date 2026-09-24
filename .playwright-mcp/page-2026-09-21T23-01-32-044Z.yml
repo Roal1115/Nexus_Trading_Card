@@ -1,0 +1,433 @@
+- generic [ref=f8e3]:
+  - navigation [ref=f8e4]:
+    - img "TCG Rank-In Logo" [ref=f8e6] [cursor=pointer]
+    - list [ref=f8e7]:
+      - listitem [ref=f8e8]:
+        - button "EVENTS" [ref=f8e9] [cursor=pointer]
+      - listitem [ref=f8e11]:
+        - button "STORES" [ref=f8e12] [cursor=pointer]
+      - listitem [ref=f8e14]:
+        - button "PLAYER GUIDE" [ref=f8e15] [cursor=pointer]
+      - listitem [ref=f8e17]:
+        - button "SEASON" [ref=f8e18] [cursor=pointer]
+      - listitem [ref=f8e20]:
+        - button "LEADERBOARD" [ref=f8e21] [cursor=pointer]
+      - listitem [ref=f8e23]:
+        - button "TOP 8" [ref=f8e24] [cursor=pointer]
+      - listitem [ref=f8e26]:
+        - button "MATCHMAKING" [ref=f8e27] [cursor=pointer]
+      - listitem [ref=f8e29]:
+        - button "FAQ" [ref=f8e30] [cursor=pointer]
+      - listitem [ref=f8e33]:
+        - generic "Cambiar TCG activo o compartir enlace" [ref=f8e35] [cursor=pointer]:
+          - generic [ref=f8e36]: Yu-Gi-Oh! TCG
+          - generic [ref=f8e37]: ▼
+      - listitem [ref=f8e39]:
+        - button "DASHBOARD" [ref=f8e40] [cursor=pointer]
+  - generic [ref=f8e42]:
+    - button "← Back to Home" [ref=f8e43] [cursor=pointer]
+    - generic [ref=f8e44]:
+      - img "Rank-In" [ref=f8e45]
+      - generic [ref=f8e46]:
+        - heading "Global Leaderboard" [level=1] [ref=f8e47]
+        - paragraph [ref=f8e48]: All registered duelists ranked by total points — All-Time records
+  - main [ref=f8e50]:
+    - generic [ref=f8e51]:
+      - generic [ref=f8e52]:
+        - textbox "🔍 Search by name..." [ref=f8e53]:
+          - /placeholder: 🔍  Search by name...
+        - combobox [ref=f8e54] [cursor=pointer]:
+          - option "🏅 All Ranks" [selected]
+          - option "Bronze"
+          - option "Diamond I"
+          - option "Diamond II"
+          - option "Diamond III"
+          - option "Gold I"
+          - option "Gold II"
+          - option "Grandmaster I"
+          - option "Grandmaster II"
+          - option "Grandmaster III"
+          - option "Master III"
+          - option "Master IV"
+          - option "Master V"
+          - option "Platinum I"
+          - option "Platinum II"
+          - option "Platinum III"
+          - option "Silver I"
+          - option "Silver II"
+        - combobox [ref=f8e55] [cursor=pointer]:
+          - option "🌎 All Zones" [selected]
+          - option "CARACAS"
+          - option "VALENCIA"
+      - table [ref=f8e57]:
+        - rowgroup [ref=f8e58]:
+          - row [ref=f8e59]:
+            - columnheader "#" [ref=f8e60]
+            - columnheader "Duelist" [ref=f8e61]
+            - columnheader "Rank Icon" [ref=f8e62]
+            - columnheader "Zone" [ref=f8e63]
+            - columnheader "Total Points" [ref=f8e64]
+        - rowgroup [ref=f8e65]:
+          - row [ref=f8e66] [cursor=pointer]:
+            - cell "1" [ref=f8e67]
+            - cell "S Samuel Gutierrez Serna Bankai Team" [ref=f8e69]:
+              - generic [ref=f8e70]: S
+              - generic [ref=f8e72]:
+                - generic [ref=f8e73]: Samuel Gutierrez Serna
+                - generic [ref=f8e75]: Bankai Team
+            - cell [ref=f8e76]:
+              - img "Grandmaster I" [ref=f8e77]
+            - cell "CARACAS" [ref=f8e78]
+            - cell "751" [ref=f8e79]
+          - row [ref=f8e80] [cursor=pointer]:
+            - cell "2" [ref=f8e81]
+            - cell "K Kanaan Asfour Aljabri (probando) Gamer Generation" [ref=f8e83]:
+              - generic [ref=f8e84]: K
+              - generic [ref=f8e86]:
+                - generic [ref=f8e87]:
+                  - generic [ref=f8e88]: Kanaan Asfour Aljabri
+                  - generic [ref=f8e89]: (probando)
+                - generic [ref=f8e90]: Gamer Generation
+            - cell [ref=f8e91]:
+              - img "Grandmaster I" [ref=f8e92]
+            - cell "CARACAS" [ref=f8e93]
+            - cell "710" [ref=f8e94]
+          - row [ref=f8e95] [cursor=pointer]:
+            - cell "3" [ref=f8e96]
+            - cell "Andres Salcedo Paredes Andres Salcedo Paredes (Seifers159) Free Win" [ref=f8e98]:
+              - img "Andres Salcedo Paredes" [ref=f8e100]
+              - generic [ref=f8e101]:
+                - generic [ref=f8e102]:
+                  - generic [ref=f8e103]: Andres Salcedo Paredes
+                  - generic [ref=f8e104]: (Seifers159)
+                - generic [ref=f8e105]: Free Win
+            - cell [ref=f8e106]:
+              - img "Grandmaster I" [ref=f8e107]
+            - cell "CARACAS" [ref=f8e108]
+            - cell "694" [ref=f8e109]
+          - row [ref=f8e110] [cursor=pointer]:
+            - cell "4" [ref=f8e111]
+            - cell "Frankjer Rafael Garcia Calzadilla Frankjer Rafael Garcia Calzadilla (Frankjer Rafael Garcia Calzadilla) Gamer Generation" [ref=f8e113]:
+              - img "Frankjer Rafael Garcia Calzadilla" [ref=f8e115]
+              - generic [ref=f8e116]:
+                - generic [ref=f8e117]:
+                  - generic [ref=f8e118]: Frankjer Rafael Garcia Calzadilla
+                  - generic [ref=f8e119]: (Frankjer Rafael Garcia Calzadilla)
+                - generic [ref=f8e120]: Gamer Generation
+            - cell [ref=f8e121]:
+              - img "Grandmaster II" [ref=f8e122]
+            - cell "CARACAS" [ref=f8e123]
+            - cell "673" [ref=f8e124]
+          - row [ref=f8e125] [cursor=pointer]:
+            - cell "5" [ref=f8e126]
+            - cell "Sebastian Jose Bueno Acevedo Sebastian Jose Bueno Acevedo (Sebastian Jose Bueno Acevedo) Free Win" [ref=f8e128]:
+              - img "Sebastian Jose Bueno Acevedo" [ref=f8e130]
+              - generic [ref=f8e131]:
+                - generic [ref=f8e132]:
+                  - generic [ref=f8e133]: Sebastian Jose Bueno Acevedo
+                  - generic [ref=f8e134]: (Sebastian Jose Bueno Acevedo)
+                - generic [ref=f8e135]: Free Win
+            - cell [ref=f8e136]:
+              - img "Grandmaster II" [ref=f8e137]
+            - cell "CARACAS" [ref=f8e138]
+            - cell "628" [ref=f8e139]
+          - row [ref=f8e140] [cursor=pointer]:
+            - cell "6" [ref=f8e141]
+            - cell "Jean Carlos Viera Jean Carlos Viera (Jean Carlos Viera) Rebellion TCG" [ref=f8e143]:
+              - img "Jean Carlos Viera" [ref=f8e145]
+              - generic [ref=f8e146]:
+                - generic [ref=f8e147]:
+                  - generic [ref=f8e148]: Jean Carlos Viera
+                  - generic [ref=f8e149]: (Jean Carlos Viera)
+                - generic [ref=f8e150]: Rebellion TCG
+            - cell [ref=f8e151]:
+              - img "Grandmaster II" [ref=f8e152]
+            - cell "CARACAS" [ref=f8e153]
+            - cell "615" [ref=f8e154]
+          - row [ref=f8e155] [cursor=pointer]:
+            - cell "7" [ref=f8e156]
+            - cell "Roberto Carlos Rojas Ruiz Roberto Carlos Rojas Ruiz (Roberto Carlos Rojas Ruiz) Rebellion TCG" [ref=f8e158]:
+              - img "Roberto Carlos Rojas Ruiz" [ref=f8e160]
+              - generic [ref=f8e161]:
+                - generic [ref=f8e162]:
+                  - generic [ref=f8e163]: Roberto Carlos Rojas Ruiz
+                  - generic [ref=f8e164]: (Roberto Carlos Rojas Ruiz)
+                - generic [ref=f8e165]: Rebellion TCG
+            - cell [ref=f8e166]:
+              - img "Grandmaster II" [ref=f8e167]
+            - cell "CARACAS" [ref=f8e168]
+            - cell "586" [ref=f8e169]
+          - row [ref=f8e170] [cursor=pointer]:
+            - cell "8" [ref=f8e171]
+            - cell "Santiago Rodriguez Goncalves Santiago Rodriguez Goncalves (Santiago Rodriguez Goncalves)" [ref=f8e173]:
+              - img "Santiago Rodriguez Goncalves" [ref=f8e175]
+              - generic [ref=f8e177]:
+                - generic [ref=f8e178]: Santiago Rodriguez Goncalves
+                - generic [ref=f8e179]: (Santiago Rodriguez Goncalves)
+            - cell [ref=f8e180]:
+              - img "Grandmaster II" [ref=f8e181]
+            - cell "CARACAS" [ref=f8e182]
+            - cell "585" [ref=f8e183]
+          - row [ref=f8e184] [cursor=pointer]:
+            - cell "9" [ref=f8e185]
+            - cell "Sebastian Alejandro Barco Santana Sebastian Alejandro Barco Santana (Sebastian Alejandro Barco Santana) Rebellion TCG" [ref=f8e187]:
+              - img "Sebastian Alejandro Barco Santana" [ref=f8e189]
+              - generic [ref=f8e190]:
+                - generic [ref=f8e191]:
+                  - generic [ref=f8e192]: Sebastian Alejandro Barco Santana
+                  - generic [ref=f8e193]: (Sebastian Alejandro Barco Santana)
+                - generic [ref=f8e194]: Rebellion TCG
+            - cell [ref=f8e195]:
+              - img "Grandmaster II" [ref=f8e196]
+            - cell "CARACAS" [ref=f8e197]
+            - cell "582" [ref=f8e198]
+          - row [ref=f8e199] [cursor=pointer]:
+            - cell "10" [ref=f8e200]
+            - cell "D Dilan Tomas Esparragoza Alvarez (Dilan Tomas Esparragoza Alvarez) Rebellion TCG" [ref=f8e202]:
+              - generic [ref=f8e203]: D
+              - generic [ref=f8e205]:
+                - generic [ref=f8e206]:
+                  - generic [ref=f8e207]: Dilan Tomas Esparragoza Alvarez
+                  - generic [ref=f8e208]: (Dilan Tomas Esparragoza Alvarez)
+                - generic [ref=f8e209]: Rebellion TCG
+            - cell [ref=f8e210]:
+              - img "Grandmaster II" [ref=f8e211]
+            - cell "CARACAS" [ref=f8e212]
+            - cell "539" [ref=f8e213]
+          - row [ref=f8e214] [cursor=pointer]:
+            - cell "11" [ref=f8e215]
+            - cell "Carlos Colmenares Carlos Colmenares (Carlos.lcm01, Colmenarescl) Rebellion TCG" [ref=f8e217]:
+              - img "Carlos Colmenares" [ref=f8e219]
+              - generic [ref=f8e220]:
+                - generic [ref=f8e221]:
+                  - generic [ref=f8e222]: Carlos Colmenares
+                  - generic [ref=f8e223]: (Carlos.lcm01, Colmenarescl)
+                - generic [ref=f8e224]: Rebellion TCG
+            - cell [ref=f8e225]:
+              - img "Grandmaster III" [ref=f8e226]
+            - cell "CARACAS" [ref=f8e227]
+            - cell "518" [ref=f8e228]
+          - row [ref=f8e229] [cursor=pointer]:
+            - cell "12" [ref=f8e230]
+            - cell "D Daniel Alejandro Monroy Salazar Bankai Team" [ref=f8e232]:
+              - generic [ref=f8e233]: D
+              - generic [ref=f8e235]:
+                - generic [ref=f8e236]: Daniel Alejandro Monroy Salazar
+                - generic [ref=f8e238]: Bankai Team
+            - cell [ref=f8e239]:
+              - img "Grandmaster III" [ref=f8e240]
+            - cell "CARACAS" [ref=f8e241]
+            - cell "506" [ref=f8e242]
+          - row [ref=f8e243] [cursor=pointer]:
+            - cell "13" [ref=f8e244]
+            - cell "Franklin Alexander Zapata Torrealba Franklin Alexander Zapata Torrealba (Franklin Alexander Zapata Torrealba) Rebellion TCG" [ref=f8e246]:
+              - img "Franklin Alexander Zapata Torrealba" [ref=f8e248]
+              - generic [ref=f8e249]:
+                - generic [ref=f8e250]:
+                  - generic [ref=f8e251]: Franklin Alexander Zapata Torrealba
+                  - generic [ref=f8e252]: (Franklin Alexander Zapata Torrealba)
+                - generic [ref=f8e253]: Rebellion TCG
+            - cell [ref=f8e254]:
+              - img "Master III" [ref=f8e255]
+            - cell "CARACAS" [ref=f8e256]
+            - cell "420" [ref=f8e257]
+          - row [ref=f8e258] [cursor=pointer]:
+            - cell "14" [ref=f8e259]
+            - cell "Angel \"Batidos\" Gonzalez 🥤 Angel \"Batidos\" Gonzalez 🥤 (Angel Moisés González Rodríguez) Omega Proxy" [ref=f8e261]:
+              - img "Angel \"Batidos\" Gonzalez 🥤" [ref=f8e263]
+              - generic [ref=f8e264]:
+                - generic [ref=f8e265]:
+                  - generic [ref=f8e266]: Angel "Batidos" Gonzalez 🥤
+                  - generic [ref=f8e267]: (Angel Moisés González Rodríguez)
+                - generic [ref=f8e268]: Omega Proxy
+            - cell [ref=f8e269]:
+              - img "Master III" [ref=f8e270]
+            - cell "CARACAS" [ref=f8e271]
+            - cell "418" [ref=f8e272]
+          - row [ref=f8e273] [cursor=pointer]:
+            - cell "15" [ref=f8e274]
+            - cell "Alejandro Enrique Pinto Acosta Alejandro Enrique Pinto Acosta (Alejandro Enrique Pinto Acosta) Bankai Team" [ref=f8e276]:
+              - img "Alejandro Enrique Pinto Acosta" [ref=f8e278]
+              - generic [ref=f8e279]:
+                - generic [ref=f8e280]:
+                  - generic [ref=f8e281]: Alejandro Enrique Pinto Acosta
+                  - generic [ref=f8e282]: (Alejandro Enrique Pinto Acosta)
+                - generic [ref=f8e283]: Bankai Team
+            - cell [ref=f8e284]:
+              - img "Master IV" [ref=f8e285]
+            - cell "CARACAS" [ref=f8e286]
+            - cell "384" [ref=f8e287]
+          - row [ref=f8e288] [cursor=pointer]:
+            - cell "16" [ref=f8e289]
+            - cell "Rafael Eduardo Blanco Martinez Rafael Eduardo Blanco Martinez (Rafael Eduardo Blanco Martinez) Omega Proxy" [ref=f8e291]:
+              - img "Rafael Eduardo Blanco Martinez" [ref=f8e293]
+              - generic [ref=f8e294]:
+                - generic [ref=f8e295]:
+                  - generic [ref=f8e296]: Rafael Eduardo Blanco Martinez
+                  - generic [ref=f8e297]: (Rafael Eduardo Blanco Martinez)
+                - generic [ref=f8e298]: Omega Proxy
+            - cell [ref=f8e299]:
+              - img "Master V" [ref=f8e300]
+            - cell "CARACAS" [ref=f8e301]
+            - cell "371" [ref=f8e302]
+          - row [ref=f8e303] [cursor=pointer]:
+            - cell "17" [ref=f8e304]
+            - cell "Jean Rosas Jean Rosas (Jean Rosas) Free Win" [ref=f8e306]:
+              - img "Jean Rosas" [ref=f8e308]
+              - generic [ref=f8e309]:
+                - generic [ref=f8e310]:
+                  - generic [ref=f8e311]: Jean Rosas
+                  - generic [ref=f8e312]: (Jean Rosas)
+                - generic [ref=f8e313]: Free Win
+            - cell [ref=f8e314]:
+              - img "Master V" [ref=f8e315]
+            - cell "CARACAS" [ref=f8e316]
+            - cell "360" [ref=f8e317]
+          - row [ref=f8e318] [cursor=pointer]:
+            - cell "18" [ref=f8e319]
+            - cell "Miguel Alejandro Rondon Rondon Miguel Alejandro Rondon Rondon Bankai Team" [ref=f8e321]:
+              - img "Miguel Alejandro Rondon Rondon" [ref=f8e323]
+              - generic [ref=f8e324]:
+                - generic [ref=f8e325]: Miguel Alejandro Rondon Rondon
+                - generic [ref=f8e327]: Bankai Team
+            - cell [ref=f8e328]:
+              - img "Diamond I" [ref=f8e329]
+            - cell "CARACAS" [ref=f8e330]
+            - cell "331" [ref=f8e331]
+          - row [ref=f8e332] [cursor=pointer]:
+            - cell "19" [ref=f8e333]
+            - cell "L Leandro Daniel Aranazar Cisneros AD Astra Team" [ref=f8e335]:
+              - generic [ref=f8e336]: L
+              - generic [ref=f8e338]:
+                - generic [ref=f8e339]: Leandro Daniel Aranazar Cisneros
+                - generic [ref=f8e341]: AD Astra Team
+            - cell [ref=f8e342]:
+              - img "Diamond II" [ref=f8e343]
+            - cell "CARACAS" [ref=f8e344]
+            - cell "316" [ref=f8e345]
+          - row [ref=f8e346] [cursor=pointer]:
+            - cell "20" [ref=f8e347]
+            - cell "J Jhenderson Villaroel (Jhenderson Villaroel) Rebellion TCG" [ref=f8e349]:
+              - generic [ref=f8e350]: J
+              - generic [ref=f8e352]:
+                - generic [ref=f8e353]:
+                  - generic [ref=f8e354]: Jhenderson Villaroel
+                  - generic [ref=f8e355]: (Jhenderson Villaroel)
+                - generic [ref=f8e356]: Rebellion TCG
+            - cell [ref=f8e357]:
+              - img "Diamond II" [ref=f8e358]
+            - cell "CARACAS" [ref=f8e359]
+            - cell "313" [ref=f8e360]
+          - row [ref=f8e361] [cursor=pointer]:
+            - cell "21" [ref=f8e362]
+            - cell "Samuel Enrique Gonzalez Gastelo Samuel Enrique Gonzalez Gastelo (Samuel Enrique Gonzalez Gastelo) Free Win" [ref=f8e364]:
+              - img "Samuel Enrique Gonzalez Gastelo" [ref=f8e366]
+              - generic [ref=f8e367]:
+                - generic [ref=f8e368]:
+                  - generic [ref=f8e369]: Samuel Enrique Gonzalez Gastelo
+                  - generic [ref=f8e370]: (Samuel Enrique Gonzalez Gastelo)
+                - generic [ref=f8e371]: Free Win
+            - cell [ref=f8e372]:
+              - img "Diamond II" [ref=f8e373]
+            - cell "CARACAS" [ref=f8e374]
+            - cell "307" [ref=f8e375]
+          - row [ref=f8e376] [cursor=pointer]:
+            - cell "22" [ref=f8e377]
+            - cell "David Alejandro Kaller Torres David Alejandro Kaller Torres (David Alejandro Kaller Torres) Bankai Team" [ref=f8e379]:
+              - img "David Alejandro Kaller Torres" [ref=f8e381]
+              - generic [ref=f8e382]:
+                - generic [ref=f8e383]:
+                  - generic [ref=f8e384]: David Alejandro Kaller Torres
+                  - generic [ref=f8e385]: (David Alejandro Kaller Torres)
+                - generic [ref=f8e386]: Bankai Team
+            - cell [ref=f8e387]:
+              - img "Diamond II" [ref=f8e388]
+            - cell "CARACAS" [ref=f8e389]
+            - cell "307" [ref=f8e390]
+          - row [ref=f8e391] [cursor=pointer]:
+            - cell "23" [ref=f8e392]
+            - cell "T Tomas Antonio Reyes Gomez (Tomas Antonio Reyes Gomez) Rebellion TCG" [ref=f8e394]:
+              - generic [ref=f8e395]: T
+              - generic [ref=f8e397]:
+                - generic [ref=f8e398]:
+                  - generic [ref=f8e399]: Tomas Antonio Reyes Gomez
+                  - generic [ref=f8e400]: (Tomas Antonio Reyes Gomez)
+                - generic [ref=f8e401]: Rebellion TCG
+            - cell [ref=f8e402]:
+              - img "Diamond II" [ref=f8e403]
+            - cell "CARACAS" [ref=f8e404]
+            - cell "304" [ref=f8e405]
+          - row [ref=f8e406] [cursor=pointer]:
+            - cell "24" [ref=f8e407]
+            - cell "A Alfonso Regueira Mori Omega Proxy" [ref=f8e409]:
+              - generic [ref=f8e410]: A
+              - generic [ref=f8e412]:
+                - generic [ref=f8e413]: Alfonso Regueira Mori
+                - generic [ref=f8e415]: Omega Proxy
+            - cell [ref=f8e416]:
+              - img "Diamond II" [ref=f8e417]
+            - cell "CARACAS" [ref=f8e418]
+            - cell "297" [ref=f8e419]
+          - row [ref=f8e420] [cursor=pointer]:
+            - cell "25" [ref=f8e421]
+            - cell "Gabriel Alejandro Ramos Rodriguez Gabriel Alejandro Ramos Rodriguez (Gabriel Alejandro Ramos Rodriguez) Rebellion TCG" [ref=f8e423]:
+              - img "Gabriel Alejandro Ramos Rodriguez" [ref=f8e425]
+              - generic [ref=f8e426]:
+                - generic [ref=f8e427]:
+                  - generic [ref=f8e428]: Gabriel Alejandro Ramos Rodriguez
+                  - generic [ref=f8e429]: (Gabriel Alejandro Ramos Rodriguez)
+                - generic [ref=f8e430]: Rebellion TCG
+            - cell [ref=f8e431]:
+              - img "Diamond II" [ref=f8e432]
+            - cell "CARACAS" [ref=f8e433]
+            - cell "292" [ref=f8e434]
+      - generic [ref=f8e435]:
+        - generic [ref=f8e436]:
+          - text: Showing
+          - strong [ref=f8e437]: 1–25
+          - text: of
+          - strong [ref=f8e438]: "100"
+          - text: duelists
+        - generic [ref=f8e439]:
+          - button "←" [disabled] [ref=f8e440]
+          - generic [ref=f8e441]:
+            - text: Page
+            - strong [ref=f8e442]: "1"
+            - text: of
+            - strong [ref=f8e443]: "4"
+          - button "→" [ref=f8e444] [cursor=pointer]
+  - contentinfo [ref=f8e445]:
+    - generic [ref=f8e446]:
+      - generic [ref=f8e447]:
+        - img "TCG Rank-In Logo" [ref=f8e448]
+        - paragraph [ref=f8e449]: "Rank-In (also known as Rankin or Rank In) is the official platform for competitive TCG rankings and tournament tracking. Find the latest standings for Yu-Gi-Oh! TCG (yugioh rank), Pokémon TCG (pokemon rank), One Piece TCG (one piece rank), Digimon TCG (digimon rank), Gundam TCG (gundam rank), Magic: The Gathering (mtg rank), and other trading card games."
+      - generic [ref=f8e450]:
+        - heading "Official Community" [level=4] [ref=f8e451]
+        - generic [ref=f8e452]:
+          - link "Official Instagram" [ref=f8e453] [cursor=pointer]:
+            - /url: https://www.instagram.com/rankintcg?igsh=MWNyOGZ2YmZrZzhiNw%3D%3D
+          - link "Official Facebook" [ref=f8e456] [cursor=pointer]:
+            - /url: https://www.facebook.com/people/Rank-In/61579028017579/?rdid=6mwztCPQgaOkj29p&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18zSZ9DvHC%2F
+        - paragraph [ref=f8e459]: Join the Rank-In community today to receive instant updates on all our tournaments!
+      - generic [ref=f8e460]:
+        - heading "Portals" [level=4] [ref=f8e461]
+        - list [ref=f8e462]:
+          - listitem [ref=f8e463]:
+            - link "Circuit Rulebooks" [ref=f8e464] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f8e465]:
+            - link "Official Stores Backend Access" [ref=f8e466] [cursor=pointer]:
+              - /url: /login
+    - generic [ref=f8e467]:
+      - generic [ref=f8e468]:
+        - generic [ref=f8e469]: © 2026 TCG Rank-In Database. All rights reserved.
+        - generic [ref=f8e470]:
+          - text: "For technical assistance, contact us at:"
+          - link "admin@rank-in-support.net" [ref=f8e471] [cursor=pointer]:
+            - /url: mailto:admin@rank-in-support.net
+      - generic [ref=f8e472]:
+        - generic [ref=f8e473]: "Viewing:"
+        - button "🇻🇪 VE ▼" [ref=f8e475] [cursor=pointer]:
+          - generic [ref=f8e476]: 🇻🇪
+          - generic [ref=f8e477]: VE
+          - generic [ref=f8e478]: ▼

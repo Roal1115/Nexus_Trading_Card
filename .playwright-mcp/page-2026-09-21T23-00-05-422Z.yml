@@ -1,0 +1,61 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - generic [ref=f1e4]:
+      - link [ref=f1e8] [cursor=pointer]:
+        - /url: /
+        - img "modal logo" [ref=f1e9]
+      - generic [ref=f1e11]:
+        - link "Home" [ref=f1e12] [cursor=pointer]:
+          - /url: https://www.mailinator.com/
+        - link "Email" [ref=f1e13] [cursor=pointer]:
+          - /url: /v4/public/inboxes.jsp
+        - link "Pricing" [ref=f1e14] [cursor=pointer]:
+          - /url: https://www.mailinator.com/site/pricing/
+        - link "Documentation" [ref=f1e15] [cursor=pointer]:
+          - /url: https://www.mailinator.com/documentation/docs/category/getting-started/index.html
+        - link "FAQ" [ref=f1e16] [cursor=pointer]:
+          - /url: https://www.mailinator.com/site/mailinator-faqs/
+        - link "Login" [ref=f1e17] [cursor=pointer]:
+          - /url: /v4/login.jsp
+  - generic [ref=f1e18]:
+    - complementary [ref=f1e19]:
+      - generic [ref=f1e20]:
+        - generic [ref=f1e21]: Recent Inboxes
+        - generic [ref=f1e24] [cursor=pointer]: Request Trial
+        - generic [ref=f1e28]:
+          - text: Mailinator + AI
+          - link "Give Your AI Assistant the Power of Mailinator" [ref=f1e29] [cursor=pointer]:
+            - /url: /v4/mailinatorai.jsp
+      - generic [ref=f1e31]:
+        - link "System Status" [ref=f1e32] [cursor=pointer]:
+          - /url: https://monitor.mailinator.com/status/mailinator
+        - link "Terms" [ref=f1e33] [cursor=pointer]:
+          - /url: https://www.mailinator.com/site/terms-of-use/
+        - link "Privacy" [ref=f1e34] [cursor=pointer]:
+          - /url: https://www.mailinator.com/site/privacy-policy/
+        - link "Accessibility" [ref=f1e35] [cursor=pointer]:
+          - /url: https://www.mailinator.com/site/accessibility/
+        - link "Security" [ref=f1e36] [cursor=pointer]:
+          - /url: https://www.mailinator.com/site/security-details/
+        - paragraph [ref=f1e37]: Copyright 2025 Manybrain, LLC, All Rights Reserved
+    - main [ref=f1e38]:
+      - generic [ref=f1e39]:
+        - generic [ref=f1e40]:
+          - heading "Public Messages" [level=4] [ref=f1e42]
+          - button "Pause Button" [ref=f1e44] [cursor=pointer]
+          - button "Delete Button" [ref=f1e48] [cursor=pointer]
+          - button "RSS Button" [ref=f1e52] [cursor=pointer]
+          - generic [ref=f1e55]:
+            - textbox "inbox field" [ref=f1e56]
+            - button "GO" [ref=f1e57] [cursor=pointer]
+        - table [ref=f1e60]:
+          - rowgroup [ref=f1e61]:
+            - row [ref=f1e62] [cursor=pointer]:
+              - cell "From" [ref=f1e63]
+              - cell "Subject" [ref=f1e64]
+              - cell "Received" [ref=f1e65]
+        - generic [ref=f1e70]:
+          - table:
+            - rowgroup
+    - link [ref=f1e73] [cursor=pointer]:
+      - /url: /comic/comic.jsp

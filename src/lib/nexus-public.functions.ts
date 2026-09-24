@@ -643,12 +643,31 @@ export const getPublicTournament = createServerFn({ method: "POST" })
     // 2. Standings
     const { data: results } = await admin
       .from("tournament_results")
-      .select("player_id, rank, wins, losses, draws, points_earned, omw_percentage")
+      .select("player_id, rank, wins, losses, draws, points_earned, omw_percentage, match_points")
       .eq("tournament_id", data.tournament_id)
       .order("rank", { ascending: true });
 
     const resultList = (results ?? []) as any[];
     const playerIds = resultList.map((r) => r.player_id);
+
+    // El líder (rank 1) no perdió ni empató ninguna ronda, así que sus match
+    // points ÷ 3 nos dan el número de rondas jugadas (partidas 3-1-0).
+    const maxMatchPoints = resultList.reduce((max, r) => Math.max(max, r.match_points ?? 0), 0);
+    const roundsPlayed = maxMatchPoints > 0 ? Math.round(maxMatchPoints / 3) : null;
+
+    // One Piece nunca ha tenido un empate oficial, así que cuando el archivo
+    // subido no trae V/D/E (torneos Bandai) lo estimamos desde match_points.
+    // Se deja la regla de "resto = empate (1 pt)" por si algún día aparece uno.
+    const isOnePiece = tournament.games?.slug === "one-piece";
+    function estimateRecord(r: (typeof resultList)[number]) {
+      if (r.wins != null || !isOnePiece || roundsPlayed == null || r.match_points == null) {
+        return { wins: r.wins, losses: r.losses, draws: r.draws };
+      }
+      const wins = Math.floor(r.match_points / 3);
+      const draws = r.match_points % 3;
+      const losses = roundsPlayed - wins - draws;
+      return { wins, losses, draws };
+    }
 
     if (playerIds.length === 0) {
       return {
@@ -663,9 +682,11 @@ export const getPublicTournament = createServerFn({ method: "POST" })
           store_city: tournament.stores?.city ?? "—",
           store_state: tournament.stores?.state ?? "—",
           zone: tournament.stores?.zone ?? "—",
+          rounds: null,
         },
         standings: [],
         total_participants: 0,
+        undefeated_count: 0,
       };
     }
 
@@ -739,19 +760,22 @@ export const getPublicTournament = createServerFn({ method: "POST" })
       // placeholder cargado por el TO, nadie a quien exponer). Un perfil
       // privado nunca debe filtrar su leader en una página pública.
       const canShowLeader = !p || !p.auth_user_id || Boolean(p.is_profile_public);
+      const record = estimateRecord(r);
       return {
         rank: r.rank as number,
         geek_tag: p?.geek_tag ?? "—",
-        is_profile_public: Boolean(p?.is_profile_public),
-        wins: r.wins as number | null,
-        losses: r.losses as number | null,
-        draws: r.draws as number | null,
+        is_profile_public: canShowLeader,
+        wins: record.wins as number | null,
+        losses: record.losses as number | null,
+        draws: record.draws as number | null,
         points_earned: r.points_earned as number | null,
         omw_percentage: r.omw_percentage as number | null,
         leader_name: canShowLeader ? ((leader as any)?.base_name ?? null) : null,
         leader_image: canShowLeader ? ((leader as any)?.card_image ?? null) : null,
       };
     });
+
+    const undefeatedCount = standings.filter((s) => s.losses === 0 && (s.wins ?? 0) > 0).length;
 
     return {
       tournament: {
@@ -765,8 +789,10 @@ export const getPublicTournament = createServerFn({ method: "POST" })
         store_city: tournament.stores?.city ?? "—",
         store_state: tournament.stores?.state ?? "—",
         zone: tournament.stores?.zone ?? "—",
+        rounds: roundsPlayed,
       },
       standings,
       total_participants: standings.length,
+      undefeated_count: undefeatedCount,
     };
   });

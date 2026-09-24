@@ -568,7 +568,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     const { data: target } = await admin
       .from("players")
       .select(
-        "id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public, equipped_title_key, equipped_badge_key, equipped_nameplate_key" as any,
+        "id, geek_tag, display_name, avatar_url, created_at, home_store_id, is_profile_public, equipped_title_key, equipped_badge_key, equipped_nameplate_key, auth_user_id" as any,
       )
       .eq("geek_tag", data.player_tag)
       .maybeSingle();
@@ -602,7 +602,10 @@ export const getPublicProfile = createServerFn({ method: "POST" })
 
     const isOwner = viewer?.id === t.id;
     const isSuperior = viewer?.role === "admin" || viewer?.role === "tcg_manager";
-    const isPublic = t.is_profile_public ?? true;
+    // Un jugador "placeholder" (subido por un TO desde un archivo, sin cuenta
+    // propia) nunca puede entrar a marcar su perfil como público — no hay
+    // nada suyo que proteger, así que se trata como público por defecto.
+    const isPublic = !t.auth_user_id || (t.is_profile_public ?? true);
     const canView = isOwner || isSuperior || isPublic;
 
     if (!canView) {
@@ -819,7 +822,7 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
     const { data: target } = await admin
       .from("players")
       .select(
-        "id, geek_tag, is_profile_public, equipped_title_key, equipped_badge_key, equipped_nameplate_key" as any,
+        "id, geek_tag, is_profile_public, equipped_title_key, equipped_badge_key, equipped_nameplate_key, auth_user_id" as any,
       )
       .eq("geek_tag", data.player_tag)
       .maybeSingle();
@@ -827,7 +830,8 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
     if (!target) throw new Error("Jugador no encontrado");
     const t = target as any;
     const isOwner = viewer?.id === t.id;
-    if (!(t.is_profile_public ?? true) && !isOwner) {
+    const isPublic = !t.auth_user_id || (t.is_profile_public ?? true);
+    if (!isPublic && !isOwner) {
       return {
         geek_tag: t.geek_tag as string,
         total_lp: 0,

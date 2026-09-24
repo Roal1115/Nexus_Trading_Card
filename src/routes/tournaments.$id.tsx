@@ -276,6 +276,28 @@ function PublicTournamentPage() {
         Ver perfil de {t.store_name} →
       </Link>
 
+      {/* Stat tiles */}
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
+          <div className="text-2xl font-bold text-white">{data.total_participants}</div>
+          <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+            Total de Jugadores
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
+          <div className="text-2xl font-bold text-white">{t.rounds ?? "—"}</div>
+          <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+            Total de Rondas
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
+          <div className="text-2xl font-bold text-white">{data.undefeated_count}</div>
+          <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+            Jugadores Invictos
+          </div>
+        </div>
+      </div>
+
       {/* Winner highlight */}
       {winner ? (
         <div className="mt-6 flex items-center gap-4 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 to-transparent p-4">
