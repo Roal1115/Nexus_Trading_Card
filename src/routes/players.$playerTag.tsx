@@ -427,7 +427,7 @@ function PublicProfilePage() {
                     title: `${profile.geek_tag} — Nexus`,
                     text: `Mira el ranking de ${profile.geek_tag} en Nexus 🏆`,
                     cardData: {
-                      geekTag: profile.geek_tag,
+                      nexusTag: profile.geek_tag,
                       subtitle: profile.store_city ?? null,
                       rankLabel:
                         topRanking?.rank_position > 0 ? `#${topRanking.rank_position}` : null,

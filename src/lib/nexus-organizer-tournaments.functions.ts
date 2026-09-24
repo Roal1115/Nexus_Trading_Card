@@ -14,7 +14,7 @@ function normalizeId(id: string): string {
 
 async function resolvePlayer(
   admin: ReturnType<typeof getNexusAdmin>,
-  geekTag: string,
+  nexusTag: string,
   membershipId: string | null,
   gameId: string,
 ): Promise<{ id: string; isNew: boolean }> {
@@ -33,7 +33,7 @@ async function resolvePlayer(
   }
 
   // 2. Fall back to geek_tag
-  const { data: byTag } = await admin.from("players").select("id").eq("geek_tag", geekTag).maybeSingle();
+  const { data: byTag } = await admin.from("players").select("id").eq("geek_tag", nexusTag).maybeSingle();
   if (byTag?.id) {
     return { id: byTag.id as string, isNew: false };
   }
@@ -42,14 +42,14 @@ async function resolvePlayer(
   const { data: newPlayer, error } = await admin
     .from("players")
     .insert({
-      geek_tag: geekTag,
+      geek_tag: nexusTag,
       is_active: true,
       role: "player",
     })
     .select("id")
     .single();
   if (error || !newPlayer) {
-    throw new Error(`No se pudo crear el jugador: ${geekTag}`);
+    throw new Error(`No se pudo crear el jugador: ${nexusTag}`);
   }
 
   if (membershipId && newPlayer.id) {

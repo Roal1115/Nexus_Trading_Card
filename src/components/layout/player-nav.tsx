@@ -14,7 +14,7 @@ import type { SidebarSection } from "@/components/layout/PanelSidebar";
 
 // Única fuente de verdad de la navegación del jugador.
 // La consumen PlayerSidebar (desktop) y ProfileDrawer (mobile).
-export function playerNavSections(role: string, geekTag?: string): SidebarSection[] {
+export function playerNavSections(role: string, nexusTag?: string): SidebarSection[] {
   const sections: SidebarSection[] = [];
 
   if (["organizer", "tcg_manager", "admin"].includes(role)) {
@@ -51,8 +51,8 @@ export function playerNavSections(role: string, geekTag?: string): SidebarSectio
     {
       title: "Cuenta",
       items: [
-        ...(geekTag
-          ? [{ to: `/players/${geekTag}`, label: "Mi Perfil", icon: <UserCircle size={16} /> }]
+        ...(nexusTag
+          ? [{ to: `/players/${nexusTag}`, label: "Mi Perfil", icon: <UserCircle size={16} /> }]
           : []),
         { to: "/settings", label: "Configuración", icon: <Settings size={16} /> },
       ],

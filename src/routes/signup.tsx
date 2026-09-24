@@ -270,7 +270,7 @@ function SignupPage() {
             Únete al Circuito
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
-            Reclama tu Geek Tag
+            Reclama tu Nexus Tag
           </h1>
         </div>
 
@@ -490,7 +490,7 @@ function Step1(props: {
       </div>
 
       <Field
-        label="Tu Geek Tag"
+        label="Tu Nexus Tag"
         hint="Tu handle único en la Arena. Letras, números y guiones bajos."
         error={step1Errors.tag}
         rightHint={<TagBadge status={tagStatus} />}
@@ -748,7 +748,7 @@ function Step4Confirm({
 
       <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
         <Row label="Correo" value={email} />
-        <Row label="Geek Tag" value={tag} />
+        <Row label="Nexus Tag" value={tag} />
         <div>
           <div className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">
             Juegos

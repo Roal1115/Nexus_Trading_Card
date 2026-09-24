@@ -43,7 +43,7 @@ type Platform = "bandai" | "limitless" | "magic" | "unknown";
 type ColumnMap = {
   platform: Platform;
   rank?: string;
-  geekTag?: string;
+  nexusTag?: string;
   matchPoints?: string;
   omw?: string;
   record?: string;
@@ -55,7 +55,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   "one-piece": {
     platform: "bandai",
     rank: "Ranking",
-    geekTag: "User Name",
+    nexusTag: "User Name",
     matchPoints: "Win Points",
     omw: "OMW %",
     membershipId: "Membership Number",
@@ -63,7 +63,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   "dragon-ball": {
     platform: "bandai",
     rank: "Ranking",
-    geekTag: "User Name",
+    nexusTag: "User Name",
     matchPoints: "Win Points",
     omw: "OMW %",
     membershipId: "Membership Number",
@@ -71,7 +71,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   gundam: {
     platform: "bandai",
     rank: "Ranking",
-    geekTag: "User Name",
+    nexusTag: "User Name",
     matchPoints: "Win Points",
     omw: "OMW %",
     membershipId: "Membership Number",
@@ -79,7 +79,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   riftbound: {
     platform: "limitless",
     rank: "Rank",
-    geekTag: "Display Name",
+    nexusTag: "Display Name",
     matchPoints: "Match Points",
     omw: "Opponent Match Win %",
     record: "Record (W-L-D)",
@@ -90,7 +90,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   "magic-the-gathering": {
     platform: "magic",
     rank: "Puesto",
-    geekTag: "Nombre",
+    nexusTag: "Nombre",
     matchPoints: "Puntos",
     omw: "%VPO",
     record: "V/D/E",
@@ -194,7 +194,7 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
   const idx = (key: string | undefined) => (key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1);
 
   const iRank = idx(map.rank);
-  const iTag = idx(map.geekTag);
+  const iTag = idx(map.nexusTag);
   const iPts = idx(map.matchPoints);
   const iOmw = idx(map.omw);
   const iRec = idx(map.record);
@@ -826,7 +826,7 @@ export function TournamentUploadForm({
                       <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
                         <tr>
                           <th className="w-10 px-3 py-2 text-left">#</th>
-                          <th className="px-3 py-2 text-left">Geek Tag</th>
+                          <th className="px-3 py-2 text-left">Nexus Tag</th>
                           <th className="px-3 py-2 text-left">Membership ID</th>
                           <th className="px-3 py-2 text-right">Match Pts</th>
                           <th className="px-3 py-2 text-right">OMW%</th>

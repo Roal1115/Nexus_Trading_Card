@@ -1,6 +1,6 @@
-// Flujos de auth por Geek Tag resueltos 100% server-side.
+// Flujos de auth por Nexus Tag resueltos 100% server-side.
 // El email real del jugador NUNCA se devuelve al navegador de un
-// usuario no autenticado (antes resolveEmailByGeekTag permitía
+// usuario no autenticado (antes resolveEmailByNexusTag permitía
 // enumerar emails públicamente — ver AUDIT.md 1.2).
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
@@ -43,7 +43,7 @@ function maskEmail(email: string): string {
 
 const identifierSchema = z.string().min(1).max(120);
 
-// ─── Login con Geek Tag o email ──────────────────────────────────────────
+// ─── Login con Nexus Tag o email ──────────────────────────────────────────
 export const loginWithIdentifier = createServerFn({ method: "POST" })
   .inputValidator((d: { identifier: string; password: string }) =>
     z.object({ identifier: identifierSchema, password: z.string().min(1).max(200) }).parse(d),

@@ -1,0 +1,37 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]: TCG Tool
+    - generic [ref=e6]:
+      - button "ES" [ref=e7] [cursor=pointer]
+      - button "🌙" [ref=e8] [cursor=pointer]
+      - generic [ref=e31]:
+        - generic [ref=e32]: 👤 tcgtool
+        - button "Salir" [ref=e33] [cursor=pointer]
+  - generic [ref=e9]:
+    - generic [ref=e86]:
+      - button "Torneos" [ref=e87] [cursor=pointer]
+      - button "Calendario" [ref=e93] [cursor=pointer]
+      - button "Events" [ref=e98] [cursor=pointer]
+      - button "Probabilidades" [ref=e105] [cursor=pointer]
+      - button "Top Calc" [ref=e112] [cursor=pointer]
+    - generic [ref=e12]:
+      - generic [ref=e121]:
+        - generic [ref=e122]: OP17 · THE WORLD'S STRONGEST WARRIORS
+        - heading "Torneos & Stats" [level=1] [ref=e123]
+        - paragraph [ref=e124]: Crea torneos suizos con top cut, lleva tus matchups con foto de cada líder y calcula tu top. Todo en un solo lugar.
+      - generic [ref=e125]:
+        - heading "Torneos" [level=2] [ref=e126]
+        - button "+ Crear torneo" [ref=e127] [cursor=pointer]
+      - generic [ref=e128]:
+        - button "🎯 Activos" [ref=e129] [cursor=pointer]
+        - button "🏆 Pasados" [ref=e130] [cursor=pointer]
+      - generic [ref=e132] [cursor=pointer]:
+        - generic [ref=e133]:
+          - generic [ref=e134]: Locals
+          - generic [ref=e135]: por tcgtool · 0 jugadores · Top 16
+        - generic [ref=e136]: Inscripción
+    - generic [ref=e10]:
+      - text: One Piece TCG Tool · v46 · desarrollado con
+      - link "AXD Interactive" [ref=e11] [cursor=pointer]:
+        - /url: https://axdinteractive.com
+      - text: No afiliado a Bandai ni a Eiichiro Oda.

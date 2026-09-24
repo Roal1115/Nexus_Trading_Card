@@ -1106,12 +1106,12 @@ function StaffTab() {
       );
       const playerId = res.player_id as string | null;
       const role = addForm.role;
-      const geekTag = addForm.geek_tag;
+      const nexusTag = addForm.geek_tag;
       setAddModal(false);
       setAddForm({ email: "", geek_tag: "", role: "organizer", work_schedule: "", contact_primary: "", contact_backup: "" });
       await refresh();
       if (playerId) {
-        await openAssignmentFor(playerId, geekTag, role);
+        await openAssignmentFor(playerId, nexusTag, role);
       }
     } catch (e: any) {
       toast.error(e?.message ?? String(e));
@@ -1210,7 +1210,7 @@ function StaffTab() {
           <table className="w-full text-sm">
             <thead className="bg-black/40 text-xs uppercase text-gray-400">
               <tr>
-                <th className="text-left px-4 py-2">Geek Tag</th>
+                <th className="text-left px-4 py-2">Nexus Tag</th>
                 <th className="text-left px-4 py-2">Email</th>
                 <th className="text-left px-4 py-2">Rol</th>
                 <th className="text-left px-4 py-2">Asignación</th>
@@ -1238,7 +1238,7 @@ function StaffTab() {
               <table className="w-full text-sm">
                 <thead className="bg-black/40 text-xs uppercase text-gray-400">
                   <tr>
-                    <th className="text-left px-4 py-2">Geek Tag</th>
+                    <th className="text-left px-4 py-2">Nexus Tag</th>
                     <th className="text-left px-4 py-2">Email</th>
                     <th className="text-left px-4 py-2">Rol</th>
                     <th className="text-left px-4 py-2">Asignación</th>
@@ -1459,11 +1459,11 @@ function StaffTab() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-gray-400">Nombre / Geek Tag *</Label>
+              <Label className="text-xs text-gray-400">Nombre / Nexus Tag *</Label>
               <Input
                 value={addForm.geek_tag}
                 onChange={(e) => setAddForm((f) => ({ ...f, geek_tag: e.target.value }))}
-                placeholder="GeekTag123"
+                placeholder="NexusTag123"
               />
             </div>
             <div className="space-y-1.5">

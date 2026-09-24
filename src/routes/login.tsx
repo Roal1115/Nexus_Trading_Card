@@ -41,7 +41,7 @@ function LoginPage() {
   const doLogin = useServerFn(loginWithIdentifier);
   const doResend = useServerFn(resendConfirmation);
   const doReset = useServerFn(sendPasswordReset);
-  const [identifier, setIdentifier] = useState(""); // Geek Tag o email
+  const [identifier, setIdentifier] = useState(""); // Nexus Tag o email
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -77,7 +77,7 @@ function LoginPage() {
 
     if (!res.ok) {
       if (res.code === "not_found") {
-        toast.error("No encontramos una cuenta con ese correo o Geek Tag");
+        toast.error("No encontramos una cuenta con ese correo o Nexus Tag");
       } else if (res.code === "unconfirmed") {
         setNeedsConfirm(res.masked_email ?? "tu correo");
       } else {
@@ -155,13 +155,13 @@ function LoginPage() {
           </div>
         ) : (
           <form onSubmit={forgotMode ? sendReset : submit} className="space-y-4">
-            <Field label="Geek Tag o correo electrónico">
+            <Field label="Nexus Tag o correo electrónico">
               <input
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
-                placeholder="Geek Tag o jugador@nexus.gg"
+                placeholder="Nexus Tag o jugador@nexus.gg"
                 className="input-base"
               />
             </Field>

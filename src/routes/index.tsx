@@ -243,7 +243,7 @@ function LeaderboardPage() {
   const fetchActiveSponsors = useServerFn(listActiveSponsors);
   const fetchBanner = useServerFn(getActiveBanner);
   const { player: viewer, role } = useNexusRole();
-  const myGeekTag = viewer?.geek_tag ?? null;
+  const myNexusTag = viewer?.geek_tag ?? null;
 
   const isStaff = role === "admin" || role === "tcg_manager" || role === "organizer";
 
@@ -434,7 +434,7 @@ function LeaderboardPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar Geek Tag…"
+                placeholder="Buscar Nexus Tag…"
                 className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -469,7 +469,7 @@ function LeaderboardPage() {
           }
           rows={period === "semestral" ? filteredSemestral : filteredMonthly}
           loading={loading}
-          myGeekTag={myGeekTag}
+          myNexusTag={myNexusTag}
           search={search}
           onClearSearch={() => setSearch("")}
         />
@@ -510,7 +510,7 @@ function LeaderboardTable({
   subtitle,
   rows,
   loading,
-  myGeekTag,
+  myNexusTag,
   search,
   onClearSearch,
 }: {
@@ -519,7 +519,7 @@ function LeaderboardTable({
   subtitle?: string | null;
   rows: Row[];
   loading: boolean;
-  myGeekTag?: string | null;
+  myNexusTag?: string | null;
   search?: string;
   onClearSearch?: () => void;
 }) {
@@ -533,7 +533,7 @@ function LeaderboardTable({
     overscan: 10,
   });
 
-  const myRowIndex = myGeekTag ? rows.findIndex((r) => r.geek_tag === myGeekTag) : -1;
+  const myRowIndex = myNexusTag ? rows.findIndex((r) => r.geek_tag === myNexusTag) : -1;
   const scrollToMe = () => {
     if (myRowIndex < 0 || !scrollRef.current) return;
 
@@ -557,7 +557,7 @@ function LeaderboardTable({
     }, 500);
   };
 
-  // Grid columns: # | Geek Tag | Ciudad | Pts | Torneos | Victorias | OMW%
+  // Grid columns: # | Nexus Tag | Ciudad | Pts | Torneos | Victorias | OMW%
   const gridCols = "grid-cols-[40px_1fr_64px_56px_36px_36px_52px]";
   const gridColsMobile = "grid-cols-[40px_1fr_68px]";
 
@@ -609,7 +609,7 @@ function LeaderboardTable({
         className={`grid md:hidden ${gridColsMobile} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-gray-400`}
       >
         <div>#</div>
-        <div>Geek Tag</div>
+        <div>Nexus Tag</div>
         <div className="text-right">Pts</div>
       </div>
 
@@ -672,7 +672,7 @@ function LeaderboardTable({
               const isFirst = rank === 1;
               const isSecond = rank === 2;
               const isThird = rank === 3;
-              const isMe = !!myGeekTag && r.geek_tag === myGeekTag;
+              const isMe = !!myNexusTag && r.geek_tag === myNexusTag;
               return (
                 <Link
                   key={r.player_id}

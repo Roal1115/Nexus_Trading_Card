@@ -12,7 +12,7 @@
 // canvas.toDataURL (síncrono) + un decode manual a Blob en vez de
 // canvas.toBlob (asíncrono).
 export type ShareCardData = {
-  geekTag: string;
+  nexusTag: string;
   subtitle?: string | null; // ciudad/tienda
   rankLabel?: string | null; // "#17"
   rankCaption?: string | null; // nombre de season/TCG bajo el rank
@@ -53,7 +53,7 @@ function generateShareCardDataUrl(data: ShareCardData): string {
   ctx.font = "bold 96px Inter, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(data.geekTag.charAt(0).toUpperCase(), cx, cy + 6);
+  ctx.fillText(data.nexusTag.charAt(0).toUpperCase(), cx, cy + 6);
   ctx.restore();
   ctx.textAlign = "start";
   ctx.textBaseline = "alphabetic";
@@ -64,7 +64,7 @@ function generateShareCardDataUrl(data: ShareCardData): string {
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 72px Inter, sans-serif";
-  ctx.fillText(data.geekTag, 70, 190);
+  ctx.fillText(data.nexusTag, 70, 190);
 
   if (data.subtitle) {
     ctx.fillStyle = "#7A8CAD";
@@ -127,7 +127,7 @@ export async function shareProfileWithCard(opts: {
   let file: File | null = null;
   try {
     const dataUrl = generateShareCardDataUrl(cardData);
-    file = new File([dataUrlToBlob(dataUrl)], `${cardData.geekTag}-nexus.png`, {
+    file = new File([dataUrlToBlob(dataUrl)], `${cardData.nexusTag}-nexus.png`, {
       type: "image/png",
     });
   } catch {

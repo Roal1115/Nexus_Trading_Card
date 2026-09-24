@@ -342,7 +342,7 @@ function ManagerTournamentDetailPage() {
             <thead className="sticky top-0 bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
               <tr>
                 <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">Geek Tag</th>
+                <th className="px-4 py-3">Nexus Tag</th>
                 <th className="px-4 py-3 whitespace-nowrap">Match Pts</th>
                 <th className="px-4 py-3 whitespace-nowrap">OMW%</th>
                 <th className="px-4 py-3 whitespace-nowrap">Pts Arena</th>

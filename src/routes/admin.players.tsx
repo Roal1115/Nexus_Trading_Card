@@ -433,7 +433,7 @@ function AdminPlayersPage() {
           <div className="flex items-center gap-2">
             <Search size={16} className="ml-2 text-gray-500" />
             <Input
-              placeholder="Buscar por geek tag (o escribe @ para buscar por email)"
+              placeholder="Buscar por nexus tag (o escribe @ para buscar por email)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="border-0 bg-transparent focus-visible:ring-0"
@@ -490,7 +490,7 @@ function AdminPlayersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="recent">Más recientes</SelectItem>
-                <SelectItem value="geek_tag">Geek Tag (A-Z)</SelectItem>
+                <SelectItem value="geek_tag">Nexus Tag (A-Z)</SelectItem>
                 <SelectItem value="points">Puntos totales</SelectItem>
               </SelectContent>
             </Select>
@@ -539,7 +539,7 @@ function AdminPlayersPage() {
               <table className="w-full text-sm">
                 <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                   <tr>
-                    <th className="px-4 py-3">Geek Tag</th>
+                    <th className="px-4 py-3">Nexus Tag</th>
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Rol</th>
                     <th className="px-4 py-3">Tienda</th>
@@ -968,7 +968,7 @@ function AdminPlayersPage() {
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <DetailField
-                      label="Geek Tag"
+                      label="Nexus Tag"
                       value={detailData.player.geek_tag}
                     />
                     <DetailField

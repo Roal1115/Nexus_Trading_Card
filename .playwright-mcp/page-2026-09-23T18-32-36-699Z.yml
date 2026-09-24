@@ -1,0 +1,99 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]: TCG Tool
+    - generic [ref=e6]:
+      - button "ES" [ref=e7] [cursor=pointer]
+      - button "🌙" [ref=e8] [cursor=pointer]
+      - generic [ref=e31]:
+        - generic [ref=e32]: 👤 tcgtool
+        - button "Salir" [ref=e33] [cursor=pointer]
+  - generic [ref=e9]:
+    - generic [ref=e137]:
+      - button "Torneos" [ref=e138] [cursor=pointer]
+      - button "Calendario" [ref=e144] [cursor=pointer]
+      - button "Events" [ref=e149] [cursor=pointer]
+      - button "Probabilidades" [ref=e156] [cursor=pointer]
+      - button "Top Calc" [ref=e163] [cursor=pointer]
+    - generic [ref=e12]:
+      - heading "📈 Probabilidades por líder" [level=2] [ref=e169]
+      - paragraph [ref=e170]: Basado en tus partidas registradas en Events. Mientras más partidas tengas, más confiable es la probabilidad (winrate histórico).
+      - generic [ref=e171]:
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - generic [ref=e175]: Filtrar por tu líder
+            - combobox [ref=e176]:
+              - option "Todos mis líderes" [selected]
+              - option "🟢🟣 Luffy [EB02]"
+          - generic [ref=e177]:
+            - generic [ref=e178]: Filtrar por evento
+            - combobox [ref=e179]:
+              - option "Todos los eventos" [selected]
+              - option "test · Local"
+        - generic [ref=e180]:
+          - generic [ref=e181]:
+            - generic [ref=e182]:
+              - generic [ref=e183]: "3"
+              - generic [ref=e184]: partidas
+            - generic [ref=e185]:
+              - generic [ref=e186]: 67%
+              - generic [ref=e187]: winrate
+            - generic [ref=e188]:
+              - generic [ref=e189]: 100%
+              - generic [ref=e190]: gané dado
+            - generic [ref=e191]:
+              - generic [ref=e192]: 33%
+              - generic [ref=e193]: jugué 1º
+          - generic [ref=e194]: 🎲 Ganas el dado → 67% de victorias · Pierdes el dado → —
+          - generic [ref=e195]: 🔀 Juegas 1º → 100% (1) · Juegas 2º → 50% (2)
+        - button "🙈 Ocultar gráficas" [ref=e197] [cursor=pointer]
+        - generic [ref=e198]:
+          - heading "📊 Winrate por rival" [level=3] [ref=e199]
+          - heading "📈 Winrate acumulado" [level=3] [ref=e202]
+        - generic [ref=e205]:
+          - heading "Contra cada líder rival" [level=3] [ref=e206]
+          - table [ref=e207]:
+            - rowgroup [ref=e208]:
+              - row [ref=e209]:
+                - columnheader "Líder" [ref=e210]
+                - columnheader "V-D" [ref=e211]
+                - columnheader "Winrate" [ref=e212]
+                - columnheader "🎲" [ref=e213]
+                - columnheader "1º" [ref=e214]
+                - columnheader "2º" [ref=e215]
+            - rowgroup [ref=e216]:
+              - row [ref=e217]:
+                - cell "Charlotte Katakuri 🟣 Katakuri" [ref=e218]:
+                  - generic [ref=e219]:
+                    - img "Charlotte Katakuri" [ref=e220]
+                    - generic [ref=e221]: 🟣 Katakuri
+                - cell "1-0" [ref=e222]
+                - cell "100%" [ref=e223]
+                - cell "100%" [ref=e224]
+                - cell "100% 1-0" [ref=e225]
+                - cell "—" [ref=e226]
+              - row [ref=e227]:
+                - cell "Crocodile 🟣🟡 Crocodile" [ref=e228]:
+                  - generic [ref=e229]:
+                    - img "Crocodile" [ref=e230]
+                    - generic [ref=e231]: 🟣🟡 Crocodile
+                - cell "1-0" [ref=e232]
+                - cell "100%" [ref=e233]
+                - cell "100%" [ref=e234]
+                - cell "—" [ref=e235]
+                - cell "100% 1-0" [ref=e236]
+              - row [ref=e237]:
+                - cell "Donquixote Doflamingo 🟣 Doflamingo" [ref=e238]:
+                  - generic [ref=e239]:
+                    - img "Donquixote Doflamingo" [ref=e240]
+                    - generic [ref=e241]: 🟣 Doflamingo
+                - cell "0-1" [ref=e242]
+                - cell "0%" [ref=e243]
+                - cell "100%" [ref=e244]
+                - cell "—" [ref=e245]
+                - cell "0% 0-1" [ref=e246]
+          - generic [ref=e247]: El winrate es tu probabilidad histórica de ganar ese matchup. Ojo con muestras chicas (pocas partidas).
+    - generic [ref=e10]:
+      - text: One Piece TCG Tool · v46 · desarrollado con
+      - link "AXD Interactive" [ref=e11] [cursor=pointer]:
+        - /url: https://axdinteractive.com
+      - text: No afiliado a Bandai ni a Eiichiro Oda.

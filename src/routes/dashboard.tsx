@@ -210,7 +210,7 @@ function DashboardPage() {
       title: `${tag} — Nexus`,
       text: `Mira mi ranking competitivo en Nexus 🏆`,
       cardData: {
-        geekTag: tag,
+        nexusTag: tag,
         subtitle: storeCity ?? null,
         rankLabel: activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : null,
         rankCaption: activeTcg?.game_name ?? null,
@@ -277,11 +277,11 @@ function DashboardPage() {
         <section className="relative mt-6 mb-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40">
           <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
 
-          {/* Fila superior — Geek Tag + Ranks */}
+          {/* Fila superior — Nexus Tag + Ranks */}
           <div className="relative flex flex-col flex-wrap items-start gap-6 p-8 sm:flex-row sm:items-end sm:justify-between sm:p-12">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                Tu Geek Tag
+                Tu Nexus Tag
               </p>
               <h1 className="mt-2 break-words text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
               <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
@@ -1147,7 +1147,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                               <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
                                 <tr>
                                   <th className="px-3 py-2 text-left">#</th>
-                                  <th className="px-3 py-2 text-left">Geek Tag</th>
+                                  <th className="px-3 py-2 text-left">Nexus Tag</th>
                                   <th className="px-3 py-2 text-center whitespace-nowrap">V / D</th>
                                   <th className="px-3 py-2 text-right">OMW%</th>
                                   <th className="px-3 py-2 text-right">Pts Arena</th>

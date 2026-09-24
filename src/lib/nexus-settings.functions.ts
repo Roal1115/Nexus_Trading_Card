@@ -40,7 +40,7 @@ export const getMyProfile = createServerFn({ method: "POST" })
     };
   });
 
-// ── Actualizar Geek Tag y nombre completo ─────────────────────────
+// ── Actualizar Nexus Tag y nombre completo ─────────────────────────
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
   .inputValidator((d: { geek_tag?: string; display_name?: string }) =>
@@ -66,7 +66,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         .eq("geek_tag", data.geek_tag)
         .neq("id", player.id)
         .maybeSingle();
-      if (existing) throw new Error("Este Geek Tag ya está en uso por otro jugador");
+      if (existing) throw new Error("Este Nexus Tag ya está en uso por otro jugador");
     }
 
     const { error } = await admin

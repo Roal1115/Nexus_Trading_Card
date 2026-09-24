@@ -143,9 +143,9 @@ function SettingsPage() {
   const [tcgIds, setTcgIds] = useState<TcgId[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
 
-  const [geekTag, setGeekTag] = useState("");
+  const [nexusTag, setNexusTag] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [currentGeekTag, setCurrentGeekTag] = useState("");
+  const [currentNexusTag, setCurrentNexusTag] = useState("");
   const [currentDisplayName, setCurrentDisplayName] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -165,7 +165,7 @@ function SettingsPage() {
   useEffect(() => {
     fetchProfile()
       .then((res: any) => {
-        setCurrentGeekTag(res.profile?.geek_tag ?? "");
+        setCurrentNexusTag(res.profile?.geek_tag ?? "");
         setCurrentDisplayName(res.profile?.display_name ?? "");
         setCurrentEmail(res.profile?.email ?? "");
         setPlayerRole(res.profile?.role ?? "player");
@@ -185,7 +185,7 @@ function SettingsPage() {
     try {
       await callUpdateProfile({
         data: {
-          geek_tag: geekTag.trim() || currentGeekTag,
+          geek_tag: nexusTag.trim() || currentNexusTag,
           display_name: displayName.trim() || currentDisplayName,
         },
       });
@@ -335,11 +335,11 @@ function SettingsPage() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-xs text-gray-400">Geek Tag</label>
+            <label className="text-xs text-gray-400">Nexus Tag</label>
             <input
-              value={geekTag}
-              onChange={(e) => setGeekTag(e.target.value)}
-              placeholder={currentGeekTag}
+              value={nexusTag}
+              onChange={(e) => setNexusTag(e.target.value)}
+              placeholder={currentNexusTag}
               className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary placeholder:text-gray-600"
             />
             <p className="text-[10px] text-gray-500">Visible públicamente en rankings y torneos.</p>

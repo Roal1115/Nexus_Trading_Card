@@ -193,7 +193,7 @@ function OrganizerPlayersPage() {
                 <thead className="text-xs text-muted-foreground border-b">
                   <tr>
                     <th className="text-left py-2 px-2">#</th>
-                    <th className="text-left py-2 px-2">Geek Tag</th>
+                    <th className="text-left py-2 px-2">Nexus Tag</th>
                     <th className="text-right py-2 px-2">Torneos</th>
                     <th className="text-right py-2 px-2">Puntos</th>
                   </tr>
@@ -232,7 +232,7 @@ function OrganizerPlayersPage() {
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground border-b">
                   <tr>
-                    <th className="text-left py-2 px-2">Geek Tag</th>
+                    <th className="text-left py-2 px-2">Nexus Tag</th>
                     <th className="text-right py-2 px-2">Días sin venir</th>
                   </tr>
                 </thead>
@@ -258,7 +258,7 @@ function OrganizerPlayersPage() {
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b">
               <tr>
-                <th className="text-left py-2 px-2">Geek Tag</th>
+                <th className="text-left py-2 px-2">Nexus Tag</th>
                 <th className="text-right py-2 px-2">Torneos (rango)</th>
                 <th className="text-left py-2 px-2">Categoría (rango)</th>
                 <th className="text-left py-2 px-2">Categoría (actual)</th>
