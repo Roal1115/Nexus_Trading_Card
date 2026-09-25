@@ -55,11 +55,20 @@ export const signupPlayer = createServerFn({ method: "POST" })
     const newAuthUserId = authUser.user.id;
 
     // 2. Buscar player existente
-    const { data: byAuth } = await admin.from("players").select("id").eq("auth_user_id", newAuthUserId).maybeSingle();
+    const { data: byAuth } = await admin
+      .from("players")
+      .select("id")
+      .eq("auth_user_id", newAuthUserId)
+      .maybeSingle();
 
     const { data: byTag } = byAuth
       ? { data: null as { id: string } | null }
-      : await admin.from("players").select("id").eq("geek_tag", data.geek_tag).is("auth_user_id", null).maybeSingle();
+      : await admin
+          .from("players")
+          .select("id")
+          .eq("geek_tag", data.geek_tag)
+          .is("auth_user_id", null)
+          .maybeSingle();
 
     const existing = byAuth ?? byTag;
 
@@ -126,8 +135,15 @@ export const signupPlayer = createServerFn({ method: "POST" })
         game_id,
         tcg_user_id: tcg_user_id.trim(),
       }));
-      const { error: tcgErr } = await admin.from("player_tcg_ids").upsert(tcgRows, { onConflict: "player_id,game_id" });
+      const { error: tcgErr } = await admin
+        .from("player_tcg_ids")
+        .upsert(tcgRows, { onConflict: "player_id,game_id" });
       if (tcgErr) failDb(tcgErr);
+      // Enlaza torneos subidos antes del registro bajo otro nombre (mismo TCG ID).
+      const { error: claimErr } = await admin.rpc("claim_tcg_placeholders" as any, {
+        p_player_id: playerId,
+      });
+      if (claimErr) console.error("claim_tcg_placeholders", claimErr);
     }
 
     return { ok: true as const, email: data.email };

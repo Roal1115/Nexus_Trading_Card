@@ -113,6 +113,11 @@ export const addMyTcgId = createServerFn({ method: "POST" })
       tcg_user_id_normalized: normalized,
     });
     if (error) failDb(error);
+    // Enlaza torneos subidos antes bajo otro nombre (mismo TCG ID).
+    const { error: claimErr } = await admin.rpc("claim_tcg_placeholders" as any, {
+      p_player_id: player.id,
+    });
+    if (claimErr) console.error("claim_tcg_placeholders", claimErr);
     return { ok: true };
   });
 
