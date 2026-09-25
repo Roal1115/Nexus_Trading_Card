@@ -12,12 +12,22 @@ export function cn(...inputs: ClassValue[]) {
 // "javascript:alert(1)//https://x" style tricks can't sneak past a prefix test.
 export function safeHref(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
-  try {
-    const parsed = new URL(url.trim());
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : undefined;
-  } catch {
-    return undefined;
-  }
+  const trimmed = url.trim();
+  const tryParse = (v: string) => {
+    try {
+      const parsed = new URL(v);
+      return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const direct = tryParse(trimmed);
+  if (direct) return direct;
+  // Rows saved before httpUrlSchema's auto-https:// prepend existed (e.g.
+  // "www.mitienda.com") fail new URL() outright — same fallback the save
+  // path applies, so legacy rows keep working instead of losing their link.
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return tryParse(`https://${trimmed}`);
+  return undefined;
 }
 
 // "YYYY-MM-DD" usando los campos LOCALES de la fecha — nunca usar
