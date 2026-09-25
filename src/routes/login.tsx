@@ -37,7 +37,7 @@ function translateAuthError(msg: string): string {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { authResolved, session, role, loading } = useNexusRole();
+  const { authResolved, session, role, loading: roleLoading } = useNexusRole();
   const doLogin = useServerFn(loginWithIdentifier);
   const doResend = useServerFn(resendConfirmation);
   const doReset = useServerFn(sendPasswordReset);
@@ -53,14 +53,14 @@ function LoginPage() {
   // Ya hay sesión (llegó por bookmark/refresh a /login): sácalo a su panel
   // en vez de mostrarle el formulario de nuevo.
   useEffect(() => {
-    // Esperar también `!loading`: authResolved solo indica que ya sabemos
-    // si hay sesión, pero `role` se resuelve después con el fetch de
-    // `player` — redirigir antes de eso mandaba a admins/organizadores a
-    // /dashboard porque role todavía era null.
-    if (authResolved && session && !loading) {
+    // Esperar también `!roleLoading`: authResolved solo indica que ya
+    // sabemos si hay sesión, pero `role` se resuelve después con el fetch
+    // de `player` — redirigir antes de eso mandaba a admins/organizadores
+    // a /dashboard porque role todavía era null.
+    if (authResolved && session && !roleLoading) {
       navigate({ to: homeRouteForRole(role), replace: true });
     }
-  }, [authResolved, session, loading, role, navigate]);
+  }, [authResolved, session, roleLoading, role, navigate]);
 
   const startCooldown = () => {
     setCooldown(true);
