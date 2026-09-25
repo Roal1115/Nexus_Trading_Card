@@ -628,18 +628,32 @@ export const getPublicProfile = createServerFn({ method: "POST" })
       };
     }
 
+    const { data: activeSeason } = await admin
+      .from("seasons")
+      .select("slug")
+      .eq("is_active", true)
+      .maybeSingle();
+    const semKey = (activeSeason?.slug as string | undefined) ?? null;
+
     const [storeRes, snapshotsRes, resultsRes] = await Promise.all([
       t.home_store_id
         ? admin.from("stores").select("name, city").eq("id", t.home_store_id).maybeSingle()
         : Promise.resolve({ data: null as any }),
-      admin
-        .from("leaderboard_snapshots")
-        .select(
-          "game_id, timeframe_type, timeframe_value, total_points, rank_position, tournaments_played, tournaments_won",
-        )
-        .eq("player_id", t.id)
-        .eq("timeframe_type", "SEMESTRAL")
-        .order("total_points", { ascending: false }),
+      semKey
+        ? admin
+            .from("leaderboard_snapshots")
+            .select(
+              "game_id, timeframe_type, timeframe_value, total_points, rank_position, tournaments_played, tournaments_won",
+            )
+            .eq("player_id", t.id)
+            .eq("timeframe_type", "SEMESTRAL")
+            // Sin este filtro se traían snapshots de temporadas/tiendas
+            // pasadas y el dedup de abajo se quedaba con la de más puntos
+            // histórica en vez de la vigente — mostraba un rank/puntos
+            // fantasma que no coincidía con el leaderboard actual.
+            .eq("timeframe_value", semKey)
+            .order("total_points", { ascending: false })
+        : Promise.resolve({ data: [] as any[] }),
       admin
         .from("tournament_results")
         .select(
@@ -651,14 +665,74 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         .limit(100),
     ]);
 
-    const snapMap = new Map<string, any>();
-    for (const s of (snapshotsRes.data ?? []) as any[]) {
-      const ex = snapMap.get(s.game_id);
-      if (!ex || (s.total_points ?? 0) > (ex.total_points ?? 0)) {
-        snapMap.set(s.game_id, s);
-      }
+    // El leaderboard público suma los puntos de un jugador entre TODAS sus
+    // tiendas (cuando no hay filtro de tienda) y rankea contra todos los
+    // demás jugadores en ese agregado — ver shape() en
+    // nexus-leaderboard.functions.ts. Antes acá solo se tomaba el snapshot
+    // de la tienda con más puntos (rank_position local a esa tienda), así
+    // que un jugador que juega en 2+ tiendas veía un rank/puntos que no
+    // coincidía con el leaderboard (ej. #2 local con 80 pts en vez de #1
+    // global con 80+66.67=146.67 pts). Replicar el mismo agregado acá.
+    const gameIdsThisSeason = Array.from(
+      new Set(((snapshotsRes.data ?? []) as any[]).map((s: any) => s.game_id)),
+    );
+
+    let snaps: any[] = [];
+    if (semKey && gameIdsThisSeason.length > 0) {
+      const { data: allSnapsForGames } = await admin
+        .from("leaderboard_snapshots")
+        .select(
+          "player_id, game_id, total_points, omw_percentage, tournaments_played, tournaments_won",
+        )
+        .eq("timeframe_type", "SEMESTRAL")
+        .eq("timeframe_value", semKey)
+        .in("game_id", gameIdsThisSeason);
+
+      snaps = gameIdsThisSeason.map((game_id) => {
+        const rowsForGame = ((allSnapsForGames ?? []) as any[]).filter(
+          (r) => r.game_id === game_id,
+        );
+        const agg = new Map<
+          string,
+          { points: number; omw_sum: number; omw_count: number; played: number; won: number }
+        >();
+        for (const r of rowsForGame) {
+          let a = agg.get(r.player_id);
+          if (!a) {
+            a = { points: 0, omw_sum: 0, omw_count: 0, played: 0, won: 0 };
+            agg.set(r.player_id, a);
+          }
+          a.points += r.total_points ?? 0;
+          a.played += r.tournaments_played ?? 0;
+          a.won += r.tournaments_won ?? 0;
+          if (r.omw_percentage != null) {
+            a.omw_sum += Number(r.omw_percentage);
+            a.omw_count += 1;
+          }
+        }
+        const ranked = Array.from(agg.entries())
+          .map(([player_id, a]) => ({
+            player_id,
+            total_points: a.points,
+            omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
+            tournaments_played: a.played,
+            tournaments_won: a.won,
+          }))
+          // Mismo tiebreak que el leaderboard público — ver shape() en
+          // nexus-leaderboard.functions.ts.
+          .sort((a, b) => b.total_points - a.total_points || b.omw_percentage - a.omw_percentage);
+        const idx = ranked.findIndex((r) => r.player_id === t.id);
+        const mine =
+          idx >= 0 ? ranked[idx] : { total_points: 0, tournaments_played: 0, tournaments_won: 0 };
+        return {
+          game_id,
+          total_points: mine.total_points,
+          rank_position: idx >= 0 ? idx + 1 : 0,
+          tournaments_played: mine.tournaments_played,
+          tournaments_won: mine.tournaments_won,
+        };
+      });
     }
-    const snaps = Array.from(snapMap.values());
 
     const results = (resultsRes.data ?? []) as any[];
 
