@@ -1,0 +1,48 @@
+- generic [ref=f14e2]:
+  - generic [ref=f14e5]:
+    - complementary [ref=f14e6]:
+      - button "Cerrar menú" [ref=f14e7]
+      - link "Nexus Panel" [ref=f14e11] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f14e19]:
+          - generic [ref=f14e20]: Nexus
+          - generic [ref=f14e21]: Panel
+      - navigation [ref=f14e22]:
+        - generic [ref=f14e23]:
+          - generic [ref=f14e24]: Administración
+          - generic [ref=f14e25]:
+            - link "Torneos" [ref=f14e26] [cursor=pointer]:
+              - /url: /admin/tournaments-panel
+            - link "Historial de Torneos" [ref=f14e32] [cursor=pointer]:
+              - /url: /admin/history
+            - link "Tiendas y Staff" [ref=f14e39] [cursor=pointer]:
+              - /url: /admin/stores
+            - link "Usuarios" [ref=f14e46] [cursor=pointer]:
+              - /url: /admin/players
+            - link "Temporadas" [ref=f14e54] [cursor=pointer]:
+              - /url: /admin/seasons
+            - link "Activity Center" [ref=f14e59] [cursor=pointer]:
+              - /url: /admin/activity
+        - generic [ref=f14e64]:
+          - generic [ref=f14e65]: Circuito
+          - generic [ref=f14e66]:
+            - link "Publicar Manualmente" [ref=f14e67] [cursor=pointer]:
+              - /url: /admin/publish
+            - link "Calendario Nacional" [ref=f14e73] [cursor=pointer]:
+              - /url: /admin/calendar
+            - link "Subir Torneo" [ref=f14e78] [cursor=pointer]:
+              - /url: /admin/upload
+        - generic [ref=f14e84]:
+          - generic [ref=f14e85]: Publicidad
+          - link "Sponsors & Ads" [ref=f14e87] [cursor=pointer]:
+            - /url: /admin/ads
+      - generic [ref=f14e93]:
+        - generic [ref=f14e94]:
+          - generic [ref=f14e95]: Sesión
+          - generic [ref=f14e96]: Admin
+        - button "Cerrar sesión" [ref=f14e97]
+    - main [ref=f14e103]:
+      - generic [ref=f14e104]:
+        - button "Abrir menú" [ref=f14e105]
+        - generic [ref=f14e107]: Panel Admin
+  - region "Notifications alt+T"

@@ -18,12 +18,18 @@ import {
 } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
-import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
+import {
+  SkeletonLine,
+  SkeletonBlock,
+  TournamentRowSkeleton,
+} from "@/components/ui/skeleton-loader";
 import {
   getTournamentDetail,
   approveTournamentForReview,
   rejectTournamentWithReason,
   undoApproveTournament,
+  getLeaguesForTournamentEdit,
+  updateTournamentLeague,
 } from "@/lib/nexus-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +43,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Shield } from "lucide-react";
 
 export const Route = createFileRoute("/admin/tournaments/$id")({
   component: TournamentDetailPage,
@@ -73,11 +87,19 @@ function statusBadge(status: string | null) {
   const map: Record<string, { label: string; cls: string }> = {
     DRAFT: { label: "Borrador", cls: "bg-gray-500/20 text-gray-200 border-gray-400/30" },
     APPROVED: { label: "Aprobado", cls: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40" },
-    PUBLISHED: { label: "Publicado", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40" },
+    PUBLISHED: {
+      label: "Publicado",
+      cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
+    },
   };
-  const v = map[status ?? ""] ?? { label: status ?? "—", cls: "bg-white/10 text-white border-white/20" };
+  const v = map[status ?? ""] ?? {
+    label: status ?? "—",
+    cls: "bg-white/10 text-white border-white/20",
+  };
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${v.cls}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${v.cls}`}
+    >
       {v.label}
     </span>
   );
@@ -105,6 +127,8 @@ function TournamentDetailPage() {
   const approveFn = useServerFn(approveTournamentForReview);
   const rejectFn = useServerFn(rejectTournamentWithReason);
   const undoFn = useServerFn(undoApproveTournament);
+  const fetchLeagues = useServerFn(getLeaguesForTournamentEdit);
+  const updateLeagueFn = useServerFn(updateTournamentLeague);
 
   const [data, setData] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,11 +137,20 @@ function TournamentDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [acting, setActing] = useState(false);
 
+  const [leagueOptions, setLeagueOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [leagueDraft, setLeagueDraft] = useState<string>("none");
+  const [savingLeague, setSavingLeague] = useState(false);
+
   const refresh = async () => {
     setLoading(true);
     try {
       const res = await fetchDetail({ data: { tournament_id: id } });
       setData(res);
+      setLeagueDraft(res.tournament.league_id ?? "none");
+      const lg = await fetchLeagues({
+        data: { store_id: res.store.id, game_id: res.game.id },
+      }).catch(() => ({ leagues: [] }));
+      setLeagueOptions(lg.leagues);
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -130,10 +163,32 @@ function TournamentDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const onSaveLeague = async () => {
+    if (!data) return;
+    const nextLeagueId = leagueDraft === "none" ? null : leagueDraft;
+    if (nextLeagueId === (data.tournament.league_id ?? null)) return;
+    setSavingLeague(true);
+    try {
+      await updateLeagueFn({ data: { tournament_id: id, league_id: nextLeagueId } });
+      toast.success("Liga del torneo actualizada");
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingLeague(false);
+    }
+  };
+
   const countdown = useCountdown(data?.tournament.undo_deadline ?? null);
 
-  const criticalCount = useMemo(() => (data?.alerts ?? []).filter((a) => a.level === "CRITICAL").length, [data]);
-  const newPlayersCount = useMemo(() => (data?.results ?? []).filter((r) => r.is_new_player).length, [data]);
+  const criticalCount = useMemo(
+    () => (data?.alerts ?? []).filter((a) => a.level === "CRITICAL").length,
+    [data],
+  );
+  const newPlayersCount = useMemo(
+    () => (data?.results ?? []).filter((r) => r.is_new_player).length,
+    [data],
+  );
 
   if (loading || !data) {
     return (
@@ -314,10 +369,53 @@ function TournamentDetailPage() {
         )}
         {isDraft && criticalCount > 0 ? (
           <label className="mt-4 flex items-start gap-2 rounded-xl bg-white/5 p-3 text-sm text-gray-200">
-            <Checkbox checked={acknowledged} onCheckedChange={(v) => setAcknowledged(!!v)} className="mt-0.5" />
+            <Checkbox
+              checked={acknowledged}
+              onCheckedChange={(v) => setAcknowledged(!!v)}
+              className="mt-0.5"
+            />
             <span>Revisé las alertas críticas y confirmo que este torneo es válido</span>
           </label>
         ) : null}
+      </section>
+
+      {/* Liga interna — editable en cualquier estado, incluyendo Publicado.
+          Cambiarla recalcula el leaderboard nacional si el torneo ya está
+          publicado (ver updateTournamentLeague). */}
+      <section className="glass rounded-2xl p-5">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+          <Shield size={16} className="text-primary" />
+          Liga interna
+        </h2>
+        <p className="mb-3 text-xs text-gray-400">
+          Circuito Nacional cuenta para el leaderboard global; una liga interna es propia de la
+          tienda.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={leagueDraft} onValueChange={setLeagueDraft}>
+            <SelectTrigger className="w-full sm:w-[280px]">
+              <SelectValue placeholder="Circuito Nacional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Circuito Nacional (sin liga)</SelectItem>
+              {leagueOptions.map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={onSaveLeague}
+            disabled={savingLeague || leagueDraft === (tournament.league_id ?? "none")}
+          >
+            {savingLeague ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+            Guardar liga
+          </Button>
+          <span className="text-xs text-gray-500">
+            Actual: {tournament.league_name ?? "Circuito Nacional"}
+          </span>
+        </div>
       </section>
 
       {/* Resultados */}
@@ -353,9 +451,13 @@ function TournamentDetailPage() {
                   <td className="px-4 py-3 font-semibold text-primary">{r.points_earned}</td>
                   <td className="px-4 py-3">
                     {r.is_new_player ? (
-                      <Badge className="bg-orange-500/20 text-orange-200 border-orange-400/40">Nuevo</Badge>
+                      <Badge className="bg-orange-500/20 text-orange-200 border-orange-400/40">
+                        Nuevo
+                      </Badge>
                     ) : (
-                      <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40">Registrado</Badge>
+                      <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40">
+                        Registrado
+                      </Badge>
                     )}
                   </td>
                 </tr>
@@ -382,7 +484,9 @@ function TournamentDetailPage() {
 
           {isApproved && !undoExpired ? (
             <>
-              <span className="text-xs text-yellow-300">Ventana de corrección: {countdown?.text}</span>
+              <span className="text-xs text-yellow-300">
+                Ventana de corrección: {countdown?.text}
+              </span>
               <Button variant="ghost" onClick={onUndo} disabled={acting}>
                 Deshacer aprobación
               </Button>
@@ -409,10 +513,14 @@ function TournamentDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rechazar torneo</DialogTitle>
-            <DialogDescription>El organizador será notificado con el motivo del rechazo.</DialogDescription>
+            <DialogDescription>
+              El organizador será notificado con el motivo del rechazo.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-300">Motivo del rechazo (mínimo 20 caracteres)</label>
+            <label className="text-xs font-medium text-gray-300">
+              Motivo del rechazo (mínimo 20 caracteres)
+            </label>
             <Textarea
               rows={4}
               value={rejectReason}
@@ -435,7 +543,17 @@ function TournamentDetailPage() {
   );
 }
 
-function SummaryCard({ icon, title, main, sub }: { icon: React.ReactNode; title: string; main: string; sub: string }) {
+function SummaryCard({
+  icon,
+  title,
+  main,
+  sub,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  main: string;
+  sub: string;
+}) {
   return (
     <div className="glass rounded-2xl p-4">
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">

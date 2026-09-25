@@ -1,13 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import {
-  Eye,
-  ArrowRight,
-  XCircle,
-  Upload,
-  FileX,
-} from "lucide-react";
+import { Eye, ArrowRight, XCircle, Upload, FileX } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
@@ -141,7 +135,9 @@ function TournamentsPanel() {
     if (v === "published" && !publishedLoaded) void refreshPublished();
   };
 
-  const selectedIds = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+  const selectedIds = Object.entries(selected)
+    .filter(([, v]) => v)
+    .map(([k]) => k);
 
   const onPublish = async () => {
     if (selectedIds.length === 0) return;
@@ -163,9 +159,7 @@ function TournamentsPanel() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Moderación
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Moderación</p>
         <h1 className="mt-2 text-3xl font-bold text-white">Torneos</h1>
         <p className="mt-1 text-sm text-gray-400">
           Revisa, aprueba, publica y administra el ciclo de vida de los torneos.
@@ -181,7 +175,8 @@ function TournamentsPanel() {
             Aprobados {approvedLoaded && approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="published">
-            Publicados {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
+            Publicados{" "}
+            {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
           </TabsTrigger>
         </TabsList>
 
@@ -348,9 +343,7 @@ function TournamentsPanel() {
                             <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                               <Checkbox
                                 checked={!!selected[r.id]}
-                                onCheckedChange={(v) =>
-                                  setSelected((s) => ({ ...s, [r.id]: !!v }))
-                                }
+                                onCheckedChange={(v) => setSelected((s) => ({ ...s, [r.id]: !!v }))}
                               />
                             </td>
                             <td className="px-4 py-3 text-white">{r.tournament_date}</td>
@@ -437,7 +430,10 @@ function TournamentsPanel() {
                     {publishedRows.map((r) => (
                       <tr
                         key={r.id}
-                        className="border-t border-white/5 transition hover:bg-white/5"
+                        onClick={() =>
+                          navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })
+                        }
+                        className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
                       >
                         <td className="px-4 py-3 text-white">{r.tournament_date}</td>
                         <td className="px-4 py-3 text-gray-300">
@@ -452,17 +448,29 @@ function TournamentsPanel() {
                             ? `${r.qualifying_year}-${String(r.qualifying_month).padStart(2, "0")}`
                             : "—"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <FileLink url={r.csv_url} />
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => setUnpublishTarget(r)}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-red-400/60 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
-                          >
-                            <FileX size={13} />
-                            Despublicar
-                          </button>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              onClick={() => setUnpublishTarget(r)}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-red-400/60 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                            >
+                              <FileX size={13} />
+                              Despublicar
+                            </button>
+                            <button
+                              onClick={() =>
+                                navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                            >
+                              <Eye size={13} />
+                              Revisar
+                              <ArrowRight size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

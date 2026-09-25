@@ -1,0 +1,23 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - link "Trading Card Nexus" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e15]: Trading Card
+            - generic [ref=e16]: Nexus
+          - link "Iniciar sesión" [ref=e18] [cursor=pointer]:
+            - /url: /login
+      - main [ref=e20]:
+        - generic [ref=e21]:
+          - heading "Debes iniciar sesión" [level=1] [ref=e22]
+          - paragraph [ref=e23]: Inicia sesión para ver y crear tus sesiones.
+          - link "Iniciar Sesión" [ref=e24] [cursor=pointer]:
+            - /url: /login
+    - region "Notifications alt+T"
+  - complementary "Made with Lovable" [ref=e25]:
+    - link "Made with Lovable" [ref=e26] [cursor=pointer]:
+      - /url: https://lovable.dev/projects/lovp_65gyv9v49f8608ae43j9akh28m?utm_source=lovable-badge&utm_campaign=badge-wording-enabled
+      - generic [ref=e27]: Made with
+    - button "Dismiss" [ref=e33] [cursor=pointer]

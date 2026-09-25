@@ -2,7 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { failDb } from "./nexus-admin.server";
 import { requireNexusAdmin } from "./nexus-auth.middleware";
-import { logAction, recomputeSnapshot, getActiveSeason, tfMonth, PAGE_SIZE, type TournamentStatus } from "./nexus-admin-shared";
+import {
+  logAction,
+  recomputeSnapshot,
+  getActiveSeason,
+  tfMonth,
+  PAGE_SIZE,
+  type TournamentStatus,
+} from "./nexus-admin-shared";
 import type { TablesUpdate } from "./database.types";
 
 type Alert = {
@@ -198,7 +205,9 @@ export const publishTournaments = createServerFn({ method: "POST" })
     const slices = new Set<string>();
     for (const t of publishable) {
       const monthKey = tfMonth(t.qualifying_month, t.qualifying_year);
-      slices.add(`${t.game_id}|${t.store_id}|MONTHLY|${monthKey}|y=${t.qualifying_year}|m=${t.qualifying_month}`);
+      slices.add(
+        `${t.game_id}|${t.store_id}|MONTHLY|${monthKey}|y=${t.qualifying_year}|m=${t.qualifying_month}`,
+      );
       slices.add(`${t.game_id}|${t.store_id}|SEMESTRAL|${season.slug}|season_id=${season.id}`);
     }
 
@@ -234,7 +243,10 @@ export const publishTournaments = createServerFn({ method: "POST" })
     // jugador ya esté al día.
     const publishableIds = publishable.map((t) => t.id);
     const { data: affectedResults } = publishableIds.length
-      ? await admin.from("tournament_results").select("player_id").in("tournament_id", publishableIds)
+      ? await admin
+          .from("tournament_results")
+          .select("player_id")
+          .in("tournament_id", publishableIds)
       : { data: [] as Array<{ player_id: string }> };
     const affectedPlayerIds = Array.from(
       new Set((affectedResults ?? []).map((r: any) => r.player_id)),
@@ -261,28 +273,39 @@ export const publishTournaments = createServerFn({ method: "POST" })
 // ---------- Stores ----------
 export const getTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin } = context;
 
     const { data: t, error: te } = await admin
       .from("tournaments")
       .select(
-        "id, store_id, game_id, status, tournament_date, qualifying_month, qualifying_semester, qualifying_year, approved_at, undo_deadline, published_at, created_at, rejection_reason",
+        "id, store_id, game_id, status, league_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, approved_at, undo_deadline, published_at, created_at, rejection_reason",
       )
       .eq("id", data.tournament_id)
       .maybeSingle();
     if (te) failDb(te);
     if (!t) throw new Error("Torneo no encontrado");
 
-    const [storeRes, gameRes, resultsRes] = await Promise.all([
+    const [storeRes, gameRes, leagueRes, resultsRes] = await Promise.all([
       admin.from("stores").select("id, name, city, state").eq("id", t.store_id).maybeSingle(),
       admin.from("games").select("id, name, slug").eq("id", t.game_id).maybeSingle(),
+      (t as any).league_id
+        ? admin
+            .from("store_leagues")
+            .select("id, name")
+            .eq("id", (t as any).league_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null as any }),
       (async () => {
         // Try with optional columns first; fall back if columns missing.
         const full = await admin
           .from("tournament_results")
-          .select("player_id, rank, wins, losses, draws, points_earned, match_points, omw_percentage")
+          .select(
+            "player_id, rank, wins, losses, draws, points_earned, match_points, omw_percentage",
+          )
           .eq("tournament_id", t.id)
           .order("rank", { ascending: true });
         if (full.error && /column .* does not exist/i.test(full.error.message)) {
@@ -301,7 +324,10 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
 
     const playerIds = Array.from(new Set((resultsRes.data ?? []).map((r: any) => r.player_id)));
     const playersRes = playerIds.length
-      ? await admin.from("players").select("id, geek_tag, email, created_at, home_store_id").in("id", playerIds)
+      ? await admin
+          .from("players")
+          .select("id, geek_tag, email, created_at, home_store_id")
+          .in("id", playerIds)
       : { data: [] as any[], error: null };
     if ((playersRes as any).error) throw new Error((playersRes as any).error.message);
 
@@ -332,7 +358,8 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       .eq("home_store_id", t.store_id)
       .in("role", ["organizer", "admin"])
       .limit(1);
-    const uploaded_by = orgs && orgs[0] ? { geek_tag: orgs[0].geek_tag, email: orgs[0].email } : null;
+    const uploaded_by =
+      orgs && orgs[0] ? { geek_tag: orgs[0].geek_tag, email: orgs[0].email } : null;
 
     // ---------- Alerts ----------
     const alerts: Alert[] = [];
@@ -428,6 +455,8 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       tournament: {
         id: t.id,
         status: t.status,
+        league_id: (t as any).league_id ?? null,
+        league_name: (leagueRes.data as any)?.name ?? null,
         tournament_date: t.tournament_date,
         qualifying_month: t.qualifying_month,
         qualifying_semester: t.qualifying_semester,
@@ -444,6 +473,125 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       results,
       alerts,
     };
+  });
+
+// Ligas activas de la misma tienda del torneo (incluye ligas legacy sin
+// game_id — mismo criterio que getActiveLeaguesForStore para organizadores,
+// pero acá bajo permiso de admin y sin bloquear a tcg_manager).
+export const getLeaguesForTournamentEdit = createServerFn({ method: "POST" })
+  .middleware([requireNexusAdmin])
+  .inputValidator((d: { store_id: string; game_id: string }) =>
+    z.object({ store_id: z.string().uuid(), game_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin } = context;
+    const { data: leagues, error } = await admin
+      .from("store_leagues")
+      .select("id, name")
+      .eq("store_id", data.store_id)
+      .or(`game_id.eq.${data.game_id},game_id.is.null`)
+      .eq("status", "active")
+      .order("name");
+    if (error) failDb(error);
+    return { leagues: leagues ?? [] };
+  });
+
+// Cambia a qué liga interna pertenece un torneo (o lo saca a Circuito
+// Nacional con league_id null). Funciona en cualquier estado, incluyendo
+// PUBLISHED — un torneo publicado que cambia de liga afecta si cuenta o no
+// para el leaderboard nacional (recomputeSnapshot solo suma torneos con
+// league_id null), así que hay que recalcular los snapshots afectados.
+export const updateTournamentLeague = createServerFn({ method: "POST" })
+  .middleware([requireNexusAdmin])
+  .inputValidator((d: { tournament_id: string; league_id: string | null }) =>
+    z
+      .object({
+        tournament_id: z.string().uuid(),
+        league_id: z.string().uuid().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t, error: te } = await admin
+      .from("tournaments")
+      .select(
+        "id, store_id, game_id, league_id, status, qualifying_year, qualifying_month, season_id, stores(name), games(name)",
+      )
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (te) failDb(te);
+    if (!t) throw new Error("Torneo no encontrado");
+
+    if (data.league_id) {
+      const { data: league, error: lge } = await admin
+        .from("store_leagues")
+        .select("id")
+        .eq("id", data.league_id)
+        .eq("store_id", (t as any).store_id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (lge) failDb(lge);
+      if (!league) throw new Error("La liga interna seleccionada ya no está disponible.");
+    }
+
+    const { error } = await admin
+      .from("tournaments")
+      .update({ league_id: data.league_id })
+      .eq("id", data.tournament_id);
+    if (error) failDb(error);
+
+    await admin.from("store_league_tournaments").delete().eq("tournament_id", data.tournament_id);
+    if (data.league_id) {
+      const { error: lte } = await admin
+        .from("store_league_tournaments")
+        .upsert(
+          { league_id: data.league_id, tournament_id: data.tournament_id },
+          { onConflict: "league_id,tournament_id" },
+        );
+      if (lte) failDb(lte);
+    }
+
+    // Solo hace falta recalcular el leaderboard nacional si el torneo ya
+    // está publicado — si sigue en DRAFT/APPROVED todavía no tiene snapshot.
+    if ((t as any).status === "PUBLISHED") {
+      const monthKey = tfMonth((t as any).qualifying_month, (t as any).qualifying_year);
+      await recomputeSnapshot(admin, (t as any).game_id, (t as any).store_id, "MONTHLY", monthKey, {
+        year: (t as any).qualifying_year,
+        month: (t as any).qualifying_month,
+      });
+      if ((t as any).season_id) {
+        const { data: season } = await admin
+          .from("seasons")
+          .select("slug")
+          .eq("id", (t as any).season_id)
+          .maybeSingle();
+        if ((season as any)?.slug) {
+          await recomputeSnapshot(
+            admin,
+            (t as any).game_id,
+            (t as any).store_id,
+            "SEMESTRAL",
+            (season as any).slug,
+            { season_id: (t as any).season_id },
+            (t as any).season_id,
+          );
+        }
+      }
+    }
+
+    const game = (t as any).games;
+    const store = (t as any).stores;
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_LEAGUE_CHANGED",
+      "tournament",
+      data.tournament_id,
+      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"}`,
+      { from_league_id: (t as any).league_id, to_league_id: data.league_id },
+    );
+    return { ok: true };
   });
 
 export const rejectTournamentWithReason = createServerFn({ method: "POST" })
@@ -493,7 +641,9 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
 
 export const approveTournamentForReview = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const now = new Date();
@@ -545,7 +695,9 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
 
 export const undoApproveTournament = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const { data: t, error: te } = await admin
@@ -600,7 +752,8 @@ export const getAdminTournamentHistory = createServerFn({ method: "POST" })
     const page = data.page ?? 1;
     const offset = (page - 1) * PAGE_SIZE;
 
-    const baseCols = "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
+    const baseCols =
+      "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
     const extraCols = ", rejection_reason, approved_by, season_id";
 
     const build = (cols: string) => {
@@ -628,7 +781,9 @@ export const getAdminTournamentHistory = createServerFn({ method: "POST" })
     const count = res.count;
     const gameIds = Array.from(new Set(rows.map((r) => r.game_id)));
     const storeIds = Array.from(new Set(rows.map((r) => r.store_id)));
-    const approverIds = Array.from(new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)));
+    const approverIds = Array.from(
+      new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)),
+    );
     const tournamentIds = rows.map((r) => r.id);
 
     const [gmsRes, storesRes, approversRes, resultsRes, allStatsRes] = await Promise.all([
@@ -642,7 +797,10 @@ export const getAdminTournamentHistory = createServerFn({ method: "POST" })
         ? admin.from("players").select("id, geek_tag, role").in("id", approverIds)
         : Promise.resolve({ data: [] as any[] }),
       tournamentIds.length
-        ? admin.from("tournament_results").select("tournament_id").in("tournament_id", tournamentIds)
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id")
+            .in("tournament_id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
       admin.from("tournaments").select("status"),
     ]);
@@ -686,8 +844,16 @@ export const getAdminFilterOptions = createServerFn({ method: "POST" })
     const { admin } = context;
     const [gamesRes, storesRes, seasonsRes] = await Promise.all([
       admin.from("games").select("id, name").eq("is_active", true).order("name"),
-      admin.from("stores").select("id, name, city").eq("is_active", true).order("city").order("name"),
-      admin.from("seasons").select("id, name, slug, status").order("start_date", { ascending: false }),
+      admin
+        .from("stores")
+        .select("id, name, city")
+        .eq("is_active", true)
+        .order("city")
+        .order("name"),
+      admin
+        .from("seasons")
+        .select("id, name, slug, status")
+        .order("start_date", { ascending: false }),
     ]);
     return {
       games: gamesRes.data ?? [],
@@ -775,14 +941,10 @@ export const unpublishTournament = createServerFn({ method: "POST" })
     if (error) failDb(error);
 
     const monthKey = tfMonth((t as any).qualifying_month, (t as any).qualifying_year);
-    await recomputeSnapshot(
-      admin,
-      (t as any).game_id,
-      (t as any).store_id,
-      "MONTHLY",
-      monthKey,
-      { year: (t as any).qualifying_year, month: (t as any).qualifying_month },
-    );
+    await recomputeSnapshot(admin, (t as any).game_id, (t as any).store_id, "MONTHLY", monthKey, {
+      year: (t as any).qualifying_year,
+      month: (t as any).qualifying_month,
+    });
     if ((t as any).season_id) {
       const { data: season } = await admin
         .from("seasons")

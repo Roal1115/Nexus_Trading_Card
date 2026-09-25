@@ -56,6 +56,7 @@ function StoreTournamentsPage() {
         .map((t) => [t.game_id, { id: t.game_id, name: t.game_name }]),
     ).values(),
   );
+  const hasAnyLeague = tournamentHistory.some((t) => t.league_name);
   const [historyGameFilter, setHistoryGameFilter] = useState<string | null>(null);
   const filteredHistory = historyGameFilter
     ? tournamentHistory.filter((t) => t.game_id === historyGameFilter)
@@ -428,8 +429,8 @@ function StoreTournamentsPage() {
                 <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="px-4 py-2 text-left">Fecha</th>
-                    {uniqueHistoryGames.length > 1 && <th className="px-4 py-2 text-left">TCG</th>}
-                    <th className="px-4 py-2 text-left">Liga</th>
+                    <th className="px-4 py-2 text-left">TCG</th>
+                    {hasAnyLeague && <th className="px-4 py-2 text-left">Liga</th>}
                     <th className="px-4 py-2 text-right">Jugadores</th>
                   </tr>
                 </thead>
@@ -447,18 +448,18 @@ function StoreTournamentsPage() {
                           year: "numeric",
                         })}
                       </td>
-                      {uniqueHistoryGames.length > 1 && (
-                        <td className="px-4 py-3 text-white">{t.game_name}</td>
+                      <td className="px-4 py-3 text-white">{t.game_name}</td>
+                      {hasAnyLeague && (
+                        <td className="px-4 py-3">
+                          {t.league_name ? (
+                            <span className="inline-block rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300">
+                              {t.league_name}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-600">—</span>
+                          )}
+                        </td>
                       )}
-                      <td className="px-4 py-3">
-                        {t.league_name ? (
-                          <span className="inline-block rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300">
-                            {t.league_name}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-600">—</span>
-                        )}
-                      </td>
                       <td className="px-4 py-3 text-right font-mono-stat text-xs text-gray-300">
                         {t.participants}
                       </td>
@@ -486,9 +487,7 @@ function StoreTournamentsPage() {
                         })}
                       </p>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                        {uniqueHistoryGames.length > 1 && (
-                          <span className="text-sm font-semibold text-white">{t.game_name}</span>
-                        )}
+                        <span className="text-sm font-semibold text-white">{t.game_name}</span>
                         {t.league_name && (
                           <span className="inline-block rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300">
                             {t.league_name}

@@ -28,7 +28,7 @@ import {
   searchStores,
   getMyTrackedTournaments,
 } from "@/lib/nexus-standalone.functions";
-import { getMyStatsGames } from "@/lib/nexus-player.functions";
+import { getMySessionGames } from "@/lib/nexus-player.functions";
 import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
@@ -762,7 +762,7 @@ function CreateSessionSheet({
   onClose: () => void;
   onCreated: (sessionId: string) => void;
 }) {
-  const fetchGames = useServerFn(getMyStatsGames);
+  const fetchGames = useServerFn(getMySessionGames);
   const searchStoresFn = useServerFn(searchStores);
   const createSession = useServerFn(createStandaloneSession);
 
@@ -1009,7 +1009,7 @@ function CreateSessionSheet({
                         <div className="mt-1.5 text-xs text-gray-500">Cargando…</div>
                       ) : games.length === 0 ? (
                         <div className="mt-1.5 text-xs text-gray-500">
-                          Aún no juegas ningún TCG registrado. Participa en un torneo primero.
+                          No hay TCGs disponibles.
                         </div>
                       ) : (
                         <div className="mt-1.5 flex flex-wrap gap-2">

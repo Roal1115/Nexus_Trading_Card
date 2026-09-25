@@ -1347,6 +1347,26 @@ export const getMyStatsGames = createServerFn({ method: "POST" })
     return { games: games ?? [] };
   });
 
+// TCGs que el jugador puede elegir al crear una sesión: los que registró
+// (player_games / player_tcg_ids), no solo en los que ya tiene rondas.
+export const getMySessionGames = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+
+    const [{ data: pg }, { data: tcg }] = await Promise.all([
+      admin.from("player_games").select("game_id").eq("player_id", player.id),
+      admin.from("player_tcg_ids").select("game_id").eq("player_id", player.id),
+    ]);
+    const gameIds = Array.from(new Set([...(pg ?? []), ...(tcg ?? [])].map((r: any) => r.game_id)));
+
+    let q = admin.from("games").select("id, name, slug").order("name");
+    if (gameIds.length > 0) q = q.in("id", gameIds);
+    const { data: games } = await q;
+
+    return { games: games ?? [] };
+  });
+
 export const getMyCasualStats = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
   .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))
