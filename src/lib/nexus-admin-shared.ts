@@ -207,8 +207,12 @@ export async function recomputeSnapshot(
   }
 
   const ranked = Array.from(agg.entries())
-    .map(([player_id, a]) => ({ player_id, ...a }))
-    .sort((a, b) => b.total_points - a.total_points);
+    .map(([player_id, a]) => ({
+      player_id,
+      ...a,
+      omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
+    }))
+    .sort((a, b) => b.total_points - a.total_points || b.omw_percentage - a.omw_percentage);
 
   const rows = ranked.map((r, i) => ({
     player_id: r.player_id,
@@ -220,7 +224,7 @@ export async function recomputeSnapshot(
     total_points: r.total_points,
     tournaments_played: r.played,
     tournaments_won: r.won,
-    omw_percentage: r.omw_count > 0 ? Math.round((r.omw_sum / r.omw_count) * 100) / 100 : 0,
+    omw_percentage: r.omw_percentage,
     rank_position: i + 1,
     last_updated_at: new Date().toISOString(),
   }));
