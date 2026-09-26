@@ -30,7 +30,29 @@ import {
   undoApproveTournament,
   getLeaguesForTournamentEdit,
   updateTournamentLeague,
+  publishTournaments,
+  recomputeTournamentRankings,
+  fetchActiveSeason,
 } from "@/lib/nexus-admin.functions";
+import {
+  deriveState,
+  INELIGIBLE_LABELS,
+  nextScheduledRun,
+  publicationEligibility,
+  scheduledPublicationDate,
+  STATE_PRESENTATION,
+  type StateTone,
+} from "@/lib/tournament-state";
+
+// La publicación automática del domingo solo se anuncia cuando está activa.
+const SCHEDULED_PUBLISHING_ACTIVE = import.meta.env.VITE_SCHEDULED_PUBLISHING === "true";
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  tcg_manager: "TCG Manager",
+  organizer: "Organizador",
+  player: "Jugador",
+};
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -83,19 +105,17 @@ function formatDateTime(iso: string) {
   return `${dt.getDate()} ${MESES[dt.getMonth()]} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
 }
 
-function statusBadge(status: string | null) {
-  const map: Record<string, { label: string; cls: string }> = {
-    DRAFT: { label: "Borrador", cls: "bg-gray-500/20 text-gray-200 border-gray-400/30" },
-    APPROVED: { label: "Aprobado", cls: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40" },
-    PUBLISHED: {
-      label: "Publicado",
-      cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
-    },
-  };
-  const v = map[status ?? ""] ?? {
-    label: status ?? "—",
-    cls: "bg-white/10 text-white border-white/20",
-  };
+const TONE_CLASSES: Record<StateTone, string> = {
+  warning: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40",
+  danger: "bg-red-500/20 text-red-200 border-red-400/40",
+  info: "bg-sky-500/20 text-sky-200 border-sky-400/40",
+  success: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
+  neutral: "bg-white/10 text-gray-200 border-white/20",
+};
+
+function statusBadge(status: string | null, rejectionReason: string | null) {
+  const p = STATE_PRESENTATION[deriveState({ status: status ?? "", rejection_reason: rejectionReason })];
+  const v = { label: p.label, cls: TONE_CLASSES[p.tone] };
   return (
     <span
       className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${v.cls}`}
@@ -136,6 +156,23 @@ function TournamentDetailPage() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [acting, setActing] = useState(false);
+  const publishFn = useServerFn(publishTournaments);
+  const recomputeFn = useServerFn(recomputeTournamentRankings);
+  const fetchSeason = useServerFn(fetchActiveSeason);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideJustification, setOverrideJustification] = useState("");
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [activeSeason, setActiveSeason] = useState<{
+    name: string;
+    start_date: string;
+    end_date: string;
+  } | null>(null);
+  useEffect(() => {
+    fetchSeason()
+      .then((s) => setActiveSeason(s))
+      .catch(() => setActiveSeason(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [leagueOptions, setLeagueOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [leagueDraft, setLeagueDraft] = useState<string>("none");
@@ -225,6 +262,42 @@ function TournamentDetailPage() {
   const undoExpired = countdown?.expired ?? true;
 
   const canApprove = isDraft && (criticalCount === 0 || acknowledged);
+  const isRejected = isDraft && !!tournament.rejection_reason;
+
+  const stateRow = {
+    status: tournament.status ?? "",
+    rejection_reason: tournament.rejection_reason,
+    undo_deadline: tournament.undo_deadline,
+    tournament_date: tournament.tournament_date,
+  };
+  const seasonRange = activeSeason
+    ? { start_date: activeSeason.start_date, end_date: activeSeason.end_date }
+    : null;
+  const now = new Date();
+  const manualEligibility = publicationEligibility(stateRow, {
+    season: seasonRange,
+    resultCount: results.length,
+    at: now,
+    mode: "manual",
+  });
+  const autoDate = scheduledPublicationDate(stateRow, {
+    season: seasonRange,
+    resultCount: results.length,
+    now,
+  });
+  const blockers = publicationEligibility(stateRow, {
+    season: seasonRange,
+    resultCount: results.length,
+    at: nextScheduledRun(now),
+    mode: "scheduled",
+  }).reasons.filter((r) => r !== "correction_window" && r !== "future_date");
+  const scheduledLabel = !SCHEDULED_PUBLISHING_ACTIVE
+    ? "Pendiente de publicación (la publicación automática aún no está activa)"
+    : autoDate
+      ? `Se publicará automáticamente el domingo ${formatDate(
+          new Date(autoDate.getTime() - 6 * 3600 * 1000).toISOString().slice(0, 10),
+        )} a las 00:00`
+      : `No se publicará automáticamente: ${blockers.map((r) => INELIGIBLE_LABELS[r]).join(", ") || "revisa el torneo"}`;
 
   const onApprove = async () => {
     setActing(true);
@@ -245,6 +318,57 @@ function TournamentDetailPage() {
       await undoFn({ data: { tournament_id: id } });
       toast.success("Aprobación deshecha");
       await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const onOverride = async () => {
+    setActing(true);
+    try {
+      await approveFn({
+        data: { tournament_id: id, override: true, justification: overrideJustification.trim() },
+      });
+      toast.success("Torneo aprobado. La anulación del rechazo quedó registrada.");
+      setOverrideOpen(false);
+      setOverrideJustification("");
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const onPublishNow = async () => {
+    setActing(true);
+    try {
+      const res = await publishFn({ data: { tournament_ids: [id] } });
+      if (res.recompute_failures.length || res.achievement_failures.length) {
+        toast.warning("Publicado, pero falló el recálculo del ranking. Usa «Recalcular ranking».");
+      } else {
+        toast.success("Torneo publicado y ranking actualizado");
+      }
+      setPublishOpen(false);
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const onRecompute = async () => {
+    setActing(true);
+    try {
+      const res = await recomputeFn({ data: { tournament_id: id } });
+      if (res.recompute_failures.length || res.achievement_failures.length) {
+        toast.error("El recálculo volvió a fallar. Revisa el Registro de actividad.");
+      } else {
+        toast.success("Ranking recalculado");
+      }
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -286,7 +410,7 @@ function TournamentDetailPage() {
               <ArrowLeft size={14} className="mr-1" /> Regresar
             </Link>
           </Button>
-          {statusBadge(tournament.status)}
+          {statusBadge(tournament.status, tournament.rejection_reason)}
         </div>
       </header>
 
@@ -308,8 +432,8 @@ function TournamentDetailPage() {
         <SummaryCard
           icon={<User size={16} />}
           title="Subido por"
-          main={uploaded_by?.geek_tag ?? "—"}
-          sub={uploaded_by?.email ?? ""}
+          main={uploaded_by?.geek_tag ?? "No registrado"}
+          sub={uploaded_by ? (ROLE_LABELS[uploaded_by.role] ?? uploaded_by.role) : ""}
         />
         <SummaryCard
           icon={<Upload size={16} />}
@@ -467,10 +591,19 @@ function TournamentDetailPage() {
         </div>
       </section>
 
-      {/* Acciones — sticky en móvil */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-background/95 p-4 backdrop-blur sm:relative sm:inset-auto sm:border-0 sm:bg-transparent sm:p-0">
-        <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          {isDraft ? (
+      {/* Acciones — en móvil queda por encima de la barra de navegación inferior */}
+      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-white/10 bg-background/95 p-4 backdrop-blur sm:relative sm:inset-auto sm:bottom-auto sm:z-auto sm:border-0 sm:bg-transparent sm:p-0">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          {isRejected ? (
+            <>
+              <span className="text-xs text-red-300">
+                Rechazado: {tournament.rejection_reason}
+              </span>
+              <Button onClick={() => setOverrideOpen(true)} disabled={acting}>
+                Aprobar de todos modos
+              </Button>
+            </>
+          ) : isDraft ? (
             <>
               <Button variant="ghost" onClick={() => setRejectOpen(true)} disabled={acting}>
                 Rechazar
@@ -482,31 +615,105 @@ function TournamentDetailPage() {
             </>
           ) : null}
 
-          {isApproved && !undoExpired ? (
+          {isApproved ? (
             <>
-              <span className="text-xs text-yellow-300">
-                Ventana de corrección: {countdown?.text}
-              </span>
-              <Button variant="ghost" onClick={onUndo} disabled={acting}>
-                Deshacer aprobación
+              {!undoExpired ? (
+                <span className="text-xs text-yellow-300">Ventana de corrección: {countdown?.text}</span>
+              ) : null}
+              <span className="text-xs text-gray-300">{scheduledLabel}</span>
+              {!undoExpired ? (
+                <Button variant="ghost" onClick={onUndo} disabled={acting}>
+                  Deshacer aprobación
+                </Button>
+              ) : null}
+              <Button
+                onClick={() => setPublishOpen(true)}
+                disabled={acting || !manualEligibility.eligible}
+                title={
+                  manualEligibility.eligible
+                    ? undefined
+                    : manualEligibility.reasons.map((r) => INELIGIBLE_LABELS[r]).join(", ")
+                }
+              >
+                Publicar ahora
               </Button>
-              <Button disabled>Aprobar torneo ✓</Button>
             </>
           ) : null}
 
-          {isApproved && undoExpired ? (
-            <span className="text-xs text-gray-400">
-              Este torneo está listo para publicarse el próximo domingo a las 8:00 PM
-            </span>
+          {isPublished ? (
+            <>
+              <span className="text-xs text-emerald-300">
+                Publicado el {tournament.published_at ? formatDateTime(tournament.published_at) : "—"}
+              </span>
+              <Button variant="ghost" onClick={onRecompute} disabled={acting}>
+                Recalcular ranking
+              </Button>
+            </>
           ) : null}
 
-          {isPublished ? (
-            <span className="text-xs text-emerald-300">
-              Publicado el {tournament.published_at ? formatDateTime(tournament.published_at) : "—"}
+          {tournament.status === "UNPUBLISHED" ? (
+            <span className="text-xs text-gray-400">
+              Despublicado{tournament.unpublish_reason ? `: ${tournament.unpublish_reason}` : ""}
             </span>
           ) : null}
         </div>
       </div>
+
+      {/* Aprobar de todos modos: autoridad final del admin sobre un rechazo */}
+      <Dialog open={overrideOpen} onOpenChange={setOverrideOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprobar de todos modos</DialogTitle>
+            <DialogDescription>
+              Este torneo fue rechazado: «{tournament.rejection_reason}». Aprobarlo anula el rechazo y
+              queda registrado en el historial con tu justificación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="override-justification" className="text-xs font-medium text-gray-300">
+              Justificación (mínimo 10 caracteres)
+            </label>
+            <Textarea
+              id="override-justification"
+              rows={4}
+              value={overrideJustification}
+              onChange={(e) => setOverrideJustification(e.target.value)}
+              placeholder="Por qué se aprueba a pesar del rechazo…"
+            />
+            <p className="text-xs text-gray-500">{overrideJustification.trim().length}/10</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOverrideOpen(false)} disabled={acting}>
+              Cancelar
+            </Button>
+            <Button onClick={onOverride} disabled={acting || overrideJustification.trim().length < 10}>
+              Aprobar de todos modos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmación de "Publicar ahora" */}
+      <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Publicar ahora</DialogTitle>
+            <DialogDescription>
+              El torneo contará para el ranking de la temporada {activeSeason?.name ?? "activa"} y se
+              recalculará el leaderboard. {!undoExpired ? "Ya no se podrá deshacer la aprobación." : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPublishOpen(false)} disabled={acting}>
+              Cancelar
+            </Button>
+            <Button onClick={onPublishNow} disabled={acting}>
+              {acting ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+              Publicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal rechazo */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>

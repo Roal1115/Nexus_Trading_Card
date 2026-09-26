@@ -56,7 +56,7 @@ export type Database = {
       admin_audit_log: {
         Row: {
           action: string
-          actor_id: string
+          actor_id: string | null
           actor_role: string
           actor_tag: string
           created_at: string
@@ -68,7 +68,7 @@ export type Database = {
         }
         Insert: {
           action: string
-          actor_id: string
+          actor_id?: string | null
           actor_role: string
           actor_tag?: string
           created_at?: string
@@ -80,7 +80,7 @@ export type Database = {
         }
         Update: {
           action?: string
-          actor_id?: string
+          actor_id?: string | null
           actor_role?: string
           actor_tag?: string
           created_at?: string
@@ -2135,6 +2135,7 @@ export type Database = {
           unpublish_reason: string | null
           unpublished_at: string | null
           unpublished_by: string | null
+          uploaded_by: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -2158,6 +2159,7 @@ export type Database = {
           unpublish_reason?: string | null
           unpublished_at?: string | null
           unpublished_by?: string | null
+          uploaded_by?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -2181,6 +2183,7 @@ export type Database = {
           unpublish_reason?: string | null
           unpublished_at?: string | null
           unpublished_by?: string | null
+          uploaded_by?: string | null
         }
         Relationships: [
           {

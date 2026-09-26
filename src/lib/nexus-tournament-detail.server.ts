@@ -150,7 +150,7 @@ export async function loadTournamentDetail(
   }
 
   const newCount = results.filter((r) => r.is_new_player).length;
-  if (newCount > 0) {
+  if (newCount > 0 && (t as any).status === "DRAFT") {
     alerts.push({
       level: "WARNING",
       message: `${newCount} jugadores nuevos serán registrados automáticamente al aprobar`,

@@ -6,6 +6,7 @@ import { loadTournamentDetail } from "./nexus-tournament-detail.server";
 import { logAction, recomputeSnapshot, tfMonth, type TournamentStatus } from "./nexus-admin.functions";
 import { mondayOfWeek, toLocalDateStr } from "./utils";
 import { getManagerGameIds, assertManagerOwnsGame } from "./nexus-manager-shared";
+import { approvalError } from "./tournament-state";
 
 
 export const getManagerGames = createServerFn({ method: "POST" })
@@ -93,12 +94,13 @@ export const managerApproveTournament = createServerFn({ method: "POST" })
     const { admin, player } = context;
     const { data: tournament } = await admin
       .from("tournaments")
-      .select("game_id, status")
+      .select("game_id, status, rejection_reason")
       .eq("id", data.tournament_id)
       .single();
     if (!tournament) throw new Error("Torneo no encontrado");
-    if (tournament.status !== "DRAFT")
-      throw new Error("Solo se pueden aprobar torneos en estado DRAFT");
+    // Un TCG Manager no puede anular un rechazo: eso es "Aprobar de todos modos" (solo admin).
+    const blocked = approvalError(tournament, "tcg_manager");
+    if (blocked) throw new Error(blocked);
     await assertManagerOwnsGame(admin, player, tournament.game_id);
 
     const now = new Date();

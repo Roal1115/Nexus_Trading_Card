@@ -365,6 +365,17 @@ alter table "public"."players" alter column "email" set data type character vary
 
 alter table "public"."players" alter column "geek_tag" set data type character varying using "geek_tag"::character varying;
 
+-- Reordenado respecto a la copia registrada en producción: estos cambios de
+-- tipo deben ir ANTES de agregar la columna generada "zone" (que lee city),
+-- o Postgres rechaza el ALTER. Mismo esquema final; producción no se re-ejecuta.
+alter table "public"."stores" alter column "city" set data type character varying using "city"::character varying;
+
+alter table "public"."stores" alter column "name" set data type character varying using "name"::character varying;
+
+alter table "public"."stores" alter column "slug" set data type character varying using "slug"::character varying;
+
+alter table "public"."stores" alter column "state" set data type character varying using "state"::character varying;
+
 alter table "public"."stores" add column "address" text;
 
 alter table "public"."stores" add column "description" text;
@@ -394,14 +405,6 @@ CASE
     WHEN (((city)::text ~~* '%mexico%'::text) OR ((city)::text ~~* '%cdmx%'::text) OR ((city)::text ~~* '%ciudad de mexico%'::text) OR ((city)::text ~~* '%naucalpan%'::text) OR ((city)::text ~~* '%ecatepec%'::text)) THEN 'Zona Centro'::text
     ELSE 'Zona Extendida'::text
 END) stored;
-
-alter table "public"."stores" alter column "city" set data type character varying using "city"::character varying;
-
-alter table "public"."stores" alter column "name" set data type character varying using "name"::character varying;
-
-alter table "public"."stores" alter column "slug" set data type character varying using "slug"::character varying;
-
-alter table "public"."stores" alter column "state" set data type character varying using "state"::character varying;
 
 alter table "public"."tournament_results" add column "draws" smallint not null default 0;
 

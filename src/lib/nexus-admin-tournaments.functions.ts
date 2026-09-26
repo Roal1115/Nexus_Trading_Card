@@ -11,6 +11,12 @@ import {
   type TournamentStatus,
 } from "./nexus-admin-shared";
 import type { TablesUpdate } from "./database.types";
+import {
+  publishTournamentsCore,
+  recomputeTournamentRankingsCore,
+} from "./nexus-publication.server";
+import { approvalError, INELIGIBLE_LABELS, type Role } from "./tournament-state";
+import { tournamentAuditLabel } from "./nexus-admin-core";
 
 type Alert = {
   level: "CRITICAL" | "WARNING";
@@ -158,119 +164,41 @@ export const publishTournaments = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-
-    const season = await getActiveSeason(admin);
-    if (!season) {
-      throw new Error("No hay una temporada activa. Crea una temporada antes de publicar torneos.");
-    }
-    const seasonStart = season.start_date;
-    const seasonEnd = season.end_date;
-
-    const { data: tournaments, error: te } = await admin
-      .from("tournaments")
-      .select("id, store_id, game_id, tournament_date, qualifying_year, qualifying_month, status")
-      .in("id", data.tournament_ids);
-    if (te) failDb(te);
-
-    const approved = (tournaments ?? []).filter((t) => t.status === "APPROVED");
-    const publishable = approved.filter((t) => {
-      const d = t.tournament_date;
-      return d >= seasonStart && d <= seasonEnd;
+    // Todo o nada, como antes: si alguno no es publicable no se publica ninguno.
+    const preview = await publishTournamentsCore(admin, {
+      ids: data.tournament_ids,
+      actor: player,
+      trigger: "manual",
+      dryRun: true,
     });
-    const outOfSeason = approved.filter((t) => !publishable.includes(t));
-    if (outOfSeason.length > 0) {
-      throw new Error(
-        `${outOfSeason.length} torneo(s) tienen fecha fuera del rango de la temporada activa (${seasonStart} — ${seasonEnd}).`,
-      );
+    if (preview.skipped.length > 0) {
+      const detail = preview.skipped
+        .map((s) => s.reasons.map((r) => INELIGIBLE_LABELS[r]).join(", "))
+        .join("; ");
+      throw new Error(`${preview.skipped.length} torneo(s) no se pueden publicar: ${detail}.`);
     }
-    if (publishable.length === 0) {
-      return { published: 0 };
-    }
-
-    const nowIso = new Date().toISOString();
-    const { error: ue } = await admin
-      .from("tournaments")
-      .update({
-        status: "PUBLISHED",
-        published_at: nowIso,
-        approved_at: nowIso,
-        season_id: season.id,
-      })
-      .in(
-        "id",
-        publishable.map((t) => t.id),
-      );
-    if (ue) failDb(ue);
-
-    const slices = new Set<string>();
-    for (const t of publishable) {
-      const monthKey = tfMonth(t.qualifying_month, t.qualifying_year);
-      slices.add(
-        `${t.game_id}|${t.store_id}|MONTHLY|${monthKey}|y=${t.qualifying_year}|m=${t.qualifying_month}`,
-      );
-      slices.add(`${t.game_id}|${t.store_id}|SEMESTRAL|${season.slug}|season_id=${season.id}`);
-    }
-
-    for (const key of slices) {
-      const parts = key.split("|");
-      const game_id = parts[0];
-      const store_id = parts[1];
-      const type = parts[2] as "MONTHLY" | "SEMESTRAL";
-      const value = parts[3];
-      const filter: { year?: number; month?: number; season_id?: string } = {};
-      for (const p of parts.slice(4)) {
-        const [k, v] = p.split("=");
-        if (k === "y") filter.year = Number(v);
-        if (k === "m") filter.month = Number(v);
-        if (k === "season_id") filter.season_id = v;
-      }
-      await recomputeSnapshot(
-        admin,
-        game_id,
-        store_id,
-        type,
-        value,
-        filter,
-        type === "SEMESTRAL" ? season.id : undefined,
-      );
-    }
-
-    // Achievements: se recalculan aquí (evento "resultados se vuelven
-    // oficiales"), no en cada lectura del dashboard/perfil — antes
-    // getPlayerAchievements llamaba el RPC en cada fetch, caro en la
-    // página de más tráfico de la app. La función sigue siendo idempotente
-    // (ON CONFLICT DO NOTHING), así que llamarla aquí es seguro aunque un
-    // jugador ya esté al día.
-    const publishableIds = publishable.map((t) => t.id);
-    const { data: affectedResults } = publishableIds.length
-      ? await admin
-          .from("tournament_results")
-          .select("player_id")
-          .in("tournament_id", publishableIds)
-      : { data: [] as Array<{ player_id: string }> };
-    const affectedPlayerIds = Array.from(
-      new Set((affectedResults ?? []).map((r: any) => r.player_id)),
-    );
-    for (const pid of affectedPlayerIds) {
-      await admin.rpc("recompute_player_achievements" as any, { p_player_id: pid });
-    }
-
-    for (const t of publishable) {
-      await logAction(
-        admin,
-        player,
-        "TOURNAMENT_PUBLISHED",
-        "tournament",
-        t.id,
-        `${t.game_id} — ${t.store_id} — ${t.tournament_date}`,
-        { season_id: season.id },
-      );
-    }
-
-    return { published: publishable.length };
+    const result = await publishTournamentsCore(admin, {
+      ids: data.tournament_ids,
+      actor: player,
+      trigger: "manual",
+    });
+    return {
+      published: result.published.length,
+      recompute_failures: result.recompute_failures,
+      achievement_failures: result.achievement_failures,
+    };
   });
 
-// ---------- Stores ----------
+// Recuperación tras una publicación parcial (el recálculo de ranking falló).
+export const recomputeTournamentRankings = createServerFn({ method: "POST" })
+  .middleware([requireNexusAdmin])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    return recomputeTournamentRankingsCore(context.admin, data.tournament_id, context.player);
+  });
+
 export const getTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
   .inputValidator((d: { tournament_id: string }) =>
@@ -282,7 +210,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
     const { data: t, error: te } = await admin
       .from("tournaments")
       .select(
-        "id, store_id, game_id, status, league_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, approved_at, undo_deadline, published_at, created_at, rejection_reason",
+        "id, store_id, game_id, status, league_id, tournament_date, qualifying_month, qualifying_semester, qualifying_year, approved_at, undo_deadline, published_at, created_at, rejection_reason, csv_url, unpublish_reason, unpublished_at, uploaded_by",
       )
       .eq("id", data.tournament_id)
       .maybeSingle();
@@ -351,15 +279,13 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
       };
     });
 
-    // Uploaded_by: best-effort — organizer of the store.
-    const { data: orgs } = await admin
-      .from("players")
-      .select("geek_tag, email, role")
-      .eq("home_store_id", t.store_id)
-      .in("role", ["organizer", "admin"])
-      .limit(1);
-    const uploaded_by =
-      orgs && orgs[0] ? { geek_tag: orgs[0].geek_tag, email: orgs[0].email } : null;
+    // Quién subió el torneo (tournaments.uploaded_by). Null en torneos
+    // anteriores al registro de uploader que no se pudieron reconstruir.
+    const uploaderId = (t as any).uploaded_by as string | null;
+    const { data: uploader } = uploaderId
+      ? await admin.from("players").select("geek_tag, role").eq("id", uploaderId).maybeSingle()
+      : { data: null };
+    const uploaded_by = uploader ? { geek_tag: uploader.geek_tag, role: uploader.role } : null;
 
     // ---------- Alerts ----------
     const alerts: Alert[] = [];
@@ -411,7 +337,7 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
 
     // WARNING: number of new players.
     const newCount = results.filter((r) => r.is_new_player).length;
-    if (newCount > 0) {
+    if (newCount > 0 && (t as any).status === "DRAFT") {
       alerts.push({
         level: "WARNING",
         message: `${newCount} jugadores nuevos serán registrados automáticamente al aprobar`,
@@ -466,6 +392,9 @@ export const getTournamentDetail = createServerFn({ method: "POST" })
         published_at: t.published_at,
         created_at: t.created_at,
         rejection_reason: (t as any).rejection_reason ?? null,
+        csv_url: (t as any).csv_url ?? null,
+        unpublish_reason: (t as any).unpublish_reason ?? null,
+        unpublished_at: (t as any).unpublished_at ?? null,
       },
       store: storeRes.data ?? { id: t.store_id, name: "—", city: null, state: null },
       game: gameRes.data ?? { id: t.game_id, name: "—", slug: "" },
@@ -541,7 +470,16 @@ export const updateTournamentLeague = createServerFn({ method: "POST" })
       .eq("id", data.tournament_id);
     if (error) failDb(error);
 
-    await admin.from("store_league_tournaments").delete().eq("tournament_id", data.tournament_id);
+    // Solo se quita el vínculo de la liga anterior (league_id); un torneo
+    // nacional puede además contar para otras ligas vía store_league_tournaments.
+    const previousLeague = (t as any).league_id as string | null;
+    if (previousLeague && previousLeague !== data.league_id) {
+      await admin
+        .from("store_league_tournaments")
+        .delete()
+        .eq("tournament_id", data.tournament_id)
+        .eq("league_id", previousLeague);
+    }
     if (data.league_id) {
       const { error: lte } = await admin
         .from("store_league_tournaments")
@@ -641,14 +579,36 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
 
 export const approveTournamentForReview = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
-  .inputValidator((d: { tournament_id: string }) =>
-    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  .inputValidator((d: { tournament_id: string; override?: boolean; justification?: string }) =>
+    z
+      .object({
+        tournament_id: z.string().uuid(),
+        override: z.boolean().optional(),
+        justification: z.string().max(2000).optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
+    const { data: current, error: ce } = await admin
+      .from("tournaments")
+      .select("status, rejection_reason")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (ce) failDb(ce);
+    if (!current) throw new Error("Torneo no encontrado");
+    // "Aprobar de todos modos": autoridad final del admin sobre un rechazo.
+    const previousRejection = current.rejection_reason;
+    const justification = data.justification?.trim() ?? "";
+    const blocked = approvalError(current, player.role as Role, {
+      override: data.override,
+      justification,
+    });
+    if (blocked) throw new Error(blocked);
+
     const now = new Date();
     const deadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-    const { error } = await admin
+    const { data: updated, error } = await admin
       .from("tournaments")
       .update({
         status: "APPROVED",
@@ -657,38 +617,20 @@ export const approveTournamentForReview = createServerFn({ method: "POST" })
         rejection_reason: null,
         approved_by: player.id,
       })
-      .eq("id", data.tournament_id);
-    if (error) {
-      if (/column .*rejection_reason.* does not exist/i.test(error.message)) {
-        const retry = await admin
-          .from("tournaments")
-          .update({
-            status: "APPROVED",
-            approved_at: now.toISOString(),
-            undo_deadline: deadline.toISOString(),
-            approved_by: player.id,
-          })
-          .eq("id", data.tournament_id);
-        if (retry.error) failDb(retry.error);
-      } else {
-        failDb(error);
-      }
-    }
-    const { data: tAfter } = await admin
-      .from("tournaments")
-      .select("tournament_date, store_id, game_id, stores(name), games(name)")
       .eq("id", data.tournament_id)
-      .maybeSingle();
-    const game = (tAfter as any)?.games;
-    const store = (tAfter as any)?.stores;
+      .eq("status", "DRAFT")
+      .select("id");
+    if (error) failDb(error);
+    if (!updated?.length) throw new Error("El torneo cambió de estado; recarga la página.");
+
     await logAction(
       admin,
       player,
-      "TOURNAMENT_APPROVED",
+      previousRejection ? "TOURNAMENT_APPROVED_OVERRIDE" : "TOURNAMENT_APPROVED",
       "tournament",
       data.tournament_id,
-      `${game?.name ?? "TCG"} — ${store?.name ?? "Tienda"} — ${tAfter?.tournament_date ?? ""}`,
-      { store_id: tAfter?.store_id, game_id: tAfter?.game_id },
+      await tournamentAuditLabel(admin, data.tournament_id),
+      previousRejection ? { previous_rejection_reason: previousRejection, justification } : {},
     );
     return { ok: true };
   });
@@ -699,7 +641,7 @@ export const undoApproveTournament = createServerFn({ method: "POST" })
     z.object({ tournament_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { admin } = context;
+    const { admin, player } = context;
     const { data: t, error: te } = await admin
       .from("tournaments")
       .select("status, undo_deadline")
@@ -716,8 +658,18 @@ export const undoApproveTournament = createServerFn({ method: "POST" })
     const { error } = await admin
       .from("tournaments")
       .update({ status: "DRAFT", approved_at: null, undo_deadline: null })
-      .eq("id", data.tournament_id);
+      .eq("id", data.tournament_id)
+      .eq("status", "APPROVED");
     if (error) failDb(error);
+    await logAction(
+      admin,
+      player,
+      "APPROVAL_UNDONE",
+      "tournament",
+      data.tournament_id,
+      await tournamentAuditLabel(admin, data.tournament_id),
+      {},
+    );
     return { ok: true };
   });
 
@@ -900,8 +852,8 @@ export const unapproveAdminTournament = createServerFn({ method: "POST" })
       "TOURNAMENT_REJECTED",
       "tournament",
       data.tournament_id,
-      `${(t as any).game_id} — ${(t as any).store_id}`,
-      { reason: data.reason, unapproved_by_role: player.role },
+      await tournamentAuditLabel(admin, data.tournament_id),
+      { reason: data.reason, unapproved_by_role: player.role, from_status: "APPROVED" },
     );
     return { success: true };
   });
@@ -1012,7 +964,7 @@ export const republishTournament = createServerFn({ method: "POST" })
       "TOURNAMENT_APPROVED",
       "tournament",
       data.tournament_id,
-      data.tournament_id,
+      await tournamentAuditLabel(admin, data.tournament_id),
       { source: "republish" },
     );
     return { success: true };

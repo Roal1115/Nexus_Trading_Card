@@ -69,6 +69,7 @@ import { Route as SessionsTournamentTournamentIdRouteImport } from './routes/ses
 import { Route as PlayersPlayerTagAchievementsRouteImport } from './routes/players.$playerTag_.achievements'
 import { Route as OrganizerTournamentsIdRouteImport } from './routes/organizer.tournaments.$id'
 import { Route as OrganizerLeaguesLeagueIdRouteImport } from './routes/organizer.leagues_.$leagueId'
+import { Route as ApiCronPublishApprovedRouteImport } from './routes/api.cron.publish-approved'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 import { Route as PlayersPlayerTagSeasonSeasonIdRouteImport } from './routes/players.$playerTag_.season.$seasonId'
@@ -377,6 +378,11 @@ const OrganizerLeaguesLeagueIdRoute =
     path: '/leagues/$leagueId',
     getParentRoute: () => OrganizerRoute,
   } as any)
+const ApiCronPublishApprovedRoute = ApiCronPublishApprovedRouteImport.update({
+  id: '/api/cron/publish-approved',
+  path: '/api/cron/publish-approved',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTournamentsIdRoute = AdminTournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
@@ -450,6 +456,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
   '/players/$playerTag/achievements': typeof PlayersPlayerTagAchievementsRoute
@@ -509,6 +516,7 @@ export interface FileRoutesByTo {
   '/tcg-manager': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
   '/players/$playerTag/achievements': typeof PlayersPlayerTagAchievementsRoute
@@ -575,6 +583,7 @@ export interface FileRoutesById {
   '/tcg-manager/': typeof TcgManagerIndexRoute
   '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
+  '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues_/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
   '/organizer/tournaments/$id': typeof OrganizerTournamentsIdRoute
   '/players/$playerTag_/achievements': typeof PlayersPlayerTagAchievementsRoute
@@ -642,6 +651,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/api/cron/publish-approved'
     | '/organizer/leagues/$leagueId'
     | '/organizer/tournaments/$id'
     | '/players/$playerTag/achievements'
@@ -701,6 +711,7 @@ export interface FileRouteTypes {
     | '/tcg-manager'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/api/cron/publish-approved'
     | '/organizer/leagues/$leagueId'
     | '/organizer/tournaments/$id'
     | '/players/$playerTag/achievements'
@@ -766,6 +777,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/'
     | '/admin/players/$id'
     | '/admin/tournaments/$id'
+    | '/api/cron/publish-approved'
     | '/organizer/leagues_/$leagueId'
     | '/organizer/tournaments/$id'
     | '/players/$playerTag_/achievements'
@@ -796,6 +808,7 @@ export interface RootRouteChildren {
   DocsFeaturesRoute: typeof DocsFeaturesRoute
   PlayersPlayerTagRoute: typeof PlayersPlayerTagRoute
   TournamentsIdRoute: typeof TournamentsIdRoute
+  ApiCronPublishApprovedRoute: typeof ApiCronPublishApprovedRoute
   PlayersPlayerTagAchievementsRoute: typeof PlayersPlayerTagAchievementsRoute
   PlayersPlayerTagSeasonSeasonIdRoute: typeof PlayersPlayerTagSeasonSeasonIdRoute
 }
@@ -1222,6 +1235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerLeaguesLeagueIdRouteImport
       parentRoute: typeof OrganizerRoute
     }
+    '/api/cron/publish-approved': {
+      id: '/api/cron/publish-approved'
+      path: '/api/cron/publish-approved'
+      fullPath: '/api/cron/publish-approved'
+      preLoaderRoute: typeof ApiCronPublishApprovedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/tournaments/$id': {
       id: '/admin/tournaments/$id'
       path: '/tournaments/$id'
@@ -1426,6 +1446,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsFeaturesRoute: DocsFeaturesRoute,
   PlayersPlayerTagRoute: PlayersPlayerTagRoute,
   TournamentsIdRoute: TournamentsIdRoute,
+  ApiCronPublishApprovedRoute: ApiCronPublishApprovedRoute,
   PlayersPlayerTagAchievementsRoute: PlayersPlayerTagAchievementsRoute,
   PlayersPlayerTagSeasonSeasonIdRoute: PlayersPlayerTagSeasonSeasonIdRoute,
 }

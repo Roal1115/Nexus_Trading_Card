@@ -5,6 +5,7 @@ import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
+import { logAction, tournamentAuditLabel } from "./nexus-admin-core";
 
 
 function normalizeId(id: string): string {
@@ -227,7 +228,8 @@ export const createTournament = createServerFn({ method: "POST" })
         ...q,
         status: "DRAFT",
         csv_url: data.csv_url ?? null,
-      })
+        uploaded_by: player.id,
+      } as any)
       .select("id")
       .single();
     if (error) failDb(error);
@@ -368,6 +370,8 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       status: data.league_id ? "PUBLISHED" : "DRAFT",
       csv_url: data.csv_url ?? null,
       league_id: data.league_id,
+      // Quién lo subió realmente (independiente de la tienda/organizador).
+      uploaded_by: player.id,
       ...(data.league_id
         ? { approved_at: now, approved_by: player.id, published_at: now }
         : {}),
@@ -424,6 +428,13 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       insertErr = (await admin.from("tournament_results").insert(stripped)).error;
     }
     if (insertErr) await cleanup(insertErr.message);
+
+    await logAction(admin, player, "TOURNAMENT_UPLOADED", "tournament", tournamentId, await tournamentAuditLabel(admin, tournamentId), {
+      uploaded_by: player.id,
+      league_id: data.league_id,
+      published_directly: !!data.league_id,
+      results: baseRows.length,
+    });
 
     return {
       ok: true as const,

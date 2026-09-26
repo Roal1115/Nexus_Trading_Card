@@ -3,7 +3,11 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
-const NEXUS_URL = "https://tbtyxtigbsljyrwyelqr.supabase.co";
+// Producción por default; NEXUS_URL (o VITE_NEXUS_URL) apunta a un Branch.
+const NEXUS_URL =
+  process.env.NEXUS_URL ||
+  import.meta.env?.VITE_NEXUS_URL ||
+  "https://tbtyxtigbsljyrwyelqr.supabase.co";
 
 // Loggea el error real de Postgres/Supabase en el servidor y lanza un
 // mensaje genérico al cliente — los mensajes de PostgREST filtran nombres
@@ -14,8 +18,7 @@ export function failDb(error: { message?: string } | null | undefined): never {
 }
 
 export function getNexusAdmin() {
-  const key =
-    process.env.NEXUS_SERVICE_ROLE_KEY ?? process.env.GEEKARENA_SERVICE_ROLE_KEY;
+  const key = process.env.NEXUS_SERVICE_ROLE_KEY ?? process.env.GEEKARENA_SERVICE_ROLE_KEY;
   if (!key) {
     throw new Error(
       "NEXUS_SERVICE_ROLE_KEY / GEEKARENA_SERVICE_ROLE_KEY no está configurada en el server.",

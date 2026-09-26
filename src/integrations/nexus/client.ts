@@ -7,8 +7,12 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 
-export const NEXUS_URL = "https://tbtyxtigbsljyrwyelqr.supabase.co";
-export const NEXUS_PUBLISHABLE_KEY = "sb_publishable_Td7bOB5_MLT1Y5MHbO35qw_y-jeLHCw";
+// Producción por default; VITE_NEXUS_URL / VITE_NEXUS_PUBLISHABLE_KEY apuntan
+// la misma app a un Supabase Branch para pruebas sin tocar código.
+export const NEXUS_URL: string =
+  import.meta.env.VITE_NEXUS_URL || "https://tbtyxtigbsljyrwyelqr.supabase.co";
+export const NEXUS_PUBLISHABLE_KEY: string =
+  import.meta.env.VITE_NEXUS_PUBLISHABLE_KEY || "sb_publishable_Td7bOB5_MLT1Y5MHbO35qw_y-jeLHCw";
 
 const isBrowser = typeof window !== "undefined";
 
