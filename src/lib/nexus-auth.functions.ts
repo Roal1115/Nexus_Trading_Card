@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
+import { normalizeTcgId } from "./utils";
 
 export const signupPlayer = createServerFn({ method: "POST" })
   .inputValidator(
@@ -37,6 +38,36 @@ export const signupPlayer = createServerFn({ method: "POST" })
       if (!data.tcg_ids[gameId] || data.tcg_ids[gameId].trim().length === 0) {
         throw new Error("Falta el ID de jugador para uno de los juegos seleccionados");
       }
+    }
+
+    // Identidad = TCG ID. Validar antes de crear el usuario de auth:
+    // - un ID que ya tiene otra cuenta real no se puede registrar;
+    // - el placeholder con este geek_tag solo se adopta si sus IDs son los mismos.
+    const wanted = new Map(data.game_ids.map((g) => [g, normalizeTcgId(data.tcg_ids[g])]));
+    for (const [gameId, norm] of wanted) {
+      const { data: holder, error } = await admin
+        .from("player_tcg_ids")
+        .select("players!inner(auth_user_id)")
+        .eq("game_id", gameId)
+        .eq("tcg_user_id_normalized", norm)
+        .maybeSingle();
+      if (error) failDb(error);
+      if ((holder?.players as { auth_user_id: string | null } | undefined)?.auth_user_id) {
+        throw new Error("Uno de tus IDs de jugador ya está registrado en otra cuenta.");
+      }
+    }
+    const { data: tagOwner, error: tagErr } = await admin
+      .from("players")
+      .select("auth_user_id, player_tcg_ids(game_id, tcg_user_id_normalized)")
+      .eq("geek_tag", data.geek_tag)
+      .maybeSingle();
+    if (tagErr) failDb(tagErr);
+    if (
+      tagOwner &&
+      (tagOwner.auth_user_id ||
+        tagOwner.player_tcg_ids.some((t) => wanted.get(t.game_id) !== t.tcg_user_id_normalized))
+    ) {
+      throw new Error("Ese Geek Tag ya está en uso.");
     }
 
     // 1. Crear usuario de auth
@@ -129,21 +160,17 @@ export const signupPlayer = createServerFn({ method: "POST" })
     const tcgEntries = Object.entries(data.tcg_ids).filter(
       ([gameId, val]) => data.game_ids.includes(gameId) && val.trim().length > 0,
     );
-    if (tcgEntries.length > 0) {
-      const tcgRows = tcgEntries.map(([game_id, tcg_user_id]) => ({
-        player_id: playerId,
-        game_id,
-        tcg_user_id: tcg_user_id.trim(),
-      }));
-      const { error: tcgErr } = await admin
-        .from("player_tcg_ids")
-        .upsert(tcgRows, { onConflict: "player_id,game_id" });
-      if (tcgErr) failDb(tcgErr);
-      // Enlaza torneos subidos antes del registro bajo otro nombre (mismo TCG ID).
-      const { error: claimErr } = await admin.rpc("claim_tcg_placeholders" as any, {
+    // Guarda cada ID y enlaza torneos subidos antes bajo otro nombre (placeholder con el mismo ID).
+    for (const [game_id, tcg_user_id] of tcgEntries) {
+      const { error: tcgErr } = await admin.rpc("assign_tcg_id" as any, {
         p_player_id: playerId,
+        p_game_id: game_id,
+        p_tcg_user_id: tcg_user_id,
       });
-      if (claimErr) console.error("claim_tcg_placeholders", claimErr);
+      if (tcgErr?.message === "TCG_ID_TAKEN") {
+        throw new Error("Uno de tus IDs de jugador ya está registrado en otra cuenta.");
+      }
+      if (tcgErr) failDb(tcgErr);
     }
 
     return { ok: true as const, email: data.email };

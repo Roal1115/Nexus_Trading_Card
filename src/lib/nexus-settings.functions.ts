@@ -105,19 +105,15 @@ export const addMyTcgId = createServerFn({ method: "POST" })
         "Ya tienes un ID registrado para este TCG. No se puede modificar una vez dado de alta.",
       );
 
-    const normalized = data.tcg_user_id.replace(/^0+/, "") || data.tcg_user_id;
-    const { error } = await admin.from("player_tcg_ids").insert({
-      player_id: player.id,
-      game_id: data.game_id,
-      tcg_user_id: data.tcg_user_id,
-      tcg_user_id_normalized: normalized,
-    });
-    if (error) failDb(error);
-    // Enlaza torneos subidos antes bajo otro nombre (mismo TCG ID).
-    const { error: claimErr } = await admin.rpc("claim_tcg_placeholders" as any, {
+    // Guarda el ID y, si lo tenía un placeholder, le pasa sus torneos (atómico).
+    const { error } = await admin.rpc("assign_tcg_id" as any, {
       p_player_id: player.id,
+      p_game_id: data.game_id,
+      p_tcg_user_id: data.tcg_user_id,
     });
-    if (claimErr) console.error("claim_tcg_placeholders", claimErr);
+    if (error?.message === "TCG_ID_TAKEN")
+      throw new Error("Ese ID ya está registrado en otra cuenta.");
+    if (error) failDb(error);
     return { ok: true };
   });
 

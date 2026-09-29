@@ -52,3 +52,9 @@ export function mondayOfWeek(date: Date): Date {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+
+// Clave canónica de un Bandai/TCG ID: mismo criterio que el trigger normalize_tcg_id
+// (sin ceros a la izquierda, "000" → "0"), más trim.
+export function normalizeTcgId(id: string): string {
+  return id.trim().replace(/^0+/, "") || "0";
+}

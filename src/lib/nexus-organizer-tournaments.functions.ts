@@ -3,70 +3,10 @@ import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
+import { resolvePlayer, ONE_PIECE_SLUG } from "./player-identity.server";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
 import { logAction, tournamentAuditLabel } from "./nexus-admin-core";
-
-
-function normalizeId(id: string): string {
-  const stripped = id.replace(/^0+/, "");
-  return stripped === "" ? "0" : stripped;
-}
-
-async function resolvePlayer(
-  admin: ReturnType<typeof getNexusAdmin>,
-  nexusTag: string,
-  membershipId: string | null,
-  gameId: string,
-): Promise<{ id: string; isNew: boolean }> {
-  // 1. Try TCG ID (normalized) first
-  if (membershipId) {
-    const normalizedInput = normalizeId(membershipId);
-    const { data: byId } = await admin
-      .from("player_tcg_ids")
-      .select("player_id")
-      .eq("game_id", gameId)
-      .eq("tcg_user_id_normalized", normalizedInput)
-      .maybeSingle();
-    if (byId?.player_id) {
-      return { id: byId.player_id as string, isNew: false };
-    }
-  }
-
-  // 2. Fall back to geek_tag
-  const { data: byTag } = await admin.from("players").select("id").eq("geek_tag", nexusTag).maybeSingle();
-  if (byTag?.id) {
-    return { id: byTag.id as string, isNew: false };
-  }
-
-  // 3. Auto-create
-  const { data: newPlayer, error } = await admin
-    .from("players")
-    .insert({
-      geek_tag: nexusTag,
-      is_active: true,
-      role: "player",
-    })
-    .select("id")
-    .single();
-  if (error || !newPlayer) {
-    throw new Error(`No se pudo crear el jugador: ${nexusTag}`);
-  }
-
-  if (membershipId && newPlayer.id) {
-    await admin.from("player_tcg_ids").upsert(
-      {
-        player_id: newPlayer.id,
-        game_id: gameId,
-        tcg_user_id: membershipId,
-        tcg_user_id_normalized: normalizeId(membershipId),
-      },
-      { onConflict: "player_id,game_id", ignoreDuplicates: true },
-    );
-  }
-
-  return { id: newPlayer.id as string, isNew: true };
-}
 
 function computeQualifying(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -80,19 +20,21 @@ function computeQualifying(dateStr: string) {
 
 export const getMyTournaments = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
-  .inputValidator((d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
-    z
-      .object({
-        status: z.string().optional(),
-        game_id: z.string().optional(),
-        date_from: z.string().optional(),
-        date_to: z.string().optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
+      z
+        .object({
+          status: z.string().optional(),
+          game_id: z.string().optional(),
+          date_from: z.string().optional(),
+          date_to: z.string().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    if (!player.home_store_id) return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
+    if (!player.home_store_id)
+      return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
 
     const { data: store } = await admin
       .from("stores")
@@ -100,7 +42,8 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       .eq("id", player.home_store_id)
       .maybeSingle();
 
-    const baseCols = "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
+    const baseCols =
+      "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
     const extraCols = ", rejection_reason, approved_by";
 
     let rows: any[] | null = null;
@@ -109,7 +52,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       let q = admin
         .from("tournaments")
         .select(baseCols + extraCols)
-.eq("store_id", player.home_store_id as string)
+        .eq("store_id", player.home_store_id as string)
         .order("tournament_date", { ascending: false });
       if (data.status) q = q.eq("status", data.status as TournamentStatus);
       if (data.game_id) q = q.eq("game_id", data.game_id);
@@ -123,7 +66,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       let q = admin
         .from("tournaments")
         .select(baseCols)
-.eq("store_id", player.home_store_id as string)
+        .eq("store_id", player.home_store_id as string)
         .order("tournament_date", { ascending: false });
       if (data.status) q = q.eq("status", data.status as TournamentStatus);
       if (data.game_id) q = q.eq("game_id", data.game_id);
@@ -149,12 +92,17 @@ export const getMyTournaments = createServerFn({ method: "POST" })
         ? admin.from("players").select("id, geek_tag").in("id", approverIds)
         : Promise.resolve({ data: [] as any[] }),
       tournamentIds.length
-        ? admin.from("tournament_results").select("tournament_id").in("tournament_id", tournamentIds)
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id")
+            .in("tournament_id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
     const gamesMap = Object.fromEntries((gmsRes.data ?? []).map((g: any) => [g.id, g.name]));
-    const approversMap = Object.fromEntries((approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]));
+    const approversMap = Object.fromEntries(
+      (approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]),
+    );
     const participantMap = (resultsRes.data ?? []).reduce((acc: Record<string, number>, r: any) => {
       acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
       return acc;
@@ -180,7 +128,9 @@ export const getMyTournaments = createServerFn({ method: "POST" })
 
 export const deleteDraftTournament = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
-  .inputValidator((d: { tournament_id: string }) => z.object({ tournament_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     const { data: t, error: te } = await admin
@@ -276,7 +226,11 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    if (player.role !== "admin" && player.role !== "tcg_manager" && player.home_store_id !== data.store_id) {
+    if (
+      player.role !== "admin" &&
+      player.role !== "tcg_manager" &&
+      player.home_store_id !== data.store_id
+    ) {
       throw new Error("No puedes subir un torneo para esta tienda");
     }
 
@@ -347,7 +301,9 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       .eq("store_id", data.store_id)
       .eq("game_id", data.game_id)
       .eq("tournament_date", data.tournament_date);
-    dupQuery = data.league_id ? dupQuery.eq("league_id", data.league_id) : dupQuery.is("league_id", null);
+    dupQuery = data.league_id
+      ? dupQuery.eq("league_id", data.league_id)
+      : dupQuery.is("league_id", null);
     const { data: existing, error: dupErr } = await dupQuery.maybeSingle();
     if (dupErr) failDb(dupErr);
     if (existing) {
@@ -372,19 +328,24 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       league_id: data.league_id,
       // Quién lo subió realmente (independiente de la tienda/organizador).
       uploaded_by: player.id,
-      ...(data.league_id
-        ? { approved_at: now, approved_by: player.id, published_at: now }
-        : {}),
+      ...(data.league_id ? { approved_at: now, approved_by: player.id, published_at: now } : {}),
     };
     if (data.tournament_id) insertPayload.id = data.tournament_id;
-    const { data: tournament, error: te } = await admin.from("tournaments").insert(insertPayload).select("id").single();
+    const { data: tournament, error: te } = await admin
+      .from("tournaments")
+      .insert(insertPayload)
+      .select("id")
+      .single();
     if (te) failDb(te);
     const tournamentId = tournament.id;
 
     if (data.league_id) {
       const { error: lte } = await admin
         .from("store_league_tournaments")
-        .upsert({ league_id: data.league_id, tournament_id: tournamentId }, { onConflict: "league_id,tournament_id" });
+        .upsert(
+          { league_id: data.league_id, tournament_id: tournamentId },
+          { onConflict: "league_id,tournament_id" },
+        );
       if (lte) failDb(lte);
     }
 
@@ -397,6 +358,14 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     const baseRows: Array<TablesInsert<"tournament_results">> = [];
     let createdPlayers = 0;
 
+    // One Piece: el Bandai ID es la identidad; una fila sin ID es invitado.
+    const { data: gameRow, error: ge } = await admin
+      .from("games")
+      .select("slug")
+      .eq("id", data.game_id)
+      .single();
+    if (ge) await cleanup(ge.message);
+    const isOnePiece = gameRow?.slug === ONE_PIECE_SLUG;
     try {
       for (const r of data.rows) {
         const { id: playerId, isNew } = await resolvePlayer(
@@ -404,6 +373,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
           r.geek_tag.trim(),
           r.membership_id ? r.membership_id.trim() || null : null,
           data.game_id,
+          isOnePiece,
         );
         if (isNew) createdPlayers++;
         baseRows.push({
@@ -429,12 +399,20 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     }
     if (insertErr) await cleanup(insertErr.message);
 
-    await logAction(admin, player, "TOURNAMENT_UPLOADED", "tournament", tournamentId, await tournamentAuditLabel(admin, tournamentId), {
-      uploaded_by: player.id,
-      league_id: data.league_id,
-      published_directly: !!data.league_id,
-      results: baseRows.length,
-    });
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_UPLOADED",
+      "tournament",
+      tournamentId,
+      await tournamentAuditLabel(admin, tournamentId),
+      {
+        uploaded_by: player.id,
+        league_id: data.league_id,
+        published_directly: !!data.league_id,
+        results: baseRows.length,
+      },
+    );
 
     return {
       ok: true as const,
@@ -445,4 +423,3 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
   });
 
 // ---------- Stores list (organizer/admin) ----------
-

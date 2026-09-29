@@ -239,11 +239,6 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
     };
   });
 
-function normalizeTcgId(id: string): string {
-  const stripped = id.replace(/^0+/, "");
-  return stripped === "" ? "0" : stripped;
-}
-
 export const updatePlayerDetail = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
   .inputValidator(
@@ -302,17 +297,18 @@ export const updatePlayerDetail = createServerFn({ method: "POST" })
       }
     }
 
-    if (data.tcg_ids) {
-      const rows = data.tcg_ids.map((t) => ({
-        player_id: data.player_id,
-        game_id: t.game_id,
-        tcg_user_id: t.tcg_user_id.trim(),
-        tcg_user_id_normalized: normalizeTcgId(t.tcg_user_id.trim()),
-      }));
-      if (rows.length > 0) {
-        const { error } = await admin.from("player_tcg_ids").upsert(rows, { onConflict: "player_id,game_id" });
-        if (error) failDb(error);
+    // Mismo camino que signup/settings: un ID que ya tiene una cuenta real se rechaza;
+    // si lo tiene un placeholder, se fusiona en este jugador.
+    for (const t of data.tcg_ids ?? []) {
+      const { error } = await admin.rpc("assign_tcg_id" as any, {
+        p_player_id: data.player_id,
+        p_game_id: t.game_id,
+        p_tcg_user_id: t.tcg_user_id,
+      });
+      if (error?.message === "TCG_ID_TAKEN") {
+        throw new Error(`El ID ${t.tcg_user_id.trim()} ya pertenece a otro jugador con cuenta.`);
       }
+      if (error) failDb(error);
     }
 
     const { data: target } = await admin.from("players").select("geek_tag").eq("id", data.player_id).maybeSingle();
