@@ -147,6 +147,39 @@ await check("17. Recuperación idempotente", "same", async () => {
   return (await snap()) === before ? "same" : "different";
 });
 
+// ---------- B1: rechazo solo desde DRAFT (UPDATE condicionado) ----------
+const { rejectDraftTournament } = await import("../src/lib/nexus-admin-core.ts");
+const row = async (id: string) =>
+  q<{ status: string; rejection_reason: string | null }>(admin.from("tournaments").select("status, rejection_reason").eq("id", id).single());
+await check("18. Rechazar DRAFT: aplica", "true DRAFT motivo", async () => {
+  const d = await makeTournament({ date: "2026-09-21", status: "DRAFT" });
+  const ok = await rejectDraftTournament(admin, d, "motivo");
+  const r = await row(d);
+  return `${ok} ${r.status} ${r.rejection_reason}`;
+});
+await check("19. Re-rechazar un rechazado actualiza el motivo", "true nuevo motivo", async () =>
+  `${await rejectDraftTournament(admin, G, "nuevo motivo")} ${(await row(G)).rejection_reason}`);
+await check("20. Rechazar APPROVED: se niega, sigue APPROVED", "false APPROVED", async () => {
+  const ap = await makeTournament({ date: "2026-09-21", status: "APPROVED", approvedAt: mx("2026-09-22T10:00:00") });
+  return `${await rejectDraftTournament(admin, ap, "tarde")} ${(await row(ap)).status}`;
+});
+await check("21. Rechazar PUBLISHED: se niega; estado, ranking y notificaciones intactos", "false PUBLISHED snapshots=same notifs=same", async () => {
+  const snaps = async () => JSON.stringify(await q(admin.from("leaderboard_snapshots").select("player_id, timeframe_type, total_points").eq("store_id", store.id).order("player_id").order("timeframe_type")));
+  const notifs = () => count(admin.from("notifications").select("id"));
+  const [s0, n0] = [await snaps(), await notifs()];
+  const ok = await rejectDraftTournament(admin, A, "página vieja");
+  return `${ok} ${(await row(A)).status} snapshots=${(await snaps()) === s0 ? "same" : "changed"} notifs=${(await notifs()) === n0 ? "same" : "changed"}`;
+});
+await check("22. Rechazar UNPUBLISHED: se niega", "false UNPUBLISHED", async () => {
+  const un = await makeTournament({ date: "2026-09-21", status: "UNPUBLISHED" });
+  return `${await rejectDraftTournament(admin, un, "no aplica")} ${(await row(un)).status}`;
+});
+await check("23. Dos rechazos simultáneos de un DRAFT: ninguno falla, queda DRAFT", "true,true DRAFT", async () => {
+  const d = await makeTournament({ date: "2026-09-21", status: "DRAFT" });
+  const rs = await Promise.all([rejectDraftTournament(admin, d, "a"), rejectDraftTournament(admin, d, "b")]);
+  return `${rs.join(",")} ${(await row(d)).status}`;
+});
+
 console.table(results);
 const failed = results.filter((r) => r.ok !== "✔").length;
 console.log(failed ? `${failed} escenario(s) fallaron` : `Los ${results.length} escenarios pasaron`);

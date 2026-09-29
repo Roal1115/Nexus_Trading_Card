@@ -48,6 +48,30 @@ export async function tournamentAuditLabel(
   return `${t.games?.name ?? "TCG"} — ${t.stores?.name ?? "Tienda"} — ${t.tournament_date}`;
 }
 
+// ---------- Rechazo ----------
+export const REJECT_STALE_ERROR =
+  "Solo se pueden rechazar torneos por revisar; el torneo cambió de estado, recarga la página.";
+
+/**
+ * Rechazo atómico: el UPDATE solo aplica si el torneo sigue en DRAFT, así una
+ * página desactualizada o una llamada directa no puede regresar a DRAFT un
+ * torneo aprobado, publicado o despublicado. Devuelve false si no cambió nada.
+ */
+export async function rejectDraftTournament(
+  admin: ReturnType<typeof getNexusAdmin>,
+  tournamentId: string,
+  reason: string,
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from("tournaments")
+    .update({ status: "DRAFT", approved_at: null, undo_deadline: null, rejection_reason: reason })
+    .eq("id", tournamentId)
+    .eq("status", "DRAFT")
+    .select("id");
+  if (error) failDb(error);
+  return (data ?? []).length > 0;
+}
+
 // ---------- Active season helper ----------
 export async function getActiveSeason(admin: ReturnType<typeof getNexusAdmin>) {
   const { data } = await admin

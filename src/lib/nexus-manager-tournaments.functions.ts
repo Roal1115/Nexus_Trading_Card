@@ -3,11 +3,16 @@ import { z } from "zod";
 import { failDb } from "./nexus-admin.server";
 import { requireNexusManager, requireNexusAdmin } from "./nexus-auth.middleware";
 import { loadTournamentDetail } from "./nexus-tournament-detail.server";
-import { logAction, recomputeSnapshot, tfMonth, type TournamentStatus } from "./nexus-admin.functions";
+import {
+  logAction,
+  recomputeSnapshot,
+  tfMonth,
+  type TournamentStatus,
+} from "./nexus-admin.functions";
 import { mondayOfWeek, toLocalDateStr } from "./utils";
 import { getManagerGameIds, assertManagerOwnsGame } from "./nexus-manager-shared";
 import { approvalError } from "./tournament-state";
-
+import { rejectDraftTournament, REJECT_STALE_ERROR } from "./nexus-admin-core";
 
 export const getManagerGames = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
@@ -66,7 +71,6 @@ export const getManagerApprovedTournaments = createServerFn({ method: "POST" })
     if (error) failDb(error);
     return data ?? [];
   });
-
 
 export const getManagerTournamentDetail = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
@@ -148,16 +152,9 @@ export const managerRejectTournament = createServerFn({ method: "POST" })
     if (!tournament) throw new Error("Torneo no encontrado");
     await assertManagerOwnsGame(admin, player, tournament.game_id);
 
-    const { error } = await admin
-      .from("tournaments")
-      .update({
-        status: "DRAFT",
-        approved_at: null,
-        undo_deadline: null,
-        rejection_reason: data.reason,
-      })
-      .eq("id", data.tournament_id);
-    if (error) failDb(error);
+    if (!(await rejectDraftTournament(admin, data.tournament_id, data.reason))) {
+      throw new Error(REJECT_STALE_ERROR);
+    }
     await logAction(
       admin,
       player,
@@ -309,4 +306,3 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
   });
 
 // ---------- Mi Historial ----------
-

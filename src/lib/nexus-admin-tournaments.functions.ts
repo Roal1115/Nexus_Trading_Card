@@ -10,13 +10,16 @@ import {
   PAGE_SIZE,
   type TournamentStatus,
 } from "./nexus-admin-shared";
-import type { TablesUpdate } from "./database.types";
 import {
   publishTournamentsCore,
   recomputeTournamentRankingsCore,
 } from "./nexus-publication.server";
 import { approvalError, INELIGIBLE_LABELS, type Role } from "./tournament-state";
-import { tournamentAuditLabel } from "./nexus-admin-core";
+import {
+  rejectDraftTournament,
+  REJECT_STALE_ERROR,
+  tournamentAuditLabel,
+} from "./nexus-admin-core";
 
 type Alert = {
   level: "CRITICAL" | "WARNING";
@@ -549,20 +552,9 @@ export const rejectTournamentWithReason = createServerFn({ method: "POST" })
       .select("tournament_date, stores(name), games(name)")
       .eq("id", data.tournament_id)
       .maybeSingle();
-    const update: TablesUpdate<"tournaments"> = {
-      status: "DRAFT",
-      approved_at: null,
-      undo_deadline: null,
-      rejection_reason: data.reason,
-    };
-    let { error } = await admin.from("tournaments").update(update).eq("id", data.tournament_id);
-    if (error && /column .*rejection_reason.* does not exist/i.test(error.message)) {
-      // Column missing — fall back to status reset only.
-      delete update.rejection_reason;
-      const retry = await admin.from("tournaments").update(update).eq("id", data.tournament_id);
-      error = retry.error;
+    if (!(await rejectDraftTournament(admin, data.tournament_id, data.reason))) {
+      throw new Error(REJECT_STALE_ERROR);
     }
-    if (error) failDb(error);
     const game = (tBefore as any)?.games;
     const store = (tBefore as any)?.stores;
     await logAction(
