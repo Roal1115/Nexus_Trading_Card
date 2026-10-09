@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
+import type { ErrorComponentProps } from "@tanstack/react-router";
 import { NexusAuthProvider } from "../context/nexus-auth.context";
 import { TCGProvider } from "@/context/tcg.context";
 import appCss from "../styles.css?url";
@@ -71,7 +72,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   if (typeof window !== "undefined" && isChunkLoadError(error)) {
     try {
       const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? "0");
