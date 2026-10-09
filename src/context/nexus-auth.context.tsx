@@ -91,6 +91,14 @@ export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
 
     const loadPlayer = async (s: Session | null) => {
       if (mountedRef.current) {
+        // Si llega una sesión nueva (login) y aún no tenemos el player de ese
+        // usuario, marcar loading para que nadie redirija con role=null.
+        if (s?.user?.email) {
+          setPlayer((prev) => {
+            if (!prev || prev.email !== s.user.email) setLoading(true);
+            return prev;
+          });
+        }
         setSession(s);
         setAuthResolved(true);
       }
