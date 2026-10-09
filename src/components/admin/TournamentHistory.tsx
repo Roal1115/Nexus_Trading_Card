@@ -1,20 +1,15 @@
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Filter, History, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { FileLink } from "@/components/ui/FileLink";
 import { BlockSelect } from "@/components/ui/block-select";
-import {
-  getAdminTournamentHistory,
-  getAdminFilterOptions,
-  republishTournament,
-} from "@/lib/nexus-admin.functions";
 import { Badge } from "@/components/ui/badge";
 import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
 
-// Pestaña "Todos" de /admin/tournaments (antes /admin/history). Los filtros
-// viven en la URL de /admin/tournaments junto a ?tab=all.
+// Pestaña "Todos" de Torneos (admin y TCG manager; antes /…/history). Los
+// filtros viven en la URL de la página que lo monta, junto a ?tab=all; los
+// datos y la ruta del detalle llegan por props según el rol.
 export type HistorySearch = {
   status?: string;
   game_id?: string;
@@ -90,9 +85,34 @@ function fmtDate(s?: string | null) {
   });
 }
 
-export function AdminTournamentHistory() {
-  const navigate = useNavigate({ from: "/admin/tournaments/" });
-  const urlSearch = useSearch({ from: "/admin/tournaments/" });
+export type HistoryResult = {
+  total: number;
+  stats?: Record<string, number>;
+  tournaments: unknown[];
+};
+export type HistoryFilterOptions = {
+  games: { id: string; name: string }[];
+  stores: { id: string; name: string; city: string | null }[];
+  seasons: { id: string; name: string; status: string }[];
+};
+
+export function TournamentHistory({
+  search: urlSearch,
+  onSearch,
+  fetchHistory,
+  fetchOptions,
+  detailTo,
+  onRepublish: republish,
+}: {
+  search: HistorySearch;
+  onSearch: (next: HistorySearch) => void;
+  fetchHistory: (filters: HistorySearch & { page: number }) => Promise<HistoryResult>;
+  fetchOptions: () => Promise<HistoryFilterOptions>;
+  detailTo: "/admin/tournaments/$id" | "/tcg-manager/tournaments/$id";
+  /** Solo admin: re-enviar a Aprobado un torneo despublicado desde la lista. */
+  onRepublish?: (tournamentId: string) => Promise<void>;
+}) {
+  const navigate = useNavigate();
   // La URL es la fuente de verdad de los filtros (compartible, sobrevive
   // atrás/adelante y refresh) — mismo patrón que el leaderboard (P0-03).
   const filters: Filters = useMemo(
@@ -111,30 +131,20 @@ export function AdminTournamentHistory() {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
-  const [opts, setOpts] = useState<{
-    games: { id: string; name: string }[];
-    stores: { id: string; name: string; city: string | null }[];
-    seasons: { id: string; name: string; status: string }[];
-  }>({ games: [], stores: [], seasons: [] });
-
-  const fetchHist = useServerFn(getAdminTournamentHistory);
-  const fetchOpts = useServerFn(getAdminFilterOptions);
-  const republishFn = useServerFn(republishTournament);
+  const [opts, setOpts] = useState<HistoryFilterOptions>({ games: [], stores: [], seasons: [] });
   const [republishing, setRepublishing] = useState<string | null>(null);
 
   const reload = async () => {
     setLoading(true);
     try {
-      const res = await fetchHist({
-        data: {
-          ...(filters.status && { status: filters.status }),
-          ...(filters.game_id && { game_id: filters.game_id }),
-          ...(filters.store_id && { store_id: filters.store_id }),
-          ...(filters.season_id && { season_id: filters.season_id }),
-          ...(filters.date_from && { date_from: filters.date_from }),
-          ...(filters.date_to && { date_to: filters.date_to }),
-          page: filters.page,
-        },
+      const res = await fetchHistory({
+        ...(filters.status && { status: filters.status }),
+        ...(filters.game_id && { game_id: filters.game_id }),
+        ...(filters.store_id && { store_id: filters.store_id }),
+        ...(filters.season_id && { season_id: filters.season_id }),
+        ...(filters.date_from && { date_from: filters.date_from }),
+        ...(filters.date_to && { date_to: filters.date_to }),
+        page: filters.page,
       });
       setRows(res.tournaments as Row[]);
       setTotal(res.total);
@@ -145,9 +155,10 @@ export function AdminTournamentHistory() {
   };
 
   const onRepublish = async (tournamentId: string) => {
+    if (!republish) return;
     setRepublishing(tournamentId);
     try {
-      await republishFn({ data: { tournament_id: tournamentId } });
+      await republish(tournamentId);
       toast.success("Torneo re-enviado a Aprobado");
       await reload();
     } catch (e: any) {
@@ -158,19 +169,18 @@ export function AdminTournamentHistory() {
   };
 
   // Patchea la URL — el fetch real ocurre en el effect de abajo, reactivo a filters.
-  const load = (overrides: Partial<Filters> = {}) =>
-    navigate({
-      search: (prev) => {
-        const next = { ...prev, ...overrides };
-        for (const k of Object.keys(next) as (keyof typeof next)[]) {
-          if (!next[k]) delete next[k];
-        }
-        return next;
-      },
-    });
+  const load = (overrides: Partial<Filters> = {}) => {
+    const next: HistorySearch = { ...urlSearch, ...overrides };
+    for (const k of Object.keys(next) as (keyof HistorySearch)[]) {
+      if (!next[k]) delete next[k];
+    }
+    onSearch(next);
+  };
 
   useEffect(() => {
-    fetchOpts({ data: {} as any }).then(setOpts).catch(() => {});
+    fetchOptions()
+      .then(setOpts)
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -190,8 +200,7 @@ export function AdminTournamentHistory() {
   ].filter(Boolean).length;
 
   const grandTotal =
-    (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) +
-    (stats.PUBLISHED ?? 0) + (stats.UNPUBLISHED ?? 0);
+    (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) + (stats.PUBLISHED ?? 0) + (stats.UNPUBLISHED ?? 0);
 
   return (
     <div className="space-y-6">
@@ -217,13 +226,17 @@ export function AdminTournamentHistory() {
           <Filter size={14} />
           <span>Filtros</span>
           {activeFilters > 0 && (
-            <span className="text-xs text-primary">{activeFilters} activo{activeFilters > 1 ? "s" : ""}</span>
+            <span className="text-xs text-primary">
+              {activeFilters} activo{activeFilters > 1 ? "s" : ""}
+            </span>
           )}
           {activeFilters > 0 && (
             <button
               onClick={() => load({ ...INITIAL })}
               className="ml-auto text-xs text-gray-400 hover:text-white border border-white/10 rounded-lg px-2 py-1"
-            >Limpiar</button>
+            >
+              Limpiar
+            </button>
           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -306,59 +319,81 @@ export function AdminTournamentHistory() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={12} className="px-3 py-8 text-center text-gray-400">Cargando...</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={12} className="px-3 py-8 text-center text-gray-400">Sin registros.</td></tr>
-              ) : rows.map((r) => (
-                <tr key={r.id} className="border-t border-white/5">
-                  <td className="px-3 py-2 text-white whitespace-nowrap">{r.tournament_date}</td>
-                  <td className="px-3 py-2 text-gray-300">{r.game_name}</td>
-                  <td className="px-3 py-2 text-gray-300">{r.store_name}</td>
-                  <td className="px-3 py-2 text-gray-400">{r.store_city}</td>
-                  <td className="px-3 py-2 text-gray-300">{r.participants}</td>
-                  <td className="px-3 py-2">
-                    <TournamentStatusBadge status={r.status} rejectionReason={r.rejection_reason} size="sm" />
-                  </td>
-                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.created_at)}</td>
-                  <td className="px-3 py-2 text-gray-300">
-                    {r.approved_by_tag ? (
-                      <span className="inline-flex items-center gap-1">
-                        {r.approved_by_tag}
-                        {r.approved_by_role && (
-                          <Badge variant="outline" className="text-[10px] px-1 py-0">
-                            {ROLE_LABEL[r.approved_by_role] ?? r.approved_by_role}
-                          </Badge>
-                        )}
-                      </span>
-                    ) : "—"}
-                  </td>
-                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.approved_at)}</td>
-                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{fmtDate(r.published_at)}</td>
-                  <td className="px-3 py-2">
-                    <FileLink url={r.csv_url} />
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-col gap-1">
-                      <Link
-                        to="/admin/tournaments/$id"
-                        params={{ id: r.id }}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
-                      >
-                        <Eye size={12} /> Detalle
-                      </Link>
-                      {r.status === "UNPUBLISHED" && (
-                        <button
-                          onClick={() => onRepublish(r.id)}
-                          disabled={republishing === r.id}
-                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
-                        >
-                          {republishing === r.id ? "..." : "↩ Re-publicar"}
-                        </button>
-                      )}
-                    </div>
+                <tr>
+                  <td colSpan={12} className="px-3 py-8 text-center text-gray-400">
+                    Cargando...
                   </td>
                 </tr>
-              ))}
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={12} className="px-3 py-8 text-center text-gray-400">
+                    Sin registros.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => (
+                  <tr key={r.id} className="border-t border-white/5">
+                    <td className="px-3 py-2 text-white whitespace-nowrap">{r.tournament_date}</td>
+                    <td className="px-3 py-2 text-gray-300">{r.game_name}</td>
+                    <td className="px-3 py-2 text-gray-300">{r.store_name}</td>
+                    <td className="px-3 py-2 text-gray-400">{r.store_city}</td>
+                    <td className="px-3 py-2 text-gray-300">{r.participants}</td>
+                    <td className="px-3 py-2">
+                      <TournamentStatusBadge
+                        status={r.status}
+                        rejectionReason={r.rejection_reason}
+                        size="sm"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
+                      {fmtDate(r.created_at)}
+                    </td>
+                    <td className="px-3 py-2 text-gray-300">
+                      {r.approved_by_tag ? (
+                        <span className="inline-flex items-center gap-1">
+                          {r.approved_by_tag}
+                          {r.approved_by_role && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              {ROLE_LABEL[r.approved_by_role] ?? r.approved_by_role}
+                            </Badge>
+                          )}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
+                      {fmtDate(r.approved_at)}
+                    </td>
+                    <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
+                      {fmtDate(r.published_at)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <FileLink url={r.csv_url} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-col gap-1">
+                        <Link
+                          to={detailTo}
+                          params={{ id: r.id }}
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <Eye size={12} /> Detalle
+                        </Link>
+                        {republish && r.status === "UNPUBLISHED" && (
+                          <button
+                            onClick={() => onRepublish(r.id)}
+                            disabled={republishing === r.id}
+                            className="inline-flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
+                          >
+                            {republishing === r.id ? "..." : "↩ Re-publicar"}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -369,58 +404,99 @@ export function AdminTournamentHistory() {
             <p className="px-4 py-6 text-center text-sm text-gray-400">Cargando...</p>
           ) : rows.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-gray-400">Sin registros.</p>
-          ) : rows.map((r) => (
-            <div key={r.id} className="px-4 py-3 space-y-2">
-              {/* Row 1 — TCG + Status badge */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-white">{r.game_name}</span>
-                <TournamentStatusBadge status={r.status} rejectionReason={r.rejection_reason} size="sm" />
-              </div>
+          ) : (
+            rows.map((r) => (
+              <div key={r.id} className="px-4 py-3 space-y-2">
+                {/* Row 1 — TCG + Status badge */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-white">{r.game_name}</span>
+                  <TournamentStatusBadge
+                    status={r.status}
+                    rejectionReason={r.rejection_reason}
+                    size="sm"
+                  />
+                </div>
 
-              {/* Row 2 — Store + City + Date */}
-              <div className="text-xs text-gray-400">
-                {r.store_name} · {r.store_city} · {new Date(r.tournament_date + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
-              </div>
+                {/* Row 2 — Store + City + Date */}
+                <div className="text-xs text-gray-400">
+                  {r.store_name} · {r.store_city} ·{" "}
+                  {new Date(r.tournament_date + "T12:00:00").toLocaleDateString("es-MX", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
 
-              {/* Row 3 — Stats grid */}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                <div><span className="text-gray-500">Participantes:</span> <span className="text-gray-200">{r.participants}</span></div>
-                <div><span className="text-gray-500">Subido:</span> <span className="text-gray-200">{new Date(r.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}</span></div>
-                {r.approved_at && (
-                  <div><span className="text-gray-500">Aprobado:</span> <span className="text-gray-200">{new Date(r.approved_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}</span></div>
-                )}
-                {r.approved_by_tag && (
-                  <div className="col-span-2"><span className="text-gray-500">Por:</span> <span className="text-gray-200">{r.approved_by_tag}</span> {r.approved_by_role && (<span className="text-[10px] text-gray-400">({r.approved_by_role === "admin" ? "Admin" : "Manager"})</span>)}</div>
-                )}
-              </div>
-
-              {/* Row 4 — File + Action */}
-              <div className="flex items-center justify-between pt-1">
-                <FileLink url={r.csv_url} />
-                <div className="flex items-center gap-3">
-                  {r.status === "UNPUBLISHED" && (
-                    <button
-                      onClick={() => onRepublish(r.id)}
-                      disabled={republishing === r.id}
-                      className="flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
-                    >
-                      {republishing === r.id ? "..." : "↩ Re-publicar"}
-                    </button>
+                {/* Row 3 — Stats grid */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div>
+                    <span className="text-gray-500">Participantes:</span>{" "}
+                    <span className="text-gray-200">{r.participants}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Subido:</span>{" "}
+                    <span className="text-gray-200">
+                      {new Date(r.created_at).toLocaleDateString("es-MX", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </div>
+                  {r.approved_at && (
+                    <div>
+                      <span className="text-gray-500">Aprobado:</span>{" "}
+                      <span className="text-gray-200">
+                        {new Date(r.approved_at).toLocaleDateString("es-MX", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                    </div>
                   )}
-                  <button onClick={() => navigate({ to: "/admin/tournaments/$id", params: { id: r.id } })} className="flex items-center gap-1 text-xs text-primary hover:underline">
-                    <Eye size={12} /> Ver detalle
-                  </button>
+                  {r.approved_by_tag && (
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Por:</span>{" "}
+                      <span className="text-gray-200">{r.approved_by_tag}</span>{" "}
+                      {r.approved_by_role && (
+                        <span className="text-[10px] text-gray-400">
+                          ({r.approved_by_role === "admin" ? "Admin" : "Manager"})
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Rejection reason if present */}
-              {r.rejection_reason && (
-                <div className="text-xs text-red-400/80 bg-red-500/10 rounded-lg px-2 py-1">
-                  Motivo: "{r.rejection_reason}"
+                {/* Row 4 — File + Action */}
+                <div className="flex items-center justify-between pt-1">
+                  <FileLink url={r.csv_url} />
+                  <div className="flex items-center gap-3">
+                    {republish && r.status === "UNPUBLISHED" && (
+                      <button
+                        onClick={() => onRepublish(r.id)}
+                        disabled={republishing === r.id}
+                        className="flex items-center gap-1 text-xs text-amber-400 hover:underline disabled:opacity-50"
+                      >
+                        {republishing === r.id ? "..." : "↩ Re-publicar"}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => navigate({ to: detailTo, params: { id: r.id } })}
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <Eye size={12} /> Ver detalle
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Rejection reason if present */}
+                {r.rejection_reason && (
+                  <div className="text-xs text-red-400/80 bg-red-500/10 rounded-lg px-2 py-1">
+                    Motivo: "{r.rejection_reason}"
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
 
         {totalPages > 1 && (
@@ -433,12 +509,16 @@ export function AdminTournamentHistory() {
                 onClick={() => load({ page: filters.page - 1 })}
                 disabled={filters.page <= 1 || loading}
                 className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-gray-400 hover:text-white disabled:opacity-30"
-              >← Anterior</button>
+              >
+                ← Anterior
+              </button>
               <button
                 onClick={() => load({ page: filters.page + 1 })}
                 disabled={filters.page >= totalPages || loading}
                 className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-gray-400 hover:text-white disabled:opacity-30"
-              >Siguiente →</button>
+              >
+                Siguiente →
+              </button>
             </div>
           </div>
         )}

@@ -7,7 +7,6 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock,
-  Loader2,
   RefreshCw,
   ScrollText,
   Upload,
@@ -22,8 +21,19 @@ import {
   type AuditLogRow,
 } from "@/lib/nexus-admin.functions";
 import { getManagerApprovedTournaments } from "@/lib/nexus-manager.functions";
-import { INELIGIBLE_LABELS, type IneligibleReason } from "@/lib/tournament-state";
+import { INELIGIBLE_LABELS } from "@/lib/tournament-state";
 import { ACTION_LABELS } from "@/components/admin/audit-actions";
+import { LoadError, Loading, Panel } from "@/components/panel/dashboard";
+import {
+  ago,
+  errMsg,
+  fmtDayTime,
+  fmtTournamentDate,
+  footerLink,
+  reasonsText,
+  rowLink,
+  type Section,
+} from "@/components/panel/dashboard-format";
 import {
   publicationOutlook,
   schedulerStatus,
@@ -41,30 +51,6 @@ export const Route = createFileRoute("/admin/")({
 const SCHEDULED_PUBLISHING_ACTIVE = import.meta.env.VITE_SCHEDULED_PUBLISHING === "true";
 const PENDING_SHOWN = 5;
 const ACTIVITY_SHOWN = 6;
-
-// ---------- Formato (hora de México) ----------
-const TZ = "America/Mexico_City";
-const fmtDay = (d: Date) =>
-  d.toLocaleDateString("es-MX", { timeZone: TZ, weekday: "short", day: "numeric", month: "short" });
-const fmtDayTime = (d: Date) =>
-  d.toLocaleString("es-MX", {
-    timeZone: TZ,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
-const fmtTournamentDate = (ymd: string) => fmtDay(new Date(`${ymd}T12:00:00-06:00`));
-const rtf = new Intl.RelativeTimeFormat("es-MX", { numeric: "auto" });
-function ago(iso: string, now: Date) {
-  const min = Math.round((new Date(iso).getTime() - now.getTime()) / 60_000);
-  if (Math.abs(min) < 60) return rtf.format(min, "minute");
-  const h = Math.round(min / 60);
-  if (Math.abs(h) < 24) return rtf.format(h, "hour");
-  return rtf.format(Math.round(h / 24), "day");
-}
 
 // ---------- Datos ----------
 type PendingRow = {
@@ -85,10 +71,6 @@ type ApprovedRow = {
 };
 type Upcoming = ApprovedRow & { outlook: PublicationOutlook };
 type Season = { name: string; start_date: string; end_date: string } | null;
-
-type Section<T> =
-  { state: "loading" } | { state: "error"; message: string } | { state: "ok"; data: T };
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 function AdminHome() {
   const { player } = useNexusRole();
@@ -225,82 +207,6 @@ function AdminHome() {
     </div>
   );
 }
-
-// ---------- Piezas ----------
-function Panel({
-  id,
-  title,
-  count,
-  footer,
-  children,
-  busy,
-}: {
-  id: string;
-  title: string;
-  count?: number;
-  footer?: React.ReactNode;
-  children: React.ReactNode;
-  busy?: boolean;
-}) {
-  return (
-    <section aria-labelledby={id} aria-busy={busy} className="glass overflow-hidden rounded-2xl">
-      <h2
-        id={id}
-        className="flex items-center gap-2 border-b border-white/10 px-5 py-3 text-sm font-semibold text-white"
-      >
-        {title}
-        {!!count && (
-          <span className="rounded-full bg-primary/20 px-2 text-xs font-bold text-primary">
-            {count}
-          </span>
-        )}
-      </h2>
-      <div>{children}</div>
-      {footer && <div className="border-t border-white/10 px-5 py-3 text-sm">{footer}</div>}
-    </section>
-  );
-}
-
-function Loading({ className = "px-5 py-6" }: { className?: string }) {
-  return (
-    <div className={`flex items-center gap-2 text-sm text-gray-400 ${className}`}>
-      <Loader2 size={14} className="animate-spin" aria-hidden /> Cargando…
-    </div>
-  );
-}
-
-function LoadError({
-  message,
-  onRetry,
-  className = "px-5 py-4",
-}: {
-  message: string;
-  onRetry: () => void;
-  className?: string;
-}) {
-  return (
-    <div
-      role="alert"
-      className={`flex flex-wrap items-center gap-3 text-sm text-red-200 ${className}`}
-    >
-      <AlertTriangle size={14} aria-hidden /> No se pudo cargar: {message}
-      <button
-        type="button"
-        onClick={onRetry}
-        className="rounded-md border border-white/15 px-2 py-1 text-xs text-white hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      >
-        Reintentar
-      </button>
-    </div>
-  );
-}
-
-const footerLink =
-  "inline-flex min-h-8 items-center gap-1 rounded py-1 text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
-const rowLink =
-  "flex min-h-11 items-center gap-3 px-5 py-3 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary";
-
-const reasonsText = (r: IneligibleReason[]) => r.map((x) => INELIGIBLE_LABELS[x]).join(" · ");
 
 function AttentionSection({
   tournaments,
@@ -452,7 +358,11 @@ function UpcomingSection({
         <ul className="divide-y divide-white/5">
           {ready.map((t) => (
             <li key={t.id}>
-              <Link to="/admin/tournaments/$id" params={{ id: t.id }} className={rowLink}>
+              <Link
+                to="/admin/tournaments/$id"
+                params={{ id: t.id }}
+                className={`${rowLink} flex-wrap sm:flex-nowrap`}
+              >
                 <CalendarClock size={16} className="shrink-0 text-sky-300" aria-hidden />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-white">
@@ -464,7 +374,7 @@ function UpcomingSection({
                       ` · ${INELIGIBLE_LABELS.correction_window} hasta ${fmtDayTime(t.outlook.windowOpenUntil)}`}
                   </span>
                 </span>
-                <span className="shrink-0 text-right text-xs font-semibold text-sky-200">
+                <span className="basis-full pl-7 text-xs font-semibold text-sky-200 sm:basis-auto sm:shrink-0 sm:pl-0 sm:text-right">
                   {SCHEDULED_PUBLISHING_ACTIVE && t.outlook.date
                     ? `Se publica ${fmtDayTime(t.outlook.date)}`
                     : "Pendiente de publicación"}

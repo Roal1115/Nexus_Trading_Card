@@ -12,15 +12,17 @@ import {
   unapproveAdminTournament,
   unpublishTournament,
   getAdminTournamentHistory,
+  getAdminFilterOptions,
+  republishTournament,
 } from "@/lib/nexus-admin.functions";
 import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 import { Button } from "@/components/ui/button";
 import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
 import {
-  AdminTournamentHistory,
+  TournamentHistory,
   parseHistorySearch,
   type HistorySearch,
-} from "@/components/admin/AdminTournamentHistory";
+} from "@/components/admin/TournamentHistory";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -77,7 +79,8 @@ type PublishedRow = {
 };
 
 function TournamentsPanel() {
-  const tab = Route.useSearch().tab ?? "pending";
+  const { tab: tabParam, ...historySearch } = Route.useSearch();
+  const tab = tabParam ?? "pending";
   const navigate = useNavigate();
   // Cambiar de pestaña limpia los filtros de "Todos".
   const setTab = (v: string) =>
@@ -87,6 +90,8 @@ function TournamentsPanel() {
 
   const fetchList = useServerFn(listTournamentsByStatus);
   const fetchHistory = useServerFn(getAdminTournamentHistory);
+  const fetchFilterOptions = useServerFn(getAdminFilterOptions);
+  const republishFn = useServerFn(republishTournament);
   const publishFn = useServerFn(publishTournaments);
   const unapproveFn = useServerFn(unapproveAdminTournament);
   const unpublishFn = useServerFn(unpublishTournament);
@@ -521,7 +526,18 @@ function TournamentsPanel() {
 
         {/* TAB: TODOS (antes /admin/history) */}
         <TabsContent value="all" className="mt-4">
-          <AdminTournamentHistory />
+          <TournamentHistory
+            search={historySearch}
+            onSearch={(next) =>
+              navigate({ to: "/admin/tournaments", search: { ...next, tab: "all" } })
+            }
+            fetchHistory={(filters) => fetchHistory({ data: filters })}
+            fetchOptions={() => fetchFilterOptions({ data: {} as never })}
+            detailTo="/admin/tournaments/$id"
+            onRepublish={async (id) => {
+              await republishFn({ data: { tournament_id: id } });
+            }}
+          />
         </TabsContent>
       </Tabs>
 

@@ -28,7 +28,7 @@ import { StoreEditModal } from "@/components/stores/StoreEditModal";
 import { safeHref } from "@/lib/utils";
 
 export const Route = createFileRoute("/tcg-manager/stores")({
-  head: () => ({ meta: [{ title: "Tiendas — TCG Manager" }] }),
+  head: () => ({ meta: [{ title: "Tiendas a mi cargo — TCG Manager" }] }),
   component: ManagerStoresPage,
 });
 
@@ -113,9 +113,10 @@ function ManagerStoresPage() {
     <div className="space-y-6">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Red</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Tiendas a tu cargo</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Gestiona la información y los horarios de torneos de las tiendas que ofrecen tus TCGs.
+        <h1 className="mt-2 text-3xl font-bold text-white">Tiendas a mi cargo</h1>
+        <p className="mt-1 max-w-3xl text-sm text-gray-400">
+          Tiendas donde se juegan los TCGs que moderas. Cada tienda la administra su organizador;
+          como TCG Manager aquí mantienes al día sus datos de contacto y los horarios de tus TCGs.
         </p>
       </header>
 
@@ -162,7 +163,8 @@ function ManagerStoresPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-gray-500">Tus TCGs aquí:</span>
                 {s.available_game_ids.map((gid) => {
                   const g = games.find((x) => x.id === gid);
                   return (

@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Eye, ArrowRight, XCircle, FileX } from "lucide-react";
+import { Loader2, Eye, ArrowRight, XCircle, FileX, Upload } from "lucide-react";
 import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
@@ -13,18 +13,37 @@ import {
   managerUndoApproval,
   unapproveManagerTournament,
   unpublishManagerTournament,
+  getManagerTournamentHistory,
+  getManagerFilterOptions,
 } from "@/lib/nexus-manager.functions";
-import { Badge } from "@/components/ui/badge";
+import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
+import {
+  TournamentHistory,
+  parseHistorySearch,
+  type HistorySearch,
+} from "@/components/admin/TournamentHistory";
+import {
+  ManagerReviewHistory,
+  parseReviewSearch,
+  type ReviewSearch,
+} from "@/components/manager/ManagerReviewHistory";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 
-const TOURNAMENT_TABS = ["pending", "approved", "published"] as const;
+const TOURNAMENT_TABS = ["pending", "approved", "published", "all", "mine"] as const;
 type TournamentsTab = (typeof TOURNAMENT_TABS)[number];
+type TournamentsSearch = HistorySearch & ReviewSearch & { tab?: TournamentsTab };
 
+// La pestaña vive en ?tab=; los filtros de "Todos" y "Revisados por mí" también.
+// Cambiar de pestaña los limpia, así que comparten date_from/date_to/page sin chocar.
 export const Route = createFileRoute("/tcg-manager/tournaments/")({
-  validateSearch: (s: Record<string, unknown>): { tab?: TournamentsTab } =>
-    TOURNAMENT_TABS.includes(s.tab as TournamentsTab) ? { tab: s.tab as TournamentsTab } : {},
+  validateSearch: (s: Record<string, unknown>): TournamentsSearch => ({
+    ...parseHistorySearch(s),
+    ...parseReviewSearch(s),
+    tab: TOURNAMENT_TABS.includes(s.tab as TournamentsTab) ? (s.tab as TournamentsTab) : undefined,
+  }),
+  head: () => ({ meta: [{ title: "Torneos — TCG Manager" }] }),
   component: ManagerTournamentsPanel,
 });
 
@@ -53,8 +72,17 @@ function formatCountdown(target: string | null | undefined): { text: string; exp
 }
 
 function ManagerTournamentsPanel() {
-  const initialTab = Route.useSearch().tab ?? "pending";
+  const { tab: tabParam, ...search } = Route.useSearch();
+  const tab = tabParam ?? "pending";
   const navigate = useNavigate();
+  // Cambiar de pestaña limpia los filtros de "Todos" / "Revisados por mí".
+  const setTab = (v: string) =>
+    navigate({
+      to: "/tcg-manager/tournaments",
+      search: v === "pending" ? {} : { tab: v as TournamentsTab },
+    });
+  const fetchHistory = useServerFn(getManagerTournamentHistory);
+  const fetchFilterOptions = useServerFn(getManagerFilterOptions);
   const { player } = useNexusRole();
   const email = player?.email ?? null;
 
@@ -126,9 +154,14 @@ function ManagerTournamentsPanel() {
   useEffect(() => {
     if (!email) return;
     void refreshPending();
-    onTabChange(initialTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
+
+  // Carga perezosa de la pestaña activa (también al llegar por URL o con atrás/adelante).
+  useEffect(() => {
+    if (email) onTabChange(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, tab]);
 
   const onTabChange = (v: string) => {
     if (v === "approved" && !approvedLoaded) void refreshApproved();
@@ -151,20 +184,28 @@ function ManagerTournamentsPanel() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Moderación
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Torneos</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Revisa, aprueba y administra los torneos de tus TCGs.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+            Moderación
+          </p>
+          <h1 className="mt-2 text-3xl font-bold text-white">Torneos</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Revisa, aprueba y administra los torneos de tus TCGs.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/tcg-manager/upload">
+            <Upload size={14} className="mr-1" aria-hidden />
+            Subir torneo
+          </Link>
+        </Button>
       </header>
 
-      <Tabs defaultValue={initialTab} onValueChange={onTabChange}>
-        <TabsList>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="pending">
-            Pendientes {pendingRows.length > 0 ? `(${pendingRows.length})` : ""}
+            Por revisar {pendingRows.length > 0 ? `(${pendingRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="approved">
             Aprobados {approvedLoaded && approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
@@ -172,9 +213,11 @@ function ManagerTournamentsPanel() {
           <TabsTrigger value="published">
             Publicados {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
           </TabsTrigger>
+          <TabsTrigger value="all">Todos</TabsTrigger>
+          <TabsTrigger value="mine">Revisados por mí</TabsTrigger>
         </TabsList>
 
-        {/* PENDIENTES */}
+        {/* POR REVISAR */}
         <TabsContent value="pending" className="mt-4">
           {pendingLoading ? (
             <div className="glass overflow-hidden rounded-2xl">
@@ -188,7 +231,7 @@ function ManagerTournamentsPanel() {
             </div>
           ) : pendingRows.length === 0 ? (
             <div className="glass rounded-2xl p-8 text-sm text-gray-400">
-              No hay torneos pendientes en tus TCGs.
+              No hay torneos por revisar en tus TCGs.
             </div>
           ) : (
             <div className="glass overflow-hidden rounded-2xl">
@@ -234,7 +277,7 @@ function ManagerTournamentsPanel() {
                             : "—"}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="secondary">{r.status}</Badge>
+                          <TournamentStatusBadge status={r.status} size="sm" />
                         </td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <FileLink url={r.csv_url} />
@@ -319,7 +362,7 @@ function ManagerTournamentsPanel() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <Badge>{r.status}</Badge>
+                            <TournamentStatusBadge status={r.status} size="sm" />
                           </td>
                           <td className="px-4 py-3">
                             <FileLink url={r.csv_url} />
@@ -420,7 +463,7 @@ function ManagerTournamentsPanel() {
                         </td>
                         <td className="px-4 py-3 text-gray-300">{r.games?.name ?? "—"}</td>
                         <td className="px-4 py-3">
-                          <Badge>{r.status}</Badge>
+                          <TournamentStatusBadge status={r.status} size="sm" />
                         </td>
                         <td className="px-4 py-3">
                           <FileLink url={r.csv_url} />
@@ -441,6 +484,29 @@ function ManagerTournamentsPanel() {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        {/* TODOS (antes /tcg-manager/history) */}
+        <TabsContent value="all" className="mt-4">
+          <TournamentHistory
+            search={search}
+            onSearch={(next) =>
+              navigate({ to: "/tcg-manager/tournaments", search: { ...next, tab: "all" } })
+            }
+            fetchHistory={(filters) => fetchHistory({ data: filters })}
+            fetchOptions={() => fetchFilterOptions()}
+            detailTo="/tcg-manager/tournaments/$id"
+          />
+        </TabsContent>
+
+        {/* REVISADOS POR MÍ (antes /tcg-manager/my-history) */}
+        <TabsContent value="mine" className="mt-4">
+          <ManagerReviewHistory
+            search={search}
+            onSearch={(next) =>
+              navigate({ to: "/tcg-manager/tournaments", search: { ...next, tab: "mine" } })
+            }
+          />
         </TabsContent>
       </Tabs>
 

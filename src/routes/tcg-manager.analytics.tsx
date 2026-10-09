@@ -34,7 +34,7 @@ import {
 } from "@/lib/nexus-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager/analytics")({
-  head: () => ({ meta: [{ title: "Analytics — TCG Manager" }] }),
+  head: () => ({ meta: [{ title: "Estadísticas — TCG Manager" }] }),
   component: ManagerAnalyticsPage,
 });
 
@@ -110,9 +110,9 @@ function ManagerAnalyticsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">TCG Manager</h1>
-        <p className="text-sm text-gray-400">Analytics</p>
-        <p className="text-xs text-gray-500">Salud nacional de tu TCG por zona y tienda.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Red</p>
+        <h1 className="mt-2 text-3xl font-bold text-white">Estadísticas</h1>
+        <p className="mt-1 text-sm text-gray-400">Salud nacional de tu TCG por zona y tienda.</p>
       </div>
 
       <div className="relative flex gap-0 border-b border-white/10">

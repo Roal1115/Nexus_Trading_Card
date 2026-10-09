@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { parseHistorySearch } from "@/components/admin/AdminTournamentHistory";
+import { parseHistorySearch } from "@/components/admin/TournamentHistory";
 
 // Ruta histórica: el Historial ahora es la pestaña "Todos" de Torneos.
 // Conserva los filtros del bookmark.

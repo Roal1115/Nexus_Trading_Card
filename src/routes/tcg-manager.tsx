@@ -4,8 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   BarChart3,
   Calendar,
-  ClipboardCheck,
-  History,
   LayoutDashboard,
   Loader2,
   Store as StoreIcon,
@@ -63,13 +61,6 @@ function TcgManagerLayout() {
                 label: "Torneos",
                 icon: <Trophy size={16} />,
                 badge: tournamentsBadge,
-              },
-              // ponytail: Historial y Revisados por mí se vuelven pestañas de Torneos en la Fase 4.
-              { to: "/tcg-manager/history", label: "Historial", icon: <History size={16} /> },
-              {
-                to: "/tcg-manager/my-history",
-                label: "Revisados por mí",
-                icon: <ClipboardCheck size={16} />,
               },
               { to: "/tcg-manager/calendar", label: "Calendario", icon: <Calendar size={16} /> },
             ],
