@@ -2,21 +2,22 @@ import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Activity,
   Calendar,
-  CheckCircle2,
+  CalendarRange,
   History,
+  LayoutDashboard,
   Loader2,
   Megaphone,
-  Menu,
-  ShieldCheck,
+  ScrollText,
   Store,
-  Users,
+  Trophy,
   Upload,
+  Users,
 } from "lucide-react";
 
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
+import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { useBadgeCounts, useActivityLastSeen } from "@/hooks/use-badge-counts";
 import { getAdminBadgeCounts } from "@/lib/nexus-admin.functions";
 
@@ -35,6 +36,7 @@ function AdminLayout() {
   const { counts } = useBadgeCounts(fetchCounts, () => ({
     activity_last_seen: getLastSeen(),
   }));
+  const tournamentsBadge = (counts?.pending ?? 0) + (counts?.approvedActive ?? 0);
 
   useEffect(() => {
     if (loading) return;
@@ -51,61 +53,53 @@ function AdminLayout() {
         userLabel={player?.geek_tag ?? "Admin"}
         mobileOpen={menuOpen}
         onMobileClose={() => setMenuOpen(false)}
+        action={{ to: "/admin/upload", label: "Subir torneo", icon: <Upload size={16} /> }}
         sections={[
           {
-            title: "Administración",
+            title: "Operación",
+            items: [
+              { to: "/admin", label: "Inicio", icon: <LayoutDashboard size={16} />, exact: true },
+              {
+                to: "/admin/tournaments",
+                label: "Torneos",
+                icon: <Trophy size={16} />,
+                badge: tournamentsBadge,
+              },
+              // ponytail: se une a Torneos → Todos en la Fase 2.
+              { to: "/admin/history", label: "Historial", icon: <History size={16} /> },
+              { to: "/admin/calendar", label: "Calendario", icon: <Calendar size={16} /> },
+            ],
+          },
+          {
+            title: "Red",
+            items: [
+              { to: "/admin/stores", label: "Tiendas", icon: <Store size={16} /> },
+              { to: "/admin/players", label: "Usuarios", icon: <Users size={16} /> },
+            ],
+          },
+          {
+            title: "Configuración",
+            items: [
+              { to: "/admin/seasons", label: "Temporadas", icon: <CalendarRange size={16} /> },
+              { to: "/admin/ads", label: "Sponsors", icon: <Megaphone size={16} /> },
+            ],
+          },
+          {
+            title: "Auditoría",
             items: [
               {
-                to: "/admin/tournaments-panel",
-                label: "Torneos",
-                icon: <ShieldCheck size={16} />,
-                badge: (counts?.pending ?? 0) + (counts?.approvedActive ?? 0),
-              },
-              { to: "/admin/history", label: "Historial de Torneos", icon: <History size={16} /> },
-              { to: "/admin/stores", label: "Tiendas y Staff", icon: <Store size={16} /> },
-              { to: "/admin/players", label: "Usuarios", icon: <Users size={16} /> },
-              { to: "/admin/seasons", label: "Temporadas", icon: <Calendar size={16} /> },
-              {
                 to: "/admin/activity",
-                label: "Activity Center",
-                icon: <Activity size={16} />,
+                label: "Registro",
+                icon: <ScrollText size={16} />,
                 badge: counts?.activity ?? 0,
               },
             ],
           },
-          {
-            title: "Circuito",
-            items: [
-              {
-                to: "/admin/publish",
-                label: "Publicar Manualmente",
-                icon: <Upload size={16} />,
-                badge: counts?.readyToPublish ?? 0,
-              },
-              { to: "/admin/calendar", label: "Calendario Nacional", icon: <Calendar size={16} /> },
-              { to: "/admin/upload", label: "Subir Torneo", icon: <Upload size={16} /> },
-            ],
-          },
-          {
-            title: "Publicidad",
-            items: [
-              { to: "/admin/ads", label: "Sponsors & Ads", icon: <Megaphone size={16} /> },
-            ],
-          },
         ]}
-
       />
       <main className="min-w-0 flex-1">
-        {/* Header mobile con hamburger */}
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:hidden">
-          <button
-            className="p-1 text-gray-400 transition hover:text-white"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Abrir menú"
-          >
-            <Menu size={22} />
-          </button>
-          <div className="text-sm font-semibold text-white">Panel Admin</div>
+        <div className="border-b border-white/10 px-4 py-3 text-sm font-semibold text-white lg:hidden">
+          Panel Admin
         </div>
 
         <div className="p-6 sm:p-8">
@@ -118,6 +112,16 @@ function AdminLayout() {
           )}
         </div>
       </main>
+      <PanelBottomNav
+        moreOpen={menuOpen}
+        onMore={() => setMenuOpen((o) => !o)}
+        items={[
+          { to: "/admin", label: "Inicio", icon: LayoutDashboard, exact: true },
+          { to: "/admin/tournaments", label: "Torneos", icon: Trophy, badge: tournamentsBadge },
+          { to: "/admin/upload", label: "Subir torneo", icon: Upload, primary: true },
+          { to: "/admin/calendar", label: "Calendario", icon: Calendar },
+        ]}
+      />
     </div>
   );
 }

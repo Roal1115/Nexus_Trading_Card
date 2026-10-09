@@ -14,7 +14,6 @@ import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { PlayerSidebar } from "@/components/layout/PlayerSidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -286,7 +285,6 @@ function RootComponent() {
             }}
           />
           <BottomNav />
-          <PanelBottomNav />
         </div>
       </NexusAuthProvider>
     </TCGProvider>

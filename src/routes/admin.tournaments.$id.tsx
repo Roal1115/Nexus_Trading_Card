@@ -398,7 +398,7 @@ function TournamentDetailPage() {
       {/* Header */}
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/admin/tournaments-panel" className="hover:text-primary">
+          <Link to="/admin/tournaments" className="hover:text-primary">
             Torneos
           </Link>
           <ChevronRight size={12} />
@@ -406,7 +406,7 @@ function TournamentDetailPage() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/admin/tournaments-panel">
+            <Link to="/admin/tournaments">
               <ArrowLeft size={14} className="mr-1" /> Regresar
             </Link>
           </Button>

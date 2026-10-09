@@ -1,9 +1,21 @@
 import { useEffect, useState } from "react";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { BarChart3, Calendar, History, Loader2, Medal, Menu, Scale, Store, Trophy, Upload, Users } from "lucide-react";
+import {
+  Calendar,
+  History,
+  LayoutDashboard,
+  Loader2,
+  Medal,
+  Scale,
+  Store,
+  Trophy,
+  Upload,
+  Users,
+} from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
+import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { useBadgeCounts } from "@/hooks/use-badge-counts";
 import { getOrganizerBadgeCounts } from "@/lib/nexus-organizer.functions";
 
@@ -35,29 +47,48 @@ function OrganizerLayout() {
         userLabel={player?.geek_tag ?? "Organizador"}
         mobileOpen={menuOpen}
         onMobileClose={() => setMenuOpen(false)}
-        items={[
-          { to: "/organizer", label: "Analytics", icon: <BarChart3 size={16} />, exact: true },
-          { to: "/organizer/players", label: "Jugadores", icon: <Users size={16} /> },
-          { to: "/organizer/store", label: "Mi Tienda", icon: <Store size={16} /> },
-          { to: "/organizer/tournaments", label: "Mis Torneos", icon: <Trophy size={16} />, badge: counts?.pending ?? 0 },
-          { to: "/organizer/history", label: "Historial de Torneos", icon: <History size={16} /> },
-          { to: "/organizer/calendar", label: "Calendario", icon: <Calendar size={16} /> },
-          { to: "/organizer/new", label: "Subir Torneo", icon: <Upload size={16} /> },
-          { to: "/organizer/leagues", label: "Ligas Internas", icon: <Medal size={16} /> },
-          { to: "/organizer/appeals", label: "Apelaciones", icon: <Scale size={16} />, badge: counts?.appeals ?? 0 },
+        action={{ to: "/organizer/new", label: "Subir torneo", icon: <Upload size={16} /> }}
+        sections={[
+          {
+            title: "Mi tienda",
+            items: [
+              // ponytail: hoy Inicio muestra las estadísticas; en la Fase 5 pasan a /organizer/analytics.
+              {
+                to: "/organizer",
+                label: "Inicio",
+                icon: <LayoutDashboard size={16} />,
+                exact: true,
+              },
+              {
+                to: "/organizer/tournaments",
+                label: "Torneos",
+                icon: <Trophy size={16} />,
+                badge: counts?.pending ?? 0,
+              },
+              // ponytail: se une a Torneos → Todos en la Fase 5.
+              { to: "/organizer/history", label: "Historial", icon: <History size={16} /> },
+              {
+                to: "/organizer/appeals",
+                label: "Apelaciones",
+                icon: <Scale size={16} />,
+                badge: counts?.appeals ?? 0,
+              },
+              { to: "/organizer/calendar", label: "Calendario", icon: <Calendar size={16} /> },
+              { to: "/organizer/leagues", label: "Ligas", icon: <Medal size={16} /> },
+            ],
+          },
+          {
+            title: "Información",
+            items: [
+              { to: "/organizer/players", label: "Jugadores", icon: <Users size={16} /> },
+              { to: "/organizer/store", label: "Datos de la tienda", icon: <Store size={16} /> },
+            ],
+          },
         ]}
       />
       <main className="min-w-0 flex-1">
-        {/* Header mobile con hamburger */}
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:hidden">
-          <button
-            className="p-1 text-gray-400 transition hover:text-white"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Abrir menú"
-          >
-            <Menu size={22} />
-          </button>
-          <div className="text-sm font-semibold text-white">Panel Organizador</div>
+        <div className="border-b border-white/10 px-4 py-3 text-sm font-semibold text-white lg:hidden">
+          Panel Organizador
         </div>
 
         <div className="p-6 sm:p-8">
@@ -70,6 +101,21 @@ function OrganizerLayout() {
           )}
         </div>
       </main>
+      <PanelBottomNav
+        moreOpen={menuOpen}
+        onMore={() => setMenuOpen((o) => !o)}
+        items={[
+          { to: "/organizer", label: "Inicio", icon: LayoutDashboard, exact: true },
+          {
+            to: "/organizer/tournaments",
+            label: "Torneos",
+            icon: Trophy,
+            badge: counts?.pending ?? 0,
+          },
+          { to: "/organizer/new", label: "Subir torneo", icon: Upload, primary: true },
+          { to: "/organizer/calendar", label: "Calendario", icon: Calendar },
+        ]}
+      />
     </div>
   );
 }

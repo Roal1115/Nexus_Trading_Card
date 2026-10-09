@@ -29,6 +29,7 @@ export function PanelSidebar({
   onMobileClose,
   collapsible = false,
   topSlot,
+  action,
 }: {
   title: string;
   subtitle: string;
@@ -39,6 +40,8 @@ export function PanelSidebar({
   onMobileClose?: () => void;
   collapsible?: boolean;
   topSlot?: (collapsed: boolean) => React.ReactNode;
+  /** Acción principal del panel (p. ej. Subir torneo), arriba del menú. */
+  action?: { to: string; label: string; icon: React.ReactNode };
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -68,8 +71,10 @@ export function PanelSidebar({
   };
 
   const renderItem = (item: SidebarItem) => {
-    const active = item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + "/");
-    const cls = `flex items-center gap-2.5 overflow-hidden rounded-md px-3 py-2 text-sm transition ${
+    const active = item.exact
+      ? pathname === item.to
+      : pathname === item.to || pathname.startsWith(item.to + "/");
+    const cls = `flex min-h-11 items-center gap-2.5 overflow-hidden rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:min-h-0 ${
       active ? "bg-primary/15 text-primary" : "text-gray-300 hover:bg-white/5 hover:text-white"
     }`;
     const title = collapsed ? item.label : undefined;
@@ -83,7 +88,11 @@ export function PanelSidebar({
         >
           {item.label}
         </span>
-        {!collapsed && <NotificationBadge count={item.badge ?? 0} />}
+        {!collapsed && (
+          <span aria-hidden>
+            <NotificationBadge count={item.badge ?? 0} />
+          </span>
+        )}
       </>
     );
     if (item.external) {
@@ -94,7 +103,15 @@ export function PanelSidebar({
       );
     }
     return (
-      <Link key={item.to} to={item.to} className={cls} title={title} onClick={closeMobile}>
+      <Link
+        key={item.to}
+        to={item.to}
+        activeOptions={{ exact: !!item.exact, includeSearch: false }}
+        aria-label={item.badge ? `${item.label}, ${item.badge} pendientes` : undefined}
+        className={cls}
+        title={title}
+        onClick={closeMobile}
+      >
         {content}
       </Link>
     );
@@ -105,7 +122,13 @@ export function PanelSidebar({
   return (
     <>
       {/* Overlay en mobile */}
-      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={closeMobile} aria-hidden />}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={closeMobile}
+          aria-hidden
+        />
+      )}
 
       {/* Espaciador: reserva el ancho del sidebar en el layout del padre
           SOLO mientras el <aside> está en position:fixed durante un
@@ -125,26 +148,30 @@ export function PanelSidebar({
           styles.css. */}
       <div
         aria-hidden
-        className="panel-sidebar-spacer hidden md:block shrink-0"
+        className="panel-sidebar-spacer hidden lg:block shrink-0"
         style={{ "--panel-sidebar-w": collapsed ? "4.5rem" : "16rem" } as React.CSSProperties}
       />
 
       <aside
-        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out sm:pb-4 md:sticky md:top-0 md:z-auto md:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 lg:pb-4 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
         style={{ height: "100dvh" }}
       >
         {/* Botón cerrar en mobile */}
         <button
           onClick={closeMobile}
-          className="absolute right-3 top-3 text-gray-400 transition hover:text-white md:hidden"
+          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-gray-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
           aria-label="Cerrar menú"
         >
           <X size={20} />
         </button>
 
-        <Link to="/" className="mb-6 flex h-9 items-center gap-2 overflow-hidden px-2" onClick={closeMobile}>
+        <Link
+          to="/"
+          className="mb-6 flex h-9 items-center gap-2 overflow-hidden px-2"
+          onClick={closeMobile}
+        >
           <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/20 text-primary">
             <Trophy size={16} />
           </span>
@@ -162,7 +189,7 @@ export function PanelSidebar({
           <button
             onClick={toggleCollapsed}
             aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
-            className="absolute -right-3 top-7 z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#0B1220] text-gray-400 transition hover:border-primary/40 hover:text-primary md:flex"
+            className="absolute -right-3 top-7 z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#0B1220] text-gray-400 transition hover:border-primary/40 hover:text-primary lg:flex"
           >
             {collapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
           </button>
@@ -170,7 +197,24 @@ export function PanelSidebar({
 
         {topSlot?.(collapsed)}
 
-        <nav className="flex flex-col gap-4 flex-1 overflow-y-auto min-h-0 py-1">
+        {action && (
+          <Link
+            to={action.to}
+            onClick={closeMobile}
+            title={collapsed ? action.label : undefined}
+            className="mb-4 flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black lg:min-h-0"
+          >
+            <span className="shrink-0" aria-hidden>
+              {action.icon}
+            </span>
+            {!collapsed && <span className="whitespace-nowrap">{action.label}</span>}
+          </Link>
+        )}
+
+        <nav
+          aria-label={`Menú: ${title}`}
+          className="flex flex-col gap-4 flex-1 overflow-y-auto min-h-0 py-1"
+        >
           {resolvedSections.map((sec) => (
             <div key={sec.title}>
               <div
@@ -197,7 +241,7 @@ export function PanelSidebar({
           <button
             onClick={logout}
             title={collapsed ? "Cerrar sesión" : undefined}
-            className="flex w-full items-center gap-2 overflow-hidden rounded-md border border-white/10 px-3 py-2 text-xs text-gray-300 transition hover:border-primary/40 hover:text-primary"
+            className="flex min-h-11 w-full items-center gap-2 overflow-hidden rounded-md border border-white/10 px-3 py-2 text-xs text-gray-300 transition hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:min-h-0"
           >
             <span className="shrink-0">
               <LogOut size={12} />

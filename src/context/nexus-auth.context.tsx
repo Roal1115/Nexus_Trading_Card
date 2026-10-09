@@ -168,7 +168,7 @@ export function useNexusRole() {
 
 export function homeRouteForRole(role: AppRole | null): string {
   if (role === "admin") return "/admin";
-  if (role === "tcg_manager") return "/tcg-manager/analytics";
+  if (role === "tcg_manager") return "/tcg-manager";
   if (role === "organizer") return "/organizer";
   return "/dashboard";
 }

@@ -231,7 +231,7 @@ function ManagerTournamentDetailPage() {
     <div className="space-y-6 pb-32">
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/tcg-manager/tournaments-panel" className="hover:text-primary">
+          <Link to="/tcg-manager/tournaments" className="hover:text-primary">
             Torneos
           </Link>
           <ChevronRight size={12} />
@@ -239,7 +239,7 @@ function ManagerTournamentDetailPage() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/tcg-manager/tournaments-panel">
+            <Link to="/tcg-manager/tournaments">
               <ArrowLeft size={14} className="mr-1" /> Regresar
             </Link>
           </Button>
