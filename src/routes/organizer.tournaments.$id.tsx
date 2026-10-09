@@ -17,6 +17,7 @@ import { FileLink } from "@/components/ui/FileLink";
 import { toast } from "sonner";
 import { getOrganizerTournamentDetail } from "@/lib/nexus-organizer.functions";
 import { Badge } from "@/components/ui/badge";
+import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
 import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/organizer/tournaments/$id")({
@@ -38,20 +39,6 @@ function formatDate(d: string) {
 function formatDateTime(iso: string) {
   const dt = new Date(iso);
   return `${dt.getDate()} ${MESES[dt.getMonth()]} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-}
-
-function statusBadge(status: string) {
-  const map: Record<string, { label: string; cls: string }> = {
-    DRAFT: { label: "Borrador", cls: "bg-gray-500/20 text-gray-200 border-gray-400/30" },
-    APPROVED: { label: "Aprobado", cls: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40" },
-    PUBLISHED: { label: "Publicado", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40" },
-  };
-  const v = map[status] ?? { label: status, cls: "bg-white/10 text-white border-white/20" };
-  return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${v.cls}`}>
-      {v.label}
-    </span>
-  );
 }
 
 function OrganizerTournamentDetailPage() {
@@ -118,19 +105,43 @@ function OrganizerTournamentDetailPage() {
       {/* Header */}
       <header className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/organizer/history" className="hover:text-primary">Historial de Torneos</Link>
+          <Link to="/organizer/tournaments" className="hover:text-primary">
+            Torneos
+          </Link>
           <ChevronRight size={12} />
           <span className="text-white">Detalle del Torneo</span>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
-            to="/organizer/history"
+            to="/organizer/tournaments"
             className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
           >
             <ArrowLeft size={14} className="mr-1" /> Regresar
           </Link>
-          {statusBadge(tournament.status)}
+          <TournamentStatusBadge
+            status={tournament.status}
+            rejectionReason={tournament.rejection_reason}
+            audience="uploader"
+          />
         </div>
+        {tournament.status === "DRAFT" && tournament.rejection_reason && (
+          <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
+            <p className="text-xs font-semibold uppercase tracking-wider text-red-300">
+              Motivo del rechazo
+            </p>
+            <p className="mt-1">{tournament.rejection_reason}</p>
+            <p className="mt-2 text-gray-300">
+              Elimina este torneo y vuelve a subir el archivo corregido.{" "}
+              <Link
+                to="/organizer/tournaments"
+                search={{ tab: "rejected" }}
+                className="text-primary hover:underline"
+              >
+                Ir a Rechazados
+              </Link>
+            </p>
+          </div>
+        )}
       </header>
 
       {/* Resumen */}
@@ -252,7 +263,11 @@ function OrganizerTournamentDetailPage() {
 
       {/* Estado del torneo (sin acciones) */}
       <div className="flex justify-end">
-        {statusBadge(tournament.status)}
+        <TournamentStatusBadge
+          status={tournament.status}
+          rejectionReason={tournament.rejection_reason}
+          audience="uploader"
+        />
       </div>
     </div>
   );

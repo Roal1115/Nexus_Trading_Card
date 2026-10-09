@@ -3,7 +3,7 @@ import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Calendar,
-  History,
+  BarChart3,
   LayoutDashboard,
   Loader2,
   Medal,
@@ -52,7 +52,6 @@ function OrganizerLayout() {
           {
             title: "Mi tienda",
             items: [
-              // ponytail: hoy Inicio muestra las estadísticas; en la Fase 5 pasan a /organizer/analytics.
               {
                 to: "/organizer",
                 label: "Inicio",
@@ -65,8 +64,6 @@ function OrganizerLayout() {
                 icon: <Trophy size={16} />,
                 badge: counts?.pending ?? 0,
               },
-              // ponytail: se une a Torneos → Todos en la Fase 5.
-              { to: "/organizer/history", label: "Historial", icon: <History size={16} /> },
               {
                 to: "/organizer/appeals",
                 label: "Apelaciones",
@@ -78,8 +75,9 @@ function OrganizerLayout() {
             ],
           },
           {
-            title: "Información",
+            title: "Tienda",
             items: [
+              { to: "/organizer/analytics", label: "Estadísticas", icon: <BarChart3 size={16} /> },
               { to: "/organizer/players", label: "Jugadores", icon: <Users size={16} /> },
               { to: "/organizer/store", label: "Datos de la tienda", icon: <Store size={16} /> },
             ],

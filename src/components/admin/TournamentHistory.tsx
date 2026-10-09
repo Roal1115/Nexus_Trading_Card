@@ -6,8 +6,9 @@ import { FileLink } from "@/components/ui/FileLink";
 import { BlockSelect } from "@/components/ui/block-select";
 import { Badge } from "@/components/ui/badge";
 import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
+import type { StatusAudience } from "@/components/admin/status-presentation";
 
-// Pestaña "Todos" de Torneos (admin y TCG manager; antes /…/history). Los
+// Pestaña "Todos" de Torneos (admin, TCG manager y organizador; antes /…/history). Los
 // filtros viven en la URL de la página que lo monta, junto a ?tab=all; los
 // datos y la ruta del detalle llegan por props según el rol.
 export type HistorySearch = {
@@ -103,15 +104,20 @@ export function TournamentHistory({
   fetchOptions,
   detailTo,
   onRepublish: republish,
+  audience = "reviewer",
 }: {
   search: HistorySearch;
   onSearch: (next: HistorySearch) => void;
   fetchHistory: (filters: HistorySearch & { page: number }) => Promise<HistoryResult>;
   fetchOptions: () => Promise<HistoryFilterOptions>;
-  detailTo: "/admin/tournaments/$id" | "/tcg-manager/tournaments/$id";
+  detailTo:
+    "/admin/tournaments/$id" | "/tcg-manager/tournaments/$id" | "/organizer/tournaments/$id";
   /** Solo admin: re-enviar a Aprobado un torneo despublicado desde la lista. */
   onRepublish?: (tournamentId: string) => Promise<void>;
+  /** Textos de estado para quien sube (organizador). */
+  audience?: StatusAudience;
 }) {
+  const uploader = audience === "uploader";
   const navigate = useNavigate();
   // La URL es la fuente de verdad de los filtros (compartible, sobrevive
   // atrás/adelante y refresh) — mismo patrón que el leaderboard (P0-03).
@@ -208,7 +214,11 @@ export function TournamentHistory({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {[
           { label: "Total", value: grandTotal, color: "text-white" },
-          { label: "Por revisar o rechazados", value: stats.DRAFT ?? 0, color: "text-gray-300" },
+          {
+            label: uploader ? "En revisión o rechazados" : "Por revisar o rechazados",
+            value: stats.DRAFT ?? 0,
+            color: "text-gray-300",
+          },
           { label: "Aprobados", value: stats.APPROVED ?? 0, color: "text-green-400" },
           { label: "Publicados", value: stats.PUBLISHED ?? 0, color: "text-primary" },
           { label: "Despublicados", value: stats.UNPUBLISHED ?? 0, color: "text-amber-400" },
@@ -245,8 +255,11 @@ export function TournamentHistory({
             onChange={(v) => load({ status: v ?? "", page: 1 })}
             placeholder="Todos los estados"
             options={[
-              { value: "DRAFT", label: "Por revisar o rechazado" },
-              { value: "APPROVED", label: "Aprobado · sin publicar" },
+              {
+                value: "DRAFT",
+                label: uploader ? "En revisión o rechazado" : "Por revisar o rechazado",
+              },
+              { value: "APPROVED", label: uploader ? "Aprobado" : "Aprobado · sin publicar" },
               { value: "PUBLISHED", label: "Publicado" },
               { value: "UNPUBLISHED", label: "Despublicado" },
             ]}
@@ -257,15 +270,17 @@ export function TournamentHistory({
             placeholder="Todos los TCG"
             options={opts.games.map((g) => ({ value: g.id, label: g.name }))}
           />
-          <BlockSelect
-            value={filters.store_id || null}
-            onChange={(v) => load({ store_id: v ?? "", page: 1 })}
-            placeholder="Todas las tiendas"
-            options={opts.stores.map((s) => ({
-              value: s.id,
-              label: s.name + (s.city ? ` — ${s.city}` : ""),
-            }))}
-          />
+          {opts.stores.length > 0 && (
+            <BlockSelect
+              value={filters.store_id || null}
+              onChange={(v) => load({ store_id: v ?? "", page: 1 })}
+              placeholder="Todas las tiendas"
+              options={opts.stores.map((s) => ({
+                value: s.id,
+                label: s.name + (s.city ? ` — ${s.city}` : ""),
+              }))}
+            />
+          )}
           <BlockSelect
             value={filters.season_id || null}
             onChange={(v) => load({ season_id: v ?? "", page: 1 })}
@@ -343,6 +358,7 @@ export function TournamentHistory({
                         status={r.status}
                         rejectionReason={r.rejection_reason}
                         size="sm"
+                        audience={audience}
                       />
                     </td>
                     <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
@@ -414,6 +430,7 @@ export function TournamentHistory({
                     status={r.status}
                     rejectionReason={r.rejection_reason}
                     size="sm"
+                    audience={audience}
                   />
                 </div>
 

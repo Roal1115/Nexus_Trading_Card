@@ -42,7 +42,6 @@ import { Route as TcgManagerAnalyticsRouteImport } from './routes/tcg-manager.an
 import { Route as StoresSlugRouteImport } from './routes/stores.$slug'
 import { Route as SessionsSessionIdRouteImport } from './routes/sessions.$sessionId'
 import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
-import { Route as OrganizerTournamentsRouteImport } from './routes/organizer.tournaments'
 import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
 import { Route as OrganizerPlayersRouteImport } from './routes/organizer.players'
 import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
@@ -50,6 +49,7 @@ import { Route as OrganizerLeaguesRouteImport } from './routes/organizer.leagues
 import { Route as OrganizerHistoryRouteImport } from './routes/organizer.history'
 import { Route as OrganizerCalendarRouteImport } from './routes/organizer.calendar'
 import { Route as OrganizerAppealsRouteImport } from './routes/organizer.appeals'
+import { Route as OrganizerAnalyticsRouteImport } from './routes/organizer.analytics'
 import { Route as DocsFeaturesRouteImport } from './routes/docs.features'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
 import { Route as AdminTournamentsPanelRouteImport } from './routes/admin.tournaments-panel'
@@ -64,6 +64,7 @@ import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as TcgManagerTournamentsIndexRouteImport } from './routes/tcg-manager.tournaments.index'
 import { Route as StoresSlugIndexRouteImport } from './routes/stores.$slug.index'
+import { Route as OrganizerTournamentsIndexRouteImport } from './routes/organizer.tournaments.index'
 import { Route as AdminTournamentsIndexRouteImport } from './routes/admin.tournaments.index'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
 import { Route as StoresSlugTournamentsRouteImport } from './routes/stores.$slug.tournaments'
@@ -242,11 +243,6 @@ const PlayersPlayerTagRoute = PlayersPlayerTagRouteImport.update({
   path: '/players/$playerTag',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrganizerTournamentsRoute = OrganizerTournamentsRouteImport.update({
-  id: '/tournaments',
-  path: '/tournaments',
-  getParentRoute: () => OrganizerRoute,
-} as any)
 const OrganizerStoreRoute = OrganizerStoreRouteImport.update({
   id: '/store',
   path: '/store',
@@ -280,6 +276,11 @@ const OrganizerCalendarRoute = OrganizerCalendarRouteImport.update({
 const OrganizerAppealsRoute = OrganizerAppealsRouteImport.update({
   id: '/appeals',
   path: '/appeals',
+  getParentRoute: () => OrganizerRoute,
+} as any)
+const OrganizerAnalyticsRoute = OrganizerAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => OrganizerRoute,
 } as any)
 const DocsFeaturesRoute = DocsFeaturesRouteImport.update({
@@ -353,6 +354,12 @@ const StoresSlugIndexRoute = StoresSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StoresSlugRoute,
 } as any)
+const OrganizerTournamentsIndexRoute =
+  OrganizerTournamentsIndexRouteImport.update({
+    id: '/tournaments/',
+    path: '/tournaments/',
+    getParentRoute: () => OrganizerRoute,
+  } as any)
 const AdminTournamentsIndexRoute = AdminTournamentsIndexRouteImport.update({
   id: '/tournaments/',
   path: '/tournaments/',
@@ -381,9 +388,9 @@ const PlayersPlayerTagAchievementsRoute =
     getParentRoute: () => rootRouteImport,
   } as any)
 const OrganizerTournamentsIdRoute = OrganizerTournamentsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => OrganizerTournamentsRoute,
+  id: '/tournaments/$id',
+  path: '/tournaments/$id',
+  getParentRoute: () => OrganizerRoute,
 } as any)
 const OrganizerLeaguesLeagueIdRoute =
   OrganizerLeaguesLeagueIdRouteImport.update({
@@ -442,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/docs/features': typeof DocsFeaturesRoute
+  '/organizer/analytics': typeof OrganizerAnalyticsRoute
   '/organizer/appeals': typeof OrganizerAppealsRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/history': typeof OrganizerHistoryRoute
@@ -449,7 +457,6 @@ export interface FileRoutesByFullPath {
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/players': typeof OrganizerPlayersRoute
   '/organizer/store': typeof OrganizerStoreRoute
-  '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/stores/$slug': typeof StoresSlugRouteWithChildren
@@ -477,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/stores/$slug/tournaments': typeof StoresSlugTournamentsRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/admin/tournaments/': typeof AdminTournamentsIndexRoute
+  '/organizer/tournaments/': typeof OrganizerTournamentsIndexRoute
   '/stores/$slug/': typeof StoresSlugIndexRoute
   '/tcg-manager/tournaments/': typeof TcgManagerTournamentsIndexRoute
   '/players/$playerTag/season/$seasonId': typeof PlayersPlayerTagSeasonSeasonIdRoute
@@ -505,6 +513,7 @@ export interface FileRoutesByTo {
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/docs/features': typeof DocsFeaturesRoute
+  '/organizer/analytics': typeof OrganizerAnalyticsRoute
   '/organizer/appeals': typeof OrganizerAppealsRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/history': typeof OrganizerHistoryRoute
@@ -512,7 +521,6 @@ export interface FileRoutesByTo {
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/players': typeof OrganizerPlayersRoute
   '/organizer/store': typeof OrganizerStoreRoute
-  '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
@@ -539,6 +547,7 @@ export interface FileRoutesByTo {
   '/stores/$slug/tournaments': typeof StoresSlugTournamentsRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/admin/tournaments': typeof AdminTournamentsIndexRoute
+  '/organizer/tournaments': typeof OrganizerTournamentsIndexRoute
   '/stores/$slug': typeof StoresSlugIndexRoute
   '/tcg-manager/tournaments': typeof TcgManagerTournamentsIndexRoute
   '/players/$playerTag/season/$seasonId': typeof PlayersPlayerTagSeasonSeasonIdRoute
@@ -573,6 +582,7 @@ export interface FileRoutesById {
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
   '/docs/features': typeof DocsFeaturesRoute
+  '/organizer/analytics': typeof OrganizerAnalyticsRoute
   '/organizer/appeals': typeof OrganizerAppealsRoute
   '/organizer/calendar': typeof OrganizerCalendarRoute
   '/organizer/history': typeof OrganizerHistoryRoute
@@ -580,7 +590,6 @@ export interface FileRoutesById {
   '/organizer/new': typeof OrganizerNewRoute
   '/organizer/players': typeof OrganizerPlayersRoute
   '/organizer/store': typeof OrganizerStoreRoute
-  '/organizer/tournaments': typeof OrganizerTournamentsRouteWithChildren
   '/players/$playerTag': typeof PlayersPlayerTagRoute
   '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/stores/$slug': typeof StoresSlugRouteWithChildren
@@ -608,6 +617,7 @@ export interface FileRoutesById {
   '/stores/$slug/tournaments': typeof StoresSlugTournamentsRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/admin/tournaments/': typeof AdminTournamentsIndexRoute
+  '/organizer/tournaments/': typeof OrganizerTournamentsIndexRoute
   '/stores/$slug/': typeof StoresSlugIndexRoute
   '/tcg-manager/tournaments/': typeof TcgManagerTournamentsIndexRoute
   '/players/$playerTag_/season/$seasonId': typeof PlayersPlayerTagSeasonSeasonIdRoute
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/docs/features'
+    | '/organizer/analytics'
     | '/organizer/appeals'
     | '/organizer/calendar'
     | '/organizer/history'
@@ -650,7 +661,6 @@ export interface FileRouteTypes {
     | '/organizer/new'
     | '/organizer/players'
     | '/organizer/store'
-    | '/organizer/tournaments'
     | '/players/$playerTag'
     | '/sessions/$sessionId'
     | '/stores/$slug'
@@ -678,6 +688,7 @@ export interface FileRouteTypes {
     | '/stores/$slug/tournaments'
     | '/tcg-manager/tournaments/$id'
     | '/admin/tournaments/'
+    | '/organizer/tournaments/'
     | '/stores/$slug/'
     | '/tcg-manager/tournaments/'
     | '/players/$playerTag/season/$seasonId'
@@ -706,6 +717,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/docs/features'
+    | '/organizer/analytics'
     | '/organizer/appeals'
     | '/organizer/calendar'
     | '/organizer/history'
@@ -713,7 +725,6 @@ export interface FileRouteTypes {
     | '/organizer/new'
     | '/organizer/players'
     | '/organizer/store'
-    | '/organizer/tournaments'
     | '/players/$playerTag'
     | '/sessions/$sessionId'
     | '/tcg-manager/analytics'
@@ -740,6 +751,7 @@ export interface FileRouteTypes {
     | '/stores/$slug/tournaments'
     | '/tcg-manager/tournaments/$id'
     | '/admin/tournaments'
+    | '/organizer/tournaments'
     | '/stores/$slug'
     | '/tcg-manager/tournaments'
     | '/players/$playerTag/season/$seasonId'
@@ -773,6 +785,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments-panel'
     | '/admin/upload'
     | '/docs/features'
+    | '/organizer/analytics'
     | '/organizer/appeals'
     | '/organizer/calendar'
     | '/organizer/history'
@@ -780,7 +793,6 @@ export interface FileRouteTypes {
     | '/organizer/new'
     | '/organizer/players'
     | '/organizer/store'
-    | '/organizer/tournaments'
     | '/players/$playerTag'
     | '/sessions/$sessionId'
     | '/stores/$slug'
@@ -808,6 +820,7 @@ export interface FileRouteTypes {
     | '/stores/$slug/tournaments'
     | '/tcg-manager/tournaments/$id'
     | '/admin/tournaments/'
+    | '/organizer/tournaments/'
     | '/stores/$slug/'
     | '/tcg-manager/tournaments/'
     | '/players/$playerTag_/season/$seasonId'
@@ -1071,13 +1084,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayersPlayerTagRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/organizer/tournaments': {
-      id: '/organizer/tournaments'
-      path: '/tournaments'
-      fullPath: '/organizer/tournaments'
-      preLoaderRoute: typeof OrganizerTournamentsRouteImport
-      parentRoute: typeof OrganizerRoute
-    }
     '/organizer/store': {
       id: '/organizer/store'
       path: '/store'
@@ -1125,6 +1131,13 @@ declare module '@tanstack/react-router' {
       path: '/appeals'
       fullPath: '/organizer/appeals'
       preLoaderRoute: typeof OrganizerAppealsRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
+    '/organizer/analytics': {
+      id: '/organizer/analytics'
+      path: '/analytics'
+      fullPath: '/organizer/analytics'
+      preLoaderRoute: typeof OrganizerAnalyticsRouteImport
       parentRoute: typeof OrganizerRoute
     }
     '/docs/features': {
@@ -1225,6 +1238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresSlugIndexRouteImport
       parentRoute: typeof StoresSlugRoute
     }
+    '/organizer/tournaments/': {
+      id: '/organizer/tournaments/'
+      path: '/tournaments'
+      fullPath: '/organizer/tournaments/'
+      preLoaderRoute: typeof OrganizerTournamentsIndexRouteImport
+      parentRoute: typeof OrganizerRoute
+    }
     '/admin/tournaments/': {
       id: '/admin/tournaments/'
       path: '/tournaments'
@@ -1262,10 +1282,10 @@ declare module '@tanstack/react-router' {
     }
     '/organizer/tournaments/$id': {
       id: '/organizer/tournaments/$id'
-      path: '/$id'
+      path: '/tournaments/$id'
       fullPath: '/organizer/tournaments/$id'
       preLoaderRoute: typeof OrganizerTournamentsIdRouteImport
-      parentRoute: typeof OrganizerTournamentsRoute
+      parentRoute: typeof OrganizerRoute
     }
     '/organizer/leagues_/$leagueId': {
       id: '/organizer/leagues_/$leagueId'
@@ -1353,18 +1373,8 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface OrganizerTournamentsRouteChildren {
-  OrganizerTournamentsIdRoute: typeof OrganizerTournamentsIdRoute
-}
-
-const OrganizerTournamentsRouteChildren: OrganizerTournamentsRouteChildren = {
-  OrganizerTournamentsIdRoute: OrganizerTournamentsIdRoute,
-}
-
-const OrganizerTournamentsRouteWithChildren =
-  OrganizerTournamentsRoute._addFileChildren(OrganizerTournamentsRouteChildren)
-
 interface OrganizerRouteChildren {
+  OrganizerAnalyticsRoute: typeof OrganizerAnalyticsRoute
   OrganizerAppealsRoute: typeof OrganizerAppealsRoute
   OrganizerCalendarRoute: typeof OrganizerCalendarRoute
   OrganizerHistoryRoute: typeof OrganizerHistoryRoute
@@ -1372,12 +1382,14 @@ interface OrganizerRouteChildren {
   OrganizerNewRoute: typeof OrganizerNewRoute
   OrganizerPlayersRoute: typeof OrganizerPlayersRoute
   OrganizerStoreRoute: typeof OrganizerStoreRoute
-  OrganizerTournamentsRoute: typeof OrganizerTournamentsRouteWithChildren
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerLeaguesLeagueIdRoute: typeof OrganizerLeaguesLeagueIdRoute
+  OrganizerTournamentsIdRoute: typeof OrganizerTournamentsIdRoute
+  OrganizerTournamentsIndexRoute: typeof OrganizerTournamentsIndexRoute
 }
 
 const OrganizerRouteChildren: OrganizerRouteChildren = {
+  OrganizerAnalyticsRoute: OrganizerAnalyticsRoute,
   OrganizerAppealsRoute: OrganizerAppealsRoute,
   OrganizerCalendarRoute: OrganizerCalendarRoute,
   OrganizerHistoryRoute: OrganizerHistoryRoute,
@@ -1385,9 +1397,10 @@ const OrganizerRouteChildren: OrganizerRouteChildren = {
   OrganizerNewRoute: OrganizerNewRoute,
   OrganizerPlayersRoute: OrganizerPlayersRoute,
   OrganizerStoreRoute: OrganizerStoreRoute,
-  OrganizerTournamentsRoute: OrganizerTournamentsRouteWithChildren,
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerLeaguesLeagueIdRoute: OrganizerLeaguesLeagueIdRoute,
+  OrganizerTournamentsIdRoute: OrganizerTournamentsIdRoute,
+  OrganizerTournamentsIndexRoute: OrganizerTournamentsIndexRoute,
 }
 
 const OrganizerRouteWithChildren = OrganizerRoute._addFileChildren(

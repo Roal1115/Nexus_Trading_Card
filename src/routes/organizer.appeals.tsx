@@ -211,8 +211,8 @@ function OrganizerAppealsPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Nexus</h1>
-        <p className="text-lg font-semibold text-white">Apelaciones de Resultados</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Mi tienda</p>
+        <h1 className="mt-2 text-3xl font-bold text-white">Apelaciones</h1>
         <p className="mt-1 text-sm text-gray-400">
           Revisa las disputas de resultados reportados en tu tienda y decide cuál versión es correcta.
         </p>
