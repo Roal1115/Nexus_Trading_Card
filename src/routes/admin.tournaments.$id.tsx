@@ -35,14 +35,12 @@ import {
   fetchActiveSeason,
 } from "@/lib/nexus-admin.functions";
 import {
-  deriveState,
   INELIGIBLE_LABELS,
   nextScheduledRun,
   publicationEligibility,
   scheduledPublicationDate,
-  STATE_PRESENTATION,
-  type StateTone,
 } from "@/lib/tournament-state";
+import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
 
 // La publicación automática del domingo solo se anuncia cuando está activa.
 const SCHEDULED_PUBLISHING_ACTIVE = import.meta.env.VITE_SCHEDULED_PUBLISHING === "true";
@@ -103,26 +101,6 @@ function formatDate(d: string) {
 function formatDateTime(iso: string) {
   const dt = new Date(iso);
   return `${dt.getDate()} ${MESES[dt.getMonth()]} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-}
-
-const TONE_CLASSES: Record<StateTone, string> = {
-  warning: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40",
-  danger: "bg-red-500/20 text-red-200 border-red-400/40",
-  info: "bg-sky-500/20 text-sky-200 border-sky-400/40",
-  success: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
-  neutral: "bg-white/10 text-gray-200 border-white/20",
-};
-
-function statusBadge(status: string | null, rejectionReason: string | null) {
-  const p = STATE_PRESENTATION[deriveState({ status: status ?? "", rejection_reason: rejectionReason })];
-  const v = { label: p.label, cls: TONE_CLASSES[p.tone] };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${v.cls}`}
-    >
-      {v.label}
-    </span>
-  );
 }
 
 function useCountdown(targetIso: string | null) {
@@ -410,7 +388,7 @@ function TournamentDetailPage() {
               <ArrowLeft size={14} className="mr-1" /> Regresar
             </Link>
           </Button>
-          {statusBadge(tournament.status, tournament.rejection_reason)}
+          <TournamentStatusBadge status={tournament.status} rejectionReason={tournament.rejection_reason} />
         </div>
       </header>
 

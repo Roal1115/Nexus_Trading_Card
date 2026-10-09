@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Eye, ArrowRight, XCircle, Upload, FileX } from "lucide-react";
@@ -15,7 +15,12 @@ import {
 } from "@/lib/nexus-admin.functions";
 import { UnapproveTournamentDialog } from "@/components/admin/UnapproveTournamentDialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
+import {
+  AdminTournamentHistory,
+  parseHistorySearch,
+  type HistorySearch,
+} from "@/components/admin/AdminTournamentHistory";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -30,12 +35,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const TOURNAMENT_TABS = ["pending", "approved", "published"] as const;
+const TOURNAMENT_TABS = ["pending", "approved", "published", "all"] as const;
 type TournamentsTab = (typeof TOURNAMENT_TABS)[number];
+type TournamentsSearch = HistorySearch & { tab?: TournamentsTab };
 
+// La pestaña vive en ?tab= (atrás/adelante y enlaces directos funcionan);
+// los filtros de "Todos" también viven en la URL.
 export const Route = createFileRoute("/admin/tournaments/")({
-  validateSearch: (s: Record<string, unknown>): { tab?: TournamentsTab } =>
-    TOURNAMENT_TABS.includes(s.tab as TournamentsTab) ? { tab: s.tab as TournamentsTab } : {},
+  validateSearch: (s: Record<string, unknown>): TournamentsSearch => ({
+    ...parseHistorySearch(s),
+    tab: TOURNAMENT_TABS.includes(s.tab as TournamentsTab) ? (s.tab as TournamentsTab) : undefined,
+  }),
+  head: () => ({ meta: [{ title: "Torneos — Admin" }] }),
   component: TournamentsPanel,
 });
 
@@ -45,6 +56,7 @@ type PendingRow = {
   game_name: string;
   status: string;
   csv_url: string | null;
+  rejection_reason: string | null;
   store: { name: string; city: string | null; state: string | null };
 };
 
@@ -65,8 +77,11 @@ type PublishedRow = {
 };
 
 function TournamentsPanel() {
-  const initialTab = Route.useSearch().tab ?? "pending";
+  const tab = Route.useSearch().tab ?? "pending";
   const navigate = useNavigate();
+  // Cambiar de pestaña limpia los filtros de "Todos".
+  const setTab = (v: string) =>
+    navigate({ to: "/admin/tournaments", search: v === "pending" ? {} : { tab: v as TournamentsTab } });
   const { player } = useNexusRole();
   const email = player?.email ?? null;
 
@@ -133,9 +148,14 @@ function TournamentsPanel() {
   useEffect(() => {
     if (!email) return;
     void refreshPending();
-    onTabChange(initialTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
+
+  // Carga perezosa de la pestaña activa (también al llegar por URL o con atrás/adelante).
+  useEffect(() => {
+    if (email) onTabChange(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, tab]);
 
   const onTabChange = (v: string) => {
     if (v === "approved" && !approvedLoaded) void refreshApproved();
@@ -165,18 +185,28 @@ function TournamentsPanel() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Moderación</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Torneos</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Revisa, aprueba, publica y administra el ciclo de vida de los torneos.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+            Moderación
+          </p>
+          <h1 className="mt-2 text-3xl font-bold text-white">Torneos</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Revisa, aprueba, publica y administra el ciclo de vida de los torneos.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/admin/upload">
+            <Upload size={14} className="mr-1" aria-hidden />
+            Subir torneo
+          </Link>
+        </Button>
       </header>
 
-      <Tabs defaultValue={initialTab} onValueChange={onTabChange}>
-        <TabsList>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="pending">
-            Pendientes {pendingRows.length > 0 ? `(${pendingRows.length})` : ""}
+            Por revisar {pendingRows.length > 0 ? `(${pendingRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="approved">
             Aprobados {approvedLoaded && approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
@@ -185,9 +215,10 @@ function TournamentsPanel() {
             Publicados{" "}
             {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
           </TabsTrigger>
+          <TabsTrigger value="all">Todos</TabsTrigger>
         </TabsList>
 
-        {/* TAB: PENDIENTES */}
+        {/* TAB: POR REVISAR */}
         <TabsContent value="pending" className="mt-4">
           {pendingLoading ? (
             <div className="glass overflow-hidden rounded-2xl">
@@ -201,7 +232,7 @@ function TournamentsPanel() {
             </div>
           ) : pendingRows.length === 0 ? (
             <div className="glass rounded-2xl p-8 text-sm text-gray-400">
-              No hay torneos pendientes.
+              No hay torneos por revisar.
             </div>
           ) : (
             <div className="glass overflow-hidden rounded-2xl">
@@ -238,7 +269,7 @@ function TournamentsPanel() {
                         </td>
                         <td className="px-4 py-3 text-gray-300">{r.game_name}</td>
                         <td className="px-4 py-3">
-                          <Badge variant="secondary">{r.status}</Badge>
+                          <TournamentStatusBadge status={r.status} rejectionReason={r.rejection_reason} size="sm" />
                         </td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <FileLink url={r.csv_url} />
@@ -360,7 +391,7 @@ function TournamentsPanel() {
                               {r.qualifying_year}-{String(r.qualifying_month).padStart(2, "0")}
                             </td>
                             <td className="px-4 py-3">
-                              <Badge>{r.status}</Badge>
+                              <TournamentStatusBadge status={r.status} rejectionReason={r.rejection_reason} size="sm" />
                             </td>
                             <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                               <FileLink url={r.csv_url} />
@@ -486,6 +517,11 @@ function TournamentsPanel() {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        {/* TAB: TODOS (antes /admin/history) */}
+        <TabsContent value="all" className="mt-4">
+          <AdminTournamentHistory />
         </TabsContent>
       </Tabs>
 

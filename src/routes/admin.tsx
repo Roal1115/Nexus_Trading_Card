@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Calendar,
   CalendarRange,
-  History,
   LayoutDashboard,
   Loader2,
   Megaphone,
@@ -65,8 +64,6 @@ function AdminLayout() {
                 icon: <Trophy size={16} />,
                 badge: tournamentsBadge,
               },
-              // ponytail: se une a Torneos → Todos en la Fase 2.
-              { to: "/admin/history", label: "Historial", icon: <History size={16} /> },
               { to: "/admin/calendar", label: "Calendario", icon: <Calendar size={16} /> },
             ],
           },
