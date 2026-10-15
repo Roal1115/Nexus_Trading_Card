@@ -65,7 +65,12 @@ export const signupPlayer = createServerFn({ method: "POST" })
     if (
       tagOwner &&
       (tagOwner.auth_user_id ||
-        tagOwner.player_tcg_ids.some((t) => wanted.get(t.game_id) !== t.tcg_user_id_normalized))
+        // Solo comparan los IDs de los juegos que el usuario seleccionó: un
+        // placeholder puede tener IDs de otros juegos (subidos en CSV) y eso
+        // no debe bloquear el registro — la adopción de abajo los conserva.
+        tagOwner.player_tcg_ids.some(
+          (t) => wanted.has(t.game_id) && wanted.get(t.game_id) !== t.tcg_user_id_normalized,
+        ))
     ) {
       throw new Error("Ese Geek Tag ya está en uso.");
     }
