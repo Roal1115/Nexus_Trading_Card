@@ -3,6 +3,7 @@
 // usuario no autenticado (antes resolveEmailByNexusTag permitía
 // enumerar emails públicamente — ver AUDIT.md 1.2).
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import { z } from "zod";
@@ -129,9 +130,20 @@ export const sendPasswordReset = createServerFn({ method: "POST" })
     const email = await resolveEmail(data.identifier.trim());
     // Respuesta idéntica exista o no la cuenta.
     if (!email) return { ok: true as const };
+    // El redirect del correo de reset solo puede apuntar al propio sitio:
+    // un redirect_to a otro origen permitiría phishing con la identidad de la app.
+    const requestOrigin = new URL(getRequest().url).origin;
+    let redirectTo: string;
+    try {
+      const target = new URL(data.redirect_to);
+      if (target.origin !== requestOrigin) return { ok: true as const };
+      redirectTo = target.href;
+    } catch {
+      return { ok: true as const };
+    }
     const auth = getAuthClient();
     await auth.auth
-      .resetPasswordForEmail(email, { redirectTo: data.redirect_to })
+      .resetPasswordForEmail(email, { redirectTo })
       .catch(() => {});
     return { ok: true as const };
   });
