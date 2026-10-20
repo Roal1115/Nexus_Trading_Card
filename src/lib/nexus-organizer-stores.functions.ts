@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
-import { getNexusAdmin, failDb } from "./nexus-admin.server";
+import { failDb } from "./nexus-admin.server";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
@@ -47,68 +47,9 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
     };
   });
 
-// Signup de organizador de tienda vía link privado (compartido directamente
-// con la tienda, no enlazado en ninguna navegación pública). El store_id
-// funciona como token: si no coincide con una tienda activa, se rechaza.
-export const signupStoreOrganizer = createServerFn({ method: "POST" })
-  .inputValidator((d: { store_id: string; email: string; password: string; geek_tag: string }) =>
-    z
-      .object({
-        store_id: z.string().uuid(),
-        email: z.string().email(),
-        password: z.string().min(8),
-        geek_tag: z
-          .string()
-          .min(3)
-          .max(30)
-          .regex(/^[A-Za-z0-9_]+$/),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data }) => {
-    const admin = getNexusAdmin();
-
-    const { data: store, error: storeErr } = await admin
-      .from("stores")
-      .select("id, name, is_active")
-      .eq("id", data.store_id)
-      .maybeSingle();
-    if (storeErr) failDb(storeErr);
-    if (!store || !store.is_active) {
-      throw new Error("Este link de registro no es válido o la tienda ya no está activa.");
-    }
-
-    const { data: existing } = await admin
-      .from("players")
-      .select("id")
-      .eq("email", data.email)
-      .maybeSingle();
-    if (existing) {
-      throw new Error("Ya existe una cuenta con ese correo. Inicia sesión en su lugar.");
-    }
-
-    const { data: authUser, error: authErr } = await admin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { geek_tag: data.geek_tag },
-    });
-    if (authErr || !authUser?.user) {
-      throw new Error(authErr?.message ?? "No se pudo crear el usuario");
-    }
-
-    const { error: insertErr } = await admin.from("players").insert({
-      geek_tag: data.geek_tag,
-      email: data.email,
-      auth_user_id: authUser.user.id,
-      role: "organizer",
-      home_store_id: data.store_id,
-      is_active: true,
-    });
-    if (insertErr) failDb(insertErr);
-
-    return { ok: true as const, store_name: store.name };
-  });
+// El rol organizer solo lo asigna un admin (upsertStaffMember +
+// assignOrganizerToStore en nexus-admin-*.functions.ts). No hay registro
+// público de organizers: un store_id es público y no sirve como credencial.
 
 export const updateHomeStore = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])

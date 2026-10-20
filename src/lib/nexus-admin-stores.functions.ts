@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { failDb } from "./nexus-admin.server";
+import { failDb, clearOtherStoreOrganizers } from "./nexus-admin.server";
 import { requireNexusAdmin } from "./nexus-auth.middleware";
 import { logAction, httpUrlSchema } from "./nexus-admin-shared";
 
@@ -209,12 +209,8 @@ export const assignOrganizerToStore = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    // Clear any other organizers that currently point to this store
-    const { error: ce } = await admin
-      .from("players")
-      .update({ home_store_id: null })
-      .eq("home_store_id", data.store_id)
-      .neq("id", data.player_id);
+    // Una tienda, un organizer: desliga a los otros organizers (no a jugadores ni a otro staff).
+    const { error: ce } = await clearOtherStoreOrganizers(admin, data.store_id, data.player_id);
     if (ce) failDb(ce);
 
     const { error } = await admin

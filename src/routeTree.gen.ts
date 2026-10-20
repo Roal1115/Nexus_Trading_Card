@@ -15,7 +15,6 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as OrganizerSignupRouteImport } from './routes/organizer-signup'
 import { Route as OrganizerRouteImport } from './routes/organizer'
 import { Route as MyStatsRouteImport } from './routes/my-stats'
 import { Route as MetaRouteImport } from './routes/meta'
@@ -105,11 +104,6 @@ const SessionsRoute = SessionsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrganizerSignupRoute = OrganizerSignupRouteImport.update({
-  id: '/organizer-signup',
-  path: '/organizer-signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizerRoute = OrganizerRouteImport.update({
@@ -430,7 +424,6 @@ export interface FileRoutesByFullPath {
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
-  '/organizer-signup': typeof OrganizerSignupRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -497,7 +490,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
-  '/organizer-signup': typeof OrganizerSignupRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -563,7 +555,6 @@ export interface FileRoutesById {
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
-  '/organizer-signup': typeof OrganizerSignupRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -634,7 +625,6 @@ export interface FileRouteTypes {
     | '/meta'
     | '/my-stats'
     | '/organizer'
-    | '/organizer-signup'
     | '/reset-password'
     | '/sessions'
     | '/settings'
@@ -701,7 +691,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/meta'
     | '/my-stats'
-    | '/organizer-signup'
     | '/reset-password'
     | '/settings'
     | '/signup'
@@ -766,7 +755,6 @@ export interface FileRouteTypes {
     | '/meta'
     | '/my-stats'
     | '/organizer'
-    | '/organizer-signup'
     | '/reset-password'
     | '/sessions'
     | '/settings'
@@ -836,7 +824,6 @@ export interface RootRouteChildren {
   MetaRoute: typeof MetaRoute
   MyStatsRoute: typeof MyStatsRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
-  OrganizerSignupRoute: typeof OrganizerSignupRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SessionsRoute: typeof SessionsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
@@ -893,13 +880,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organizer-signup': {
-      id: '/organizer-signup'
-      path: '/organizer-signup'
-      fullPath: '/organizer-signup'
-      preLoaderRoute: typeof OrganizerSignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizer': {
@@ -1492,7 +1472,6 @@ const rootRouteChildren: RootRouteChildren = {
   MetaRoute: MetaRoute,
   MyStatsRoute: MyStatsRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
-  OrganizerSignupRoute: OrganizerSignupRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SessionsRoute: SessionsRouteWithChildren,
   SettingsRoute: SettingsRoute,

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getNexusAdmin, failDb } from "./nexus-admin.server";
+import { getNexusAdmin, failDb, generateTempPassword } from "./nexus-admin.server";
 import { requireNexusAdmin } from "./nexus-auth.middleware";
 import { logAction, PAGE_SIZE } from "./nexus-admin-shared";
 import type { TablesUpdate } from "./database.types";
@@ -512,7 +512,7 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
     }
 
     // Scenario A — new user: create auth account, then update player record
-    const tempPassword = Math.random().toString(36).slice(2) + "Aa1!";
+    const tempPassword = generateTempPassword();
     const { data: authUser, error: authErr } = await admin.auth.admin.createUser({
       email: data.email,
       password: tempPassword,
