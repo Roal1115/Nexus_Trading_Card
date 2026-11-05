@@ -195,7 +195,7 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
 
     const playerIds = Array.from(new Set((resultsRes.data ?? []).map((r: any) => r.player_id)));
     const playersRes = playerIds.length
-      ? await admin.from("players").select("id, geek_tag, email, created_at, home_store_id").in("id", playerIds)
+      ? await admin.from("players").select("id, geek_tag, created_at, home_store_id").in("id", playerIds)
       : { data: [] as any[], error: null };
     if ((playersRes as any).error) throw new Error((playersRes as any).error.message);
 

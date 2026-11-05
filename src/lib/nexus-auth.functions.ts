@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
+import { checkRateLimit, getClientIp } from "./rate-limit.server";
 import { normalizeTcgId } from "./utils";
 
 export const signupPlayer = createServerFn({ method: "POST" })
@@ -31,6 +32,10 @@ export const signupPlayer = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data }) => {
+    // 10 registros por IP cada 10 minutos: holgado para un torneo en una misma red.
+    if (!checkRateLimit(`signup_${getClientIp()}`, 10, 600_000)) {
+      throw new Error("Demasiados intentos. Espera unos minutos e intenta de nuevo.");
+    }
     const admin = getNexusAdmin();
 
     // Validar que cada juego seleccionado tenga su ID

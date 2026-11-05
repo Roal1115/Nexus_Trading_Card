@@ -80,6 +80,26 @@ Corrige dos permisos abiertos: cada usuario podía insertar, cambiar y borrar su
 ## Sigue abierto
 
 - Protección de contraseñas filtradas apagada en Supabase Auth; se activa desde el dashboard.
-- `pg_trgm` sigue en `public`.
-- La policy de lectura de `tournament_results` no filtra por estado del torneo.
-- `supabase_admin` conserva sus privilegios por defecto abiertos; postgres no los controla.
+- `supabase_admin` conserva sus privilegios por defecto abiertos; postgres no puede cambiarlos (probado). Las migraciones corren como postgres.
+- `updateMyEmail` sigue fallando a propósito hasta tener SMTP propio.
+
+# Limpieza final
+
+`supabase/migrations/20261105045055_security_cleanup.sql`, aplicada en producción el 2026-11-05 (UTC).
+
+- `pg_trgm` pasa al esquema `extensions`.
+- Ninguna función de `public` queda ejecutable por `anon`.
+- `tournament_results` solo se lee en torneos `PUBLISHED` o `APPROVED`.
+- `league-assets` solo acepta PNG, JPEG, WebP y GIF de hasta 5 MB.
+- `signupPlayer` limita a 10 registros por IP cada 10 minutos.
+
+## Auditoría del 2026-11-05
+
+- Historial de git: sin tokens `service_role`; la única clave secreta encontrada ya fue eliminada.
+- Edge functions y `/api/cron/publish-approved`: exigen secreto. El código de `send-tournament-reminders` no está en el repo.
+- Server functions con sesión: auditadas con Codex, sin acceso a datos ajenos. Se verificaron sus hallazgos, no cada función.
+
+## Riesgo aceptado
+
+- Las policies de escritura sin grant quedan inactivas; quitarlas no aporta seguridad.
+- Cualquier organizer puede leer los CSV de `tournament-files` y sobrescribir imágenes de `league-assets` de otros organizers.

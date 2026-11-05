@@ -43,6 +43,12 @@ const TAG = `zzbase${Date.now().toString(36)}`;
 const cleanupUsers: string[] = [];
 async function cleanup() {
   await svc.from("push_subscriptions").delete().like("endpoint", "https://zzbase%");
+  const stores = await rows(svc.from("stores").select("id").like("slug", "zzbase%"));
+  const ts = await rows(svc.from("tournaments").select("id").in("store_id", stores.map((s: any) => s.id)));
+  await svc.from("tournament_results").delete().in("tournament_id", ts.map((t: any) => t.id));
+  await svc.from("tournaments").delete().in("id", ts.map((t: any) => t.id));
+  const files = await svc.storage.from("league-assets").list(TAG);
+  await svc.storage.from("league-assets").remove((files.data ?? []).map((f) => `${TAG}/${f.name}`));
   await svc.from("players").delete().like("geek_tag", "zzbase%");
   await svc.from("games").delete().like("slug", "zzbase%");
   await svc.from("stores").delete().like("slug", "zzbase%");
@@ -143,6 +149,43 @@ await check("2i. authenticated no se cambia el rol", async () => {
   const r = await user.from("players").update({ role: "admin" }).eq("id", a.id);
   const p = await rows(svc.from("players").select("role").eq("id", a.id).single());
   return denied(r) === true && p.role === "player" ? true : `rol=${p.role}; ${denied(r)}`;
+});
+
+// ---------- Limpieza final ----------
+const tournamentWith = async (status: string, day: string) => {
+  const t = await insertOne("tournaments", {
+    store_id: store, game_id: game, tournament_date: day,
+    qualifying_year: 2026, qualifying_month: 9, qualifying_semester: 2, status,
+  });
+  await insertOne("tournament_results", { tournament_id: t.id, player_id: a.id, rank: 1, points_earned: 3 });
+  return t.id as string;
+};
+const published = await tournamentWith("PUBLISHED", "2026-09-01");
+const draft = await tournamentWith("DRAFT", "2026-09-02");
+await check("4a. anon lee resultados publicados", async () => {
+  const r = await anon().from("tournament_results").select("id").eq("tournament_id", published);
+  return !r.error && r.data?.length === 1 ? true : `error=${r.error?.code} filas=${r.data?.length}`;
+});
+await check("4b. anon no lee resultados sin publicar", async () => {
+  const r = await anon().from("tournament_results").select("id").eq("tournament_id", draft);
+  return !r.error && r.data?.length === 0 ? true : `error=${r.error?.code} filas=${r.data?.length}`;
+});
+await check("4c. anon no ejecuta increment_sponsor_view", async () =>
+  denied(await anon().rpc("increment_sponsor_view", { p_sponsor_id: randomUUID() })));
+await check("4d. service_role conserva increment_sponsor_view", async () => {
+  const r = await svc.rpc("increment_sponsor_view", { p_sponsor_id: randomUUID() });
+  return r.error?.code === "42501" ? `sin permiso: ${r.error.message}` : true;
+});
+const upload = (name: string, type: string) =>
+  svc.storage.from("league-assets").upload(`${TAG}/${name}`, new Blob(["x"], { type }), { contentType: type });
+await check("4e. league-assets rechaza SVG y HTML", async () => {
+  const svg = await upload("a.svg", "image/svg+xml");
+  const html = await upload("a.html", "text/html");
+  return svg.error && html.error ? true : `svg=${svg.error ? "rechazado" : "aceptado"} html=${html.error ? "rechazado" : "aceptado"}`;
+});
+await check("4f. league-assets acepta imágenes", async () => {
+  const r = await upload("a.png", "image/png");
+  return r.error ? `error: ${r.error.message}` : true;
 });
 
 // ---------- El servidor sigue igual ----------

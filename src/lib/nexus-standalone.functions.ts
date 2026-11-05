@@ -421,6 +421,17 @@ export const deleteStandaloneRound = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
+    const { data: session } = await admin
+      .from("standalone_sessions")
+      .select("id, status")
+      .eq("id", data.session_id)
+      .eq("player_id", player.id)
+      .maybeSingle();
+
+    if (!session) throw new Error("Sesión no encontrada o no autorizado");
+    if (session.status === "matched")
+      throw new Error("No puedes editar una sesión ya vinculada a un torneo oficial");
+
     const { error } = await admin
       .from("standalone_round_results")
       .delete()

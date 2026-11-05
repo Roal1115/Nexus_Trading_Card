@@ -65,7 +65,7 @@ export async function loadTournamentDetail(
   const playersRes = playerIds.length
     ? await admin
         .from("players")
-        .select("id, geek_tag, email, created_at, home_store_id")
+        .select("id, geek_tag, created_at, home_store_id")
         .in("id", playerIds)
     : { data: [] as any[], error: null };
   if ((playersRes as any).error) throw new Error((playersRes as any).error.message);
