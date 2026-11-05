@@ -391,24 +391,6 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     >;
     for (const c of classification) categorySummary[c.status]++;
 
-    // ---------- 6. Por recuperar ----------
-    const atRisk = classification.filter((c) => c.status === "por_recuperar");
-
-    // ---------- 7. Top players ----------
-    const topPlayers = Array.from(playerDatesAll.entries())
-      .map(([pid, dates]) => ({
-        player_id: pid,
-        geek_tag: geekTagMap.get(pid) ?? "—",
-        tournaments: dates.filter((d) => {
-          const dt = new Date(d + "T12:00:00");
-          return dt >= rangeStart && dt <= rangeEnd;
-        }).length,
-        points: Math.round(pointsByPlayerInRange.get(pid) ?? 0),
-      }))
-      .filter((p) => p.tournaments > 0)
-      .sort((a, b) => b.tournaments - a.tournaments || b.points - a.points)
-      .slice(0, 100);
-
     return {
       store_id: storeId,
       league_id: data.league_id ?? null,
@@ -428,8 +410,6 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       attendance_trend: attendanceTrend,
       category_summary: categorySummary,
       classification,
-      at_risk: atRisk,
-      top_players: topPlayers,
     };
   });
 

@@ -5,12 +5,10 @@ import {
   Loader2,
   Users,
   HelpCircle,
-  AlertTriangle,
   Trophy,
   Eye,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate } from "@/components/panel/dashboard-format";
 import {
   PLAYER_STATUS_COLORS,
   PLAYER_STATUS_HELP,
@@ -33,18 +31,15 @@ import {
 } from "recharts";
 import { Link } from "@tanstack/react-router";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import { usePagination } from "@/hooks/use-pagination";
 import { getStoreAnalytics, getStorePageViewAnalytics } from "@/lib/nexus-organizer.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { TablePager } from "@/components/ui/table-pager";
 import { ScopeFilters } from "@/components/organizer/scope-filters";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
@@ -177,10 +172,6 @@ function OrganizerAnalytics() {
     void refresh(dateFrom, dateTo, selectedGameId, leagueId);
   };
 
-  const topPlayersPage = usePagination(data?.top_players ?? []);
-  const atRiskPage = usePagination(data?.at_risk ?? []);
-  const classificationPage = usePagination(data?.classification ?? []);
-
   if (roleLoading || (loading && !data)) {
     return (
       <div className="space-y-6 p-4 md:p-6">
@@ -232,28 +223,6 @@ function OrganizerAnalytics() {
             <SkeletonLine width="w-32" height="h-4" />
             <SkeletonBlock className="h-52 w-full rounded-lg" />
           </div>
-          <div className="rounded-lg border bg-card p-4 space-y-3">
-            <SkeletonLine width="w-28" height="h-4" />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <SkeletonLine key={i} width="w-full" height="h-6" />
-            ))}
-          </div>
-        </div>
-
-        {/* Por recuperar */}
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <SkeletonLine width="w-48" height="h-4" />
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonLine key={i} width="w-full" height="h-6" />
-          ))}
-        </div>
-
-        {/* Detalle por jugador */}
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <SkeletonLine width="w-40" height="h-4" />
-          {Array.from({ length: 6 }).map((_, i) => (
-            <SkeletonLine key={i} width="w-full" height="h-6" />
-          ))}
         </div>
       </div>
     );
@@ -285,7 +254,7 @@ function OrganizerAnalytics() {
             to="/organizer/players"
             className="mt-1 inline-block text-xs font-semibold text-primary hover:underline"
           >
-            Ver detalle completo de jugadores →
+            Ver mis jugadores →
           </Link>
         </div>
 
@@ -341,6 +310,20 @@ function OrganizerAnalytics() {
             <div className="text-4xl font-bold text-white">{data.total_attendance}</div>
             <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">
               Asistencias totales (todas las inscripciones)
+            </p>
+          </div>
+          <div className="glass flex flex-col items-center justify-center rounded-2xl p-6">
+            <Users size={28} className="mb-2 text-primary" />
+            <div className="text-4xl font-bold text-white">{data.avg_players_per_tournament}</div>
+            <p className="mt-1 text-center text-xs uppercase tracking-wider text-gray-400">
+              Jugadores por torneo (promedio)
+            </p>
+          </div>
+          <div className="glass flex flex-col items-center justify-center rounded-2xl p-6">
+            <Trophy size={28} className="mb-2 text-primary" />
+            <div className="text-4xl font-bold text-white">{data.avg_points_per_player}</div>
+            <p className="mt-1 text-center text-xs uppercase tracking-wider text-gray-400">
+              Puntos por jugador (promedio)
             </p>
           </div>
         </div>
@@ -524,8 +507,8 @@ function OrganizerAnalytics() {
       {/* Visitas a la página pública de la tienda */}
       <StorePageViewsCard />
 
-      {/* Desglose por TCG + Top jugadores */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Desglose por TCG */}
+      <div>
         <div className="rounded-lg border bg-card p-4">
           <h2 className="text-sm font-semibold mb-3">Desglose por TCG</h2>
           {data.game_breakdown.length === 0 ? (
@@ -574,141 +557,6 @@ function OrganizerAnalytics() {
             </ResponsiveContainer>
           )}
         </div>
-
-        {/* Top jugadores */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Trophy className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold">Más torneos en el periodo</h2>
-          </div>
-          {data.top_players.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin datos en este periodo.</p>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-xs text-muted-foreground border-b">
-                    <tr>
-                      <th scope="col" className="text-left py-2 px-2">
-                        #
-                      </th>
-                      <th scope="col" className="text-left py-2 px-2">
-                        Nexus Tag
-                      </th>
-                      <th scope="col" className="text-right py-2 px-2">
-                        Torneos
-                      </th>
-                      <th scope="col" className="text-right py-2 px-2">
-                        Puntos
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topPlayersPage.pageItems.map((p, i) => (
-                      <tr key={p.player_id} className="border-b last:border-0">
-                        <td className="py-2 px-2 font-semibold">{(topPlayersPage.page - 1) * topPlayersPage.pageSize + i + 1}</td>
-                        <td className="py-2 px-2">{p.geek_tag}</td>
-                        <td className="py-2 px-2 text-right">{p.tournaments}</td>
-                        <td className="py-2 px-2 text-right">{p.points}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <TablePager page={topPlayersPage.page} totalPages={topPlayersPage.totalPages} onPageChange={topPlayersPage.setPage} />
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Jugadores en riesgo */}
-      <div className="rounded-lg border bg-card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <h2 className="text-sm font-semibold">Por recuperar</h2>
-          <span className="text-xs text-muted-foreground">
-            {PLAYER_STATUS_HELP.por_recuperar}
-          </span>
-        </div>
-        {data.at_risk.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay jugadores por recuperar.</p>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground border-b">
-                  <tr>
-                    <th scope="col" className="text-left py-2 px-2">
-                      Nexus Tag
-                    </th>
-                    <th scope="col" className="text-right py-2 px-2">
-                      Torneos que faltó
-                    </th>
-                    <th scope="col" className="text-right py-2 px-2">
-                      Días sin venir
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {atRiskPage.pageItems.map((p) => (
-                    <tr key={p.player_id} className="border-b last:border-0">
-                      <td className="py-2 px-2">{p.geek_tag}</td>
-                      <td className="py-2 px-2 text-right">{p.missed_tournaments}</td>
-                      <td className="py-2 px-2 text-right">{p.days_since} días</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <TablePager page={atRiskPage.page} totalPages={atRiskPage.totalPages} onPageChange={atRiskPage.setPage} />
-          </>
-        )}
-      </div>
-
-      {/* Tabla de clasificación completa */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-semibold mb-3">Detalle por Jugador</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b">
-              <tr>
-                <th scope="col" className="text-left py-2 px-2">
-                  Nexus Tag
-                </th>
-                <th scope="col" className="text-right py-2 px-2">
-                  Torneos en el periodo
-                </th>
-                <th scope="col" className="text-left py-2 px-2">
-                  Estado
-                </th>
-                <th scope="col" className="text-left py-2 px-2">
-                  Última visita
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {classificationPage.pageItems.map((c) => (
-                <tr key={c.player_id} className="border-b last:border-0">
-                  <td className="py-2 px-2">{c.geek_tag}</td>
-                  <td className="py-2 px-2 text-right">{c.tournaments_in_range}</td>
-                  <td className="py-2 px-2">
-                    <Badge
-                      variant="outline"
-                      style={{
-                        borderColor: PLAYER_STATUS_COLORS[c.status],
-                        color: PLAYER_STATUS_COLORS[c.status],
-                      }}
-                    >
-                      {PLAYER_STATUS_LABELS[c.status]}
-                    </Badge>
-                  </td>
-                  <td className="py-2 px-2">{formatDate(c.last_visit)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <TablePager page={classificationPage.page} totalPages={classificationPage.totalPages} onPageChange={classificationPage.setPage} />
       </div>
     </div>
   );
