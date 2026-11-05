@@ -211,7 +211,8 @@ function ManagerTournamentsPanel() {
             Aprobados {approvedLoaded && approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="published">
-            Publicados {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
+            Publicados{" "}
+            {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="all">Todos</TabsTrigger>
           <TabsTrigger value="mine">Revisados por mí</TabsTrigger>
@@ -236,16 +237,30 @@ function ManagerTournamentsPanel() {
           ) : (
             <div className="glass overflow-hidden rounded-2xl">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="table-cards w-full text-sm">
                   <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                     <tr>
-                      <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Tienda</th>
-                      <th className="px-4 py-3">Juego</th>
-                      <th className="px-4 py-3">Subido el</th>
-                      <th className="px-4 py-3">Estado</th>
-                      <th className="px-4 py-3">CSV</th>
-                      <th className="px-4 py-3 text-right">Acciones</th>
+                      <th scope="col" className="px-4 py-3">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Tienda
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Juego
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Subido el
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        CSV
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -260,26 +275,34 @@ function ManagerTournamentsPanel() {
                         }
                         className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
                       >
-                        <td className="px-4 py-3 text-white">{r.tournament_date}</td>
-                        <td className="px-4 py-3 text-gray-300">
-                          {r.stores?.name ?? "—"}
-                          {r.stores?.city ? (
-                            <span className="block text-xs text-gray-500">
-                              {r.stores.city}
-                              {r.stores.state ? `, ${r.stores.state}` : ""}
-                            </span>
-                          ) : null}
+                        <td data-label="Fecha" className="px-4 py-3 text-white">
+                          {r.tournament_date}
                         </td>
-                        <td className="px-4 py-3 text-gray-300">{r.games?.name ?? "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-400">
-                          {r.created_at
-                            ? new Date(r.created_at).toLocaleDateString("es-MX")
-                            : "—"}
+                        <td data-label="Tienda" className="px-4 py-3 text-gray-300">
+                          <div>
+                            {r.stores?.name ?? "—"}
+                            {r.stores?.city ? (
+                              <span className="block text-xs text-gray-500">
+                                {r.stores.city}
+                                {r.stores.state ? `, ${r.stores.state}` : ""}
+                              </span>
+                            ) : null}
+                          </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td data-label="Juego" className="px-4 py-3 text-gray-300">
+                          {r.games?.name ?? "—"}
+                        </td>
+                        <td data-label="Subido el" className="px-4 py-3 text-xs text-gray-400">
+                          {r.created_at ? new Date(r.created_at).toLocaleDateString("es-MX") : "—"}
+                        </td>
+                        <td data-label="Estado" className="px-4 py-3">
                           <TournamentStatusBadge status={r.status} size="sm" />
                         </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          data-label="CSV"
+                          className="px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <FileLink url={r.csv_url} />
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -329,16 +352,30 @@ function ManagerTournamentsPanel() {
                 Tienes 48 horas para deshacer una aprobación si fue un error.
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="table-cards w-full text-sm">
                   <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                     <tr>
-                      <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Tienda</th>
-                      <th className="px-4 py-3">Juego</th>
-                      <th className="px-4 py-3">Ventana corrección</th>
-                      <th className="px-4 py-3">Estado</th>
-                      <th className="px-4 py-3">CSV</th>
-                      <th className="px-4 py-3 text-right">Acciones</th>
+                      <th scope="col" className="px-4 py-3">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Tienda
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Juego
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Ventana corrección
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        CSV
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -349,22 +386,26 @@ function ManagerTournamentsPanel() {
                           key={r.id}
                           className="border-t border-white/5 transition hover:bg-white/5"
                         >
-                          <td className="px-4 py-3 text-white">{r.tournament_date}</td>
-                          <td className="px-4 py-3 text-gray-300">
+                          <td data-label="Fecha" className="px-4 py-3 text-white">
+                            {r.tournament_date}
+                          </td>
+                          <td data-label="Tienda" className="px-4 py-3 text-gray-300">
                             {r.stores?.name ?? "—"}
                           </td>
-                          <td className="px-4 py-3 text-gray-300">{r.games?.name ?? "—"}</td>
-                          <td className="px-4 py-3 text-xs">
+                          <td data-label="Juego" className="px-4 py-3 text-gray-300">
+                            {r.games?.name ?? "—"}
+                          </td>
+                          <td data-label="Ventana corrección" className="px-4 py-3 text-xs">
                             {cd.expired ? (
                               <span className="text-gray-500">Expirada</span>
                             ) : (
                               <span className="text-yellow-300">{cd.text} restantes</span>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="Estado" className="px-4 py-3">
                             <TournamentStatusBadge status={r.status} size="sm" />
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="CSV" className="px-4 py-3">
                             <FileLink url={r.csv_url} />
                           </td>
                           <td className="px-4 py-3 text-right">
@@ -434,15 +475,27 @@ function ManagerTournamentsPanel() {
           ) : (
             <div className="glass overflow-hidden rounded-2xl">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="table-cards w-full text-sm">
                   <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                     <tr>
-                      <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Tienda</th>
-                      <th className="px-4 py-3">Juego</th>
-                      <th className="px-4 py-3">Estado</th>
-                      <th className="px-4 py-3">CSV</th>
-                      <th className="px-4 py-3 text-right">Acciones</th>
+                      <th scope="col" className="px-4 py-3">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Tienda
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Juego
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        CSV
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -457,21 +510,31 @@ function ManagerTournamentsPanel() {
                         }
                         className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
                       >
-                        <td className="px-4 py-3 text-white">{r.tournament_date}</td>
-                        <td className="px-4 py-3 text-gray-300">
-                          {r.stores?.name ?? "—"}
-                          {r.stores?.city ? (
-                            <span className="block text-xs text-gray-500">
-                              {r.stores.city}
-                              {r.stores.state ? `, ${r.stores.state}` : ""}
-                            </span>
-                          ) : null}
+                        <td data-label="Fecha" className="px-4 py-3 text-white">
+                          {r.tournament_date}
                         </td>
-                        <td className="px-4 py-3 text-gray-300">{r.games?.name ?? "—"}</td>
-                        <td className="px-4 py-3">
+                        <td data-label="Tienda" className="px-4 py-3 text-gray-300">
+                          <div>
+                            {r.stores?.name ?? "—"}
+                            {r.stores?.city ? (
+                              <span className="block text-xs text-gray-500">
+                                {r.stores.city}
+                                {r.stores.state ? `, ${r.stores.state}` : ""}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td data-label="Juego" className="px-4 py-3 text-gray-300">
+                          {r.games?.name ?? "—"}
+                        </td>
+                        <td data-label="Estado" className="px-4 py-3">
                           <TournamentStatusBadge status={r.status} size="sm" />
                         </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          data-label="CSV"
+                          className="px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <FileLink url={r.csv_url} />
                         </td>
                         <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
@@ -481,6 +544,19 @@ function ManagerTournamentsPanel() {
                           >
                             <FileX size={13} />
                             Despublicar
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate({
+                                to: "/tcg-manager/tournaments/$id",
+                                params: { id: r.id },
+                              })
+                            }
+                            className="ml-2 inline-flex items-center gap-1.5 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                          >
+                            <Eye size={13} />
+                            Ver
+                            <ArrowRight size={13} />
                           </button>
                         </td>
                       </tr>

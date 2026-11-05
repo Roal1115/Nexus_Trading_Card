@@ -186,12 +186,24 @@ export function TournamentResults({ results }: { results: ResultRow[] }) {
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
             <tr>
-              <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Nexus Tag</th>
-              <th className="px-4 py-3 whitespace-nowrap">Match Pts</th>
-              <th className="px-4 py-3 whitespace-nowrap">OMW%</th>
-              <th className="px-4 py-3 whitespace-nowrap">Pts Arena</th>
-              <th className="px-4 py-3">Estado</th>
+              <th scope="col" className="px-4 py-3">
+                #
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Nexus Tag
+              </th>
+              <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                Match Pts
+              </th>
+              <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                OMW%
+              </th>
+              <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                Pts Arena
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Estado
+              </th>
             </tr>
           </thead>
           <tbody>

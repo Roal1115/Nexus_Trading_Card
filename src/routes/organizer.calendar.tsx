@@ -248,7 +248,11 @@ function OrganizerCalendarPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2">
-          <button onClick={() => navigateWeek(-1)} className="text-gray-400 hover:text-white">
+          <button
+            aria-label="Semana anterior"
+            onClick={() => navigateWeek(-1)}
+            className="text-gray-400 hover:text-white"
+          >
             <ChevronLeft size={18} />
           </button>
           <div className="text-sm text-white min-w-[180px] text-center">
@@ -259,7 +263,11 @@ function OrganizerCalendarPage() {
               year: "numeric",
             })}
           </div>
-          <button onClick={() => navigateWeek(1)} className="text-gray-400 hover:text-white">
+          <button
+            aria-label="Semana siguiente"
+            onClick={() => navigateWeek(1)}
+            className="text-gray-400 hover:text-white"
+          >
             <ChevronRight size={18} />
           </button>
         </div>

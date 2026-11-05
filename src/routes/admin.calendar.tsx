@@ -263,6 +263,7 @@ function AdminCalendarPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2">
           <button
+            aria-label="Semana anterior"
             onClick={() => navigateWeek(-1)}
             className="text-gray-400 hover:text-white transition"
           >
@@ -281,6 +282,7 @@ function AdminCalendarPage() {
             })}
           </div>
           <button
+            aria-label="Semana siguiente"
             onClick={() => navigateWeek(1)}
             className="text-gray-400 hover:text-white transition"
           >
@@ -456,11 +458,21 @@ function AdminCalendarPage() {
           <table className="w-full text-sm">
             <thead className="bg-black/40 text-xs uppercase text-gray-400">
               <tr>
-                <th className="text-left px-4 py-2">Tienda</th>
-                <th className="text-left px-4 py-2">Zona</th>
-                <th className="text-left px-4 py-2">Día / Hora</th>
-                <th className="text-left px-4 py-2">Estado</th>
-                <th className="text-left px-4 py-2">Contacto</th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Tienda
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Zona
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Día / Hora
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Estado
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Contacto
+                </th>
               </tr>
             </thead>
             <tbody>

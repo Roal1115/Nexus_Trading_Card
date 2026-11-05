@@ -302,10 +302,11 @@ function ManagerTournamentDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-300">
+            <label htmlFor="reject-reason" className="text-xs font-medium text-gray-300">
               Motivo del rechazo (mínimo 20 caracteres)
             </label>
             <Textarea
+              id="reject-reason"
               rows={4}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}

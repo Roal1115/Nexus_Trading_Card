@@ -403,12 +403,24 @@ function AdminStoresPage() {
               <table className="w-full text-sm">
                 <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                   <tr>
-                    <th className="px-4 py-3">Tienda</th>
-                    <th className="px-4 py-3">Ciudad</th>
-                    <th className="px-4 py-3">Estado (MX)</th>
-                    <th className="px-4 py-3">Organizador</th>
-                    <th className="px-4 py-3">Activa</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
+                        <th scope="col" className="px-4 py-3">
+                          Tienda
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Ciudad
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Estado (MX)
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Organizador
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Activa
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right">
+                          Acciones
+                        </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -456,6 +468,7 @@ function AdminStoresPage() {
                         </td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <Switch
+                                aria-label={`Activar ${s.name}`}
                             checked={!!s.is_active}
                             onCheckedChange={() => setToggleStore(s)}
                           />
@@ -509,6 +522,7 @@ function AdminStoresPage() {
                         )}
                       </div>
                       <Switch
+                            aria-label={`Activar ${s.name}`}
                         checked={!!s.is_active}
                         onCheckedChange={() => setToggleStore(s)}
                       />
@@ -1210,12 +1224,24 @@ function StaffTab() {
           <table className="w-full text-sm">
             <thead className="bg-black/40 text-xs uppercase text-gray-400">
               <tr>
-                <th className="text-left px-4 py-2">Nexus Tag</th>
-                <th className="text-left px-4 py-2">Email</th>
-                <th className="text-left px-4 py-2">Rol</th>
-                <th className="text-left px-4 py-2">Asignación</th>
-                <th className="text-left px-4 py-2">Estado</th>
-                <th className="text-left px-4 py-2">Acciones</th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Nexus Tag
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Email
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Rol
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Asignación
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Estado
+                </th>
+                <th scope="col" className="text-left px-4 py-2">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -1238,12 +1264,24 @@ function StaffTab() {
               <table className="w-full text-sm">
                 <thead className="bg-black/40 text-xs uppercase text-gray-400">
                   <tr>
-                    <th className="text-left px-4 py-2">Nexus Tag</th>
-                    <th className="text-left px-4 py-2">Email</th>
-                    <th className="text-left px-4 py-2">Rol</th>
-                    <th className="text-left px-4 py-2">Asignación</th>
-                    <th className="text-left px-4 py-2">Estado</th>
-                    <th className="text-left px-4 py-2">Acciones</th>
+                    <th scope="col" className="text-left px-4 py-2">
+                      Nexus Tag
+                    </th>
+                    <th scope="col" className="text-left px-4 py-2">
+                      Email
+                    </th>
+                    <th scope="col" className="text-left px-4 py-2">
+                      Rol
+                    </th>
+                    <th scope="col" className="text-left px-4 py-2">
+                      Asignación
+                    </th>
+                    <th scope="col" className="text-left px-4 py-2">
+                      Estado
+                    </th>
+                    <th scope="col" className="text-left px-4 py-2">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1304,7 +1342,10 @@ function StaffTab() {
                         <td className="px-4 py-3">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button className="p-1.5 rounded hover:bg-white/10 text-gray-300">
+                              <button
+                                aria-label="Más acciones"
+                                className="p-1.5 rounded hover:bg-white/10 text-gray-300"
+                              >
                                 <MoreHorizontal size={16} />
                               </button>
                             </DropdownMenuTrigger>
@@ -1602,10 +1643,11 @@ function StaffTab() {
                 Información operativa
               </h4>
               <div>
-                <label className="text-xs text-gray-400 mb-1 block">
+                <label htmlFor="op-work-schedule" className="text-xs text-gray-400 mb-1 block">
                   Horario / Disponibilidad
                 </label>
                 <input
+                  id="op-work-schedule"
                   value={opFields.work_schedule}
                   onChange={(e) =>
                     setOpFields((f) => ({ ...f, work_schedule: e.target.value }))
@@ -1616,10 +1658,11 @@ function StaffTab() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">
+                  <label htmlFor="op-contact-primary" className="text-xs text-gray-400 mb-1 block">
                     Contacto principal
                   </label>
                   <input
+                    id="op-contact-primary"
                     value={opFields.contact_primary}
                     onChange={(e) =>
                       setOpFields((f) => ({ ...f, contact_primary: e.target.value }))
@@ -1629,10 +1672,11 @@ function StaffTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">
+                  <label htmlFor="op-contact-backup" className="text-xs text-gray-400 mb-1 block">
                     Contacto de respaldo
                   </label>
                   <input
+                    id="op-contact-backup"
                     value={opFields.contact_backup}
                     onChange={(e) =>
                       setOpFields((f) => ({ ...f, contact_backup: e.target.value }))

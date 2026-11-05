@@ -295,14 +295,30 @@ function TournamentRows({ rows, onDelete }: { rows: Row[]; onDelete: (id: string
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
               <tr>
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3">TCG</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">Aprobado por</th>
-                <th className="px-4 py-3">Fecha aprobación</th>
-                <th className="px-4 py-3">Participantes</th>
-                <th className="px-4 py-3">CSV</th>
-                <th className="px-4 py-3 text-right">Acciones</th>
+                <th scope="col" className="px-4 py-3">
+                  Fecha
+                </th>
+                <th scope="col" className="px-4 py-3">
+                  TCG
+                </th>
+                <th scope="col" className="px-4 py-3">
+                  Estado
+                </th>
+                <th scope="col" className="px-4 py-3">
+                  Aprobado por
+                </th>
+                <th scope="col" className="px-4 py-3">
+                  Fecha aprobación
+                </th>
+                <th scope="col" className="px-4 py-3">
+                  Participantes
+                </th>
+                <th scope="col" className="px-4 py-3">
+                  CSV
+                </th>
+                <th scope="col" className="px-4 py-3 text-right">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody>

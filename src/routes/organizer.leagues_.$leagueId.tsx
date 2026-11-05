@@ -595,7 +595,11 @@ function OrganizerLeagueDetailPage() {
                           )}
                         </div>
                         {!isArchived && (
-                          <button onClick={() => handleDeleteSchedule(s.id)} className="text-gray-500 hover:text-red-400">
+                          <button
+                            aria-label="Eliminar horario"
+                            onClick={() => handleDeleteSchedule(s.id)}
+                            className="text-gray-500 hover:text-red-400"
+                          >
                             <Trash2 size={14} />
                           </button>
                         )}
@@ -841,6 +845,7 @@ function OrganizerLeagueDetailPage() {
                       {!isArchived && (
                         <button
                           type="button"
+                          aria-label="Eliminar premio"
                           onClick={() => setPrizes((prev) => prev.filter((_, i) => i !== idx))}
                           className="text-gray-500 hover:text-red-400"
                         >

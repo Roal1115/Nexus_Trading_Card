@@ -539,13 +539,27 @@ function AdminPlayersPage() {
               <table className="w-full text-sm">
                 <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                   <tr>
-                    <th className="px-4 py-3">Nexus Tag</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Rol</th>
-                    <th className="px-4 py-3">Tienda</th>
-                    <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3">Registro</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
+                    <th scope="col" className="px-4 py-3">
+                      Nexus Tag
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Email
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Rol
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Tienda
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Estado
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Registro
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -845,10 +859,11 @@ function AdminPlayersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
-              <label className="text-xs text-gray-400">
+              <label htmlFor="delete-confirm-tag" className="text-xs text-gray-400">
                 Escribe el Player Tag exacto para confirmar
               </label>
               <Input
+                id="delete-confirm-tag"
                 value={deleteConfirmTag}
                 onChange={(e) => setDeleteConfirmTag(e.target.value)}
                 placeholder={deleteModal?.geek_tag ?? ""}
@@ -1332,7 +1347,7 @@ function RowActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" aria-label="Más acciones">
           <MoreHorizontal size={16} />
         </Button>
       </DropdownMenuTrigger>

@@ -16,6 +16,7 @@ export function TablePager({
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
         className="rounded-md border border-white/10 p-1.5 text-gray-400 transition hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+        aria-label="Página anterior"
       >
         <ChevronLeft size={14} />
       </button>
@@ -26,6 +27,7 @@ export function TablePager({
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
         className="rounded-md border border-white/10 p-1.5 text-gray-400 transition hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+        aria-label="Página siguiente"
       >
         <ChevronRight size={14} />
       </button>

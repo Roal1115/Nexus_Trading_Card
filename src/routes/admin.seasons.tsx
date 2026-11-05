@@ -305,12 +305,24 @@ function AdminSeasonsPage() {
             <table className="w-full text-sm">
               <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                 <tr>
-                  <th className="px-4 py-3">Nombre</th>
-                  <th className="px-4 py-3">Slug</th>
-                  <th className="px-4 py-3">Inicio</th>
-                  <th className="px-4 py-3">Fin</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
+                  <th scope="col" className="px-4 py-3">
+                    Nombre
+                  </th>
+                  <th scope="col" className="px-4 py-3">
+                    Slug
+                  </th>
+                  <th scope="col" className="px-4 py-3">
+                    Inicio
+                  </th>
+                  <th scope="col" className="px-4 py-3">
+                    Fin
+                  </th>
+                  <th scope="col" className="px-4 py-3">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody>

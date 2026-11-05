@@ -115,7 +115,7 @@ function ManagerAnalyticsPage() {
         <p className="mt-1 text-sm text-gray-400">Salud nacional de tu TCG por zona y tienda.</p>
       </div>
 
-      <div className="relative flex gap-0 border-b border-white/10">
+      <div className="relative flex flex-wrap gap-0 border-b border-white/10">
         {games.map((g) => (
           <button
             key={g.id}
@@ -318,10 +318,18 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-400">
-                      <th className="pb-2 pr-4">#</th>
-                      <th className="pb-2 pr-4">Tienda</th>
-                      <th className="pb-2 pr-4">Zona</th>
-                      <th className="pb-2 text-right">Jugadores</th>
+                      <th scope="col" className="pb-2 pr-4">
+                        #
+                      </th>
+                      <th scope="col" className="pb-2 pr-4">
+                        Tienda
+                      </th>
+                      <th scope="col" className="pb-2 pr-4">
+                        Zona
+                      </th>
+                      <th scope="col" className="pb-2 text-right">
+                        Jugadores
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">

@@ -84,7 +84,10 @@ function TournamentsPanel() {
   const navigate = useNavigate();
   // Cambiar de pestaña limpia los filtros de "Todos".
   const setTab = (v: string) =>
-    navigate({ to: "/admin/tournaments", search: v === "pending" ? {} : { tab: v as TournamentsTab } });
+    navigate({
+      to: "/admin/tournaments",
+      search: v === "pending" ? {} : { tab: v as TournamentsTab },
+    });
   const { player } = useNexusRole();
   const email = player?.email ?? null;
 
@@ -242,15 +245,27 @@ function TournamentsPanel() {
           ) : (
             <div className="glass overflow-hidden rounded-2xl">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="table-cards w-full text-sm">
                   <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                     <tr>
-                      <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Tienda</th>
-                      <th className="px-4 py-3">Juego</th>
-                      <th className="px-4 py-3">Estado</th>
-                      <th className="px-4 py-3">CSV</th>
-                      <th className="px-4 py-3 text-right">Acciones</th>
+                      <th scope="col" className="px-4 py-3">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Tienda
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Juego
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        CSV
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -262,21 +277,35 @@ function TournamentsPanel() {
                         }
                         className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
                       >
-                        <td className="px-4 py-3 text-white">{r.tournament_date}</td>
-                        <td className="px-4 py-3 text-gray-300">
-                          {r.store.name}
-                          {r.store.city ? (
-                            <span className="block text-xs text-gray-500">
-                              {r.store.city}
-                              {r.store.state ? `, ${r.store.state}` : ""}
-                            </span>
-                          ) : null}
+                        <td data-label="Fecha" className="px-4 py-3 text-white">
+                          {r.tournament_date}
                         </td>
-                        <td className="px-4 py-3 text-gray-300">{r.game_name}</td>
-                        <td className="px-4 py-3">
-                          <TournamentStatusBadge status={r.status} rejectionReason={r.rejection_reason} size="sm" />
+                        <td data-label="Tienda" className="px-4 py-3 text-gray-300">
+                          <div>
+                            {r.store.name}
+                            {r.store.city ? (
+                              <span className="block text-xs text-gray-500">
+                                {r.store.city}
+                                {r.store.state ? `, ${r.store.state}` : ""}
+                              </span>
+                            ) : null}
+                          </div>
                         </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td data-label="Juego" className="px-4 py-3 text-gray-300">
+                          {r.game_name}
+                        </td>
+                        <td data-label="Estado" className="px-4 py-3">
+                          <TournamentStatusBadge
+                            status={r.status}
+                            rejectionReason={r.rejection_reason}
+                            size="sm"
+                          />
+                        </td>
+                        <td
+                          data-label="CSV"
+                          className="px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <FileLink url={r.csv_url} />
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -319,6 +348,19 @@ function TournamentsPanel() {
                 <p className="text-sm text-gray-400">
                   Selecciona los torneos a publicar. El leaderboard se recalculará al publicar.
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden"
+                  disabled={approvedRows.length === 0}
+                  onClick={() =>
+                    setSelected(
+                      allChecked ? {} : Object.fromEntries(approvedRows.map((r) => [r.id, true])),
+                    )
+                  }
+                >
+                  {allChecked ? "Quitar selección" : "Seleccionar todos"}
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button disabled={selectedIds.length === 0 || publishing}>
@@ -350,11 +392,12 @@ function TournamentsPanel() {
               ) : (
                 <div className="glass overflow-hidden rounded-2xl">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="table-cards w-full text-sm">
                       <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                         <tr>
-                          <th className="px-4 py-3">
+                          <th scope="col" className="px-4 py-3">
                             <Checkbox
+                              aria-label="Seleccionar todos"
                               checked={allChecked}
                               onCheckedChange={(v) => {
                                 if (v) {
@@ -365,13 +408,27 @@ function TournamentsPanel() {
                               }}
                             />
                           </th>
-                          <th className="px-4 py-3">Fecha</th>
-                          <th className="px-4 py-3">Tienda</th>
-                          <th className="px-4 py-3">Juego</th>
-                          <th className="px-4 py-3">Periodo</th>
-                          <th className="px-4 py-3">Estado</th>
-                          <th className="px-4 py-3">CSV</th>
-                          <th className="px-4 py-3 text-right">Acciones</th>
+                          <th scope="col" className="px-4 py-3">
+                            Fecha
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Tienda
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Juego
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Periodo
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Estado
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            CSV
+                          </th>
+                          <th scope="col" className="px-4 py-3 text-right">
+                            Acciones
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -383,22 +440,41 @@ function TournamentsPanel() {
                             }
                             className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
                           >
-                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <td
+                              data-label="/>"
+                              className="px-4 py-3"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Checkbox
+                                aria-label={`Seleccionar torneo del ${r.tournament_date}`}
                                 checked={!!selected[r.id]}
                                 onCheckedChange={(v) => setSelected((s) => ({ ...s, [r.id]: !!v }))}
                               />
                             </td>
-                            <td className="px-4 py-3 text-white">{r.tournament_date}</td>
-                            <td className="px-4 py-3 text-gray-300">{r.store.name}</td>
-                            <td className="px-4 py-3 text-gray-300">{r.game_name}</td>
-                            <td className="px-4 py-3 text-gray-400">
+                            <td data-label="Fecha" className="px-4 py-3 text-white">
+                              {r.tournament_date}
+                            </td>
+                            <td data-label="Tienda" className="px-4 py-3 text-gray-300">
+                              {r.store.name}
+                            </td>
+                            <td data-label="Juego" className="px-4 py-3 text-gray-300">
+                              {r.game_name}
+                            </td>
+                            <td data-label="Periodo" className="px-4 py-3 text-gray-400">
                               {r.qualifying_year}-{String(r.qualifying_month).padStart(2, "0")}
                             </td>
-                            <td className="px-4 py-3">
-                              <TournamentStatusBadge status={r.status} rejectionReason={r.rejection_reason} size="sm" />
+                            <td data-label="Estado" className="px-4 py-3">
+                              <TournamentStatusBadge
+                                status={r.status}
+                                rejectionReason={r.rejection_reason}
+                                size="sm"
+                              />
                             </td>
-                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <td
+                              data-label="CSV"
+                              className="px-4 py-3"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <FileLink url={r.csv_url} />
                             </td>
                             <td
@@ -458,15 +534,27 @@ function TournamentsPanel() {
           ) : (
             <div className="glass overflow-hidden rounded-2xl">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="table-cards w-full text-sm">
                   <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                     <tr>
-                      <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Tienda</th>
-                      <th className="px-4 py-3">Juego</th>
-                      <th className="px-4 py-3">Periodo</th>
-                      <th className="px-4 py-3">CSV</th>
-                      <th className="px-4 py-3 text-right">Acciones</th>
+                      <th scope="col" className="px-4 py-3">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Tienda
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Juego
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Periodo
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        CSV
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -478,20 +566,30 @@ function TournamentsPanel() {
                         }
                         className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
                       >
-                        <td className="px-4 py-3 text-white">{r.tournament_date}</td>
-                        <td className="px-4 py-3 text-gray-300">
-                          {r.store_name}
-                          {r.store_city && r.store_city !== "—" ? (
-                            <span className="block text-xs text-gray-500">{r.store_city}</span>
-                          ) : null}
+                        <td data-label="Fecha" className="px-4 py-3 text-white">
+                          {r.tournament_date}
                         </td>
-                        <td className="px-4 py-3 text-gray-300">{r.game_name}</td>
-                        <td className="px-4 py-3 text-gray-400">
+                        <td data-label="Tienda" className="px-4 py-3 text-gray-300">
+                          <div>
+                            {r.store_name}
+                            {r.store_city && r.store_city !== "—" ? (
+                              <span className="block text-xs text-gray-500">{r.store_city}</span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td data-label="Juego" className="px-4 py-3 text-gray-300">
+                          {r.game_name}
+                        </td>
+                        <td data-label="Periodo" className="px-4 py-3 text-gray-400">
                           {r.qualifying_year && r.qualifying_month
                             ? `${r.qualifying_year}-${String(r.qualifying_month).padStart(2, "0")}`
                             : "—"}
                         </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          data-label="CSV"
+                          className="px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <FileLink url={r.csv_url} />
                         </td>
                         <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>

@@ -279,12 +279,24 @@ function OrganizerLeaguesPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                       <tr>
-                        <th className="px-4 py-3">Nombre</th>
-                        <th className="px-4 py-3">TCG</th>
-                        <th className="px-4 py-3">Vigencia</th>
-                        <th className="px-4 py-3">Torneos</th>
-                        <th className="px-4 py-3">Premios</th>
-                        <th className="px-4 py-3 text-right">Acciones</th>
+                        <th scope="col" className="px-4 py-3">
+                          Nombre
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          TCG
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Vigencia
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Torneos
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Premios
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right">
+                          Acciones
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -348,11 +360,21 @@ function OrganizerLeaguesPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                       <tr>
-                        <th className="px-4 py-3">Nombre</th>
-                        <th className="px-4 py-3">TCG</th>
-                        <th className="px-4 py-3">Vigencia</th>
-                        <th className="px-4 py-3">Ganador</th>
-                        <th className="px-4 py-3">Puntos</th>
+                        <th scope="col" className="px-4 py-3">
+                          Nombre
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          TCG
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Vigencia
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Ganador
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Puntos
+                        </th>
                       </tr>
                     </thead>
                     <tbody>

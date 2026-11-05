@@ -118,10 +118,18 @@ function PlayerDetailPage() {
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase tracking-wider text-gray-500">
                 <tr>
-                  <th className="px-2 py-2">Fecha</th>
-                  <th className="px-2 py-2">Posición</th>
-                  <th className="px-2 py-2">W-L</th>
-                  <th className="px-2 py-2">Puntos</th>
+                  <th scope="col" className="px-2 py-2">
+                    Fecha
+                  </th>
+                  <th scope="col" className="px-2 py-2">
+                    Posición
+                  </th>
+                  <th scope="col" className="px-2 py-2">
+                    W-L
+                  </th>
+                  <th scope="col" className="px-2 py-2">
+                    Puntos
+                  </th>
                 </tr>
               </thead>
               <tbody>

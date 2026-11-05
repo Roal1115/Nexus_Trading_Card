@@ -210,11 +210,21 @@ function AdminAdsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Rank</th>
-                      <th className="px-3 py-2 text-left">Nombre</th>
-                      <th className="px-3 py-2 text-right">Límite</th>
-                      <th className="px-3 py-2 text-left">Estado</th>
-                      <th className="px-3 py-2 text-right">Acciones</th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Rank
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Nombre
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Límite
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -253,11 +263,21 @@ function AdminAdsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Rank</th>
-                      <th className="px-3 py-2 text-left">Nombre</th>
-                      <th className="px-3 py-2 text-right">Límite</th>
-                      <th className="px-3 py-2 text-left">Estado</th>
-                      <th className="px-3 py-2 text-right">Acciones</th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Rank
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Nombre
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Límite
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -379,12 +399,24 @@ function AdminAdsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Sponsor</th>
-                      <th className="px-3 py-2 text-right">Vistas este mes</th>
-                      <th className="px-3 py-2 text-right">Límite</th>
-                      <th className="px-3 py-2 text-left">Consumido</th>
-                      <th className="px-3 py-2 text-left">Ciclos</th>
-                      <th className="px-3 py-2 text-left">Estado</th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Sponsor
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Vistas este mes
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Límite
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Consumido
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Ciclos
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Estado
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -562,12 +594,13 @@ function AdminAdsPage() {
 
             {/* Text confirmation */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs text-gray-400">
+              <label htmlFor="delete-confirm-input" className="text-xs text-gray-400">
                 Para confirmar, escribe{" "}
                 <span className="font-mono font-bold text-red-400">ELIMINAR</span> en el campo de
                 abajo:
               </label>
               <input
+                id="delete-confirm-input"
                 type="text"
                 value={deleteInput}
                 onChange={(e) => setDeleteInput(e.target.value)}

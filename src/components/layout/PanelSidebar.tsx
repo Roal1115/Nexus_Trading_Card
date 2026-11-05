@@ -154,7 +154,7 @@ export function PanelSidebar({
 
       <aside
         className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 lg:pb-4 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          mobileOpen ? "translate-x-0" : "invisible -translate-x-full lg:visible lg:translate-x-0"
         }`}
         style={{ height: "100dvh" }}
       >

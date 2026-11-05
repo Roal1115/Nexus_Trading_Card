@@ -185,12 +185,24 @@ export function ManagerReviewHistory({
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-xs uppercase tracking-wider text-gray-400">
               <tr>
-                <th className="text-left px-4 py-2 font-medium">Fecha acción</th>
-                <th className="text-left px-4 py-2 font-medium">Acción</th>
-                <th className="text-left px-4 py-2 font-medium">TCG</th>
-                <th className="text-left px-4 py-2 font-medium">Tienda</th>
-                <th className="text-left px-4 py-2 font-medium">Fecha torneo</th>
-                <th className="text-left px-4 py-2 font-medium">Estado actual</th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Fecha acción
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Acción
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  TCG
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Tienda
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Fecha torneo
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Estado actual
+                </th>
               </tr>
             </thead>
             <tbody>

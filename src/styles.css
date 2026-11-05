@@ -348,3 +348,53 @@
     transform: translateX(100%);
   }
 }
+
+/* Foco de teclado visible. Los componentes con su propio ring usan outline-none. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Tablas que debajo de lg se apilan como tarjetas: cada <td data-label="…"> muestra
+   el nombre de su columna. Sin data-label la celda es de acciones. */
+@media (max-width: 1023.98px) {
+  .table-cards thead {
+    display: none;
+  }
+  .table-cards,
+  .table-cards tbody,
+  .table-cards tr {
+    display: block;
+    width: 100%;
+  }
+  .table-cards tr {
+    padding: 0.5rem 0;
+  }
+  .table-cards td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.375rem 1rem;
+    text-align: right;
+  }
+  .table-cards td:not([data-label]) {
+    justify-content: flex-end;
+  }
+  .table-cards td > .inline-flex {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .table-cards td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    text-align: left;
+  }
+}
+
+/* El tooltip oculto de Recharts queda fuera del gráfico y desbordaba la página en móvil. */
+.recharts-responsive-container {
+  overflow-x: clip;
+}
