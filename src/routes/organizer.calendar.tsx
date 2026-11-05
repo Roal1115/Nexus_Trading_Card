@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SlotRsvpList } from "@/components/calendar/slot-rsvp";
 
 export const Route = createFileRoute("/organizer/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -78,6 +79,7 @@ function OrganizerCalendarPage() {
   const [gameFilter, setGameFilter] = useState<string>("all");
 
   const [editingEntry, setEditingEntry] = useState<CalEntry | null>(null);
+  const [rsvpEntry, setRsvpEntry] = useState<CalEntry | null>(null);
   const [editForm, setEditForm] = useState({ label: "", start_time: "" });
   const [savingOverride, setSavingOverride] = useState(false);
 
@@ -334,14 +336,15 @@ function OrganizerCalendarPage() {
                       {cellEntries.map((e) => {
                         const isEditableLeague = Boolean(e.league_schedule_id);
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={e.id}
-                            onClick={isEditableLeague ? () => openEdit(e) : undefined}
-                            className={`w-full text-left rounded px-1.5 py-1 mb-0.5 border ${
+                            onClick={() => (isEditableLeague ? openEdit(e) : setRsvpEntry(e))}
+                            className={`w-full text-left rounded px-1.5 py-1 mb-0.5 border cursor-pointer transition hover:brightness-125 ${
                               e.league_id
                                 ? "bg-amber-500/10 border-amber-500/30"
                                 : "bg-primary/10 border-primary/30"
-                            } ${isEditableLeague ? "cursor-pointer transition hover:brightness-125" : ""}`}
+                            }`}
                           >
                             <div className={`text-[10px] truncate ${e.league_id ? "text-amber-300" : "text-primary"}`}>
                               {e.override_label || e.game_name}
@@ -353,7 +356,7 @@ function OrganizerCalendarPage() {
                             {e.league_name && (
                               <div className="text-[9px] text-amber-400/80 truncate">{e.league_name}</div>
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -364,6 +367,18 @@ function OrganizerCalendarPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={rsvpEntry !== null} onOpenChange={(o) => !o && setRsvpEntry(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {rsvpEntry?.override_label || rsvpEntry?.game_name} · {rsvpEntry?.date} ·{" "}
+              {rsvpEntry?.start_time}
+            </DialogTitle>
+          </DialogHeader>
+          {rsvpEntry && <SlotRsvpList slot={rsvpEntry} />}
+        </DialogContent>
+      </Dialog>
 
       {/* Editar una sola ocurrencia de un horario de liga interna */}
       <Dialog open={editingEntry !== null} onOpenChange={(o) => !o && setEditingEntry(null)}>

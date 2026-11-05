@@ -19,6 +19,7 @@ import {
 } from "@/lib/nexus-manager.functions";
 import { ZONE_COLORS } from "@/lib/game-colors";
 import { NationalScheduleEditSection } from "@/components/calendar/national-schedule-edit-section";
+import { SlotRsvpList } from "@/components/calendar/slot-rsvp";
 
 
 export const Route = createFileRoute("/admin/calendar")({
@@ -664,6 +665,8 @@ function AdminCalendarPage() {
                 setSelectedEntry(null);
               }}
             />
+
+            <SlotRsvpList slot={selectedEntry} />
 
             <div className="rounded-lg border border-white/10 bg-black/30 p-3">
               <div className="text-[10px] uppercase text-gray-500">Horario</div>

@@ -29,6 +29,7 @@ import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { publicCalendarQuery } from "@/lib/calendar-queries";
 import { CalendarPreferencesPrompt } from "@/components/calendar/preferences-prompt";
+import { acceptsSlotRsvp, SlotRsvpPanel, useMySlotRsvps } from "@/components/calendar/slot-rsvp";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -148,7 +149,12 @@ function CalendarPage() {
   };
 
 
-  const calendarGrid = useCalendarGrid(events, weekDates);
+  const mySlots = useMySlotRsvps(player?.id);
+  const markedEvents = useMemo(
+    () => events.map((e) => (acceptsSlotRsvp(e) && mySlots.has(e) ? { ...e, my_rsvp: true } : e)),
+    [events, mySlots],
+  );
+  const calendarGrid = useCalendarGrid(markedEvents, weekDates);
 
   const buildEventIcs = (entry: any) => {
     const isProjected = Boolean(entry.is_scheduled);
@@ -378,6 +384,10 @@ function CalendarPage() {
                 <CheckCircle2 size={14} className="text-emerald-400" />
                 <span className="text-sm font-semibold text-emerald-400">Asististe a este torneo</span>
               </div>
+            )}
+
+            {acceptsSlotRsvp(selectedEntry) && (
+              <SlotRsvpPanel entry={selectedEntry} playerId={player?.id} />
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-3">

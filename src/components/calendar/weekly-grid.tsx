@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Heart } from "lucide-react";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { toLocalDateStr, mondayOfWeek } from "@/lib/utils";
 
@@ -93,6 +93,9 @@ export function CalendarEntry({
       <p className={`font-semibold truncate ${compact ? "text-[9px]" : "text-[10px]"}`}>
         {entry.store_name}
         {attended && <CheckCircle2 size={8} className="inline text-emerald-400 ml-1" />}
+        {entry.my_rsvp && (
+          <Heart size={8} className="inline fill-current ml-1" aria-label="Con preferencia" />
+        )}
       </p>
       {!compact && (
         <p className="text-[9px] opacity-70 truncate">

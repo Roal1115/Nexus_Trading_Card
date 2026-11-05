@@ -43,6 +43,16 @@ export function todayInMexicoStr(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date());
 }
 
+// "HH:MM" en hora de México.
+export function nowInMexicoTimeStr(): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Mexico_City",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+}
+
 // Convención de semana estandarizada en toda la app: Lun–Dom.
 // Siempre usar este helper — nunca recalcular a mano con getDay().
 export function mondayOfWeek(date: Date): Date {

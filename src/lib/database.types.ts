@@ -2056,6 +2056,41 @@ export type Database = {
           },
         ]
       }
+      schedule_rsvps: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          occurrence_date: string
+          player_id: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          occurrence_date: string
+          player_id: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          occurrence_date?: string
+          player_id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_rsvps_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_rsvps: {
         Row: {
           created_at: string | null

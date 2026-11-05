@@ -9,6 +9,7 @@ import {
   createRsvp,
   cancelRsvp,
 } from "@/lib/nexus-rsvp.functions";
+import { RSVP_NOTICE } from "@/lib/rsvp-rules";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
 import { todayInMexicoStr } from "@/lib/utils";
@@ -137,15 +138,15 @@ function PublicTournamentPage() {
   const createMut = useMutation({
     mutationFn: () => createFn({ data: { tournament_id: t.id } }),
     onSuccess: () => {
-      toast.success("¡Te anotaste!");
+      toast.success("Preferencia registrada");
       invalidate();
     },
-    onError: (e: any) => toast.error(e?.message ?? "No se pudo confirmar asistencia"),
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo guardar tu preferencia"),
   });
   const cancelMut = useMutation({
     mutationFn: () => cancelFn({ data: { tournament_id: t.id } }),
     onSuccess: () => {
-      toast.success("Asistencia cancelada");
+      toast.success("Quitaste tu preferencia");
       invalidate();
     },
     onError: (e: any) => toast.error(e?.message ?? "No se pudo cancelar"),
@@ -218,10 +219,12 @@ function PublicTournamentPage() {
           {data.total_participants > 0 && <span>{data.total_participants} participantes</span>}
           {isFuture ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-secondary-foreground">
-              <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} confirmados
+              <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} con preferencia
             </span>
           ) : null}
         </div>
+
+        {isFuture ? <p className="mt-3 text-xs text-muted-foreground">{RSVP_NOTICE}</p> : null}
 
         <div className="mt-4 flex flex-wrap gap-2">
           {isFuture && player ? (
@@ -235,7 +238,7 @@ function PublicTournamentPage() {
               }`}
             >
               <Heart className={`h-4 w-4 ${isRsvped ? "fill-current" : ""}`} />
-              {isRsvped ? "Cancelar asistencia" : "Voy a ir"}
+              {isRsvped ? "Quitar preferencia" : "Pedir preferencia"}
             </button>
           ) : null}
           {isFuture ? (
