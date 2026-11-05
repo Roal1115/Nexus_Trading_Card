@@ -160,7 +160,8 @@ git commit -m "docs(security): registra el cierre de player_tcg_ids y recompute"
 
 ## Estado (2026-11-04)
 
-- Tasks 1 y 2 hechas en `nexus-admin-test`, que queda con el cambio aplicado. Sin commits todavía.
+- Tasks 1 y 2 hechas en `nexus-admin-test`, que queda con el cambio aplicado.
+- Task 3 aplicada en producción el 2026-11-05 (UTC) y verificada por catálogo y como `anon`. Falta la prueba de humo (Step 4).
 - Antes de aplicar: 7/12. Después: 12/12. Tras rollback: 7/12, mismos 5 fallos. Tras reaplicar: 12/12.
 - `identity.check` 29/29 y `lifecycle-test` 23/23 antes y después.
 - `organizer-assignment` 13/14 antes y después: el caso 3 falla porque el sandbox no tiene la Fase 0, no por este cambio.

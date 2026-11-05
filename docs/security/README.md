@@ -28,4 +28,33 @@ El md5 se calcula sobre el texto con saltos de línea `LF` y **sin salto de lín
 - **Son de un solo uso y no deben ir en `supabase/migrations/`**: el apply aborta si el estado ya no es el original, así que un `supabase db push` fallaría. Por eso viven aquí.
 - El rollback solo funciona sobre el estado exacto que deja el apply.
 - Ejecutar siempre como `postgres`.
-- No incluye las fases 0b/0c ni nada del Circuit. Quedan abiertos, entre otros: escritura propia en `player_tcg_ids`, `recompute_player_achievements` ejecutable por `anon`/`authenticated`, y privilegios `TRUNCATE`/`TRIGGER`/`REFERENCES` concedidos por defecto en las demás tablas públicas.
+- No incluye las fases 0b/0c ni nada del Circuit. Quedan abiertos, entre otros, los privilegios `TRUNCATE`/`TRIGGER`/`REFERENCES` concedidos por defecto en las demás tablas públicas.
+
+# Cierre de `player_tcg_ids` y `recompute_player_achievements`
+
+Corrige dos permisos abiertos: cada usuario podía insertar, cambiar y borrar su Bandai ID directo por PostgREST, saltándose `assign_tcg_id`, y cualquiera sin sesión podía ejecutar `recompute_player_achievements` para cualquier jugador.
+
+## Estado
+
+- **Aplicado en producción** (`tbtyxtigbsljyrwyelqr`) el 2026-11-05 (UTC), vía `execute_sql` (no está en el historial de `supabase_migrations`).
+- Probado antes en `nexus-admin-test` con `scripts/tcg-ids-hardening.test.mts`, incluido el ciclo apply, rollback y reapply. El sandbox queda aplicado.
+
+## Archivos
+
+| Archivo | md5 del texto |
+|---|---|
+| `tcg-ids-achievements.apply.sql` | `21f470795c0568a8d71323f29a218c30` |
+| `tcg-ids-achievements.rollback.sql` | `48119501c29a63f0804bf822aa9bbea0` |
+
+## Qué hace
+
+- `anon` y `authenticated` quedan solo con `SELECT` en `player_tcg_ids` (la lectura sigue limitada por RLS).
+- Elimina la policy `player_tcg_ids_own_write`.
+- `recompute_player_achievements` queda ejecutable solo por `postgres` y `service_role`; se revoca también a `PUBLIC`.
+- Las mismas reglas de la Fase 0: un solo uso, fuera de `supabase/migrations/` y siempre como `postgres`.
+
+## Sigue abierto
+
+- `addMyTcgId` no comprueba la propiedad del Bandai ID. Pendiente por decisión: los IDs son reales y el admin puede corregirlos desde el panel.
+- `pg_default_acl` en `public` da todos los privilegios a `anon` y `authenticated` en cada tabla nueva y `EXECUTE` en cada función nueva.
+- Reconstruir la base desde `supabase/migrations/` reabre estos permisos y los de la Fase 0.
