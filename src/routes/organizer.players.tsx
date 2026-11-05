@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Trophy, Users, Star } from "lucide-react";
+import { Loader2, AlertTriangle, Trophy, Users, Star } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate } from "@/components/panel/dashboard-format";
+import {
+  PLAYER_STATUS_COLORS,
+  PLAYER_STATUS_HELP,
+  PLAYER_STATUS_LABELS,
+} from "@/lib/player-status";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { usePagination } from "@/hooks/use-pagination";
 import { getStoreAnalytics } from "@/lib/nexus-organizer.functions";
@@ -20,20 +26,6 @@ export const Route = createFileRoute("/organizer/players")({
 });
 
 type AnalyticsResult = Awaited<ReturnType<typeof getStoreAnalytics>>;
-
-const CATEGORY_LABELS: Record<string, string> = {
-  recurrente: "Recurrente",
-  ocasional: "Ocasional",
-  una_vez: "Una sola vez",
-  inactivo: "Inactivo",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  recurrente: "#22c55e",
-  ocasional: "#eab308",
-  una_vez: "#60a5fa",
-  inactivo: "#6b7280",
-};
 
 function OrganizerPlayersPage() {
   const { player, loading: roleLoading } = useNexusRole();
@@ -119,7 +111,7 @@ function OrganizerPlayersPage() {
           <p className="text-xs uppercase tracking-wider text-primary font-semibold">Jugadores</p>
           <h1 className="text-2xl md:text-3xl font-bold">Detalle de jugadores</h1>
           <p className="text-sm text-muted-foreground">
-            Top jugadores, en riesgo y clasificación completa — misma info del dashboard, sin recorte.
+            Quién viene a tu tienda y a quién conviene recuperar.
           </p>
         </div>
 
@@ -182,7 +174,7 @@ function OrganizerPlayersPage() {
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <Trophy className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold">Top Jugadores</h2>
+          <h2 className="text-sm font-semibold">Más torneos en el periodo</h2>
         </div>
         {data.top_players.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sin datos en este periodo.</p>
@@ -223,17 +215,17 @@ function OrganizerPlayersPage() {
         )}
       </div>
 
-      {/* Jugadores en riesgo */}
+      {/* Por recuperar */}
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <h2 className="text-sm font-semibold">Jugadores en Riesgo</h2>
+          <h2 className="text-sm font-semibold">Por recuperar</h2>
           <span className="text-xs text-muted-foreground">
-            (más de {data.settings.at_risk_threshold_days} días sin venir)
+            {PLAYER_STATUS_HELP.por_recuperar}
           </span>
         </div>
         {data.at_risk.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay jugadores en riesgo actualmente.</p>
+          <p className="text-sm text-muted-foreground">No hay jugadores por recuperar.</p>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -244,6 +236,9 @@ function OrganizerPlayersPage() {
                       Nexus Tag
                     </th>
                     <th scope="col" className="text-right py-2 px-2">
+                      Torneos que faltó
+                    </th>
+                    <th scope="col" className="text-right py-2 px-2">
                       Días sin venir
                     </th>
                   </tr>
@@ -252,6 +247,7 @@ function OrganizerPlayersPage() {
                   {atRiskPage.pageItems.map((p) => (
                     <tr key={p.player_id} className="border-b last:border-0">
                       <td className="py-2 px-2">{p.geek_tag}</td>
+                      <td className="py-2 px-2 text-right">{p.missed_tournaments}</td>
                       <td className="py-2 px-2 text-right">{p.days_since} días</td>
                     </tr>
                   ))}
@@ -274,16 +270,13 @@ function OrganizerPlayersPage() {
                   Nexus Tag
                 </th>
                 <th scope="col" className="text-right py-2 px-2">
-                  Torneos (rango)
+                  Torneos en el periodo
                 </th>
                 <th scope="col" className="text-left py-2 px-2">
-                  Categoría (rango)
+                  Estado
                 </th>
                 <th scope="col" className="text-left py-2 px-2">
-                  Categoría (actual)
-                </th>
-                <th scope="col" className="text-left py-2 px-2">
-                  Tendencia
+                  Última visita
                 </th>
               </tr>
             </thead>
@@ -293,28 +286,17 @@ function OrganizerPlayersPage() {
                   <td className="py-2 px-2">{c.geek_tag}</td>
                   <td className="py-2 px-2 text-right">{c.tournaments_in_range}</td>
                   <td className="py-2 px-2">
-                    <Badge variant="outline" style={{ borderColor: CATEGORY_COLORS[c.category_range], color: CATEGORY_COLORS[c.category_range] }}>
-                      {CATEGORY_LABELS[c.category_range]}
+                    <Badge
+                      variant="outline"
+                      style={{
+                        borderColor: PLAYER_STATUS_COLORS[c.status],
+                        color: PLAYER_STATUS_COLORS[c.status],
+                      }}
+                    >
+                      {PLAYER_STATUS_LABELS[c.status]}
                     </Badge>
                   </td>
-                  <td className="py-2 px-2">
-                    <Badge variant="outline" style={{ borderColor: CATEGORY_COLORS[c.category_current], color: CATEGORY_COLORS[c.category_current] }}>
-                      {CATEGORY_LABELS[c.category_current]}
-                    </Badge>
-                  </td>
-                  <td className="py-2 px-2">
-                    {c.trend === "down" && (
-                      <span className="inline-flex items-center gap-1 text-red-500 text-xs">
-                        <TrendingDown className="h-3 w-3" /> Bajó
-                      </span>
-                    )}
-                    {c.trend === "up" && (
-                      <span className="inline-flex items-center gap-1 text-green-500 text-xs">
-                        <TrendingUp className="h-3 w-3" /> Mejoró
-                      </span>
-                    )}
-                    {c.trend === "same" && <span className="text-muted-foreground text-xs">—</span>}
-                  </td>
+                  <td className="py-2 px-2">{formatDate(c.last_visit)}</td>
                 </tr>
               ))}
             </tbody>

@@ -194,6 +194,5 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
 
 // ---------- Store Analytics ----------
 
-type PlayerCategory = "recurrente" | "ocasional" | "una_vez" | "inactivo";
 
 

@@ -6,15 +6,7 @@ import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
 
-
-type PlayerCategory = "recurrente" | "ocasional" | "una_vez" | "inactivo";
-
-const CATEGORY_RANK: Record<PlayerCategory, number> = {
-  recurrente: 3,
-  ocasional: 2,
-  una_vez: 1,
-  inactivo: 0,
-};
+import { PLAYER_STATUSES, playerStatus, type PlayerStatus } from "./player-status";
 
 function getWeekRanges(start: Date, end: Date): Array<{ start: Date; end: Date }> {
   const weeks: Array<{ start: Date; end: Date }> = [];
@@ -28,26 +20,6 @@ function getWeekRanges(start: Date, end: Date): Array<{ start: Date; end: Date }
     cur.setDate(cur.getDate() + 7);
   }
   return weeks;
-}
-
-function classifyPlayer(
-  tournamentDates: string[], // ISO date strings "YYYY-MM-DD", sorted
-  rangeStart: Date,
-  rangeEnd: Date,
-): PlayerCategory {
-  const datesInRange = tournamentDates
-    .map((d) => new Date(d + "T12:00:00"))
-    .filter((d) => d >= rangeStart && d <= rangeEnd);
-
-  if (datesInRange.length === 0) return "inactivo";
-  if (datesInRange.length === 1) return "una_vez";
-
-  const weeks = getWeekRanges(rangeStart, rangeEnd);
-  const allWeeksCovered = weeks.every((w) =>
-    datesInRange.some((d) => d >= w.start && d <= w.end),
-  );
-
-  return allWeeksCovered ? "recurrente" : "ocasional";
 }
 
 export const getStorePageViewAnalytics = createServerFn({ method: "POST" })
@@ -148,11 +120,10 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     // Threshold settings (defaults if no row exists)
     const { data: settings } = await admin
       .from("store_analytics_settings")
-      .select("inactive_threshold_days, at_risk_threshold_days")
+      .select("inactive_threshold_days")
       .eq("store_id", storeId)
       .maybeSingle();
     const inactiveThresholdDays = settings?.inactive_threshold_days ?? 45;
-    const atRiskThresholdDays = settings?.at_risk_threshold_days ?? 21;
 
     // Date range: default = first tournament of store -> today
     const today = new Date();
@@ -385,15 +356,15 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     // Puntos por jugador en tienda: puntos totales entre jugadores únicos del rango.
     const avgPointsPerPlayer = playersInRange.size > 0 ? totalPoints / playersInRange.size : 0;
 
-    // ---------- 4. Player classification (range + current) ----------
-    const currentRangeEnd = today;
-    const currentRangeStart = new Date(today);
-    currentRangeStart.setDate(currentRangeStart.getDate() - 45); // matches inactive threshold
+    // ---------- 4. Estado de cada jugador (a fecha de hoy, no depende del rango) ----------
+    const todayStr = todayInMexicoStr();
+    const storeDates = (tournamentsInStore ?? [])
+      .filter((t) => !data.game_id || t.game_id === data.game_id)
+      .map((t) => t.tournament_date);
 
     const classification = Array.from(playerDatesAll.entries())
       .map(([pid, dates]) => {
-        const categoryInRange = classifyPlayer(dates, rangeStart, rangeEnd);
-        const categoryCurrent = classifyPlayer(dates, currentRangeStart, currentRangeEnd);
+        const { status, missed } = playerStatus(dates, storeDates, todayStr);
         const lastVisit = dates[dates.length - 1];
         return {
           player_id: pid,
@@ -402,41 +373,25 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
             const dt = new Date(d + "T12:00:00");
             return dt >= rangeStart && dt <= rangeEnd;
           }).length,
-          category_range: categoryInRange,
-          category_current: categoryCurrent,
+          status,
+          missed_tournaments: missed,
           last_visit: lastVisit,
-          trend:
-            CATEGORY_RANK[categoryCurrent] === CATEGORY_RANK[categoryInRange]
-              ? "same"
-              : CATEGORY_RANK[categoryCurrent] < CATEGORY_RANK[categoryInRange]
-                ? "down"
-                : "up",
+          days_since: Math.floor(
+            (today.getTime() - new Date(lastVisit + "T12:00:00").getTime()) / 86_400_000,
+          ),
         };
       })
-      .filter((c) => playersInRange.has(c.player_id) || c.category_current !== c.category_range);
+      .sort((a, b) => b.last_visit.localeCompare(a.last_visit));
 
-    // ---------- 5. Category summary (donut) ----------
-    const categorySummary: Record<PlayerCategory, number> = {
-      recurrente: 0,
-      ocasional: 0,
-      una_vez: 0,
-      inactivo: 0,
-    };
-    for (const c of classification) {
-      if (playersInRange.has(c.player_id)) {
-        categorySummary[c.category_range]++;
-      }
-    }
+    // ---------- 5. Resumen por estado ----------
+    const categorySummary = Object.fromEntries(PLAYER_STATUSES.map((s) => [s, 0])) as Record<
+      PlayerStatus,
+      number
+    >;
+    for (const c of classification) categorySummary[c.status]++;
 
-    // ---------- 6. At-risk players (always vs today) ----------
-    const atRisk = Array.from(playerDatesAll.entries())
-      .map(([pid, dates]) => {
-        const lastVisit = new Date(dates[dates.length - 1] + "T12:00:00");
-        const daysSince = Math.floor((today.getTime() - lastVisit.getTime()) / 86_400_000);
-        return { player_id: pid, geek_tag: geekTagMap.get(pid) ?? "—", days_since: daysSince };
-      })
-      .filter((p) => p.days_since > atRiskThresholdDays && p.days_since <= inactiveThresholdDays)
-      .sort((a, b) => a.days_since - b.days_since);
+    // ---------- 6. Por recuperar ----------
+    const atRisk = classification.filter((c) => c.status === "por_recuperar");
 
     // ---------- 7. Top players ----------
     const topPlayers = Array.from(playerDatesAll.entries())
@@ -447,10 +402,10 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
           const dt = new Date(d + "T12:00:00");
           return dt >= rangeStart && dt <= rangeEnd;
         }).length,
-        points: pointsByPlayerInRange.get(pid) ?? 0,
+        points: Math.round(pointsByPlayerInRange.get(pid) ?? 0),
       }))
       .filter((p) => p.tournaments > 0)
-      .sort((a, b) => b.tournaments - a.tournaments)
+      .sort((a, b) => b.tournaments - a.tournaments || b.points - a.points)
       .slice(0, 100);
 
     return {
@@ -463,7 +418,6 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       },
       settings: {
         inactive_threshold_days: inactiveThresholdDays,
-        at_risk_threshold_days: atRiskThresholdDays,
       },
       total_players: playersInRange.size,
       total_attendance: totalAttendance,

@@ -4,14 +4,19 @@ import { useEffect, useState } from "react";
 import {
   Loader2,
   Users,
-  TrendingUp,
-  TrendingDown,
   HelpCircle,
   AlertTriangle,
   Trophy,
   Eye,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate } from "@/components/panel/dashboard-format";
+import {
+  PLAYER_STATUS_COLORS,
+  PLAYER_STATUS_HELP,
+  PLAYER_STATUS_LABELS,
+  PLAYER_STATUSES,
+} from "@/lib/player-status";
 import {
   AreaChart,
   Area,
@@ -49,20 +54,6 @@ export const Route = createFileRoute("/organizer/analytics")({
 });
 
 type AnalyticsResult = Awaited<ReturnType<typeof getStoreAnalytics>>;
-
-const CATEGORY_LABELS: Record<string, string> = {
-  recurrente: "Recurrente",
-  ocasional: "Ocasional",
-  una_vez: "Una sola vez",
-  inactivo: "Inactivo",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  recurrente: "#22c55e",
-  ocasional: "#eab308",
-  una_vez: "#60a5fa",
-  inactivo: "#6b7280",
-};
 
 type PageViewResult = Awaited<ReturnType<typeof getStorePageViewAnalytics>>;
 
@@ -249,7 +240,7 @@ function OrganizerAnalytics() {
           </div>
         </div>
 
-        {/* Jugadores en riesgo */}
+        {/* Por recuperar */}
         <div className="rounded-lg border bg-card p-4 space-y-3">
           <SkeletonLine width="w-48" height="h-4" />
           {Array.from({ length: 4 }).map((_, i) => (
@@ -356,7 +347,7 @@ function OrganizerAnalytics() {
 
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold">Clasificación de Jugadores</h2>
+            <h2 className="text-sm font-semibold">Estado de tus jugadores</h2>
             <Popover>
               <PopoverTrigger asChild>
                 <button className="text-muted-foreground hover:text-foreground" aria-label="Cómo se calculan">
@@ -364,29 +355,34 @@ function OrganizerAnalytics() {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-80 text-xs space-y-2">
-                <p className="font-semibold">¿Cómo se calculan las categorías?</p>
-                <p><span className="font-semibold text-green-500">Recurrente:</span> vino al menos una vez por semana, sin faltar ninguna semana del periodo.</p>
-                <p><span className="font-semibold text-yellow-500">Ocasional:</span> jugó 2+ veces, pero con semanas sin actividad.</p>
-                <p><span className="font-semibold text-blue-400">Una sola vez:</span> solo asistió una vez en el periodo.</p>
-                <p><span className="font-semibold text-gray-400">Inactivo:</span> no ha venido en más de {data.settings.inactive_threshold_days} días.</p>
+                <p className="font-semibold">¿Cómo se calcula cada estado?</p>
+                {PLAYER_STATUSES.map((s) => (
+                  <p key={s}>
+                    <span className="font-semibold" style={{ color: PLAYER_STATUS_COLORS[s] }}>
+                      {PLAYER_STATUS_LABELS[s]}:
+                    </span>{" "}
+                    {PLAYER_STATUS_HELP[s]}
+                  </p>
+                ))}
+                <p>El estado es a fecha de hoy: no cambia con el rango de fechas.</p>
               </PopoverContent>
             </Popover>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {(["recurrente", "ocasional", "una_vez", "inactivo"] as const).map((key) => (
+            {PLAYER_STATUSES.map((key) => (
               <div
                 key={key}
                 className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center"
-                style={{ borderColor: `${CATEGORY_COLORS[key]}30` }}
+                style={{ borderColor: `${PLAYER_STATUS_COLORS[key]}30` }}
               >
                 <div
                   className="mb-2 flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ backgroundColor: `${CATEGORY_COLORS[key]}20` }}
+                  style={{ backgroundColor: `${PLAYER_STATUS_COLORS[key]}20` }}
                 >
-                  <Users size={18} style={{ color: CATEGORY_COLORS[key] }} />
+                  <Users size={18} style={{ color: PLAYER_STATUS_COLORS[key] }} />
                 </div>
                 <p className="text-3xl font-bold text-white">{data.category_summary[key]}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{CATEGORY_LABELS[key]}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{PLAYER_STATUS_LABELS[key]}</p>
               </div>
             ))}
           </div>
@@ -458,9 +454,9 @@ function OrganizerAnalytics() {
         </ResponsiveContainer>
       </div>
 
-      {/* Jugadores nuevos vs. recurrentes por semana */}
+      {/* Jugadores nuevos vs. los que regresan por semana */}
       <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-semibold mb-1">Nuevos vs. Recurrentes</h2>
+        <h2 className="text-sm font-semibold mb-1">Nuevos y los que regresan</h2>
         <p className="text-xs text-muted-foreground mb-3">
           Nuevo = primera vez que juega en esta tienda. Bajas (en negativo) = jugadores que cruzan el umbral de
           inactivo ({data.settings.inactive_threshold_days} días sin venir) esa semana.
@@ -583,7 +579,7 @@ function OrganizerAnalytics() {
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Trophy className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold">Top Jugadores</h2>
+            <h2 className="text-sm font-semibold">Más torneos en el periodo</h2>
           </div>
           {data.top_players.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin datos en este periodo.</p>
@@ -629,13 +625,13 @@ function OrganizerAnalytics() {
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <h2 className="text-sm font-semibold">Jugadores en Riesgo</h2>
+          <h2 className="text-sm font-semibold">Por recuperar</h2>
           <span className="text-xs text-muted-foreground">
-            (más de {data.settings.at_risk_threshold_days} días sin venir)
+            {PLAYER_STATUS_HELP.por_recuperar}
           </span>
         </div>
         {data.at_risk.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay jugadores en riesgo actualmente.</p>
+          <p className="text-sm text-muted-foreground">No hay jugadores por recuperar.</p>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -646,6 +642,9 @@ function OrganizerAnalytics() {
                       Nexus Tag
                     </th>
                     <th scope="col" className="text-right py-2 px-2">
+                      Torneos que faltó
+                    </th>
+                    <th scope="col" className="text-right py-2 px-2">
                       Días sin venir
                     </th>
                   </tr>
@@ -654,6 +653,7 @@ function OrganizerAnalytics() {
                   {atRiskPage.pageItems.map((p) => (
                     <tr key={p.player_id} className="border-b last:border-0">
                       <td className="py-2 px-2">{p.geek_tag}</td>
+                      <td className="py-2 px-2 text-right">{p.missed_tournaments}</td>
                       <td className="py-2 px-2 text-right">{p.days_since} días</td>
                     </tr>
                   ))}
@@ -676,16 +676,13 @@ function OrganizerAnalytics() {
                   Nexus Tag
                 </th>
                 <th scope="col" className="text-right py-2 px-2">
-                  Torneos (rango)
+                  Torneos en el periodo
                 </th>
                 <th scope="col" className="text-left py-2 px-2">
-                  Categoría (rango)
+                  Estado
                 </th>
                 <th scope="col" className="text-left py-2 px-2">
-                  Categoría (actual)
-                </th>
-                <th scope="col" className="text-left py-2 px-2">
-                  Tendencia
+                  Última visita
                 </th>
               </tr>
             </thead>
@@ -695,28 +692,17 @@ function OrganizerAnalytics() {
                   <td className="py-2 px-2">{c.geek_tag}</td>
                   <td className="py-2 px-2 text-right">{c.tournaments_in_range}</td>
                   <td className="py-2 px-2">
-                    <Badge variant="outline" style={{ borderColor: CATEGORY_COLORS[c.category_range], color: CATEGORY_COLORS[c.category_range] }}>
-                      {CATEGORY_LABELS[c.category_range]}
+                    <Badge
+                      variant="outline"
+                      style={{
+                        borderColor: PLAYER_STATUS_COLORS[c.status],
+                        color: PLAYER_STATUS_COLORS[c.status],
+                      }}
+                    >
+                      {PLAYER_STATUS_LABELS[c.status]}
                     </Badge>
                   </td>
-                  <td className="py-2 px-2">
-                    <Badge variant="outline" style={{ borderColor: CATEGORY_COLORS[c.category_current], color: CATEGORY_COLORS[c.category_current] }}>
-                      {CATEGORY_LABELS[c.category_current]}
-                    </Badge>
-                  </td>
-                  <td className="py-2 px-2">
-                    {c.trend === "down" && (
-                      <span className="inline-flex items-center gap-1 text-red-500 text-xs">
-                        <TrendingDown className="h-3 w-3" /> Bajó
-                      </span>
-                    )}
-                    {c.trend === "up" && (
-                      <span className="inline-flex items-center gap-1 text-green-500 text-xs">
-                        <TrendingUp className="h-3 w-3" /> Mejoró
-                      </span>
-                    )}
-                    {c.trend === "same" && <span className="text-muted-foreground text-xs">—</span>}
-                  </td>
+                  <td className="py-2 px-2">{formatDate(c.last_visit)}</td>
                 </tr>
               ))}
             </tbody>
