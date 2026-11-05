@@ -31,6 +31,8 @@ import {
   deletePlayerAccount,
 } from "@/lib/nexus-admin.functions";
 import { assignManagerGames } from "@/lib/nexus-manager.functions";
+import { formatDate } from "@/components/panel/dashboard-format";
+import { PLAYER_STATUS_COLORS, PLAYER_STATUS_LABELS } from "@/lib/player-status";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1138,6 +1140,28 @@ function AdminPlayersPage() {
                       value={Number(detailData.total_points).toFixed(2)}
                     />
                   </div>
+                  {detailData.activity.map((a) => (
+                    <div
+                      key={a.game_id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-white">{a.game_name}</p>
+                        <p className="text-xs text-gray-400">
+                          {a.tournaments} torneos · Última visita {formatDate(a.last_visit)}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        style={{
+                          borderColor: PLAYER_STATUS_COLORS[a.status],
+                          color: PLAYER_STATUS_COLORS[a.status],
+                        }}
+                      >
+                        {PLAYER_STATUS_LABELS[a.status]}
+                      </Badge>
+                    </div>
+                  ))}
                 </section>
               </div>
             ) : null}

@@ -3,6 +3,7 @@ import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   BarChart3,
+  Users,
   Calendar,
   LayoutDashboard,
   Loader2,
@@ -73,6 +74,7 @@ function TcgManagerLayout() {
                 label: "Tiendas a mi cargo",
                 icon: <StoreIcon size={16} />,
               },
+              { to: "/tcg-manager/players", label: "Jugadores", icon: <Users size={16} /> },
               {
                 to: "/tcg-manager/analytics",
                 label: "Estadísticas",

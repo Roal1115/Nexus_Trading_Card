@@ -54,3 +54,18 @@ export function playerStatus(
 
   return { status: playerDates.length === 1 ? "nuevo" : "ocasional", missed };
 }
+
+// Para vistas de varias tiendas: solo cuentan los torneos de las tiendas donde el
+// jugador ha ido. Que otra tienda haga torneos no lo vuelve "por recuperar".
+export function statusAcrossStores(
+  visits: Array<{ store_id: string; date: string }>,
+  tournaments: Array<{ store_id: string; date: string }>,
+  today: string,
+) {
+  const stores = new Set(visits.map((v) => v.store_id));
+  return playerStatus(
+    visits.map((v) => v.date),
+    tournaments.filter((t) => stores.has(t.store_id)).map((t) => t.date),
+    today,
+  );
+}

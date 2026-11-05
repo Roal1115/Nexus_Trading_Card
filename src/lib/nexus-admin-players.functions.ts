@@ -4,6 +4,8 @@ import { getNexusAdmin, failDb, generateTempPassword } from "./nexus-admin.serve
 import { requireNexusAdmin } from "./nexus-auth.middleware";
 import { logAction, PAGE_SIZE } from "./nexus-admin-shared";
 import type { TablesUpdate } from "./database.types";
+import { statusAcrossStores } from "./player-status";
+import { todayInMexicoStr } from "./utils";
 
 
 export const listPlayers = createServerFn({ method: "POST" })
@@ -212,8 +214,39 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
 
     const tIds = Array.from(new Set((resultsRes.data ?? []).map((r) => r.tournament_id)));
     const { data: tournaments } = tIds.length
-      ? await admin.from("tournaments").select("id, tournament_date, game_id, store_id").in("id", tIds)
+      ? await admin.from("tournaments").select("id, tournament_date, game_id, store_id, status, league_id, games(name)").in("id", tIds)
       : { data: [] as any[] };
+
+    // Mismo estado que ven manager y organizer, por TCG.
+    const counted = (tournaments ?? []).filter(
+      (t: any) => ["APPROVED", "PUBLISHED"].includes(t.status) && t.league_id === null,
+    );
+    const { data: held, error: heldError } = counted.length
+      ? await admin
+          .from("tournaments")
+          .select("game_id, store_id, tournament_date")
+          .in("game_id", Array.from(new Set(counted.map((t: any) => t.game_id))))
+          .in("store_id", Array.from(new Set(counted.map((t: any) => t.store_id))))
+          .in("status", ["APPROVED", "PUBLISHED"])
+          .is("league_id", null)
+      : { data: [] as any[], error: null };
+    if (heldError) failDb(heldError);
+    const today = todayInMexicoStr();
+    const activity = Array.from(new Set(counted.map((t: any) => t.game_id))).map((gameId) => {
+      const visits = counted.filter((t: any) => t.game_id === gameId);
+      const toVisit = (t: any) => ({ store_id: t.store_id, date: t.tournament_date });
+      return {
+        game_id: gameId as string,
+        game_name: ((visits[0] as any).games?.name ?? "—") as string,
+        tournaments: visits.length,
+        last_visit: visits.map((t: any) => t.tournament_date as string).sort().at(-1) as string,
+        status: statusAcrossStores(
+          visits.map(toVisit),
+          (held ?? []).filter((t: any) => t.game_id === gameId).map(toVisit),
+          today,
+        ).status,
+      };
+    });
 
     const totalPoints = (resultsRes.data ?? []).reduce((s, r) => s + (r.points_earned ?? 0), 0);
     const wins = (resultsRes.data ?? []).filter((r) => r.rank === 1).length;
@@ -226,6 +259,7 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
       total_points: totalPoints,
       results: resultsRes.data ?? [],
       tournaments: tournaments ?? [],
+      activity,
       yearly_snapshots: snapsRes.data ?? [],
       tcg_ids: ((tcgIdsRes.data ?? []) as any[]).map((r) => ({
         game_id: r.game_id as string,

@@ -6,6 +6,8 @@ import { loadTournamentDetail } from "./nexus-tournament-detail.server";
 import { logAction, recomputeSnapshot, tfMonth, type TournamentStatus } from "./nexus-admin.functions";
 import { mondayOfWeek, toLocalDateStr } from "./utils";
 import { getManagerGameIds, assertManagerOwnsGame } from "./nexus-manager-shared";
+import { loadGamePlayers } from "./nexus-manager-players.server";
+import { PLAYER_STATUSES, type PlayerStatus } from "./player-status";
 
 
 export const getManagerAnalyticsOverview = createServerFn({ method: "POST" })
@@ -214,7 +216,7 @@ export const getManagerAnalyticsTrend = createServerFn({ method: "POST" })
       .eq("game_id", data.game_id);
     const storeIdsWithGame = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
     if (storeIdsWithGame.length === 0) {
-      return { monthly_trend: [], player_classification: [], peak_days: [] };
+      return { monthly_trend: [], status_summary: null, peak_days: [] };
     }
 
     let storeQuery = admin
@@ -227,7 +229,7 @@ export const getManagerAnalyticsTrend = createServerFn({ method: "POST" })
     const { data: stores } = await storeQuery;
     const filteredStoreIds = (stores ?? []).map((s: any) => s.id);
     if (filteredStoreIds.length === 0) {
-      return { monthly_trend: [], player_classification: [], peak_days: [] };
+      return { monthly_trend: [], status_summary: null, peak_days: [] };
     }
 
     let tQuery = admin
@@ -242,7 +244,7 @@ export const getManagerAnalyticsTrend = createServerFn({ method: "POST" })
     const { data: tournaments } = await tQuery;
 
     if (!tournaments || tournaments.length === 0) {
-      return { monthly_trend: [], player_classification: [], peak_days: [] };
+      return { monthly_trend: [], status_summary: null, peak_days: [] };
     }
 
     const tournamentIds = tournaments.map((t: any) => t.id);
@@ -338,12 +340,96 @@ export const getManagerAnalyticsTrend = createServerFn({ method: "POST" })
         .map((d) => ({ ...d, type: "valley" as const })),
     ];
 
-    const player_classification = Array.from(playerDates.entries()).map(([player_id, dates]) => ({
-      player_id,
-      last_visit: dates[dates.length - 1],
-      total_tournaments: dates.length,
-    }));
+    // Estado a fecha de hoy de quienes jugaron en el periodo filtrado.
+    const statusById = new Map(
+      (await loadGamePlayers(admin, data.game_id, filteredStoreIds)).map((p) => [p.player_id, p.status]),
+    );
+    const status_summary = Object.fromEntries(PLAYER_STATUSES.map((s) => [s, 0])) as Record<
+      PlayerStatus,
+      number
+    >;
+    for (const pid of playerDates.keys()) {
+      const status = statusById.get(pid);
+      if (status) status_summary[status]++;
+    }
 
-    return { monthly_trend, player_classification, peak_days };
+    return { monthly_trend, status_summary, peak_days };
   });
 
+
+// Jugadores de los TCGs que modera el manager, en todas las tiendas.
+export const getManagerPlayers = createServerFn({ method: "POST" })
+  .middleware([requireNexusManager])
+  .inputValidator((d: { game_id?: string }) =>
+    z.object({ game_id: z.string().uuid().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const gameIds = await getManagerGameIds(admin, player);
+    const { data: games, error } = gameIds.length
+      ? await admin.from("games").select("id, name").in("id", gameIds).order("name")
+      : { data: [] as Array<{ id: string; name: string }>, error: null };
+    if (error) failDb(error);
+
+    const gameId = data.game_id ?? games?.[0]?.id ?? null;
+    const summary = Object.fromEntries(PLAYER_STATUSES.map((s) => [s, 0])) as Record<
+      PlayerStatus,
+      number
+    >;
+    if (!gameId) return { games: games ?? [], game_id: null, players: [], summary };
+
+    await assertManagerOwnsGame(admin, player, gameId);
+    const players = await loadGamePlayers(admin, gameId);
+    for (const p of players) summary[p.status]++;
+    return { games: games ?? [], game_id: gameId, players, summary };
+  });
+
+// Vista de staff: solo resultados en los TCGs del manager, aunque el perfil sea
+// privado. Mismo error si no existe o no jugó ahí, para no revelar quién está registrado.
+export const getManagerPlayerDetail = createServerFn({ method: "POST" })
+  .middleware([requireNexusManager])
+  .inputValidator((d: { player_id: string }) =>
+    z.object({ player_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const gameIds = await getManagerGameIds(admin, player);
+    const notFound = "Este jugador no ha jugado en tus TCGs";
+    if (gameIds.length === 0) throw new Error(notFound);
+
+    const { data: rows, error } = await admin
+      .from("tournament_results")
+      .select(
+        "rank, points_earned, tournaments!inner(id, tournament_date, game_id, status, games(name), stores(name))",
+      )
+      .eq("player_id", data.player_id)
+      .in("tournaments.game_id", gameIds)
+      .in("tournaments.status", ["APPROVED", "PUBLISHED"]);
+    if (error) failDb(error);
+    if (!rows?.length) throw new Error(notFound);
+
+    const { data: target, error: targetError } = await admin
+      .from("players")
+      .select("geek_tag")
+      .eq("id", data.player_id)
+      .single();
+    if (targetError) failDb(targetError);
+
+    const tournaments = rows
+      .map((r) => ({
+        id: r.tournaments.id,
+        date: r.tournaments.tournament_date,
+        game: r.tournaments.games?.name ?? "—",
+        store: r.tournaments.stores?.name ?? "—",
+        rank: r.rank,
+        points: Math.round(r.points_earned ?? 0),
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    return {
+      geek_tag: target.geek_tag,
+      total_points: tournaments.reduce((sum, t) => sum + t.points, 0),
+      last_visit: tournaments[0].date,
+      tournaments,
+    };
+  });

@@ -1,6 +1,6 @@
 // Run: npx tsx scripts/player-status.check.mts
 import assert from "node:assert/strict";
-import { playerStatus } from "../src/lib/player-status.ts";
+import { playerStatus, statusAcrossStores } from "../src/lib/player-status.ts";
 
 const TODAY = "2026-11-05";
 const status = (player: string[], store: string[]) => playerStatus(player, store, TODAY);
@@ -48,5 +48,27 @@ assert.equal(status(["2026-11-05"], [...weekly, "2026-11-12", "2026-11-19", "202
 
 // Dos torneos el mismo día son dos oportunidades, no una.
 assert.equal(status(["2026-10-01"], ["2026-10-01", "2026-10-02", "2026-10-02", "2026-10-03"]).missed, 3);
+
+// Varias tiendas: torneos de una tienda donde nunca fue no cuentan como faltas.
+const at = (store_id: string, dates: string[]) => dates.map((date) => ({ store_id, date }));
+const mine = at("A", ["2026-10-01", "2026-10-08"]);
+assert.notEqual(
+  statusAcrossStores(mine, [...mine, ...at("B", ["2026-10-15", "2026-10-22", "2026-10-29"])], TODAY).status,
+  "por_recuperar",
+);
+// Pero sí cuentan los de su propia tienda.
+assert.equal(
+  statusAcrossStores(mine, [...mine, ...at("A", ["2026-10-15", "2026-10-22", "2026-10-29"])], TODAY).status,
+  "por_recuperar",
+);
+// Se cambió de tienda y sigue viniendo: no se pierde.
+assert.notEqual(
+  statusAcrossStores(
+    [...at("A", ["2026-09-10"]), ...at("B", ["2026-10-29", "2026-11-05"])],
+    [...at("A", ["2026-09-10", "2026-10-01", "2026-10-08", "2026-10-15"]), ...at("B", ["2026-10-29", "2026-11-05"])],
+    TODAY,
+  ).status,
+  "por_recuperar",
+);
 
 console.log("player-status: ok");
