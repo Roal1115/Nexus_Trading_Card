@@ -355,11 +355,12 @@ function RoundCard({
   const [open, setOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  const resultColor = round.won_match === true
-    ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
-    : round.won_match === false
-    ? "bg-red-500/10 border-l-2 border-l-red-500"
-    : "bg-white/[0.02]";
+  const resultColor =
+    round.won_match === true
+      ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
+      : round.won_match === false
+        ? "bg-red-500/10 border-l-2 border-l-red-500"
+        : "bg-white/[0.02]";
 
   return (
     <div
@@ -380,8 +381,8 @@ function RoundCard({
             round.won_match === true
               ? "text-emerald-400"
               : round.won_match === false
-              ? "text-red-400"
-              : "text-gray-400"
+                ? "text-red-400"
+                : "text-gray-400"
           }`}
         >
           R{round.round_number}
@@ -403,7 +404,7 @@ function RoundCard({
           <span className="truncate text-xs text-gray-300">
             {round.is_bye
               ? "Bye"
-              : opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—"}
+              : (opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—")}
           </span>
         </div>
 
@@ -423,11 +424,17 @@ function RoundCard({
             round.won_match === true
               ? "text-emerald-400"
               : round.won_match === false
-              ? "text-red-400"
-              : "text-gray-500"
+                ? "text-red-400"
+                : "text-gray-500"
           }`}
         >
-          {round.is_bye ? "Bye" : round.won_match === true ? "W" : round.won_match === false ? "L" : "—"}
+          {round.is_bye
+            ? "Bye"
+            : round.won_match === true
+              ? "W"
+              : round.won_match === false
+                ? "L"
+                : "—"}
         </span>
 
         {/* Delete button */}
@@ -805,8 +812,8 @@ export function PerformanceTrackerModal({
         },
       });
       toast.success(`Ronda ${round.round_number} guardada`);
-    } catch {
-      toast.error("Error al guardar la ronda");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al guardar la ronda");
     } finally {
       setSavingRound(null);
     }

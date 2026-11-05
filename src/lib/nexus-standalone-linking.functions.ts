@@ -2,6 +2,7 @@ import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser } from "./nexus-auth.middleware";
+import { maxWinsFor, sessionLinkProblem } from "./round-rules";
 
 // ============================================================
 // undoSessionLink — revierte el vínculo de una sesión matched
@@ -230,57 +231,71 @@ export const linkSessionManually = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (!tournament) throw new Error("Torneo no encontrado o no publicado");
+    if (tournament.game_id !== (session as any).game_id) {
+      throw new Error("Este torneo es de otro TCG");
+    }
 
-    const { data: result } = await admin
+    const { data: results, error: resultsError } = await admin
       .from("tournament_results")
-      .select("id")
-      .eq("tournament_id", data.tournament_id)
-      .eq("player_id", player.id)
-      .maybeSingle();
+      .select("player_id, match_points")
+      .eq("tournament_id", data.tournament_id);
+    if (resultsError) failDb(resultsError);
 
+    const result = (results ?? []).find((r) => r.player_id === player.id);
     if (!result) throw new Error("No apareces en los resultados de este torneo");
 
     // Migrar rondas
-    const { data: rounds } = await admin
+    const { data: rounds, error: roundsError } = await admin
       .from("standalone_round_results")
       .select("*")
       .eq("session_id", data.session_id);
+    if (roundsError) failDb(roundsError);
 
     const roundsToMigrate = (rounds ?? []) as any[];
 
+    const { data: taken, error: takenError } = await admin
+      .from("tournament_round_results")
+      .select("round_number, won_match")
+      .eq("tournament_id", data.tournament_id)
+      .eq("player_id", player.id);
+    if (takenError) failDb(takenError);
+
+    const problem = sessionLinkProblem({
+      rounds: roundsToMigrate,
+      matchPoints: result.match_points,
+      maxRounds: maxWinsFor(Math.max(0, ...(results ?? []).map((r) => r.match_points ?? 0))),
+      takenRounds: taken ?? [],
+    });
+    if (problem) throw new Error(problem);
+
     if (roundsToMigrate.length > 0) {
       const { error: insertError } = await admin.from("tournament_round_results").insert(
-        roundsToMigrate
-          .filter((r: any) => {
-            // Skip si ya existe una fila oficial no auto-populada
-            return true; // filtrado abajo con NOT EXISTS en SQL no disponible aquí, manejamos con upsert
-          })
-          .map((r: any) => ({
-            tournament_id: data.tournament_id,
-            player_id: r.player_id,
-            opponent_player_id: r.opponent_player_id,
-            round_number: r.round_number,
-            is_bye: r.is_bye,
-            player_leader_id: r.player_leader_id,
-            opponent_leader_id: r.opponent_leader_id,
-            won_die_roll: r.won_die_roll,
-            turn_order: r.turn_order,
-            won_match: r.won_match,
-            notes: r.notes,
-            is_auto_populated: false,
-            status: "confirmed",
-            reporter_player_id: r.reporter_player_id,
-            source_session_id: data.session_id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })),
+        roundsToMigrate.map((r: any) => ({
+          tournament_id: data.tournament_id,
+          player_id: r.player_id,
+          opponent_player_id: r.opponent_player_id,
+          round_number: r.round_number,
+          is_bye: r.is_bye,
+          player_leader_id: r.player_leader_id,
+          opponent_leader_id: r.opponent_leader_id,
+          won_die_roll: r.won_die_roll,
+          turn_order: r.turn_order,
+          won_match: r.won_match,
+          notes: r.notes,
+          is_auto_populated: false,
+          status: "confirmed",
+          reporter_player_id: r.reporter_player_id,
+          source_session_id: data.session_id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })),
       );
 
       if (insertError) failDb(insertError);
     }
 
-    // Actualizar sesión
-    await admin
+    // Actualizar sesión. Si falla, no dejar rondas oficiales de una sesión sin vincular.
+    const { error: linkError } = await admin
       .from("standalone_sessions")
       .update({
         status: "matched",
@@ -288,6 +303,13 @@ export const linkSessionManually = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.session_id);
+    if (linkError) {
+      await admin
+        .from("tournament_round_results")
+        .delete()
+        .eq("source_session_id", data.session_id);
+      failDb(linkError);
+    }
 
     // Log
     await admin.from("session_link_events").insert({
@@ -299,4 +321,3 @@ export const linkSessionManually = createServerFn({ method: "POST" })
 
     return { success: true };
   });
-

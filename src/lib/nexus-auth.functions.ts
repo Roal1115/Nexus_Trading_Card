@@ -67,17 +67,20 @@ export const signupPlayer = createServerFn({ method: "POST" })
       .eq("geek_tag", data.geek_tag)
       .maybeSingle();
     if (tagErr) failDb(tagErr);
-    if (
-      tagOwner &&
-      (tagOwner.auth_user_id ||
-        // Solo comparan los IDs de los juegos que el usuario seleccionó: un
-        // placeholder puede tener IDs de otros juegos (subidos en CSV) y eso
-        // no debe bloquear el registro — la adopción de abajo los conserva.
-        tagOwner.player_tcg_ids.some(
-          (t) => wanted.has(t.game_id) && wanted.get(t.game_id) !== t.tcg_user_id_normalized,
-        ))
-    ) {
-      throw new Error("Ese Geek Tag ya está en uso.");
+    if (tagOwner?.auth_user_id) throw new Error("Ese Nexus Tag ya está en uso.");
+    if (tagOwner) {
+      // Un placeholder solo se adopta demostrando su identidad: al menos un TCG ID
+      // igual y ninguno distinto en los juegos elegidos. Elegir otro juego no basta,
+      // y sin este ID igual cualquiera heredaría el historial solo por escribir el tag.
+      const selected = tagOwner.player_tcg_ids.filter((t) => wanted.has(t.game_id));
+      const sameIdentity =
+        selected.length > 0 &&
+        selected.every((t) => wanted.get(t.game_id) === t.tcg_user_id_normalized);
+      if (!sameIdentity) {
+        throw new Error(
+          "Ese Nexus Tag pertenece a un jugador con historial. Si eres tú, usa el mismo ID de jugador; si no, elige otro tag.",
+        );
+      }
     }
 
     // 1. Crear usuario de auth

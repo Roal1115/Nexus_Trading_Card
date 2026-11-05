@@ -11,12 +11,7 @@ import {
   SkeletonBlock,
   SettingsSectionSkeleton,
 } from "@/components/ui/skeleton-loader";
-import {
-  getMyProfile,
-  updateMyProfile,
-  addMyTcgId,
-  updateMyEmail,
-} from "@/lib/nexus-settings.functions";
+import { getMyProfile, updateMyProfile, addMyTcgId } from "@/lib/nexus-settings.functions";
 import ReactDOM from "react-dom";
 
 export const Route = createFileRoute("/settings")({
@@ -134,7 +129,6 @@ function SettingsPage() {
   const fetchProfile = useServerFn(getMyProfile);
   const callUpdateProfile = useServerFn(updateMyProfile);
   const callAddTcgId = useServerFn(addMyTcgId);
-  const callUpdateEmail = useServerFn(updateMyEmail);
 
   const [loading, setLoading] = useState(true);
   const [playerRole, setPlayerRole] = useState<string>("");
@@ -146,9 +140,6 @@ function SettingsPage() {
   const [currentNexusTag, setCurrentNexusTag] = useState("");
   const [currentDisplayName, setCurrentDisplayName] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
-
-  const [newEmail, setNewEmail] = useState("");
-  const [savingEmail, setSavingEmail] = useState(false);
 
   const [currentEmail, setCurrentEmail] = useState("");
 
@@ -192,20 +183,6 @@ function SettingsPage() {
       toast.error(e?.message ?? "Error al guardar");
     } finally {
       setSavingProfile(false);
-    }
-  };
-
-  const onUpdateEmail = async () => {
-    if (!newEmail) return;
-    setSavingEmail(true);
-    try {
-      const res = (await callUpdateEmail({ data: { new_email: newEmail } })) as any;
-      toast.success(res?.message ?? "Email actualizado");
-      setNewEmail("");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Error al actualizar email");
-    } finally {
-      setSavingEmail(false);
     }
   };
 
@@ -373,32 +350,16 @@ function SettingsPage() {
       {/* Email */}
       <section className="glass space-y-4 rounded-2xl p-6">
         <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-          <Mail size={14} className="text-primary" /> Cambiar email
+          <Mail size={14} className="text-primary" /> Email
         </h2>
-        <p className="text-xs text-gray-400">
-          Recibirás un correo de confirmación en tu nuevo email antes de que el cambio sea efectivo.
-        </p>
         {currentEmail && (
           <p className="text-xs text-gray-500">
             Email actual: <span className="font-mono text-gray-300">{currentEmail}</span>
           </p>
         )}
-        <div className="flex gap-2">
-          <input
-            type="email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            placeholder="nuevo@email.com"
-            className="flex-1 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
-          />
-          <button
-            onClick={onUpdateEmail}
-            disabled={savingEmail || !newEmail}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            {savingEmail ? <Loader2 size={12} className="animate-spin" /> : "Actualizar"}
-          </button>
-        </div>
+        {/* ponytail: cambio de email apagado hasta tener SMTP propio; después va con
+            nexus.auth.updateUser({ email }) aquí y se borra updateMyEmail. */}
+        <p className="text-xs text-gray-400">Cambiar tu email estará disponible muy pronto.</p>
       </section>
 
       {/* Contraseña */}

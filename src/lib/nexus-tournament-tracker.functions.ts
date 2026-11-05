@@ -2,8 +2,42 @@ import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser } from "./nexus-auth.middleware";
+import { maxWinsFor } from "./round-rules";
 
 const EXCLUDED_EVENT_LEADER_IDS = ["P-900", "P-800", "P-700"];
+
+// Solo quien aparece en los resultados de un torneo contado puede ver o registrar sus rondas.
+async function assertPlayedTournament(admin: any, tournamentId: string, playerId: string) {
+  const { data, error } = await admin
+    .from("tournament_results")
+    .select("id, tournaments!inner(status)")
+    .eq("tournament_id", tournamentId)
+    .eq("player_id", playerId)
+    .in("tournaments.status", ["APPROVED", "PUBLISHED"])
+    .maybeSingle();
+  if (error) failDb(error);
+  if (!data) throw new Error("No apareces en los resultados de este torneo");
+}
+
+// Quita las copias que este jugador dejó en sus oponentes y nadie ha aceptado todavía.
+async function removeMyPendingMirrors(
+  admin: any,
+  tournamentId: string,
+  playerId: string,
+  filter: { round_number?: number; except_opponent?: string | null } = {},
+) {
+  let q = admin
+    .from("tournament_round_results")
+    .delete()
+    .eq("tournament_id", tournamentId)
+    .eq("reporter_player_id", playerId)
+    .eq("is_auto_populated", true)
+    .eq("status", "pending_confirmation");
+  if (filter.round_number !== undefined) q = q.eq("round_number", filter.round_number);
+  if (filter.except_opponent) q = q.neq("player_id", filter.except_opponent);
+  const { error } = await q;
+  if (error) failDb(error);
+}
 
 function groupOrder(cardSetId: string): number {
   if (cardSetId.startsWith("OP")) return 0;
@@ -55,11 +89,13 @@ export const getDeckIdentifiers = createServerFn({ method: "POST" })
     // ponytail: sync can leave duplicate rows sharing a card_set_id; keep the one with an image
     const deduped = basicOnly
       ? Array.from(
-          filtered.reduce((map: Map<string, any>, r: any) => {
-            const existing = map.get(r.card_set_id);
-            if (!existing || (!existing.card_image && r.card_image)) map.set(r.card_set_id, r);
-            return map;
-          }, new Map<string, any>()).values(),
+          filtered
+            .reduce((map: Map<string, any>, r: any) => {
+              const existing = map.get(r.card_set_id);
+              if (!existing || (!existing.card_image && r.card_image)) map.set(r.card_set_id, r);
+              return map;
+            }, new Map<string, any>())
+            .values(),
         )
       : filtered;
 
@@ -80,6 +116,7 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
+    await assertPlayedTournament(admin, data.tournament_id, player.id);
 
     const { data: tournament } = await admin
       .from("tournaments")
@@ -222,6 +259,7 @@ async function validateMaxWins(
   playerId: string,
   roundNumberBeingSaved: number,
   willBeWin: boolean,
+  isOpponent = false,
 ) {
   if (!willBeWin) return;
 
@@ -233,7 +271,7 @@ async function validateMaxWins(
     .maybeSingle();
 
   const matchPoints = myResult?.match_points ?? 0;
-  const maxWins = Math.floor(matchPoints / 3);
+  const maxWins = maxWinsFor(matchPoints);
 
   const { data: existingWins } = await admin
     .from("tournament_round_results")
@@ -246,6 +284,11 @@ async function validateMaxWins(
   const currentWinCount = (existingWins ?? []).length;
 
   if (currentWinCount + 1 > maxWins) {
+    if (isOpponent) {
+      throw new Error(
+        "Ese resultado no cuadra: tu oponente ya tiene todas sus victorias de este torneo. Revisa la ronda.",
+      );
+    }
     throw new Error(
       `No puedes registrar más de ${maxWins} victorias en este torneo (tuviste ${matchPoints} puntos de match). Revisa tus rondas guardadas.`,
     );
@@ -294,6 +337,19 @@ export const saveRoundResult = createServerFn({ method: "POST" })
       throw new Error("Debes seleccionar un oponente o marcar Bye");
     }
 
+    await assertPlayedTournament(admin, data.tournament_id, player.id);
+    if (!data.is_bye) {
+      const { data: opponentResult, error: opponentError } = await admin
+        .from("tournament_results")
+        .select("id")
+        .eq("tournament_id", data.tournament_id)
+        .eq("player_id", data.opponent_player_id!)
+        .neq("player_id", player.id)
+        .maybeSingle();
+      if (opponentError) failDb(opponentError);
+      if (!opponentResult) throw new Error("Ese oponente no aparece en este torneo");
+    }
+
     const wonMatch = data.is_bye ? true : (data.won_match ?? null);
 
     await validateMaxWins(
@@ -303,6 +359,16 @@ export const saveRoundResult = createServerFn({ method: "POST" })
       data.round_number,
       wonMatch === true,
     );
+    if (!data.is_bye) {
+      await validateMaxWins(
+        admin,
+        data.tournament_id,
+        data.opponent_player_id!,
+        data.round_number,
+        wonMatch === false,
+        true,
+      );
+    }
 
     const myRow = {
       tournament_id: data.tournament_id,
@@ -324,11 +390,23 @@ export const saveRoundResult = createServerFn({ method: "POST" })
 
     const { data: existing } = await admin
       .from("tournament_round_results")
-      .select("id")
+      .select("id, is_auto_populated")
       .eq("tournament_id", data.tournament_id)
       .eq("player_id", player.id)
       .eq("round_number", data.round_number)
       .maybeSingle();
+
+    if (existing?.is_auto_populated) {
+      throw new Error(
+        "Esta ronda la reportó tu oponente. Acéptala o apélala desde el detalle del torneo.",
+      );
+    }
+
+    // Si cambió de oponente, la copia que dejó en el anterior ya no aplica.
+    await removeMyPendingMirrors(admin, data.tournament_id, player.id, {
+      round_number: data.round_number,
+      except_opponent: data.is_bye ? null : data.opponent_player_id,
+    });
 
     if (existing) {
       const { error } = await admin
@@ -403,9 +481,11 @@ export const clearTournamentRounds = createServerFn({ method: "POST" })
       .from("tournament_round_results")
       .delete()
       .eq("tournament_id", data.tournament_id)
-      .eq("player_id", player.id);
+      .eq("player_id", player.id)
+      .eq("is_auto_populated", false);
 
     if (error) failDb(error);
+    await removeMyPendingMirrors(admin, data.tournament_id, player.id);
     return { success: true };
   });
 
@@ -430,9 +510,13 @@ export const deleteRoundResult = createServerFn({ method: "POST" })
       .delete()
       .eq("tournament_id", data.tournament_id)
       .eq("player_id", player.id)
-      .eq("round_number", data.round_number);
+      .eq("round_number", data.round_number)
+      .eq("is_auto_populated", false);
 
     if (error) failDb(error);
+    await removeMyPendingMirrors(admin, data.tournament_id, player.id, {
+      round_number: data.round_number,
+    });
     return { success: true };
   });
 
