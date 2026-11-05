@@ -283,7 +283,6 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
 
     if (gameIds.length === 0) return { pending: 0, approved: 0 };
 
-    const nowIso = new Date().toISOString();
     const [pending, approved] = await Promise.all([
       admin
         .from("tournaments")
@@ -295,8 +294,7 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
         .from("tournaments")
         .select("*", { count: "exact", head: true })
         .eq("status", "APPROVED")
-        .in("game_id", gameIds)
-        .lt("undo_deadline", nowIso),
+        .in("game_id", gameIds),
     ]);
 
     return {

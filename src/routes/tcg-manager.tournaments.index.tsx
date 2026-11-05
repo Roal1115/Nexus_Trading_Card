@@ -73,13 +73,12 @@ function formatCountdown(target: string | null | undefined): { text: string; exp
 
 function ManagerTournamentsPanel() {
   const { tab: tabParam, ...search } = Route.useSearch();
-  const tab = tabParam ?? "pending";
   const navigate = useNavigate();
   // Cambiar de pestaña limpia los filtros de "Todos" / "Revisados por mí".
   const setTab = (v: string) =>
     navigate({
       to: "/tcg-manager/tournaments",
-      search: v === "pending" ? {} : { tab: v as TournamentsTab },
+      search: { tab: v as TournamentsTab },
     });
   const fetchHistory = useServerFn(getManagerTournamentHistory);
   const fetchFilterOptions = useServerFn(getManagerFilterOptions);
@@ -97,14 +96,12 @@ function ManagerTournamentsPanel() {
   const [pendingLoading, setPendingLoading] = useState(true);
 
   const [approvedRows, setApprovedRows] = useState<Row[]>([]);
-  const [approvedLoading, setApprovedLoading] = useState(false);
-  const [approvedLoaded, setApprovedLoaded] = useState(false);
+  const [approvedLoading, setApprovedLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
   const [unapproveTarget, setUnapproveTarget] = useState<Row | null>(null);
 
   const [publishedRows, setPublishedRows] = useState<Row[]>([]);
-  const [publishedLoading, setPublishedLoading] = useState(false);
-  const [publishedLoaded, setPublishedLoaded] = useState(false);
+  const [publishedLoading, setPublishedLoading] = useState(true);
   const [unpublishTarget, setUnpublishTarget] = useState<Row | null>(null);
 
   const [, setTick] = useState(0);
@@ -134,7 +131,6 @@ function ManagerTournamentsPanel() {
       toast.error(String((e as Error).message ?? e));
     } finally {
       setApprovedLoading(false);
-      setApprovedLoaded(true);
     }
   };
 
@@ -147,26 +143,21 @@ function ManagerTournamentsPanel() {
       toast.error(String((e as Error).message ?? e));
     } finally {
       setPublishedLoading(false);
-      setPublishedLoaded(true);
     }
   };
 
   useEffect(() => {
     if (!email) return;
     void refreshPending();
+    // Todas de una vez: las pestañas muestran su número sin abrirlas.
+    void refreshApproved();
+    void refreshPublished();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
 
-  // Carga perezosa de la pestaña activa (también al llegar por URL o con atrás/adelante).
-  useEffect(() => {
-    if (email) onTabChange(tab);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email, tab]);
-
-  const onTabChange = (v: string) => {
-    if (v === "approved" && !approvedLoaded) void refreshApproved();
-    if (v === "published" && !publishedLoaded) void refreshPublished();
-  };
+  // Sin pestaña en la URL, abre donde hay trabajo.
+  const nothingToReview = !pendingLoading && pendingRows.length === 0;
+  const tab = tabParam ?? (nothingToReview && approvedRows.length > 0 ? "approved" : "pending");
 
   const onUndo = async (id: string) => {
     setActingId(id);
@@ -208,11 +199,11 @@ function ManagerTournamentsPanel() {
             Por revisar {pendingRows.length > 0 ? `(${pendingRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="approved">
-            Aprobados {approvedLoaded && approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
+            Aprobados {approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="published">
             Publicados{" "}
-            {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
+            {publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="all">Todos</TabsTrigger>
           <TabsTrigger value="mine">Revisados por mí</TabsTrigger>
@@ -633,7 +624,6 @@ function ManagerTournamentsPanel() {
             data: { tournament_id: unpublishTarget.id, reason },
           });
           toast.success("Torneo despublicado. Los rankings se recalcularán.");
-          setPublishedLoaded(false);
           await refreshPublished();
         }}
       />

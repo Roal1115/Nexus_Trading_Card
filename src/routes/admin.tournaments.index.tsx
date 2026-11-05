@@ -80,13 +80,12 @@ type PublishedRow = {
 
 function TournamentsPanel() {
   const { tab: tabParam, ...historySearch } = Route.useSearch();
-  const tab = tabParam ?? "pending";
   const navigate = useNavigate();
   // Cambiar de pestaña limpia los filtros de "Todos".
   const setTab = (v: string) =>
     navigate({
       to: "/admin/tournaments",
-      search: v === "pending" ? {} : { tab: v as TournamentsTab },
+      search: { tab: v as TournamentsTab },
     });
   const { player } = useNexusRole();
   const email = player?.email ?? null;
@@ -103,15 +102,14 @@ function TournamentsPanel() {
   const [pendingLoading, setPendingLoading] = useState(true);
 
   const [approvedRows, setApprovedRows] = useState<ApprovedRow[]>([]);
-  const [approvedLoading, setApprovedLoading] = useState(false);
-  const [approvedLoaded, setApprovedLoaded] = useState(false);
+  const [approvedLoading, setApprovedLoading] = useState(true);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [publishing, setPublishing] = useState(false);
   const [unapproveTarget, setUnapproveTarget] = useState<ApprovedRow | null>(null);
 
   const [publishedRows, setPublishedRows] = useState<PublishedRow[]>([]);
-  const [publishedLoading, setPublishedLoading] = useState(false);
-  const [publishedLoaded, setPublishedLoaded] = useState(false);
+  const [publishedLoading, setPublishedLoading] = useState(true);
+  const [publishedTotal, setPublishedTotal] = useState(0);
   const [unpublishTarget, setUnpublishTarget] = useState<PublishedRow | null>(null);
 
   const refreshPending = async () => {
@@ -136,7 +134,6 @@ function TournamentsPanel() {
       toast.error(String((e as Error).message ?? e));
     } finally {
       setApprovedLoading(false);
-      setApprovedLoaded(true);
     }
   };
 
@@ -145,30 +142,26 @@ function TournamentsPanel() {
     try {
       const res = await fetchHistory({ data: { status: "PUBLISHED", page: 1 } });
       setPublishedRows(res.tournaments as unknown as PublishedRow[]);
+      setPublishedTotal(res.total);
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
       setPublishedLoading(false);
-      setPublishedLoaded(true);
     }
   };
 
   useEffect(() => {
     if (!email) return;
     void refreshPending();
+    // Todas de una vez: las pestañas muestran su número sin abrirlas.
+    void refreshApproved();
+    void refreshPublished();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
 
-  // Carga perezosa de la pestaña activa (también al llegar por URL o con atrás/adelante).
-  useEffect(() => {
-    if (email) onTabChange(tab);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email, tab]);
-
-  const onTabChange = (v: string) => {
-    if (v === "approved" && !approvedLoaded) void refreshApproved();
-    if (v === "published" && !publishedLoaded) void refreshPublished();
-  };
+  // Sin pestaña en la URL, abre donde hay trabajo.
+  const nothingToReview = !pendingLoading && pendingRows.length === 0;
+  const tab = tabParam ?? (nothingToReview && approvedRows.length > 0 ? "approved" : "pending");
 
   const selectedIds = Object.entries(selected)
     .filter(([, v]) => v)
@@ -180,8 +173,7 @@ function TournamentsPanel() {
     try {
       const res = await publishFn({ data: { tournament_ids: selectedIds } });
       toast.success(`${res.published} torneos publicados — leaderboard actualizado`);
-      await refreshApproved();
-      setPublishedLoaded(false);
+      await Promise.all([refreshApproved(), refreshPublished()]);
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -217,11 +209,11 @@ function TournamentsPanel() {
             Por revisar {pendingRows.length > 0 ? `(${pendingRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="approved">
-            Aprobados {approvedLoaded && approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
+            Aprobados {approvedRows.length > 0 ? `(${approvedRows.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="published">
             Publicados{" "}
-            {publishedLoaded && publishedRows.length > 0 ? `(${publishedRows.length})` : ""}
+            {publishedTotal > 0 ? `(${publishedTotal})` : ""}
           </TabsTrigger>
           <TabsTrigger value="all">Todos</TabsTrigger>
         </TabsList>
@@ -680,7 +672,6 @@ function TournamentsPanel() {
             data: { tournament_id: unpublishTarget.id, reason },
           });
           toast.success("Torneo despublicado. Los rankings se recalcularán.");
-          setPublishedLoaded(false);
           await refreshPublished();
         }}
       />
