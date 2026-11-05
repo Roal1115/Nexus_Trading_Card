@@ -129,16 +129,3 @@ export const updateMyEmail = createServerFn({ method: "POST" })
     if (error) failDb(error);
     return { ok: true, message: "Te enviamos un correo de confirmación a tu nuevo email." };
   });
-
-// ── Cambiar contraseña (Supabase Auth) ────────────────────────────
-export const updateMyPassword = createServerFn({ method: "POST" })
-  .middleware([requireNexusUser])
-  .inputValidator((d: { new_password: string }) =>
-    z.object({ new_password: z.string().min(8, "Mínimo 8 caracteres") }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const { admin } = context;
-    const { error } = await admin.auth.updateUser({ password: data.new_password });
-    if (error) failDb(error);
-    return { ok: true };
-  });

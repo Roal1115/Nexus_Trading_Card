@@ -16,7 +16,6 @@ import {
   updateMyProfile,
   addMyTcgId,
   updateMyEmail,
-  updateMyPassword,
 } from "@/lib/nexus-settings.functions";
 import ReactDOM from "react-dom";
 
@@ -136,7 +135,6 @@ function SettingsPage() {
   const callUpdateProfile = useServerFn(updateMyProfile);
   const callAddTcgId = useServerFn(addMyTcgId);
   const callUpdateEmail = useServerFn(updateMyEmail);
-  const callUpdatePassword = useServerFn(updateMyPassword);
 
   const [loading, setLoading] = useState(true);
   const [playerRole, setPlayerRole] = useState<string>("");
@@ -218,7 +216,14 @@ function SettingsPage() {
     }
     setSavingPassword(true);
     try {
-      await callUpdatePassword({ data: { new_password: newPassword } });
+      const { error } = await nexus.auth.updateUser({ password: newPassword });
+      if (error) {
+        throw new Error(
+          error.code === "same_password"
+            ? "La nueva contraseña debe ser diferente a la anterior"
+            : "No se pudo cambiar la contraseña. Intenta de nuevo",
+        );
+      }
       toast.success("Contraseña actualizada correctamente");
       setNewPassword("");
       setConfirmPassword("");
