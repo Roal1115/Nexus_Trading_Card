@@ -1,5 +1,4 @@
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
-import { TcgSwitcher } from "@/components/layout/TcgSwitcher";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { playerNavSections } from "@/components/layout/player-nav";
 import { useNexusRole } from "@/hooks/use-nexus-role";
@@ -27,7 +26,6 @@ export function PlayerSidebar() {
         userLabel={player?.geek_tag ?? ""}
         topSlot={(collapsed) => (
           <div className="mb-4 space-y-3 px-2">
-            <TcgSwitcher collapsed={collapsed} />
             <NotificationBell variant="sidebar" collapsed={collapsed} />
           </div>
         )}

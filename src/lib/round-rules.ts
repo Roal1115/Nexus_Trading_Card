@@ -19,7 +19,7 @@ export function sessionLinkProblem({
   const taken = new Set(takenRounds.map((r) => r.round_number));
   const clashes = rounds.map((r) => r.round_number).filter((n) => taken.has(n));
   if (clashes.length > 0) {
-    return `Ya hay resultados registrados para la ronda ${clashes.sort((a, b) => a - b).join(", ")} de este torneo. Elimina esas rondas de tu sesión antes de vincular.`;
+    return `Ya hay resultados registrados para la ronda ${clashes.sort((a, b) => a - b).join(", ")} de este torneo. Elimina esas rondas de tu partida antes de vincular.`;
   }
   const wins = [...rounds, ...takenRounds].filter((r) => r.won_match === true).length;
   const maxWins = maxWinsFor(matchPoints);
@@ -28,7 +28,7 @@ export function sessionLinkProblem({
   }
   const tooHigh = rounds.find((r) => r.round_number > maxRounds);
   if (maxRounds > 0 && tooHigh) {
-    return `Este torneo tuvo ${maxRounds} rondas y tu sesión llega a la ronda ${tooHigh.round_number}. Corrige tus rondas antes de vincular.`;
+    return `Este torneo tuvo ${maxRounds} rondas y tu partida llega a la ronda ${tooHigh.round_number}. Corrige tus rondas antes de vincular.`;
   }
   return null;
 }

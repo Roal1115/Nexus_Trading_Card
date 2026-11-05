@@ -830,7 +830,7 @@ export function TournamentUploadForm({
                           <th className="px-3 py-2 text-left">Membership ID</th>
                           <th className="px-3 py-2 text-right">Match Pts</th>
                           <th className="px-3 py-2 text-right">OMW%</th>
-                          <th className="px-3 py-2 text-right">Pts Arena</th>
+                          <th className="px-3 py-2 text-right">Puntos</th>
                           <th className="px-3 py-2 text-left">Estado</th>
                         </tr>
                       </thead>
@@ -887,7 +887,7 @@ export function TournamentUploadForm({
                   </div>
                 )}
                 <p className="border-t border-white/5 px-4 py-2 text-[11px] text-gray-400">
-                  Los Puntos Arena se calculan como: (tus puntos / puntos del 1er lugar) × 100
+                  Los Puntos se calculan como: (tus puntos / puntos del 1er lugar) × 100
                 </p>
                 {totalErrors > 0 && (
                   <p className="border-t border-white/5 px-4 py-2 text-xs text-red-300">

@@ -50,8 +50,13 @@ export const loginWithIdentifier = createServerFn({ method: "POST" })
     z.object({ identifier: identifierSchema, password: z.string().min(1).max(200) }).parse(d),
   )
   .handler(async ({ data }) => {
-    // 5 intentos de login por IP por minuto
-    if (!checkRateLimit(`login_${getClientIp()}`, 5, 60_000)) {
+    // 5 intentos por cuenta y 30 por IP: en un torneo muchos jugadores comparten el Wi-Fi.
+    const ip = getClientIp();
+    const account = data.identifier.trim().toLowerCase();
+    if (
+      !checkRateLimit(`login_${ip}_${account}`, 5, 60_000) ||
+      !checkRateLimit(`login_${ip}`, 30, 60_000)
+    ) {
       return { ok: false as const, code: "error" as const, message: "Too many attempts" };
     }
 

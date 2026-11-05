@@ -5,7 +5,6 @@ import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useTCG } from "@/context/tcg.context";
 import { nexus } from "@/integrations/nexus/client";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
-import { TcgSwitcher } from "@/components/layout/TcgSwitcher";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export function AppHeader() {
@@ -24,6 +23,8 @@ export function AppHeader() {
       .from("games")
       .select("id, name, slug")
       .eq("is_active", true)
+      // Temporada 1: solo One Piece. Calendario y Meta siguen a este juego.
+      .eq("slug", "one-piece")
       .order("name")
       .then(({ data }) => {
         if (data?.length) setTcgs(data as { id: string; name: string; slug: string }[]);
@@ -43,7 +44,7 @@ export function AppHeader() {
           probablyAuthed ? "lg:hidden" : ""
         }`}
       >
-        <div className="mx-auto grid h-16 max-w-7xl grid-cols-3 items-center px-4 sm:px-6">
+        <div className="mx-auto grid h-16 max-w-7xl grid-cols-2 items-center px-4 sm:px-6">
           {/* LEFT — Logo */}
           <div className="flex items-center">
             <Link
@@ -56,11 +57,6 @@ export function AppHeader() {
               <span className="hidden sm:inline text-white">Trading Card</span>
               <span className="hidden sm:inline text-primary">Nexus</span>
             </Link>
-          </div>
-
-          {/* CENTER — TCG Switcher */}
-          <div className="flex justify-center">
-            <TcgSwitcher />
           </div>
 
           {/* RIGHT — Avatar / Login */}
@@ -83,7 +79,11 @@ export function AppHeader() {
       </header>
 
       {player && (
-        <ProfileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} player={player as any} />
+        <ProfileDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          player={player as any}
+        />
       )}
     </>
   );

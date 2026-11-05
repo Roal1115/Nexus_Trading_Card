@@ -62,7 +62,6 @@ import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.store
 import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
 import { Route as TournamentsIdRouteImport } from './routes/tournaments.$id'
-import { Route as AdminPlayersIdRouteImport } from './routes/admin.players.$id'
 import { Route as AdminTournamentsIndexRouteImport } from './routes/admin.tournaments.index'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as ApiCronPublishApprovedRouteImport } from './routes/api.cron.publish-approved'
@@ -345,11 +344,6 @@ const TournamentsIdRoute = TournamentsIdRouteImport.update({
   path: '/tournaments/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPlayersIdRoute = AdminPlayersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminPlayersRoute,
-} as any)
 const AdminTournamentsIndexRoute = AdminTournamentsIndexRouteImport.update({
   id: '/tournaments/',
   path: '/tournaments/',
@@ -455,7 +449,7 @@ export interface FileRoutesByFullPath {
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
-  '/admin/players': typeof AdminPlayersRouteWithChildren
+  '/admin/players': typeof AdminPlayersRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
@@ -488,7 +482,6 @@ export interface FileRoutesByFullPath {
   '/sessions/': typeof SessionsIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
-  '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
@@ -521,7 +514,7 @@ export interface FileRoutesByTo {
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
-  '/admin/players': typeof AdminPlayersRouteWithChildren
+  '/admin/players': typeof AdminPlayersRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
@@ -553,7 +546,6 @@ export interface FileRoutesByTo {
   '/sessions': typeof SessionsIndexRoute
   '/stores': typeof StoresIndexRoute
   '/tcg-manager': typeof TcgManagerIndexRoute
-  '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
@@ -592,7 +584,7 @@ export interface FileRoutesById {
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
-  '/admin/players': typeof AdminPlayersRouteWithChildren
+  '/admin/players': typeof AdminPlayersRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
@@ -625,7 +617,6 @@ export interface FileRoutesById {
   '/sessions/': typeof SessionsIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
-  '/admin/players/$id': typeof AdminPlayersIdRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues_/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
@@ -698,7 +689,6 @@ export interface FileRouteTypes {
     | '/sessions/'
     | '/stores/'
     | '/tcg-manager/'
-    | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/api/cron/publish-approved'
     | '/organizer/leagues/$leagueId'
@@ -763,7 +753,6 @@ export interface FileRouteTypes {
     | '/sessions'
     | '/stores'
     | '/tcg-manager'
-    | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/api/cron/publish-approved'
     | '/organizer/leagues/$leagueId'
@@ -834,7 +823,6 @@ export interface FileRouteTypes {
     | '/sessions/'
     | '/stores/'
     | '/tcg-manager/'
-    | '/admin/players/$id'
     | '/admin/tournaments/$id'
     | '/api/cron/publish-approved'
     | '/organizer/leagues_/$leagueId'
@@ -1249,13 +1237,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TournamentsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/players/$id': {
-      id: '/admin/players/$id'
-      path: '/$id'
-      fullPath: '/admin/players/$id'
-      preLoaderRoute: typeof AdminPlayersIdRouteImport
-      parentRoute: typeof AdminPlayersRoute
-    }
     '/admin/tournaments/': {
       id: '/admin/tournaments/'
       path: '/tournaments'
@@ -1364,25 +1345,13 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminPlayersRouteChildren {
-  AdminPlayersIdRoute: typeof AdminPlayersIdRoute
-}
-
-const AdminPlayersRouteChildren: AdminPlayersRouteChildren = {
-  AdminPlayersIdRoute: AdminPlayersIdRoute,
-}
-
-const AdminPlayersRouteWithChildren = AdminPlayersRoute._addFileChildren(
-  AdminPlayersRouteChildren,
-)
-
 interface AdminRouteChildren {
   AdminActivityRoute: typeof AdminActivityRoute
   AdminAdsRoute: typeof AdminAdsRoute
   AdminApprovedRoute: typeof AdminApprovedRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
-  AdminPlayersRoute: typeof AdminPlayersRouteWithChildren
+  AdminPlayersRoute: typeof AdminPlayersRoute
   AdminPublishRoute: typeof AdminPublishRoute
   AdminSeasonsRoute: typeof AdminSeasonsRoute
   AdminStoresRoute: typeof AdminStoresRoute
@@ -1399,7 +1368,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminApprovedRoute: AdminApprovedRoute,
   AdminCalendarRoute: AdminCalendarRoute,
   AdminHistoryRoute: AdminHistoryRoute,
-  AdminPlayersRoute: AdminPlayersRouteWithChildren,
+  AdminPlayersRoute: AdminPlayersRoute,
   AdminPublishRoute: AdminPublishRoute,
   AdminSeasonsRoute: AdminSeasonsRoute,
   AdminStoresRoute: AdminStoresRoute,

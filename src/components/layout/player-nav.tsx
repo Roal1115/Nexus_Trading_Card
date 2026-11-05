@@ -45,7 +45,7 @@ export function playerNavSections(role: string, nexusTag?: string): SidebarSecti
       items: [
         { to: "/dashboard", label: "Mi Panel", icon: <LayoutDashboard size={16} /> },
         { to: "/my-stats", label: "Mis Stats", icon: <BarChart3 size={16} /> },
-        { to: "/sessions", label: "Sesiones", icon: <Swords size={16} /> },
+        { to: "/sessions", label: "Partidas", icon: <Swords size={16} /> },
       ],
     },
     {

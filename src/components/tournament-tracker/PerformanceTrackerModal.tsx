@@ -843,7 +843,7 @@ export function PerformanceTrackerModal({
         <div className="flex items-start gap-3">
           <Trophy className="text-primary mt-1" size={22} />
           <div>
-            <h2 className="text-xl font-extrabold text-white">Performance Tracker</h2>
+            <h2 className="text-xl font-extrabold text-white">Mis Partidas</h2>
             <p className="mt-1 text-xs text-gray-400">
               Registra el detalle de cada ronda: contra quién jugaste, qué leader usaste, y el
               resultado.

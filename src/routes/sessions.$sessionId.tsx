@@ -53,7 +53,7 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/sessions/$sessionId")({
-  head: () => ({ meta: [{ title: "Sesión — Nexus" }] }),
+  head: () => ({ meta: [{ title: "Partida — Nexus" }] }),
   component: SessionDetailPage,
 });
 
@@ -1134,7 +1134,7 @@ function StandaloneRoundTracker({
                       value={header.nameDraft}
                       onChange={(e) => header.setNameDraft(e.target.value)}
                       maxLength={100}
-                      placeholder="Nombre de la sesión"
+                      placeholder="Nombre de la partida"
                       className="w-full max-w-[200px] rounded-md border border-primary/40 bg-white/5 px-2 py-1 text-base font-bold text-white outline-none focus:border-primary"
                     />
                     <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1">
@@ -1179,7 +1179,7 @@ function StandaloneRoundTracker({
                     className="group flex min-w-0 items-center gap-1.5"
                   >
                     <h1 className="truncate text-xl font-bold text-white">
-                      {session?.name ?? "Sesión"}
+                      {session?.name ?? "Partida"}
                     </h1>
                     <button
                       type="button"
@@ -1226,7 +1226,7 @@ function StandaloneRoundTracker({
               <button
                 onClick={() => header.setDeleteConfirming(true)}
                 className="rounded-md p-1.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
-                aria-label="Eliminar sesión"
+                aria-label="Eliminar partida"
               >
                 <Trash2 size={14} />
               </button>
@@ -1543,7 +1543,7 @@ function DisambiguationPicker({
     setLinking(true);
     try {
       await linkFn({ data: { session_id: sessionId, tournament_id: selectedId } });
-      toast.success("Sesión vinculada correctamente");
+      toast.success("Partida vinculada correctamente");
       onLinked();
       onClose();
     } catch (e: any) {
@@ -1587,7 +1587,7 @@ function DisambiguationPicker({
                 {confirming && selectedCandidate ? (
                   <div className="space-y-4">
                     <p className="text-sm text-gray-300">
-                      ¿Vincular esta sesión al siguiente torneo?
+                      ¿Vincular esta partida al siguiente torneo?
                     </p>
                     <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
                       <p className="text-sm font-semibold text-white">
@@ -1707,7 +1707,7 @@ function SessionDetailPage() {
     setLoading(true);
     fetchDetail({ data: { session_id: sessionId } })
       .then(setDetail)
-      .catch((e: any) => toast.error(e?.message ?? "Error al cargar sesión"))
+      .catch((e: any) => toast.error(e?.message ?? "Error al cargar la partida"))
       .finally(() => setLoading(false));
   };
 
@@ -1735,7 +1735,7 @@ function SessionDetailPage() {
     setDeleting(true);
     try {
       await deleteFn({ data: { session_id: sessionId } });
-      toast.success("Sesión eliminada");
+      toast.success("Partida eliminada");
       navigate({ to: "/sessions" });
     } catch (e: any) {
       toast.error(e?.message ?? "Error al eliminar");
@@ -1766,9 +1766,9 @@ function SessionDetailPage() {
           : prev,
       );
       setEditingDetails(false);
-      toast.success("Sesión actualizada");
+      toast.success("Partida actualizada");
     } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo actualizar la sesión");
+      toast.error(e?.message ?? "No se pudo actualizar la partida");
     } finally {
       setSavingDetails(false);
     }
@@ -1805,7 +1805,7 @@ function SessionDetailPage() {
           to="/sessions"
           className="inline-flex items-center gap-1 transition hover:text-primary"
         >
-          <ArrowLeft size={12} /> Mis Sesiones
+          <ArrowLeft size={12} /> Mis Partidas
         </Link>
         <span>/</span>
         <span className="text-gray-300">{session?.name ?? "…"}</span>

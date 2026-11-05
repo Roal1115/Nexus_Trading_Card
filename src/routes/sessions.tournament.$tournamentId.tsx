@@ -536,7 +536,7 @@ function SessionDetailPage() {
           to="/sessions"
           className="inline-flex items-center gap-1 transition hover:text-primary"
         >
-          <ArrowLeft size={12} /> Mis Sesiones
+          <ArrowLeft size={12} /> Mis Partidas
         </Link>
         <span>/</span>
         <span className="text-gray-300">{session?.name ?? "…"}</span>

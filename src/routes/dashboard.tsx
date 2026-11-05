@@ -37,6 +37,15 @@ const RANK_TIER_TEXT: Record<Exclude<RankTier, null>, string> = {
   silver: "text-gray-300",
   bronze: "text-amber-600",
 };
+const POINTS_HELP = `¿Cómo se calculan tus puntos?
+
+Puntos: Cada torneo normaliza tus puntos con la fórmula:
+(tus match points ÷ match points del 1er lugar) × 100
+
+Regla top 2 por semana: Si juegas más de 2 torneos en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el ranking.
+
+Ranking mensual: Suma de tus puntos en el mes actual.
+Ranking de temporada: Suma acumulada durante la temporada completa.`;
 const RANK_TIER_BOX: Record<Exclude<RankTier, null>, string> = {
   gold: "border-yellow-500/40 bg-yellow-500/[0.06]",
   silver: "border-gray-400/40 bg-gray-400/[0.06]",
@@ -76,7 +85,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  const { player: gaPlayer } = useNexusRole();
+  const { player: gaPlayer, loading: authLoading } = useNexusRole();
   const navigate = useNavigate();
   const loaderData = Route.useLoaderData();
 
@@ -187,6 +196,15 @@ function DashboardPage() {
     }
   }, [data, selectedTcg]);
 
+  // Sin esto, recargar con sesión mostraba "Debes iniciar sesión" antes de resolverla.
+  if (!gaPlayer && authLoading) {
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        <SkeletonBlock className="h-64 w-full rounded-2xl" />
+      </main>
+    );
+  }
+
   if (!gaPlayer) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
@@ -249,24 +267,6 @@ function DashboardPage() {
   const paginatedEvents = filteredEvents.slice(0, page * PAGE_SIZE);
   const hasMore = filteredEvents.length > page * PAGE_SIZE;
 
-  // Calcular placement delta torneo vs torneo anterior
-  // events está ordenado por fecha DESC — index 0 es el más reciente
-  const getPlacementDelta = (index: number): number | null => {
-    // El más reciente (index 0) no tiene anterior
-    const current = filteredEvents[index];
-    const previous = filteredEvents[index + 1];
-    if (!previous) return null;
-    // Delta positivo = mejoró (bajó de número de posición)
-    return previous.placement - current.placement;
-  };
-
-  function PlacementDelta({ delta }: { delta: number | null }) {
-    if (delta === null) return null; // primer torneo, sin tag
-    if (delta === 0) return <span className="text-[8px] text-gray-600">—</span>;
-    if (delta > 0) return <span className="text-[8px] font-bold text-emerald-400">▲{delta}</span>;
-    return <span className="text-[8px] font-bold text-red-400">▼{Math.abs(delta)}</span>;
-  }
-
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
       <aside className="hidden xl:block">
@@ -284,7 +284,7 @@ function DashboardPage() {
                 Tu Nexus Tag
               </p>
               <h1 className="mt-2 break-words text-5xl font-bold text-white sm:text-7xl">{tag}</h1>
-              <p className="mt-2 text-sm text-gray-400">{storeCity ?? "—"}</p>
+              {storeCity && <p className="mt-2 text-sm text-gray-400">{storeCity}</p>}
             </div>
             {loading ? (
               // Mismo layout final: caja de Rank Global + fila de hasta 5
@@ -332,7 +332,8 @@ function DashboardPage() {
                           tier ? RANK_TIER_TEXT[tier] : "text-primary"
                         }`}
                       >
-                        <Crown size={10} /> Rank Global
+                        <Crown size={10} /> Ranking de Temporada
+                        <TooltipInfo text={POINTS_HELP} />
                       </div>
                       <div
                         className={`font-mono text-5xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-white"}`}
@@ -551,10 +552,10 @@ function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-white">
                       {achievements.unlocked_count}
-                      <span className="text-gray-500"> / {achievements.total_count} achievements</span>
+                      <span className="text-gray-500"> / {achievements.total_count} logros</span>
                     </p>
                     <p className="truncate text-xs text-gray-500">
-                      {achievements.total_lp} Legacy Points
+                      {achievements.total_lp} Puntos de Logro
                     </p>
                   </div>
                 </div>
@@ -576,7 +577,7 @@ function DashboardPage() {
                     <Layers size={18} />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-white">Performance Tracker</p>
+                    <p className="truncate text-sm font-semibold text-white">Mis Partidas</p>
                     <p className="truncate text-xs text-gray-500">
                       Registra tus partidas en torneos y prácticas
                     </p>
@@ -599,22 +600,12 @@ function DashboardPage() {
             de mostrar un skeleton de 2 cards que después puede desaparecer
             (el caso más común, 1 solo TCG) — ese "fantasma" era justo el
             layout viejo que quedaba pegado en la carga. */}
-        {!loading && tcgStats.length !== 1 && (
+        {!loading && tcgStats.length > 1 && (
           <section className="mt-6">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-white">
                 Mis Rankings
-                <TooltipInfo
-                  text={`¿Cómo se calculan tus puntos?
-
-Puntos Arena: Cada torneo normaliza tus puntos con la fórmula:
-(tus match points ÷ match points del 1er lugar) × 100
-
-Regla top 2 por semana: Si juegas más de 2 torneos del mismo TCG en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el leaderboard.
-
-Leaderboard mensual: Suma de tus Pts Arena en el mes actual.
-Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
-                />
+                <TooltipInfo text={POINTS_HELP} />
               </h2>
             </div>
             {tcgStats.length === 0 ? (
@@ -757,7 +748,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                   <th className="px-4 py-2 text-left">TCG</th>
                   <th className="px-4 py-2 text-center whitespace-nowrap">V / D</th>
                   <th className="px-4 py-2 text-right">Posición</th>
-                  <th className="px-4 py-2 text-right">Pts Arena</th>
+                  <th className="px-4 py-2 text-right">Puntos</th>
                   <th className="px-4 py-2 w-8"></th>
                 </tr>
               </thead>
@@ -806,7 +797,6 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                             >
                               #{t.placement}
                             </span>
-                            <PlacementDelta delta={getPlacementDelta(paginatedEvents.indexOf(t))} />
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
@@ -819,7 +809,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                 e.stopPropagation();
                                 setTrackerTournament({ id: t.id, game_id: t.game_id });
                               }}
-                              title="Performance Tracker"
+                              title="Mis Partidas"
                               className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_16px_rgba(232,106,34,0.35)]"
                             >
                               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -827,7 +817,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                 size={13}
                                 className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
                               />
-                              <span className="relative hidden sm:inline">Tracker</span>
+                              <span className="relative hidden sm:inline">Partidas</span>
                             </button>
                             <ChevronRight size={14} />
                           </div>
@@ -907,7 +897,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                               e.stopPropagation();
                               setTrackerTournament({ id: t.id, game_id: t.game_id });
                             }}
-                            title="Performance Tracker"
+                            title="Mis Partidas"
                             className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_16px_rgba(232,106,34,0.35)]"
                           >
                             <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -915,7 +905,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                               size={13}
                               className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
                             />
-                            <span className="relative hidden sm:inline">Tracker</span>
+                            <span className="relative hidden sm:inline">Partidas</span>
                           </button>
                           <div className="flex flex-col items-end leading-none">
                             <span
@@ -927,7 +917,6 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                             >
                               #{t.placement}
                             </span>
-                            <PlacementDelta delta={getPlacementDelta(paginatedEvents.indexOf(t))} />
                           </div>
                         </div>
                         <p className="text-xs font-mono-stat font-semibold text-white">
@@ -1117,14 +1106,6 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                           </div>
                           <div>
                             <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                              Editorial
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-white">
-                              {tournamentDetail.game.publisher}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] uppercase tracking-widest text-gray-500">
                               Participantes
                             </p>
                             <p className="mt-1 text-sm font-semibold text-white">
@@ -1150,7 +1131,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                                   <th className="px-3 py-2 text-left">Nexus Tag</th>
                                   <th className="px-3 py-2 text-center whitespace-nowrap">V / D</th>
                                   <th className="px-3 py-2 text-right">OMW%</th>
-                                  <th className="px-3 py-2 text-right">Pts Arena</th>
+                                  <th className="px-3 py-2 text-right">Puntos</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1217,7 +1198,7 @@ Leaderboard de temporada: Suma acumulada durante la temporada completa.`}
                       <div className="min-h-0 min-w-0 max-h-[50vh] overflow-y-auto border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[calc(90vh-80px)] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:sticky lg:top-0">
                         <div className="mb-4 flex items-center justify-between">
                           <h3 className="text-sm font-bold uppercase tracking-widest text-white">
-                            Performance Tracker
+                            Mis Partidas
                           </h3>
                           {editingTrackerInModal && (
                             <button
@@ -1375,7 +1356,7 @@ function TcgRankCard({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
-            <Crown size={10} /> {tab === "global" ? "Rank Global" : "Rank Mes"}
+            <Crown size={10} /> {tab === "global" ? "Temporada" : "Mensual"}
           </div>
           <p
             className={`mt-1 font-mono-stat text-3xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-white"}`}

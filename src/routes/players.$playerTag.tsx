@@ -251,7 +251,7 @@ function PublicProfilePage() {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
         <h2 className="text-2xl font-bold text-white">Jugador no encontrado</h2>
-        <p className="mt-2 text-sm text-gray-400">No existe un jugador con ese Player Tag.</p>
+        <p className="mt-2 text-sm text-gray-400">No existe un jugador con ese Nexus Tag.</p>
         <Link
           to="/"
           className="mt-6 inline-block rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white"
@@ -306,7 +306,7 @@ function PublicProfilePage() {
             )}
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                Player Tag
+                Nexus Tag
               </p>
               <h1 className="mt-1 break-words text-3xl font-bold text-white sm:text-5xl">
                 {profile.geek_tag}
@@ -359,7 +359,7 @@ function PublicProfilePage() {
                         Torneos Ganados
                       </p>
                       <p className="font-mono-stat text-lg font-bold text-white">
-                        🏆 #{profile.total_tournaments_won}
+                        🏆 {profile.total_tournaments_won}
                       </p>
                     </div>
                   )}
@@ -466,7 +466,7 @@ function PublicProfilePage() {
             módulo, un solo header. */}
         {(profile.rankings.length > 0 || achievements || achievementsQuery.isPending) && (
           <section className="mt-6">
-            <h2 className="mb-3 text-lg font-semibold text-white">Standing</h2>
+            <h2 className="mb-3 text-lg font-semibold text-white">Ranking</h2>
             <div className="flex flex-wrap gap-4">
               {profile.rankings.map((r: any) => (
                 <div
@@ -479,7 +479,7 @@ function PublicProfilePage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
-                        <Crown size={10} /> Rank
+                        <Crown size={10} /> Temporada
                       </p>
                       <p className="mt-1 font-mono-stat text-3xl font-bold text-white">
                         {r.rank_position > 0 ? `#${r.rank_position}` : "—"}
@@ -495,7 +495,7 @@ function PublicProfilePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-gray-400">
-                    <span>{r.tournaments_played} jugados</span>
+                    <span>{r.tournaments_played} jugados esta temporada</span>
                     <span>·</span>
                     <span>{r.tournaments_won} ganados</span>
                   </div>
@@ -521,7 +521,7 @@ function PublicProfilePage() {
                     className="glass flex w-full flex-col justify-between gap-3 rounded-2xl border border-white/10 p-5 transition hover:border-primary/30 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
                   >
                     <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white">
-                      <Trophy size={14} className="text-primary" /> Achievements
+                      <Trophy size={14} className="text-primary" /> Logros
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary">
@@ -542,8 +542,8 @@ function PublicProfilePage() {
                         </p>
                         <p className="text-xs text-gray-500">
                           {achievements.unlocked_count > 0
-                            ? `${achievements.total_lp} Legacy Points`
-                            : "Empieza a competir para desbloquear achievements"}
+                            ? `${achievements.total_lp} Puntos de Logro`
+                            : "Empieza a competir para desbloquear logros"}
                         </p>
                       </div>
                     </div>
@@ -671,9 +671,9 @@ function PublicProfilePage() {
                   <th className="px-4 py-2 text-right">Posición</th>
                   <th
                     className="px-4 py-2 text-right"
-                    title="Puntos de ranking otorgados por ese torneo — distintos de los Legacy Points de achievements."
+                    title="Puntos de ranking otorgados por ese torneo — distintos de los Puntos de Logro de achievements."
                   >
-                    Pts Arena
+                    Puntos
                   </th>
                 </tr>
               </thead>

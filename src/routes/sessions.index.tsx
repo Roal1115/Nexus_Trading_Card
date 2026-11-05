@@ -47,7 +47,7 @@ function cleanName(name: string): string {
 }
 
 export const Route = createFileRoute("/sessions/")({
-  head: () => ({ meta: [{ title: "Mis Sesiones — Nexus" }] }),
+  head: () => ({ meta: [{ title: "Mis Partidas — Nexus" }] }),
   loader: async ({ context }) => {
     try {
       return await context.queryClient.ensureQueryData(sessionsPageQuery());
@@ -212,7 +212,7 @@ function SessionCard({
               setConfirming(true);
             }}
             className="rounded-md p-1.5 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition"
-            aria-label="Eliminar sesión"
+            aria-label="Eliminar partida"
           >
             <Trash2 size={14} />
           </button>
@@ -301,7 +301,7 @@ function TrackedTournamentCard({ tournament }: { tournament: TrackedTournament }
 
       <div className="hidden sm:block flex-shrink-0 text-right">
         <div className="text-xs text-gray-300">{formatTournamentDate(tournament.tournament_date)}</div>
-        <div className="mt-0.5 text-[11px] text-gray-500">Performance Tracker</div>
+        <div className="mt-0.5 text-[11px] text-gray-500">Registro oficial</div>
       </div>
 
       <ChevronRight size={16} className="flex-shrink-0 text-gray-600 transition group-hover:text-primary" />
@@ -380,7 +380,7 @@ function SessionsPage() {
     initialData: loaderData,
   });
   const sessions = data?.sessions ?? [];
-  const trackedTournaments = data?.tournaments ?? [];
+  const allTracked = data?.tournaments ?? [];
   const loading = roleLoading || (!!player && isLoading && !data);
   const loadingTournaments = loading;
 
@@ -391,9 +391,9 @@ function SessionsPage() {
       queryClient.setQueryData(sessionsPageQuery().queryKey, (prev: typeof data) =>
         prev ? { ...prev, sessions: prev.sessions.filter((s) => s.id !== id) } : prev,
       );
-      toast.success("Sesión eliminada");
+      toast.success("Partida eliminada");
     },
-    onError: (e: any) => toast.error(e?.message ?? "No se pudo eliminar la sesión"),
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo eliminar la partida"),
     onSettled: () => setDeletingId(null),
   });
   const handleDelete = (id: string) => deleteMutation.mutate(id);
@@ -404,7 +404,7 @@ function SessionsPage() {
         <div className="glass rounded-2xl border border-white/10 p-8 text-center">
           <h1 className="text-xl font-bold text-white">Debes iniciar sesión</h1>
           <p className="mt-2 text-sm text-gray-400">
-            Inicia sesión para ver y crear tus sesiones.
+            Inicia sesión para ver y crear tus partidas.
           </p>
           <Link
             to="/login"
@@ -420,9 +420,12 @@ function SessionsPage() {
   const pendingSessions = sessions.filter((s) => s.status === "unlinked");
   const matchedSessions = sessions.filter((s) => s.status === "matched");
   const casualSessions = sessions.filter((s) => s.status === "casual");
+  // Una partida vinculada también aparece como torneo con rondas: mostrarla una sola vez.
+  const linkedIds = new Set(matchedSessions.map((s) => s.tournament_id));
+  const trackedTournaments = allTracked.filter((t) => !linkedIds.has(t.id));
   const officialCount = matchedSessions.length + trackedTournaments.length;
   const isEmpty =
-    !loading && !loadingTournaments && sessions.length === 0 && trackedTournaments.length === 0;
+    !loading && !loadingTournaments && sessions.length === 0 && allTracked.length === 0;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 pb-28 sm:px-6 sm:pb-8">
@@ -431,9 +434,9 @@ function SessionsPage() {
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-gray-500">
             <Layers size={14} />
-            Performance
+            Mi carrera
           </div>
-          <h1 className="mt-1 text-2xl font-bold text-white">Mis Sesiones</h1>
+          <h1 className="mt-1 text-2xl font-bold text-white">Mis Partidas</h1>
         </div>
 
         {/* Create button (desktop) */}
@@ -442,7 +445,7 @@ function SessionsPage() {
           className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
         >
           <Plus size={14} />
-          Nueva Sesión
+          Nueva Partida
         </button>
       </div>
 
@@ -460,17 +463,10 @@ function SessionsPage() {
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Layers size={22} />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-white">Sin sesiones registradas</h2>
+          <h2 className="mt-4 text-lg font-semibold text-white">Sin partidas registradas</h2>
           <p className="mt-1 max-w-sm text-sm text-gray-400">
-            Crea tu primera sesión para empezar a registrar tus partidas.
+            Crea tu primera partida para empezar a registrar tus rondas.
           </p>
-          <button
-            onClick={() => setShowCreateSheet(true)}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-          >
-            <Plus size={14} />
-            Nueva Sesión
-          </button>
         </div>
       ) : (
         <>
@@ -480,7 +476,7 @@ function SessionsPage() {
             title="Pendientes de vincular"
             count={pendingSessions.length}
             tone="amber"
-            subtitle="Se vincularán automáticamente cuando el organizador suba los resultados."
+            subtitle="Se vinculan solas al publicarse el torneo. Si ya se publicó, abre la partida y vincúlala a mano."
           >
             {pendingSessions.map((s) => (
               <SessionCard
@@ -497,7 +493,7 @@ function SessionsPage() {
             icon={<Trophy size={14} />}
             title="Torneos Oficiales"
             count={officialCount}
-            subtitle="Resultados verificados — cuentan para tu ranking."
+            subtitle="Vinculadas a un torneo oficial."
           >
             {matchedSessions.map((s) => (
               <SessionCard
@@ -538,7 +534,7 @@ function SessionsPage() {
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
         >
           <Plus size={16} />
-          Nueva Sesión
+          Nueva Partida
         </button>
       </div>
 
@@ -886,10 +882,10 @@ function CreateSessionSheet({
         if (date) payload.session_date = date;
       }
       const res = await createSession({ data: payload });
-      toast.success("Sesión creada");
+      toast.success("Partida creada");
       onCreated((res.session as { id: string }).id);
     } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo crear la sesión");
+      toast.error(e?.message ?? "No se pudo crear la partida");
     } finally {
       setSubmitting(false);
     }
@@ -921,7 +917,7 @@ function CreateSessionSheet({
             >
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
                 <h2 className="text-base font-bold text-white">
-                  {step === 1 ? "Nueva Sesión" : "Detalles de la sesión"}
+                  {step === 1 ? "Nueva Partida" : "Detalles de la partida"}
                 </h2>
                 <button
                   onClick={onClose}
@@ -1171,7 +1167,7 @@ function CreateSessionSheet({
                           Creando…
                         </>
                       ) : (
-                        "Crear Sesión"
+                        "Crear Partida"
                       )}
                     </button>
                   </div>

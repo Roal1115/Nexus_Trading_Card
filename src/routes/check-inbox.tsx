@@ -33,7 +33,7 @@ function CheckInboxPage() {
         <p className="mt-3 text-sm text-gray-400">
           Te enviamos un enlace de verificación a{" "}
           <span className="text-white">{email || "tu correo"}</span>. Una vez
-          confirmado podrás entrar a la Arena.
+          confirmado podrás entrar a Nexus.
         </p>
 
         <button

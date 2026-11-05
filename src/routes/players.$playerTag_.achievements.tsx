@@ -205,7 +205,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
           >
             {item.tier}
           </span>
-          <span className="text-[10px] font-semibold text-gray-500">+{item.base_lp} LP</span>
+          <span className="text-[10px] font-semibold text-gray-500">+{item.base_lp} PL</span>
         </div>
         {item.reward_detail && (
           <p className="mt-1 text-[11px] leading-snug text-primary/80">{item.reward_detail}</p>
@@ -273,7 +273,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
           >
             {item.tier}
           </span>
-          <span className="text-[10px] font-semibold text-gray-500">+{item.base_lp} LP</span>
+          <span className="text-[10px] font-semibold text-gray-500">+{item.base_lp} PL</span>
         </div>
         {item.reward_detail && (
           <p className="mt-1 text-[11px] leading-snug text-primary/80">{item.reward_detail}</p>
@@ -529,7 +529,7 @@ function AchievementsHubPage() {
           <CompletionRing percent={completionPercent} />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">
-              Achievements de {playerTag}
+              Logros de {playerTag}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white sm:text-sm">
@@ -540,7 +540,7 @@ function AchievementsHubPage() {
               <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1 text-xs font-semibold text-fuchsia-300 sm:text-sm">
                 <Sparkles size={13} />
                 {data.total_lp}
-                <span className="font-normal text-fuchsia-300/70">LP</span>
+                <span className="font-normal text-fuchsia-300/70">PL</span>
               </span>
             </div>
           </div>

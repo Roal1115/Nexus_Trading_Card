@@ -183,7 +183,7 @@ function CalendarPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Torneos</p>
         <h1 className="mt-1 text-3xl font-bold text-white">Calendario</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Torneos programados — {activeTcg?.name ?? "Todos los TCGs"}
+          Torneos programados{activeTcg ? ` — ${activeTcg.name}` : ""}
         </p>
       </div>
 

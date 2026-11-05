@@ -8,6 +8,7 @@ import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTCG } from "@/context/tcg.context";
 import { leaderboardOptionsQuery, leaderboardQuery } from "@/lib/leaderboard-queries";
 import { listActiveSponsors, getActiveBanner } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
@@ -19,7 +20,6 @@ import { PillSelect } from "@/components/ui/pill-select";
 type Period = "monthly" | "semestral";
 
 type LeaderboardSearch = {
-  tcg?: string;
   city?: string;
   store?: string;
   month?: string;
@@ -29,7 +29,6 @@ type LeaderboardSearch = {
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): LeaderboardSearch => ({
-    tcg: typeof s.tcg === "string" && s.tcg ? s.tcg : undefined,
     city: typeof s.city === "string" && s.city ? s.city : undefined,
     store: typeof s.store === "string" && s.store ? s.store : undefined,
     month: typeof s.month === "string" && /^\d{4}-\d{2}$/.test(s.month) ? s.month : undefined,
@@ -49,7 +48,6 @@ export const Route = createFileRoute("/")({
   component: LeaderboardPage,
 });
 
-type Game = { id: string; slug: string; name: string };
 type Store = { id: string; name: string; city: string | null };
 type Row = {
   player_id: string;
@@ -213,7 +211,7 @@ function PeriodSegmentedControl({
 }) {
   const options: Array<{ value: Period; label: string }> = [
     { value: "monthly", label: "Mensual" },
-    { value: "semestral", label: "Semestral" },
+    { value: "semestral", label: "Temporada" },
   ];
   return (
     <div
@@ -262,10 +260,9 @@ function LeaderboardPage() {
   }, [role]);
 
   // La URL es la única fuente de verdad de filtros y búsqueda (compartible,
-  // sobrevive atrás/adelante y refresh). Sin valores en la URL: TCG = Todos.
+  // sobrevive atrás/adelante y refresh). La temporada 1 es solo One Piece.
   const urlSearch = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
-  const tcg = urlSearch.tcg ?? ALL;
   const city = urlSearch.city ?? ALL;
   const storeId = urlSearch.store ?? ALL;
   const month = urlSearch.month ?? ALL;
@@ -284,7 +281,6 @@ function LeaderboardPage() {
       replace,
     });
 
-  const handleTcgChange = (v: string) => patchSearch({ tcg: v === ALL ? undefined : v });
   const setCity = (v: string) => patchSearch({ city: v === ALL ? undefined : v });
   const setStoreId = (v: string) => patchSearch({ store: v === ALL ? undefined : v });
   const setMonth = (v: string) => patchSearch({ month: v === ALL ? undefined : v });
@@ -293,18 +289,19 @@ function LeaderboardPage() {
   const setPeriod = (v: Period) => patchSearch({ period: v === "monthly" ? undefined : v });
 
   const optionsQuery = useQuery(leaderboardOptionsQuery());
-  const games = (optionsQuery.data?.games ?? []) as Game[];
   const stores = (optionsQuery.data?.stores ?? []) as Store[];
   const months = (optionsQuery.data?.months ?? []) as string[];
 
-  const boardQuery = useQuery(
-    leaderboardQuery({
-      game_id: tcg === ALL ? null : tcg,
+  const { activeTcg } = useTCG();
+  const boardQuery = useQuery({
+    ...leaderboardQuery({
+      game_id: activeTcg?.id ?? null,
       city: city === ALL ? null : city,
       store_id: storeId === ALL ? null : storeId,
       month: month === ALL ? null : month,
     }),
-  );
+    enabled: !!activeTcg,
+  });
   const monthly = (boardQuery.data?.monthly ?? []) as Row[];
   const semestral = (boardQuery.data?.semestral ?? []) as Row[];
   const monthLbl = boardQuery.data?.month_label ?? "";
@@ -355,19 +352,12 @@ function LeaderboardPage() {
         {!isStaff && <AdVertical sponsor={activeSponsor} />}
       </aside>
       <main className="min-w-0 pb-20">
-        <section className="relative my-8 overflow-hidden rounded-2xl border-border bg-card p-8 sm:p-12">
+        <section className="relative my-4 overflow-hidden rounded-2xl border-border bg-card p-5 sm:my-8 sm:p-12">
           <HeroBackground />
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Temporada III · Patrocinado por Bandai · Wizards · TPCI
-          </p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-white sm:text-6xl bg-gradient-to-r from-primary via-[#5F8CFF] to-accent bg-clip-text text-transparent">
+          <h1 className="max-w-2xl text-3xl font-bold leading-tight text-white sm:text-6xl bg-gradient-to-r from-primary via-[#5F8CFF] to-accent bg-clip-text text-transparent">
             Circuito <span className="text-primary">Nacional</span>
           </h1>
-          <p className="mt-3 max-w-xl text-sm text-gray-400 sm:text-base">
-            El sistema oficial de ranking para TCG competitivo. Escala la tabla. Gana tu boleto al
-            Mundial.
-          </p>
         </section>
 
         {!isStaff && <AdCarousel sponsors={allSponsors.filter((s) => s.is_active)} />}
@@ -385,16 +375,6 @@ function LeaderboardPage() {
           {" "}
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap w-full items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer ... min-w-[180px]">
-              <PillSelect
-                label="TCG"
-                value={tcg}
-                onChange={handleTcgChange}
-                options={[
-                  { value: ALL, label: "Todos" },
-                  ...games.map((g) => ({ value: g.id, label: g.name })),
-                ]}
-              />
-
               <PillSelect
                 label="Ciudad"
                 value={city}
@@ -458,7 +438,7 @@ function LeaderboardPage() {
         <div className="lg:hidden">{!isStaff && <AdHorizontal sponsor={activeSponsor} />}</div>
 
         <LeaderboardTable
-          title={period === "semestral" ? "General Semestral" : "Ranking Mensual"}
+          title={period === "semestral" ? "Ranking de Temporada" : "Ranking Mensual"}
           badge={period === "semestral" ? semesterLbl : monthLbl.toUpperCase()}
           subtitle={
             period === "semestral"
@@ -651,7 +631,7 @@ function LeaderboardTable({
                 : "Sin resultados para estos filtros"}
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Prueba cambiando el TCG, ciudad o mes seleccionado
+              Prueba cambiando la ciudad, la tienda o el mes
             </p>
             {search && onClearSearch && (
               <button

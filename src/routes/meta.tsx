@@ -96,7 +96,7 @@ function MetaPage() {
   // `filters` = draft (lo que el usuario está editando); `appliedFilters` =
   // lo que realmente dispara la query — reproduce el patrón "Aplicar/Limpiar
   // filtros" que ya existía (zona/tienda/fechas no auto-aplican). game_id es
-  // la excepción: lo controla el TcgSwitcher global, no un select de esta
+  // la excepción: lo fija el juego de la temporada, no un select de esta
   // página, así que sí aplica de inmediato (igual que antes).
   const [filters, setFilters] = useState<MetaFilters>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<MetaFilters>(DEFAULT_FILTERS);
@@ -261,7 +261,7 @@ function MetaPage() {
                 ))}
               </div>
             ) : leaders.length === 0 ? (
-              <div className="p-12 text-center">
+              <div className="sticky left-0 max-w-[calc(100vw-2rem)] p-8 text-center">
                 <p className="text-sm text-gray-400">Sin datos suficientes para mostrar el meta.</p>
                 <p className="mt-2 text-xs text-gray-600">
                   Se requieren mínimo 5 rondas por leader.

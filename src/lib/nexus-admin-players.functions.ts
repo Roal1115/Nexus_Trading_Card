@@ -417,7 +417,7 @@ export const deletePlayerAccount = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!target) throw new Error("Usuario no encontrado");
     if ((target as any).geek_tag !== data.confirm_tag) {
-      throw new Error("El Player Tag no coincide");
+      throw new Error("El Nexus Tag no coincide");
     }
     if ((target as any).role === "admin") {
       throw new Error("No puedes eliminar una cuenta de admin");

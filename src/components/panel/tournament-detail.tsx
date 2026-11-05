@@ -199,7 +199,7 @@ export function TournamentResults({ results }: { results: ResultRow[] }) {
                 OMW%
               </th>
               <th scope="col" className="px-4 py-3 whitespace-nowrap">
-                Pts Arena
+                Puntos
               </th>
               <th scope="col" className="px-4 py-3">
                 Estado

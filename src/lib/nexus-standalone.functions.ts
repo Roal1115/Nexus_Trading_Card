@@ -361,7 +361,7 @@ export const saveStandaloneRound = createServerFn({ method: "POST" })
 
     if (!session) throw new Error("Sesión no encontrada o no autorizado");
     if (session.status === "matched")
-      throw new Error("No puedes editar una sesión ya vinculada a un torneo oficial");
+      throw new Error("No puedes editar una partida ya vinculada a un torneo oficial");
 
     const wonMatch = data.is_bye ? true : (data.won_match ?? null);
 
@@ -430,7 +430,7 @@ export const deleteStandaloneRound = createServerFn({ method: "POST" })
 
     if (!session) throw new Error("Sesión no encontrada o no autorizado");
     if (session.status === "matched")
-      throw new Error("No puedes editar una sesión ya vinculada a un torneo oficial");
+      throw new Error("No puedes editar una partida ya vinculada a un torneo oficial");
 
     const { error } = await admin
       .from("standalone_round_results")

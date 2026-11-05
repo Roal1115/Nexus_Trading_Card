@@ -121,7 +121,7 @@ export function NameplateBanner({
                   {equipped.tier}
                 </span>
                 <span className="text-[10px] font-semibold text-gray-500">
-                  +{equipped.base_lp} LP
+                  +{equipped.base_lp} PL
                 </span>
               </div>
               {equipped.reward_detail && (

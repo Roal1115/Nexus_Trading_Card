@@ -11,7 +11,7 @@ export const getMyProfile = createServerFn({ method: "POST" })
 
     const { data: profile } = await admin
       .from("players")
-      .select("id, geek_tag, display_name, email, role")
+      .select("id, geek_tag, display_name, email, role, is_profile_public, preferred_zone")
       .eq("id", player.id)
       .maybeSingle();
 
@@ -25,7 +25,12 @@ export const getMyProfile = createServerFn({ method: "POST" })
       .from("games")
       .select("id, name")
       .eq("is_active", true)
+      // Temporada 1: solo One Piece.
+      .eq("slug", "one-piece")
       .order("name");
+
+    const { data: stores } = await admin.from("stores").select("zone").eq("is_active", true);
+    const zones = Array.from(new Set((stores ?? []).map((s) => s.zone).filter(Boolean))).sort();
 
     return {
       profile: profile ?? null,
@@ -37,6 +42,7 @@ export const getMyProfile = createServerFn({ method: "POST" })
         created_at: t.created_at,
       })),
       all_games: allGames ?? [],
+      zones: zones as string[],
     };
   });
 

@@ -94,7 +94,12 @@ export function CalendarEntry({
         {entry.store_name}
         {attended && <CheckCircle2 size={8} className="inline text-emerald-400 ml-1" />}
       </p>
-      {!compact && <p className="text-[9px] opacity-70 truncate">{entry.game_name}</p>}
+      {!compact && (
+        <p className="text-[9px] opacity-70 truncate">
+          {entry.time ? `${entry.time.slice(0, 5)} · ` : ""}
+          {entry.game_name}
+        </p>
+      )}
       {!compact && entry.league_name && (
         <p className="text-[8px] font-semibold uppercase tracking-wide opacity-80 truncate">{entry.league_name}</p>
       )}
@@ -250,7 +255,9 @@ function MobileWeeklyList({
               {DAY_NAMES[d.getDay()]} {d.getDate()}
             </p>
             {dayEntries.length === 0 ? (
-              <p className="text-xs text-gray-600">Sin torneos</p>
+              <p className="text-xs text-gray-600">
+                {d < new Date() && !isToday ? "—" : "Sin torneos"}
+              </p>
             ) : (
               <div className="space-y-1.5">
                 {dayEntries.map((entry) => (

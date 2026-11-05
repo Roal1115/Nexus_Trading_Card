@@ -97,7 +97,7 @@ function LoginPage() {
       return;
     }
 
-    toast.success("¡Bienvenido de vuelta a la Arena!");
+    toast.success("¡Bienvenido de vuelta!");
     navigate({ to: homeRouteForRole(res.role ?? null) });
   };
 
@@ -201,7 +201,7 @@ function LoginPage() {
               className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
-              {forgotMode ? "Enviar enlace" : "Entrar a la Arena"}
+              {forgotMode ? "Enviar enlace" : "Entrar"}
             </motion.button>
 
             <div className="flex items-center justify-between text-xs">

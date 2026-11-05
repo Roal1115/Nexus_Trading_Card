@@ -907,7 +907,7 @@ function StatsPage() {
       <header className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <Link
           to="/dashboard"
-          aria-label="Volver al dashboard"
+          aria-label="Volver a Mi Panel"
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white transition"
         >
           <ArrowLeft size={14} />
@@ -916,7 +916,7 @@ function StatsPage() {
 
         {!!displayStats?.total_tournaments_won && (
           <span className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-            🏆 Torneos Ganados #{displayStats.total_tournaments_won}
+            🏆 Torneos Ganados: {displayStats.total_tournaments_won}
           </span>
         )}
 
@@ -987,7 +987,7 @@ function StatsPage() {
           {statsSource === "casual" &&
             "Partidas casuales y de práctica. No afectan tu ranking competitivo."}
           {statsSource === "pending" &&
-            "Sesiones en espera de que el organizador publique el torneo. Pasarán a Oficial automáticamente."}
+            "Partidas en espera de que el organizador publique el torneo. Pasarán a Oficial automáticamente."}
           {statsSource === "all" && "Todas tus partidas combinadas (incluye pendientes)."}
         </p>
       )}
@@ -1003,13 +1003,13 @@ function StatsPage() {
           <BarChart3 size={40} className="mx-auto mb-4 text-gray-600" />
           <p className="text-sm font-semibold text-white">Sin datos registrados</p>
           <p className="mt-2 text-xs text-gray-500">
-            Registra tus rondas en el Performance Tracker para ver tus stats aquí.
+            Registra tus rondas en Mis Partidas para ver tus stats aquí.
           </p>
           <Link
-            to="/dashboard"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-gray-300 hover:text-white transition"
+            to="/sessions"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110"
           >
-            <ArrowLeft size={12} /> Volver al dashboard
+            Ir a Mis Partidas
           </Link>
         </div>
       ) : (
@@ -1030,9 +1030,9 @@ function StatsPage() {
             <div className="glass rounded-2xl p-12 text-center">
               <p className="text-sm text-gray-500">
                 {statsSource === "casual"
-                  ? "Sin partidas casuales registradas. Crea una sesión casual para empezar."
+                  ? "Sin partidas casuales registradas. Crea una partida casual para empezar."
                   : statsSource === "pending"
-                    ? "No tienes sesiones pendientes de vinculación a un torneo."
+                    ? "No tienes partidas pendientes de vinculación a un torneo."
                     : timeRange !== "all" && stats && stats.leaders.length > 0
                       ? `Sin partidas en los últimos ${timeRange} días.`
                       : statsSource === "all"

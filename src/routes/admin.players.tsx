@@ -862,7 +862,7 @@ function AdminPlayersPage() {
             </DialogHeader>
             <div className="space-y-2">
               <label htmlFor="delete-confirm-tag" className="text-xs text-gray-400">
-                Escribe el Player Tag exacto para confirmar
+                Escribe el Nexus Tag exacto para confirmar
               </label>
               <Input
                 id="delete-confirm-tag"

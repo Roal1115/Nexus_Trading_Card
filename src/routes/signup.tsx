@@ -98,11 +98,14 @@ function SignupPage() {
       .from("games")
       .select("*")
       .eq("is_active", true)
+      // Temporada 1: solo One Piece, ya seleccionado.
+      .eq("slug", "one-piece")
       .order("name")
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) toast.error("No se pudieron cargar los juegos");
         setGames((data ?? []) as Game[]);
+        setSelected(new Set((data ?? []).map((g) => g.id)));
         setGamesLoading(false);
       });
     return () => {
@@ -395,7 +398,7 @@ function SignupPage() {
 }
 
 function Stepper({ step }: { step: Step }) {
-  const labels = ["Identidad", "Tus Juegos", "Datos", "Confirmación"];
+  const labels = ["Identidad", "Tu ID", "Datos", "Confirmación"];
   return (
     <div className="mb-8 flex items-center gap-3">
       {labels.map((label, i) => {
@@ -491,7 +494,7 @@ function Step1(props: {
 
       <Field
         label="Tu Nexus Tag"
-        hint="Tu handle único en la Arena. Letras, números y guiones bajos."
+        hint="Tu nombre único en Nexus. Letras, números y guiones bajos."
         error={step1Errors.tag}
         rightHint={<TagBadge status={tagStatus} />}
       >
@@ -579,10 +582,10 @@ function Step2({
   return (
     <div>
       <h2 className="mb-1 text-xl font-semibold text-white">
-        ¿Qué TCGs juegas?
+        Tu Bandai ID
       </h2>
       <p className="mb-5 text-sm text-gray-400">
-        Selecciona los juegos en los que participas e ingresa tu ID en cada uno.
+        Las tiendas registran tus torneos con este ID. Si no coincide, tus resultados no llegarán a tu perfil. Revísalo bien: no se puede cambiar después.
       </p>
 
       {loading ? (

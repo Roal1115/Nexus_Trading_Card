@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown, LogOut } from "lucide-react";
@@ -12,6 +12,8 @@ import {
   SettingsSectionSkeleton,
 } from "@/components/ui/skeleton-loader";
 import { getMyProfile, updateMyProfile, addMyTcgId } from "@/lib/nexus-settings.functions";
+import { setPlayerPreferences, toggleProfilePrivacy } from "@/lib/nexus-player.functions";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import ReactDOM from "react-dom";
 
 export const Route = createFileRoute("/settings")({
@@ -33,13 +35,16 @@ function SettingsSelect({
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const selected = options.find((o) => o.value === value);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      // La lista vive en un portal: sin revisarla, tocar una opción cerraba antes del click.
+      const target = e.target as Node;
+      if (!ref.current?.contains(target) && !listRef.current?.contains(target)) {
         setOpen(false);
       }
     };
@@ -83,6 +88,7 @@ function SettingsSelect({
         typeof document !== "undefined" &&
         ReactDOM.createPortal(
           <div
+            ref={listRef}
             style={{
               position: "fixed",
               top: pos.top,
@@ -126,7 +132,10 @@ type TcgId = {
 type Game = { id: string; name: string };
 
 function SettingsPage() {
+  const { player: authPlayer, loading: authLoading, updatePlayer } = useNexusRole();
   const fetchProfile = useServerFn(getMyProfile);
+  const togglePrivacy = useServerFn(toggleProfilePrivacy);
+  const savePreferences = useServerFn(setPlayerPreferences);
   const callUpdateProfile = useServerFn(updateMyProfile);
   const callAddTcgId = useServerFn(addMyTcgId);
 
@@ -142,6 +151,9 @@ function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [currentEmail, setCurrentEmail] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const [zone, setZone] = useState("");
+  const [zones, setZones] = useState<string[]>([]);
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -152,6 +164,7 @@ function SettingsPage() {
   const [savingTcgId, setSavingTcgId] = useState(false);
 
   useEffect(() => {
+    if (!authPlayer?.id) return;
     fetchProfile()
       .then((res: any) => {
         setCurrentNexusTag(res.profile?.geek_tag ?? "");
@@ -160,24 +173,67 @@ function SettingsPage() {
         setPlayerRole(res.profile?.role ?? "player");
         setTcgIds(res.tcg_ids ?? []);
         setAllGames(res.all_games ?? []);
+        setIsPublic(res.profile?.is_profile_public ?? true);
+        setZone(res.profile?.preferred_zone ?? "");
+        setZones(res.zones ?? []);
       })
       .catch(() => toast.error("Error al cargar tu perfil"))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authPlayer?.id]);
 
   const isPlayer = playerRole === "player" || playerRole === "";
   const availableGames = allGames.filter((g) => !tcgIds.some((t) => t.game_id === g.id));
 
+  const newTag = nexusTag.trim();
+  const newName = displayName.trim();
+  const tagChanged = !!newTag && newTag !== currentNexusTag;
+  const nameChanged = !!newName && newName !== currentDisplayName;
+
+  const onTogglePrivacy = async () => {
+    const next = !isPublic;
+    setIsPublic(next);
+    try {
+      await togglePrivacy({ data: { is_public: next } });
+      toast.success(next ? "Tu perfil ahora es público" : "Tu perfil ahora es privado");
+    } catch {
+      setIsPublic(!next);
+      toast.error("No se pudo cambiar la privacidad");
+    }
+  };
+
+  const onZoneChange = async (value: string) => {
+    const previous = zone;
+    setZone(value);
+    try {
+      await savePreferences({
+        data: { game_id: authPlayer?.preferred_game_id ?? null, zone: value },
+      });
+      updatePlayer({ preferred_zone: value });
+      toast.success("Zona guardada");
+    } catch {
+      setZone(previous);
+      toast.error("No se pudo guardar tu zona");
+    }
+  };
+
   const onSaveProfile = async () => {
     setSavingProfile(true);
     try {
+      // Solo lo que cambió: un tag antiguo con otro formato no debe bloquear otros cambios.
       await callUpdateProfile({
         data: {
-          geek_tag: nexusTag.trim() || currentNexusTag,
-          display_name: displayName.trim() || currentDisplayName,
+          ...(tagChanged && { geek_tag: newTag }),
+          ...(nameChanged && { display_name: newName }),
         },
       });
+      if (tagChanged) {
+        setCurrentNexusTag(newTag);
+        updatePlayer({ geek_tag: newTag });
+      }
+      if (nameChanged) setCurrentDisplayName(newName);
+      setNexusTag("");
+      setDisplayName("");
       toast.success("Perfil actualizado correctamente");
     } catch (e: any) {
       toast.error(e?.message ?? "Error al guardar");
@@ -227,6 +283,20 @@ function SettingsPage() {
       setSavingTcgId(false);
     }
   };
+
+  if (!authLoading && !authPlayer) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
+        <h2 className="text-2xl font-bold text-white">Debes iniciar sesión</h2>
+        <Link
+          to="/login"
+          className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
+        >
+          Iniciar sesión
+        </Link>
+      </main>
+    );
+  }
 
   if (loading) {
     return (
@@ -339,12 +409,45 @@ function SettingsPage() {
         </div>
         <button
           onClick={onSaveProfile}
-          disabled={savingProfile}
+          disabled={savingProfile || (!tagChanged && !nameChanged)}
           className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {savingProfile ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
           Guardar cambios
         </button>
+      </section>
+
+      {/* Privacidad y preferencias */}
+      <section className="glass space-y-4 rounded-2xl p-6">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+          <Shield size={14} className="text-primary" /> Privacidad y preferencias
+        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-white">Perfil {isPublic ? "público" : "privado"}</p>
+            <p className="text-xs text-gray-500">
+              El staff de las tiendas y TCGs donde jugaste siempre puede ver esos resultados.
+            </p>
+          </div>
+          <button
+            onClick={onTogglePrivacy}
+            className="flex-shrink-0 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
+          >
+            Hacer {isPublic ? "privado" : "público"}
+          </button>
+        </div>
+        {zones.length > 0 && (
+          <div className="space-y-1">
+            <label className="text-xs text-gray-400">Mi zona</label>
+            <SettingsSelect
+              value={zone}
+              onChange={onZoneChange}
+              placeholder="Selecciona tu zona"
+              options={zones.map((z) => ({ value: z, label: z }))}
+            />
+            <p className="text-[10px] text-gray-500">El calendario se abre en esta zona.</p>
+          </div>
+        )}
       </section>
 
       {/* Email */}

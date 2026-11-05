@@ -25,7 +25,7 @@ const PLAYER_ITEMS: NavItem[] = [
 ];
 
 // Rutas que solo se alcanzan desde el drawer de perfil (no tienen tab propio)
-const DRAWER_ONLY_ROUTES = ["/settings", "/sessions", "/stores"];
+const DRAWER_ONLY_ROUTES = ["/settings", "/sessions", "/stores", "/my-stats"];
 
 const PILL_TRANSITION = { type: "spring" as const, stiffness: 500, damping: 34 };
 

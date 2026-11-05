@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import {
 } from "@/lib/nexus-rsvp.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
+import { todayInMexicoStr } from "@/lib/utils";
 import {
   Trophy,
   MapPin,
@@ -28,7 +29,11 @@ import { useState } from "react";
 
 export const Route = createFileRoute("/tournaments/$id")({
   loader: async ({ params }) => {
-    return await getPublicTournament({ data: { tournament_id: params.id } });
+    try {
+      return await getPublicTournament({ data: { tournament_id: params.id } });
+    } catch {
+      throw notFound();
+    }
   },
   head: ({ loaderData, params }) => {
     const t = loaderData?.tournament;
@@ -58,6 +63,7 @@ export const Route = createFileRoute("/tournaments/$id")({
     };
   },
   errorComponent: TournamentNotFound,
+  notFoundComponent: TournamentNotFound,
   component: PublicTournamentPage,
 });
 
@@ -70,7 +76,7 @@ function TournamentNotFound() {
         Este torneo no existe o aún no ha sido publicado.
       </p>
       <Link
-        to="/meta"
+        to="/"
         className="inline-flex items-center rounded-xl border border-border bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
       >
         Ver el ranking nacional
@@ -108,7 +114,7 @@ function PublicTournamentPage() {
 
   const t = data.tournament;
   const winner = data.standings[0];
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayInMexicoStr();
   const isFuture = t.date >= today;
 
   const rsvpCountQuery = useQuery({
@@ -209,7 +215,7 @@ function PublicTournamentPage() {
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{t.zone}</span>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span>{data.total_participants} participantes</span>
+          {data.total_participants > 0 && <span>{data.total_participants} participantes</span>}
           {isFuture ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-secondary-foreground">
               <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} confirmados
@@ -222,7 +228,7 @@ function PublicTournamentPage() {
             <button
               onClick={() => (isRsvped ? cancelMut.mutate() : createMut.mutate())}
               disabled={rsvpBusy || rsvpStatusQuery.isLoading}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
+              className={`flex min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
                 isRsvped
                   ? "border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
                   : "bg-[#F97316] text-white hover:bg-[#F97316]/90"
@@ -246,14 +252,14 @@ function PublicTournamentPage() {
                 }),
               )}
               download={icsFileName(`${t.game_name}-${t.store_name}-${t.date}`)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
+              className="flex min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
             >
               <CalendarPlus className="h-4 w-4" /> Agregar a mi calendario
             </a>
           ) : null}
           <button
             onClick={handleShare}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-white/5 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-white/10"
+            className="flex min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-white/5 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-white/10"
           >
             {copied ? (
               <>
@@ -268,35 +274,29 @@ function PublicTournamentPage() {
         </div>
       </div>
 
-      <Link
-        to="/stores/$slug"
-        params={{ slug: t.store_slug }}
-        className="mt-3 inline-block text-xs text-primary hover:underline"
-      >
-        Ver perfil de {t.store_name} →
-      </Link>
-
       {/* Stat tiles */}
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
-          <div className="text-2xl font-bold text-white">{data.total_participants}</div>
-          <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-            Total de Jugadores
+      {data.standings.length > 0 && (
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
+            <div className="text-2xl font-bold text-white">{data.total_participants}</div>
+            <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+              Total de Jugadores
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
+            <div className="text-2xl font-bold text-white">{t.rounds ?? "—"}</div>
+            <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+              Total de Rondas
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
+            <div className="text-2xl font-bold text-white">{data.undefeated_count}</div>
+            <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+              Jugadores Invictos
+            </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
-          <div className="text-2xl font-bold text-white">{t.rounds ?? "—"}</div>
-          <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-            Total de Rondas
-          </div>
-        </div>
-        <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
-          <div className="text-2xl font-bold text-white">{data.undefeated_count}</div>
-          <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-            Jugadores Invictos
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Winner highlight */}
       {winner ? (
@@ -327,11 +327,11 @@ function PublicTournamentPage() {
       {/* Standings */}
       {data.standings.length > 0 ? (
         <div className="mt-6 overflow-hidden rounded-2xl border border-border glass">
-          <div className="grid grid-cols-[40px_1fr_70px_60px_60px] gap-2 border-b border-white/10 px-4 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="grid grid-cols-[28px_minmax(0,1fr)_52px_52px] gap-2 border-b border-white/10 px-3 sm:grid-cols-[40px_1fr_70px_60px_60px] sm:px-4 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">
             <div>#</div>
             <div>Jugador</div>
             <div>V/D/E</div>
-            <div>OMW%</div>
+            <div className="hidden sm:block">OMW%</div>
             <div>PTS</div>
           </div>
           {data.standings.map((s: (typeof data.standings)[number]) => {
@@ -343,7 +343,7 @@ function PublicTournamentPage() {
             return (
               <div
                 key={`${s.rank}-${s.geek_tag}`}
-                className="grid grid-cols-[40px_1fr_70px_60px_60px] items-center gap-2 border-b border-white/[0.05] px-4 py-3"
+                className="grid grid-cols-[28px_minmax(0,1fr)_52px_52px] items-center gap-2 border-b border-white/[0.05] px-3 sm:grid-cols-[40px_1fr_70px_60px_60px] sm:px-4 py-3"
               >
                 <div
                   className={`font-mono text-sm ${isTop3 ? "font-bold text-primary" : "text-muted-foreground"}`}
@@ -380,7 +380,7 @@ function PublicTournamentPage() {
                 <div className="whitespace-nowrap font-mono text-xs text-secondary-foreground">
                   {vde}
                 </div>
-                <div className="font-mono text-xs text-muted-foreground">{omw}</div>
+                <div className="hidden font-mono text-xs text-muted-foreground sm:block">{omw}</div>
                 <div className="font-mono text-sm font-semibold text-white">{pts}</div>
               </div>
             );
@@ -388,23 +388,27 @@ function PublicTournamentPage() {
         </div>
       ) : (
         <div className="mt-6 rounded-2xl border border-border bg-white/5 p-6 text-center text-sm text-secondary-foreground">
-          Este torneo no tiene resultados registrados.
+          {isFuture
+            ? "Los resultados aparecerán aquí después del torneo."
+            : "Este torneo no tiene resultados registrados."}
         </div>
       )}
 
       {/* Footer CTA */}
-      <div className="mt-8 text-center">
-        <h3 className="text-sm font-semibold text-white">¿Compites en este circuito?</h3>
-        <p className="mt-1 text-xs text-secondary-foreground">
-          Registra tus partidas, sigue tu ranking nacional y consulta el meta.
-        </p>
-        <Link
-          to="/signup"
-          className="mt-3 inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-[#0B1220] hover:bg-primary/90"
-        >
-          Crear mi cuenta
-        </Link>
-      </div>
+      {!player && (
+        <div className="mt-8 text-center">
+          <h3 className="text-sm font-semibold text-white">¿Compites en este circuito?</h3>
+          <p className="mt-1 text-xs text-secondary-foreground">
+            Registra tus partidas, sigue tu ranking nacional y consulta el meta.
+          </p>
+          <Link
+            to="/signup"
+            className="mt-3 inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-[#0B1220] hover:bg-primary/90"
+          >
+            Crear mi cuenta
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
