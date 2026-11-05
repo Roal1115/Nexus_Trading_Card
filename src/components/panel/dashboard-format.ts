@@ -35,3 +35,28 @@ export const rowLink =
 
 export const reasonsText = (r: IneligibleReason[]) =>
   r.map((x) => INELIGIBLE_LABELS[x]).join(" · ");
+
+const MESES = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+export function formatDate(d: string) {
+  const dt = new Date(d + "T00:00:00");
+  return `${dt.getDate()} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
+export function formatDateTime(iso: string) {
+  const dt = new Date(iso);
+  return `${dt.getDate()} ${MESES[dt.getMonth()]} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+}

@@ -449,7 +449,13 @@ function ManagerTournamentsPanel() {
                     {publishedRows.map((r) => (
                       <tr
                         key={r.id}
-                        className="border-t border-white/5 transition hover:bg-white/5"
+                        onClick={() =>
+                          navigate({
+                            to: "/tcg-manager/tournaments/$id",
+                            params: { id: r.id },
+                          })
+                        }
+                        className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
                       >
                         <td className="px-4 py-3 text-white">{r.tournament_date}</td>
                         <td className="px-4 py-3 text-gray-300">
@@ -465,10 +471,10 @@ function ManagerTournamentsPanel() {
                         <td className="px-4 py-3">
                           <TournamentStatusBadge status={r.status} size="sm" />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <FileLink url={r.csv_url} />
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setUnpublishTarget(r)}
                             className="inline-flex items-center gap-1.5 rounded-md border border-red-400/60 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
