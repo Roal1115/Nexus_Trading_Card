@@ -56,5 +56,30 @@ Corrige dos permisos abiertos: cada usuario podía insertar, cambiar y borrar su
 ## Sigue abierto
 
 - `addMyTcgId` no comprueba la propiedad del Bandai ID. Pendiente por decisión: los IDs son reales y el admin puede corregirlos desde el panel.
-- `pg_default_acl` en `public` da todos los privilegios a `anon` y `authenticated` en cada tabla nueva y `EXECUTE` en cada función nueva.
-- Reconstruir la base desde `supabase/migrations/` reabre estos permisos y los de la Fase 0.
+
+# Línea base de permisos
+
+`supabase/migrations/20261105040921_security_baseline.sql`, aplicada en producción el 2026-11-05 (UTC) y registrada en `supabase_migrations`. Es idempotente e incluye la Fase 0 y el cierre de `player_tcg_ids`, así que reconstruir la base desde migraciones ya no reabre esos permisos.
+
+## Qué permite
+
+- `anon`: solo `SELECT`, limitado por RLS.
+- `authenticated`: `SELECT`, `UPDATE (read_at)` en `notifications`, e `INSERT`/`DELETE` en `push_subscriptions`. Son las únicas escrituras directas del navegador.
+- `service_role`: sin cambios.
+- `SELECT` no se puede quitar de `players`: las policies de storage y de otras tablas lo leen como el rol llamante.
+
+## Regla para migraciones nuevas
+
+**Toda tabla o función nueva nace cerrada** para `anon` y `authenticated`. Si el navegador la necesita, su migración debe incluir el `grant` explícito. Las server functions usan `service_role` y no necesitan nada.
+
+## Verificación y rollback
+
+- `scripts/security-baseline.test.mts`, solo contra `nexus-admin-test`.
+- `docs/security/security-baseline.rollback.sql` restaura las demás tablas y los privilegios por defecto, y conserva cerrados `players`, `player_tcg_ids` y `recompute_player_achievements`.
+
+## Sigue abierto
+
+- Protección de contraseñas filtradas apagada en Supabase Auth; se activa desde el dashboard.
+- `pg_trgm` sigue en `public`.
+- La policy de lectura de `tournament_results` no filtra por estado del torneo.
+- `supabase_admin` conserva sus privilegios por defecto abiertos; postgres no los controla.
