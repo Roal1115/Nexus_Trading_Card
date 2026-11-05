@@ -28,7 +28,6 @@ El md5 se calcula sobre el texto con saltos de línea `LF` y **sin salto de lín
 - **Son de un solo uso y no deben ir en `supabase/migrations/`**: el apply aborta si el estado ya no es el original, así que un `supabase db push` fallaría. Por eso viven aquí.
 - El rollback solo funciona sobre el estado exacto que deja el apply.
 - Ejecutar siempre como `postgres`.
-- No incluye las fases 0b/0c ni nada del Circuit. Quedan abiertos, entre otros, los privilegios `TRUNCATE`/`TRIGGER`/`REFERENCES` concedidos por defecto en las demás tablas públicas.
 
 # Cierre de `player_tcg_ids` y `recompute_player_achievements`
 
