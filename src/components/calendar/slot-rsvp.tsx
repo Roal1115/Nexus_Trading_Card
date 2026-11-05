@@ -8,6 +8,7 @@ import {
   cancelSlotRsvp,
   createSlotRsvp,
   getMySlotRsvps,
+  getMySlotsToLog,
   getSlotRsvpCount,
   getSlotRsvpList,
 } from "@/lib/nexus-rsvp.functions";
@@ -78,12 +79,28 @@ export function SlotRsvpPanel({
   });
   const count = countData?.count ?? 0;
 
+  // Solo se ofrece si sigue pendiente: ya registrada, Mis Partidas no tendría su tarjeta.
+  const fetchToLog = useServerFn(getMySlotsToLog);
+  const { data: toLog } = useQuery({
+    queryKey: ["slots-to-log", playerId],
+    queryFn: () => fetchToLog(),
+    enabled: state === "started" && attending,
+  });
+  const canLog = toLog?.slots.some((s) => slotKey(s) === slotKey(slot));
+
   return (
     <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
       <p className="text-xs font-semibold text-white">
         {count === 1 ? "1 jugador" : `${count} jugadores`} con preferencia
       </p>
-      {state !== "open" ? (
+      {state === "started" && canLog ? (
+        <Link
+          to="/sessions"
+          className="mt-2 block rounded-xl bg-primary py-2.5 text-center text-sm font-semibold text-primary-foreground"
+        >
+          Registrar mi partida
+        </Link>
+      ) : state !== "open" ? (
         <p className="mt-2 text-sm text-secondary-foreground">
           {state === "started"
             ? "Este torneo ya empezó."

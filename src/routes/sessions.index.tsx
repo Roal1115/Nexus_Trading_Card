@@ -29,6 +29,7 @@ import {
   getMyTrackedTournaments,
 } from "@/lib/nexus-standalone.functions";
 import { getMySessionGames } from "@/lib/nexus-player.functions";
+import { cancelSlotRsvp, getMySlotsToLog } from "@/lib/nexus-rsvp.functions";
 import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
@@ -62,6 +63,7 @@ type SessionsResult = Awaited<ReturnType<typeof getStandaloneSessions>>;
 type SessionRow = SessionsResult["sessions"][number];
 type TrackedTournamentsResult = Awaited<ReturnType<typeof getMyTrackedTournaments>>;
 type TrackedTournament = TrackedTournamentsResult["tournaments"][number];
+type SlotToLog = Awaited<ReturnType<typeof getMySlotsToLog>>["slots"][number];
 
 function formatTournamentDate(date: string): string {
   try {
@@ -372,7 +374,10 @@ function SessionsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const [prefill, setPrefill] = useState<SlotToLog | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const fetchSlotsToLog = useServerFn(getMySlotsToLog);
+  const cancelSlot = useServerFn(cancelSlotRsvp);
 
   const { data, isLoading } = useQuery({
     ...sessionsPageQuery(),
@@ -381,6 +386,20 @@ function SessionsPage() {
   });
   const sessions = data?.sessions ?? [];
   const allTracked = data?.tournaments ?? [];
+
+  const slotsKey = ["slots-to-log", player?.id];
+  const { data: slotsData } = useQuery({
+    queryKey: slotsKey,
+    queryFn: () => fetchSlotsToLog(),
+    enabled: !!player,
+  });
+  const slotsToLog = slotsData?.slots ?? [];
+  const skipSlot = useMutation({
+    mutationFn: ({ store_id, game_id, date }: SlotToLog) =>
+      cancelSlot({ data: { store_id, game_id, date } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: slotsKey }),
+    onError: (e: Error) => toast.error(e.message || "No se pudo quitar"),
+  });
   const loading = roleLoading || (!!player && isLoading && !data);
   const loadingTournaments = loading;
 
@@ -448,6 +467,48 @@ function SessionsPage() {
           Nueva Partida
         </button>
       </div>
+
+      <Section
+        icon={<Trophy size={14} />}
+        title="Registra tu partida"
+        count={slotsToLog.length}
+        subtitle="Pediste preferencia en estos torneos. Los datos ya vienen llenos."
+      >
+        {slotsToLog.map((slot) => (
+          <div
+            key={`${slot.store_id}_${slot.date}`}
+            className="glass flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 p-3"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{slot.store_name}</p>
+              <p className="text-xs text-gray-400">
+                {formatSessionDate(slot.date)}
+                {slot.time ? ` · ${slot.time} hrs` : ""}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => skipSlot.mutate(slot)}
+                disabled={skipSlot.isPending}
+                className="rounded-lg px-3 py-2 text-xs font-medium text-gray-400 transition hover:text-white disabled:opacity-60"
+              >
+                No fui
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPrefill(slot);
+                  setShowCreateSheet(true);
+                }}
+                className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110"
+              >
+                Registrar
+              </button>
+            </div>
+          </div>
+        ))}
+      </Section>
 
       {/* Content */}
       {loading || loadingTournaments ? (
@@ -540,9 +601,15 @@ function SessionsPage() {
 
       <CreateSessionSheet
         open={showCreateSheet}
-        onClose={() => setShowCreateSheet(false)}
+        prefill={prefill}
+        onClose={() => {
+          setShowCreateSheet(false);
+          setPrefill(null);
+        }}
         onCreated={(id) => {
           setShowCreateSheet(false);
+          setPrefill(null);
+          queryClient.invalidateQueries({ queryKey: slotsKey });
           navigate({ to: "/sessions/$sessionId", params: { sessionId: id } });
         }}
       />
@@ -751,10 +818,12 @@ type StoreRow = { id: string; name: string; city: string | null; zone: string | 
 
 function CreateSessionSheet({
   open,
+  prefill,
   onClose,
   onCreated,
 }: {
   open: boolean;
+  prefill: SlotToLog | null;
   onClose: () => void;
   onCreated: (sessionId: string) => void;
 }) {
@@ -801,6 +870,25 @@ function CreateSessionSheet({
       return () => clearTimeout(t);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !prefill) return;
+    const weekday = new Date(`${prefill.date}T12:00:00`).toLocaleDateString("es-MX", {
+      weekday: "long",
+    });
+    setSessionType("competitive");
+    setStep(2);
+    setName(`Torneo del ${weekday} — ${prefill.store_name}`.slice(0, 100));
+    setGameId(prefill.game_id);
+    setDate(prefill.date);
+    setTime(prefill.time);
+    setSelectedStore({
+      id: prefill.store_id,
+      name: prefill.store_name,
+      city: prefill.store_city,
+      zone: prefill.store_zone,
+    });
+  }, [open, prefill]);
 
   // Load games when opening
   useEffect(() => {

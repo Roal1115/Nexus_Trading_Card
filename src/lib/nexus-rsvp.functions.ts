@@ -246,3 +246,98 @@ export const getSlotRsvpList = createServerFn({ method: "POST" })
       })),
     };
   });
+
+// Horarios ya empezados donde el jugador pidió preferencia y aún no registra nada.
+// Mis Partidas los ofrece para abrir Nueva Partida ya llena, con los datos exactos
+// que el auto-enlace compara contra el torneo publicado.
+const SLOT_LOG_WINDOW_DAYS = 7;
+
+export const getMySlotsToLog = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+    const today = todayInMexicoStr();
+    const since = new Date(`${today}T00:00:00Z`);
+    since.setUTCDate(since.getUTCDate() - SLOT_LOG_WINDOW_DAYS);
+    const from = since.toISOString().slice(0, 10);
+
+    const { data: rsvps, error } = await admin
+      .from("schedule_rsvps")
+      .select("store_id, game_id, occurrence_date, stores!inner(name, city, zone)")
+      .eq("player_id", player.id)
+      .gte("occurrence_date", from)
+      .lte("occurrence_date", today)
+      .order("occurrence_date", { ascending: false });
+    if (error) failDb(error);
+    if (!rsvps?.length) return { slots: [] };
+
+    const [schedules, sessions, results] = await Promise.all([
+      admin
+        .from("store_schedules")
+        .select("id, store_id, game_id, day_of_week, start_time")
+        .in("store_id", [...new Set(rsvps.map((r) => r.store_id))]),
+      admin
+        .from("standalone_sessions")
+        .select("store_id, game_id, session_date")
+        .eq("player_id", player.id)
+        .eq("session_type", "competitive")
+        .gte("session_date", from),
+      admin
+        .from("tournament_results")
+        .select("tournaments!inner(store_id, game_id, tournament_date)")
+        .eq("player_id", player.id)
+        .gte("tournaments.tournament_date", from),
+    ]);
+    if (schedules.error) failDb(schedules.error);
+    if (sessions.error) failDb(sessions.error);
+    if (results.error) failDb(results.error);
+
+    const { data: overrides, error: oe } = await admin
+      .from("store_schedule_overrides")
+      .select("national_schedule_id, occurrence_date, start_time")
+      .in(
+        "national_schedule_id",
+        (schedules.data ?? []).map((s) => s.id),
+      )
+      .gte("occurrence_date", from);
+    if (oe) failDb(oe);
+
+    const key = (store: string | null, game: string, date: string | null) =>
+      `${store}_${game}_${date}`;
+    const logged = new Set([
+      ...(sessions.data ?? []).map((s) => key(s.store_id, s.game_id, s.session_date)),
+      ...(results.data ?? []).map((r) =>
+        key(r.tournaments.store_id, r.tournaments.game_id, r.tournaments.tournament_date),
+      ),
+    ]);
+    const nowTime = nowInMexicoTimeStr();
+
+    const slots = rsvps.flatMap((r) => {
+      if (logged.has(key(r.store_id, r.game_id, r.occurrence_date))) return [];
+      const schedule = schedules.data?.find(
+        (s) =>
+          s.store_id === r.store_id &&
+          s.game_id === r.game_id &&
+          s.day_of_week === new Date(r.occurrence_date + "T12:00:00").getDay(),
+      );
+      const override = overrides?.find(
+        (o) =>
+          o.national_schedule_id === schedule?.id && o.occurrence_date === r.occurrence_date,
+      );
+      const startTime = override?.start_time || schedule?.start_time || null;
+      const state = slotRsvpState({ date: r.occurrence_date, startTime, today, nowTime });
+      if (state !== "started") return [];
+      return [
+        {
+          store_id: r.store_id,
+          game_id: r.game_id,
+          date: r.occurrence_date,
+          time: startTime?.slice(0, 5) ?? "",
+          store_name: r.stores.name,
+          store_city: r.stores.city,
+          store_zone: r.stores.zone,
+        },
+      ];
+    });
+    return { slots };
+  });
