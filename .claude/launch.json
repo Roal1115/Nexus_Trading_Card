@@ -3,6 +3,9 @@
   "configurations": [
     {
       "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 8080,
       "url": "http://localhost:8080"
     }
   ]

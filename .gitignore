@@ -36,3 +36,7 @@ backups/
 
 # Claves del proyecto de pruebas (nexus-admin-test); nunca se suben
 .env.test
+
+# Generated locally
+.playwright-mcp/
+supabase/.temp/
