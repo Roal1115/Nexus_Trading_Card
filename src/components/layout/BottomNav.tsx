@@ -1,7 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { Trophy, LayoutDashboard, TrendingUp, CalendarDays, User, LogIn } from "lucide-react";
+import {
+  Trophy,
+  LayoutDashboard,
+  TrendingUp,
+  CalendarDays,
+  User,
+  LogIn,
+  Store,
+  Swords,
+} from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 
@@ -13,19 +22,22 @@ type NavItem = {
 
 const GUEST_ITEMS: NavItem[] = [
   { to: "/", label: "Ranking", icon: Trophy },
+  { to: "/calendar", label: "Calendario", icon: CalendarDays },
+  { to: "/meta", label: "Meta", icon: TrendingUp },
+  { to: "/stores", label: "Tiendas", icon: Store },
   { to: "/login", label: "Entrar", icon: LogIn },
 ];
 
 const PLAYER_ITEMS: NavItem[] = [
-  { to: "/", label: "Ranking", icon: Trophy },
+  { to: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { to: "/calendar", label: "Calendario", icon: CalendarDays },
-  { to: "/dashboard", label: "Panel", icon: LayoutDashboard },
-  { to: "/meta", label: "Meta", icon: TrendingUp },
+  { to: "/sessions", label: "Partidas", icon: Swords },
+  { to: "/", label: "Ranking", icon: Trophy },
   { to: "__profile__", label: "Menú", icon: User },
 ];
 
 // Rutas que solo se alcanzan desde el drawer de perfil (no tienen tab propio)
-const DRAWER_ONLY_ROUTES = ["/settings", "/sessions", "/stores", "/my-stats"];
+const DRAWER_ONLY_ROUTES = ["/settings", "/stores", "/my-stats", "/meta", "/players"];
 
 const PILL_TRANSITION = { type: "spring" as const, stiffness: 500, damping: 34 };
 
@@ -55,12 +67,11 @@ function NavIcon({ isActive, children }: { isActive: boolean; children: React.Re
 }
 
 function NavLabel({ isActive, children }: { isActive: boolean; children: React.ReactNode }) {
-  // Siempre renderizado con espacio reservado: animar solo opacity (composited)
-  // evita reflows por frame que hacían tartamudear al pill durante la navegación.
+  // Siempre visible: los iconos solos no dicen a dónde lleva cada pestaña.
   return (
     <span
-      className={`relative z-10 text-[10px] font-semibold leading-none text-primary transition-opacity duration-150 ${
-        isActive ? "opacity-100" : "opacity-0"
+      className={`relative z-10 text-[10px] font-semibold leading-none transition-colors duration-150 ${
+        isActive ? "text-primary" : "text-[#7A8CAD]"
       }`}
     >
       {children}
@@ -100,8 +111,7 @@ export function BottomNav() {
   if (isStaffRoute) return null;
 
   const items = probablyAuthed ? PLAYER_ITEMS : GUEST_ITEMS;
-  const isProfileActive =
-    drawerOpen || DRAWER_ONLY_ROUTES.some((r) => pathname.startsWith(r));
+  const isProfileActive = drawerOpen || DRAWER_ONLY_ROUTES.some((r) => pathname.startsWith(r));
 
   return (
     <>

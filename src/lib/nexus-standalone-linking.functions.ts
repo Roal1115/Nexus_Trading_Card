@@ -2,7 +2,7 @@ import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser } from "./nexus-auth.middleware";
-import { maxWinsFor, sessionLinkProblem } from "./round-rules";
+import { sessionLinkProblem } from "./round-rules";
 
 // ============================================================
 // undoSessionLink — revierte el vínculo de una sesión matched
@@ -263,7 +263,8 @@ export const linkSessionManually = createServerFn({ method: "POST" })
     const problem = sessionLinkProblem({
       rounds: roundsToMigrate,
       matchPoints: result.match_points,
-      maxRounds: maxWinsFor(Math.max(0, ...(results ?? []).map((r) => r.match_points ?? 0))),
+      // Hacia arriba: con empates (1 punto) el puntaje del líder no es múltiplo de 3.
+      maxRounds: Math.ceil(Math.max(0, ...(results ?? []).map((r) => r.match_points ?? 0)) / 3),
       takenRounds: taken ?? [],
     });
     if (problem) throw new Error(problem);

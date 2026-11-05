@@ -3,12 +3,7 @@ import { useEffect, useRef } from "react";
 import { LogOut } from "lucide-react";
 import { nexus } from "@/integrations/nexus/client";
 import { playerNavSections } from "@/components/layout/player-nav";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 // 1. El prop player ya tiene role — confirma que el tipo lo incluye:
 type ProfileDrawerProps = {
@@ -53,7 +48,7 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
       <SheetContent
         id="profile-drawer"
-        side="left"
+        side="right"
         className="flex w-[86%] max-w-sm flex-col gap-0 border-white/10 bg-[#0B1220]/95 p-0 backdrop-blur-xl"
       >
         <SheetTitle className="sr-only">Menú de perfil</SheetTitle>
@@ -76,14 +71,6 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
           </div>
           <div>
             <p className="font-mono-stat text-base font-bold text-white">{player.geek_tag}</p>
-            <Link
-              to="/players/$playerTag"
-              params={{ playerTag: player.geek_tag }}
-              onClick={onClose}
-              className="text-xs text-primary hover:underline"
-            >
-              Ver perfil público →
-            </Link>
           </div>
         </div>
 

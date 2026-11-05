@@ -907,7 +907,7 @@ function StatsPage() {
       <header className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <Link
           to="/dashboard"
-          aria-label="Volver a Mi Panel"
+          aria-label="Volver al inicio"
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white transition"
         >
           <ArrowLeft size={14} />

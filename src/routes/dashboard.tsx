@@ -80,7 +80,7 @@ export const Route = createFileRoute("/dashboard")({
     context.queryClient.ensureQueryData(myDashboardQuery()).catch(() => {});
     return undefined;
   },
-  head: () => ({ meta: [{ title: "Mi Panel — Nexus" }] }),
+  head: () => ({ meta: [{ title: "Inicio — Nexus" }] }),
   component: DashboardPage,
 });
 
