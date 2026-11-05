@@ -506,7 +506,7 @@ function DashboardPage() {
             </button>
             <button
               onClick={handleTogglePrivacy}
-              title={isPublic ? "Perfil público — clic para hacer privado" : "Perfil privado — clic para hacer público"}
+              title={`${isPublic ? "Perfil público — clic para hacer privado" : "Perfil privado — clic para hacer público"}. Las tiendas donde jugaste siempre pueden ver tus resultados en ellas.`}
               className={`ml-auto inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
                 isPublic
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"

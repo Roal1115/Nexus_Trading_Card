@@ -114,7 +114,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       }
     }
     if (!storeId) {
-      throw new Error("Esta tienda no tiene torneos registrados aún");
+      throw new Error("Tu cuenta no tiene una tienda asignada");
     }
 
     // Threshold settings (defaults if no row exists)
@@ -373,6 +373,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
             const dt = new Date(d + "T12:00:00");
             return dt >= rangeStart && dt <= rangeEnd;
           }).length,
+          points: Math.round(pointsByPlayerInRange.get(pid) ?? 0),
           status,
           missed_tournaments: missed,
           last_visit: lastVisit,
@@ -429,6 +430,54 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       classification,
       at_risk: atRisk,
       top_players: topPlayers,
+    };
+  });
+
+// Vista de staff: solo lo jugado en la tienda del organizer, aunque el perfil sea
+// privado. Nunca devuelve datos personales. El mismo error para quien no existe y
+// para quien no jugó aquí, así no sirve para averiguar quién está registrado.
+export const getOrganizerPlayerDetail = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator((d: { player_id: string }) =>
+    z.object({ player_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (!player.home_store_id) throw new Error("Tu cuenta no tiene una tienda asignada");
+
+    const { data: rows, error } = await admin
+      .from("tournament_results")
+      .select(
+        "rank, points_earned, tournaments!inner(id, tournament_date, store_id, status, games(name))",
+      )
+      .eq("player_id", data.player_id)
+      .eq("tournaments.store_id", player.home_store_id)
+      .in("tournaments.status", ["APPROVED", "PUBLISHED"]);
+    if (error) failDb(error);
+    if (!rows?.length) throw new Error("Este jugador no ha jugado en tu tienda");
+
+    const { data: target, error: targetError } = await admin
+      .from("players")
+      .select("geek_tag")
+      .eq("id", data.player_id)
+      .single();
+    if (targetError) failDb(targetError);
+
+    const tournaments = rows
+      .map((r) => ({
+        id: r.tournaments.id,
+        date: r.tournaments.tournament_date,
+        game: r.tournaments.games?.name ?? "—",
+        rank: r.rank,
+        points: Math.round(r.points_earned ?? 0),
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    return {
+      geek_tag: target.geek_tag,
+      total_points: tournaments.reduce((sum, t) => sum + t.points, 0),
+      last_visit: tournaments[0].date,
+      tournaments,
     };
   });
 
