@@ -2,7 +2,7 @@ import { failDb } from "./nexus-admin.server";
 import type { TablesUpdate } from "./database.types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNexusUser } from "./nexus-auth.middleware";
+import { requireNexusOrganizer, requireNexusUser } from "./nexus-auth.middleware";
 
 const turnOrderSchema = z.enum(["first", "second"]).nullable().optional();
 
@@ -108,7 +108,7 @@ export const createAppeal = createServerFn({ method: "POST" })
 // getStoreAppeals — organizador ve apelaciones pendientes de su tienda
 // ============================================================
 export const getStoreAppeals = createServerFn({ method: "POST" })
-  .middleware([requireNexusUser])
+  .middleware([requireNexusOrganizer])
   .handler(async ({ context }) => {
     const { admin, player } = context;
 

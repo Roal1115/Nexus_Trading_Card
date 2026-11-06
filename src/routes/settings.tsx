@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { nexus } from "@/integrations/nexus/client";
@@ -11,7 +12,13 @@ import {
   SkeletonBlock,
   SettingsSectionSkeleton,
 } from "@/components/ui/skeleton-loader";
-import { getMyProfile, updateMyProfile, addMyTcgId } from "@/lib/nexus-settings.functions";
+import {
+  getMyProfile,
+  updateMyProfile,
+  addMyTcgId,
+  setMyHomeStore,
+} from "@/lib/nexus-settings.functions";
+import { TAG_RE, TAG_RULE_MESSAGE } from "@/lib/nexus-tag";
 import { setPlayerPreferences, toggleProfilePrivacy } from "@/lib/nexus-player.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import ReactDOM from "react-dom";
@@ -138,6 +145,8 @@ function SettingsPage() {
   const savePreferences = useServerFn(setPlayerPreferences);
   const callUpdateProfile = useServerFn(updateMyProfile);
   const callAddTcgId = useServerFn(addMyTcgId);
+  const saveHomeStore = useServerFn(setMyHomeStore);
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
   const [playerRole, setPlayerRole] = useState<string>("");
@@ -154,6 +163,10 @@ function SettingsPage() {
   const [isPublic, setIsPublic] = useState(true);
   const [zone, setZone] = useState("");
   const [zones, setZones] = useState<string[]>([]);
+  const [homeStoreId, setHomeStoreId] = useState("");
+  const [stores, setStores] = useState<Array<{ id: string; name: string; city: string | null }>>(
+    [],
+  );
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -176,6 +189,8 @@ function SettingsPage() {
         setIsPublic(res.profile?.is_profile_public ?? true);
         setZone(res.profile?.preferred_zone ?? "");
         setZones(res.zones ?? []);
+        setHomeStoreId(res.profile?.home_store_id ?? "");
+        setStores(res.stores ?? []);
       })
       .catch(() => toast.error("Error al cargar tu perfil"))
       .finally(() => setLoading(false));
@@ -188,6 +203,7 @@ function SettingsPage() {
   const newTag = nexusTag.trim();
   const newName = displayName.trim();
   const tagChanged = !!newTag && newTag !== currentNexusTag;
+  const tagInvalid = tagChanged && !TAG_RE.test(newTag);
   const nameChanged = !!newName && newName !== currentDisplayName;
 
   const onTogglePrivacy = async () => {
@@ -199,6 +215,20 @@ function SettingsPage() {
     } catch {
       setIsPublic(!next);
       toast.error("No se pudo cambiar la privacidad");
+    }
+  };
+
+  const onHomeStoreChange = async (value: string) => {
+    const previous = homeStoreId;
+    setHomeStoreId(value);
+    try {
+      await saveHomeStore({ data: { store_id: value || null } });
+      updatePlayer({ home_store_id: value || null });
+      queryClient.invalidateQueries({ queryKey: ["my-dashboard"] });
+      toast.success("Tienda principal guardada");
+    } catch {
+      setHomeStoreId(previous);
+      toast.error("No se pudo guardar tu tienda principal");
     }
   };
 
@@ -394,7 +424,13 @@ function SettingsPage() {
               placeholder={currentNexusTag}
               className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary placeholder:text-gray-600"
             />
-            <p className="text-[10px] text-gray-500">Visible públicamente en rankings y torneos.</p>
+            {tagInvalid ? (
+              <p className="text-[10px] text-red-400">{TAG_RULE_MESSAGE}</p>
+            ) : (
+              <p className="text-[10px] text-gray-500">
+                Visible públicamente en rankings y torneos.
+              </p>
+            )}
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-400">Nombre para mostrar</label>
@@ -409,7 +445,7 @@ function SettingsPage() {
         </div>
         <button
           onClick={onSaveProfile}
-          disabled={savingProfile || (!tagChanged && !nameChanged)}
+          disabled={savingProfile || tagInvalid || (!tagChanged && !nameChanged)}
           className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {savingProfile ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
@@ -446,6 +482,24 @@ function SettingsPage() {
               options={zones.map((z) => ({ value: z, label: z }))}
             />
             <p className="text-[10px] text-gray-500">El calendario se abre en esta zona.</p>
+          </div>
+        )}
+        {isPlayer && stores.length > 0 && (
+          <div className="space-y-1">
+            <label className="text-xs text-gray-400">Mi tienda principal (opcional)</label>
+            <SettingsSelect
+              value={homeStoreId}
+              onChange={onHomeStoreChange}
+              placeholder="Sin tienda principal"
+              options={[
+                { value: "", label: "Sin tienda principal" },
+                ...stores.map((s) => ({
+                  value: s.id,
+                  label: s.city ? `${s.name} · ${s.city}` : s.name,
+                })),
+              ]}
+            />
+            <p className="text-[10px] text-gray-500">Se muestra en tu Inicio y en tu perfil.</p>
           </div>
         )}
       </section>

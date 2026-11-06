@@ -6,13 +6,12 @@ import { toast } from "sonner";
 import { nexus, type Game } from "@/integrations/nexus/client";
 import { signupPlayer } from "@/lib/nexus-auth.functions";
 import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
+import { TAG_RE, TAG_RULE_MESSAGE } from "@/lib/nexus-tag";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Únete al Circuito — Nexus" }] }),
   component: SignupPage,
 });
-
-const TAG_RE = /^[A-Za-z0-9_]{3,30}$/;
 
 const MIN_FORM_MS = 8000;
 
@@ -167,7 +166,7 @@ function SignupPage() {
     if (email && !/^\S+@\S+\.\S+$/.test(email))
       e.email = "Ingresa un correo electrónico válido";
     if (tag && !TAG_RE.test(tag))
-      e.tag = "3 a 30 caracteres. Solo letras, números y guiones bajos";
+      e.tag = TAG_RULE_MESSAGE;
     if (password && !passwordIsValid(password))
       e.password =
         "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número";

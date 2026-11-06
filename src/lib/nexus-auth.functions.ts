@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { checkRateLimit, getClientIp } from "./rate-limit.server";
+import { TAG_RE } from "./nexus-tag";
 import { normalizeTcgId } from "./utils";
 
 export const signupPlayer = createServerFn({ method: "POST" })
@@ -19,11 +20,7 @@ export const signupPlayer = createServerFn({ method: "POST" })
         .object({
           email: z.string().email(),
           password: z.string().min(8),
-          geek_tag: z
-            .string()
-            .min(3)
-            .max(30)
-            .regex(/^[A-Za-z0-9_]+$/),
+          geek_tag: z.string().regex(TAG_RE),
           game_ids: z.array(z.string().uuid()).min(1),
           tcg_ids: z.record(z.string().uuid(), z.string().min(1).max(120)),
           gender: z.enum(["hombre", "mujer", "no_especificado"]),

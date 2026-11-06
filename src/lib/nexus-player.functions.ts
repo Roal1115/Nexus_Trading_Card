@@ -996,6 +996,9 @@ export const getPlayerAchievements = createServerFn({ method: "POST" })
     };
   });
 
+// Rondas sin leader: cuentan en el récord, pero no pueden entrar al desglose por leader.
+type NoLeaderRound = { date: string | null; won: boolean };
+
 export const getMyStats = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
   .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))
@@ -1022,6 +1025,7 @@ export const getMyStats = createServerFn({ method: "POST" })
         total_rounds_in_meta: 0,
         total_tournaments_won: 0,
         leaders: [],
+        no_leader_rounds: [] as NoLeaderRound[],
       };
     }
 
@@ -1324,6 +1328,14 @@ export const getMyStats = createServerFn({ method: "POST" })
       total_rounds_in_meta: totalMetaRounds ?? 0,
       total_tournaments_won: wonTournamentIds.size,
       leaders: leaderStats,
+      no_leader_rounds: allRounds
+        .filter((r: any) => !r.player_leader_id)
+        .map(
+          (r: any): NoLeaderRound => ({
+            date: tournamentMetaMap.get(r.tournament_id)?.date ?? null,
+            won: r.won_match === true,
+          }),
+        ),
     };
   });
 
@@ -1674,6 +1686,14 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
       game_slug: (game as any)?.slug ?? "",
       total_rounds_in_meta: 0,
       leaders,
+      no_leader_rounds: (allRounds as any[])
+        .filter((r) => !r.player_leader_id)
+        .map(
+          (r): NoLeaderRound => ({
+            date: (sessionMap.get(r.session_id) as any)?.session_date ?? null,
+            won: r.won_match === true,
+          }),
+        ),
     };
   });
 
@@ -1931,6 +1951,14 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
       game_slug: (game as any)?.slug ?? "",
       total_rounds_in_meta: 0,
       leaders,
+      no_leader_rounds: (allRounds as any[])
+        .filter((r) => !r.player_leader_id)
+        .map(
+          (r): NoLeaderRound => ({
+            date: (sessionMap.get(r.session_id) as any)?.session_date ?? null,
+            won: r.won_match === true,
+          }),
+        ),
     };
   });
 

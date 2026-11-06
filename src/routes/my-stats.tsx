@@ -45,6 +45,10 @@ type TimeRange = "30" | "90" | "all";
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+// Las respuestas vacías de casual y pendientes no traen la lista.
+const noLeaderOf = (s: { no_leader_rounds?: StatsData["no_leader_rounds"] } | null) =>
+  s?.no_leader_rounds ?? [];
+
 // Recomputa todos los stats desde round_history con un corte de fecha.
 // ponytail: client-side sobre datos ya cargados; si el payload crece demasiado, mover el filtro al server
 function filterStatsByDate(stats: StatsData, days: number): StatsData {
@@ -111,7 +115,12 @@ function filterStatsByDate(stats: StatsData, days: number): StatsData {
     .filter((l) => l.total_games > 0)
     .sort((a, b) => b.total_games - a.total_games);
 
-  return { ...stats, total_rounds_in_meta: 0, leaders };
+  return {
+    ...stats,
+    total_rounds_in_meta: 0,
+    leaders,
+    no_leader_rounds: noLeaderOf(stats).filter((r) => r.date && r.date >= cutoff),
+  };
 }
 
 const STAT_TOOLTIPS: Record<string, string> = {
@@ -770,6 +779,7 @@ function mergeStats(official: StatsData, casual: any): StatsData {
     ...official,
     total_rounds_in_meta: 0,
     leaders,
+    no_leader_rounds: [...noLeaderOf(official), ...noLeaderOf(casual)],
   };
 }
 
@@ -855,7 +865,9 @@ function StatsPage() {
     displayStats && selectedLeaderIdx < displayStats.leaders.length ? selectedLeaderIdx : 0;
   const selectedLeader = displayStats?.leaders[leaderIdx] ?? null;
 
-  // Resumen global del dataset actual (todos los leaders)
+  // Resumen global del dataset actual: todos los leaders más las rondas sin leader.
+  const noLeaderRounds = noLeaderOf(displayStats);
+  const noLeaderWins = noLeaderRounds.filter((r) => r.won).length;
   const overview = displayStats
     ? displayStats.leaders.reduce(
         (a, l) => ({
@@ -863,7 +875,11 @@ function StatsPage() {
           wins: a.wins + l.wins,
           losses: a.losses + l.losses,
         }),
-        { games: 0, wins: 0, losses: 0 },
+        {
+          games: noLeaderRounds.length,
+          wins: noLeaderWins,
+          losses: noLeaderRounds.length - noLeaderWins,
+        },
       )
     : null;
   const overviewWr =
@@ -1029,7 +1045,9 @@ function StatsPage() {
           ) : !displayStats || displayStats.leaders.length === 0 ? (
             <div className="glass rounded-2xl p-12 text-center">
               <p className="text-sm text-gray-500">
-                {statsSource === "casual"
+                {noLeaderRounds.length > 0
+                  ? `Tienes ${noLeaderRounds.length} ${noLeaderRounds.length === 1 ? "ronda" : "rondas"} sin leader (${noLeaderWins}V · ${noLeaderRounds.length - noLeaderWins}D). Agrégalo en Mis Partidas para ver tus stats por leader.`
+                  : statsSource === "casual"
                   ? "Sin partidas casuales registradas. Crea una partida casual para empezar."
                   : statsSource === "pending"
                     ? "No tienes partidas pendientes de vinculación a un torneo."
@@ -1042,6 +1060,19 @@ function StatsPage() {
             </div>
           ) : (
             <>
+              {noLeaderRounds.length > 0 && (
+                <p className="mb-3 rounded-lg border border-border bg-card/60 px-3 py-2 text-xs text-muted-foreground">
+                  {noLeaderRounds.length === 1
+                    ? "1 ronda sin leader cuenta en tu récord, pero no aparece por leader."
+                    : `${noLeaderRounds.length} rondas sin leader cuentan en tu récord, pero no aparecen por leader.`}{" "}
+                  Agrégalo en{" "}
+                  <Link to="/sessions" className="text-primary hover:underline">
+                    Mis Partidas
+                  </Link>
+                  .
+                </p>
+              )}
+
               {/* Resumen global del dataset */}
               {overview && overview.games > 0 && (
                 <div className="glass mb-6 grid grid-cols-3 divide-x divide-white/5 rounded-2xl border border-white/10">
