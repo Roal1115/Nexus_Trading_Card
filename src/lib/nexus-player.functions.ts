@@ -97,7 +97,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
     const { data: privacyRow } = await admin
       .from("players")
-      .select("id, is_profile_public" as any)
+      .select("id, is_profile_public, onboarding_dismissed_at" as any)
       .eq("id", player.id)
       .maybeSingle();
     const isProfilePublic = ((privacyRow as any)?.is_profile_public ?? true) as boolean;
@@ -298,6 +298,9 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       }),
       events,
       is_profile_public: isProfilePublic,
+      // === null: si la lectura falla no se le muestra a quien ya lo saltó.
+      show_onboarding:
+        player.role === "player" && (privacyRow as any)?.onboarding_dismissed_at === null,
       registered_game_ids: ((tcgIdRows ?? []) as any[]).map((t) => t.game_id),
       totalTournamentsAttended: totalTournamentsCount ?? 0,
       mostVisitedStore,
@@ -540,6 +543,19 @@ export const setPlayerPreferences = createServerFn({ method: "POST" })
         preferred_zone: data.zone ?? null,
         preferences_prompted_at: new Date().toISOString(),
       } as any)
+      .eq("id", player.id);
+    if (error) failDb(error);
+    return { success: true };
+  });
+
+// "Empieza aquí" de Inicio: nunca bloquea, el jugador lo salta cuando quiera.
+export const dismissOnboarding = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .handler(async ({ context }) => {
+    const { admin, player } = context;
+    const { error } = await admin
+      .from("players")
+      .update({ onboarding_dismissed_at: new Date().toISOString() })
       .eq("id", player.id);
     if (error) failDb(error);
     return { success: true };

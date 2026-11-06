@@ -28,14 +28,25 @@ const arrow = (
   />
 );
 
-/** Primer paso útil para quien aún no tiene torneos: reemplaza el Inicio vacío. */
-export function NewPlayerSteps({ zone }: { zone: string | null }) {
+/** Primera visita a Inicio, tenga o no torneos. No bloquea: se puede saltar. */
+export function NewPlayerSteps({ zone, onSkip }: { zone: string | null; onSkip: () => void }) {
   return (
     <section className="mb-6" aria-labelledby="new-player-title">
-      <h2 id="new-player-title" className="text-lg font-semibold text-foreground">
-        Empieza aquí
-      </h2>
-      <p className="mb-3 text-sm text-muted-foreground">Tres pasos para empezar a competir.</p>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h2 id="new-player-title" className="text-lg font-semibold text-foreground">
+            Empieza aquí
+          </h2>
+          <p className="text-sm text-muted-foreground">Tres pasos para empezar.</p>
+        </div>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="flex-shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+        >
+          Saltar
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <Link to="/settings" className={stepClass}>
           <StepIcon done={!!zone}>

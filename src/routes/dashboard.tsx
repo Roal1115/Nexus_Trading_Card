@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NewPlayerSteps } from "@/components/player/NewPlayerSteps";
 import {
   Award,
@@ -55,7 +55,7 @@ const RANK_TIER_BOX: Record<Exclude<RankTier, null>, string> = {
 
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import { toggleProfilePrivacy } from "@/lib/nexus-player.functions";
+import { dismissOnboarding, toggleProfilePrivacy } from "@/lib/nexus-player.functions";
 import { myDashboardQuery, tournamentDetailQuery } from "@/lib/dashboard-queries";
 import { playerAchievementsQuery } from "@/lib/player-profile-queries";
 import { shareProfileWithCard } from "@/lib/share-card";
@@ -118,6 +118,8 @@ function DashboardPage() {
   };
 
   const togglePrivacyFn = useServerFn(toggleProfilePrivacy);
+  const dismissOnboardingFn = useServerFn(dismissOnboarding);
+  const queryClient = useQueryClient();
   const [isPublic, setIsPublic] = useState(true);
   const [copiedProfile, setCopiedProfile] = useState(false);
 
@@ -168,6 +170,20 @@ function DashboardPage() {
     } catch {
       setIsPublic(!next);
       toast.error("Error al cambiar la privacidad");
+    }
+  };
+
+  const handleSkipSteps = async () => {
+    const setShown = (show_onboarding: boolean) =>
+      queryClient.setQueryData(myDashboardQuery().queryKey, (old: any) =>
+        old ? { ...old, show_onboarding } : old,
+      );
+    setShown(false);
+    try {
+      await dismissOnboardingFn();
+    } catch {
+      setShown(true);
+      toast.error("No se pudo guardar. Intenta de nuevo.");
     }
   };
 
@@ -260,8 +276,8 @@ function DashboardPage() {
 
   const activeTcg = tcgStats.find((t) => t.game_id === selectedTcg) ?? tcgStats[0];
   const hasHistory = (data?.totalTournamentsAttended ?? 0) > 0;
-  // Con `data`: si la carga falla no hay que tratar como nuevo a quien ya tiene historial.
-  const isNewPlayer = !!data && !hasHistory;
+  const showSteps = !!(data as any)?.show_onboarding;
+  const hideEmptySections = showSteps && !hasHistory;
 
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
@@ -304,7 +320,22 @@ function DashboardPage() {
                   ))}
                 </div>
               </div>
-            ) : !hasHistory ? null : (
+            ) : !hasHistory ? (
+              !showSteps && (
+                // Saltó los pasos sin torneos: queda un solo CTA en vez de 4 cards con "—".
+                <div className="flex max-w-xs flex-col items-start gap-3 rounded-xl border border-primary/30 bg-black/40 px-5 py-4">
+                  <p className="text-sm text-gray-300">
+                    Aún no has jugado ningún torneo. Busca uno cerca de ti y empieza tu ranking.
+                  </p>
+                  <Link
+                    to="/calendar"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
+                  >
+                    Ver calendario de torneos →
+                  </Link>
+                </div>
+              )
+            ) : (
               <div className="flex flex-col items-start gap-3">
                 {/* Rank global — el número que más le importa al jugador al entrar, así que es el foco visual.
                     Top 3 del leaderboard se colorea como medallero (oro/plata/bronce). */}
@@ -509,13 +540,13 @@ function DashboardPage() {
           </div>
         </section>
 
-        {isNewPlayer && <NewPlayerSteps zone={gaPlayer.preferred_zone} />}
+        {showSteps && <NewPlayerSteps zone={gaPlayer.preferred_zone} onSkip={handleSkipSteps} />}
 
         {/* Achievements + Performance Tracker — antes eran dos cards de
             ancho completo apiladas (cada una con su propio header), ahora
             son tiles de igual altura en una sola fila. Mismo contenido,
             mitad del alto vertical antes de llegar a Torneos Recientes. */}
-        {(!isNewPlayer || achievementsLoading || (achievements && achievements.unlocked_count > 0)) && (
+        {(!showSteps || achievementsLoading || (achievements && achievements.unlocked_count > 0)) && (
           <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {achievementsLoading ? (
               <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4">
@@ -558,7 +589,7 @@ function DashboardPage() {
               )
             )}
 
-            {!isNewPlayer && (
+            {!showSteps && (
               <Link
                 to="/sessions"
                 className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
@@ -683,7 +714,7 @@ function DashboardPage() {
         )}
 
         {/* Recent */}
-        <section className={`glass mt-6 overflow-hidden rounded-2xl ${isNewPlayer ? "hidden" : ""}`}>
+        <section className={`glass mt-6 overflow-hidden rounded-2xl ${hideEmptySections ? "hidden" : ""}`}>
           <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="text-primary" size={18} />

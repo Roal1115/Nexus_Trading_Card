@@ -638,6 +638,7 @@ export type Database = {
       }
       players: {
         Row: {
+          onboarding_dismissed_at: string | null
           auth_user_id: string | null
           avatar_url: string | null
           birth_date: string | null
@@ -659,6 +660,7 @@ export type Database = {
           work_schedule: string | null
         }
         Insert: {
+          onboarding_dismissed_at?: string | null
           auth_user_id?: string | null
           avatar_url?: string | null
           birth_date?: string | null
@@ -680,6 +682,7 @@ export type Database = {
           work_schedule?: string | null
         }
         Update: {
+          onboarding_dismissed_at?: string | null
           auth_user_id?: string | null
           avatar_url?: string | null
           birth_date?: string | null
