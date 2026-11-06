@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTournamentRoundsForPlayer } from "@/lib/nexus-tournament-tracker.functions";
 import { AppealForm } from "@/components/tournament-tracker/AppealForm";
+import { cleanLeaderName } from "@/components/tournament-tracker/round-ui";
 import { AnimatePresence } from "framer-motion";
 import { confirmRoundResult } from "@/lib/nexus-tournament-tracker.functions";
 // En lucide-react agrega:
@@ -178,7 +179,7 @@ function RoundAccordionItem({
             <span className="text-sm text-gray-300">
               {round.is_bye
                 ? "Bye"
-                : `vs ${round.opponent_leader?.base_name?.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim() ?? opponentTag}`}
+                : `vs ${round.opponent_leader ? cleanLeaderName(round.opponent_leader.base_name) : opponentTag}`}
             </span>
             {!open && !round.is_bye && (
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">

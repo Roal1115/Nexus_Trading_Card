@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, X, Plus, Trophy, ChevronDown, Trash2, ShieldQuestion } from "lucide-react";
+import { X, Plus, Trophy, ChevronDown, Trash2, ShieldQuestion } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { toast } from "sonner";
@@ -11,18 +11,16 @@ import {
   clearTournamentRounds,
   deleteRoundResult,
 } from "@/lib/nexus-tournament-tracker.functions";
-import { ColorDots } from "./color-dots";
-
-type DeckIdentifier = {
-  id: string;
-  card_name: string;
-  base_name: string;
-  colors: string[] | null;
-  card_image: string | null;
-  card_image_id: string | null;
-  set_code: string | null;
-  card_set_id: string | null;
-};
+import {
+  cleanLeaderName,
+  LeaderSearchSelect,
+  RoundCardFrame,
+  RoundFieldLabel,
+  RoundNotesField,
+  RoundOutcomeFields,
+  RoundSaveButton,
+  type DeckIdentifier,
+} from "./round-ui";
 
 type RoundRow = {
   id?: string;
@@ -40,10 +38,6 @@ type RoundRow = {
   status?: string;
 };
 
-function cleanDisplayName(name: string): string {
-  return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
-}
-
 function LeaderSelect({
   gameId,
   value,
@@ -56,23 +50,7 @@ function LeaderSelect({
   placeholder: string;
 }) {
   const fetchDeckIdentifiers = useServerFn(getDeckIdentifiers);
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<DeckIdentifier[]>([]);
   const [artVariants, setArtVariants] = useState<DeckIdentifier[]>([]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handle = setTimeout(() => {
-      fetchDeckIdentifiers({
-        data: { game_id: gameId, search: search || undefined, basic_only: true },
-      })
-        .then((rows) => setOptions(rows as DeckIdentifier[]))
-        .catch(() => setOptions([]));
-    }, 200);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, search, gameId]);
 
   useEffect(() => {
     if (!value) {
@@ -88,68 +66,13 @@ function LeaderSelect({
   }, [value?.card_set_id]);
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-      >
-        <span className="flex items-center truncate">
-          {value ? (
-            <>
-              {cleanDisplayName(value.base_name)}
-              <ColorDots colors={value.colors} />
-            </>
-          ) : (
-            <span className="text-gray-500">{placeholder}</span>
-          )}
-        </span>
-        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
-      </button>
-
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
-          <div className="relative p-2">
-            <Search
-              size={13}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-            />
-            <input
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader o ID (ej. OP10-010)…"
-              className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
-            />
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {options.length === 0 ? (
-              <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
-            ) : (
-              options.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
-                >
-                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                    {opt.card_set_id}
-                  </span>
-                  <span className="flex-1 truncate text-white">
-                    {cleanDisplayName(opt.base_name)}
-                  </span>
-                  <ColorDots colors={opt.colors} />
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+    <div>
+      <LeaderSearchSelect
+        gameId={gameId}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+      />
 
       {value?.card_image && (
         <div className="mt-3 flex items-start gap-3">
@@ -185,99 +108,6 @@ function LeaderSelect({
               </div>
             </div>
           )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function OpponentLeaderSelect({
-  gameId,
-  value,
-  onChange,
-}: {
-  gameId: string;
-  value: DeckIdentifier | null;
-  onChange: (d: DeckIdentifier | null) => void;
-}) {
-  const fetchDeckIdentifiers = useServerFn(getDeckIdentifiers);
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<DeckIdentifier[]>([]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handle = setTimeout(() => {
-      fetchDeckIdentifiers({
-        data: { game_id: gameId, search: search || undefined, basic_only: true },
-      })
-        .then((rows) => setOptions(rows as DeckIdentifier[]))
-        .catch(() => setOptions([]));
-    }, 200);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, search, gameId]);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-      >
-        <span className="flex items-center truncate">
-          {value ? (
-            <>
-              {cleanDisplayName(value.base_name)}
-              <ColorDots colors={value.colors} />
-            </>
-          ) : (
-            <span className="text-gray-500">Selecciona leader…</span>
-          )}
-        </span>
-        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
-          <div className="relative p-2">
-            <Search
-              size={13}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-            />
-            <input
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader o ID (ej. OP10-010)…"
-              className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
-            />
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {options.length === 0 ? (
-              <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
-            ) : (
-              options.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
-                >
-                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                    {opt.card_set_id}
-                  </span>
-                  <span className="flex-1 truncate text-white">
-                    {cleanDisplayName(opt.base_name)}
-                  </span>
-                  <ColorDots colors={opt.colors} />
-                </button>
-              ))
-            )}
-          </div>
         </div>
       )}
     </div>
@@ -352,325 +182,76 @@ function RoundCard({
   saving: boolean;
   deleting: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-
-  const resultColor =
-    round.won_match === true
-      ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
-      : round.won_match === false
-        ? "bg-red-500/10 border-l-2 border-l-red-500"
-        : "bg-white/[0.02]";
-
   return (
-    <div
-      className={`rounded-xl border overflow-hidden transition-colors duration-150 ${
-        deleteConfirm ? "border-red-500/40" : "border-white/10"
-      } ${resultColor}`}
+    <RoundCardFrame
+      round={round}
+      opponentLabel={
+        round.is_bye
+          ? "Bye"
+          : (opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—")
+      }
+      onDelete={onDelete}
+      deleting={deleting}
     >
-      {/* Collapsed row */}
-      <div
-        onClick={() => !deleteConfirm && setOpen((o) => !o)}
-        className={`relative grid grid-cols-[40px_1fr_52px_52px_52px_36px] items-center gap-2 px-3 py-3 cursor-pointer transition-colors duration-150 ${
-          open ? "bg-white/[0.04]" : "hover:bg-white/[0.04] active:bg-white/[0.07]"
-        }`}
-      >
-        {/* Round number */}
-        <span
-          className={`font-mono text-sm font-bold ${
-            round.won_match === true
-              ? "text-emerald-400"
-              : round.won_match === false
-                ? "text-red-400"
-                : "text-gray-400"
-          }`}
-        >
-          R{round.round_number}
-        </span>
-
-        {/* Opponent */}
-        <div className="flex items-center gap-2 min-w-0 text-left">
-          {round.opponent_leader?.card_image ? (
-            <img
-              src={round.opponent_leader.card_image}
-              alt={round.opponent_leader.base_name}
-              className="h-9 w-6 flex-shrink-0 rounded-md border border-white/10 object-cover"
+      {(close) => (
+        <>
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            <input
+              type="checkbox"
+              checked={round.is_bye}
+              onChange={(e) =>
+                onChange({
+                  is_bye: e.target.checked,
+                  opponent_player_id: null,
+                  opponent_leader_id: null,
+                  won_die_roll: null,
+                  turn_order: null,
+                  won_match: e.target.checked ? true : null,
+                })
+              }
             />
-          ) : (
-            <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-              <span className="text-[8px] text-gray-600">?</span>
-            </div>
-          )}
-          <span className="truncate text-xs text-gray-300">
-            {round.is_bye
-              ? "Bye"
-              : (opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—")}
-          </span>
-        </div>
+            Bye (ronda libre, sin oponente)
+          </label>
 
-        {/* Dice */}
-        <span className="text-center text-[11px] text-gray-400">
-          {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Opp"}
-        </span>
-
-        {/* Order */}
-        <span className="text-center text-[11px] text-gray-400">
-          {round.turn_order === "first" ? "1st" : round.turn_order === "second" ? "2nd" : "—"}
-        </span>
-
-        {/* Result */}
-        <span
-          className={`text-center text-xs font-bold ${
-            round.won_match === true
-              ? "text-emerald-400"
-              : round.won_match === false
-                ? "text-red-400"
-                : "text-gray-500"
-          }`}
-        >
-          {round.is_bye
-            ? "Bye"
-            : round.won_match === true
-              ? "W"
-              : round.won_match === false
-                ? "L"
-                : "—"}
-        </span>
-
-        {/* Delete button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteConfirm(true);
-          }}
-          className="relative z-10 flex items-center justify-center rounded-md p-1.5 text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
-        >
-          <Trash2 size={13} />
-        </button>
-
-        {/* Delete confirmation — full-row overlay */}
-        <AnimatePresence>
-          {deleteConfirm && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`absolute inset-0 z-40 flex items-center justify-between gap-3 rounded-t-xl bg-red-950/95 px-4 backdrop-blur-sm ${
-                open ? "" : "rounded-b-xl"
-              }`}
-            >
-              <span className="text-xs font-medium text-red-100">
-                ¿Eliminar Ronda {round.round_number}?
-              </span>
-              <div className="flex flex-shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onDelete}
-                  disabled={deleting}
-                  className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
-                >
-                  {deleting ? "…" : "Eliminar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirm(false)}
-                  className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/10"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Expanded form */}
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-white/10 px-4 pb-5 pt-4 space-y-5">
-              <label className="flex items-center gap-2 text-xs text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={round.is_bye}
-                  onChange={(e) =>
-                    onChange({
-                      is_bye: e.target.checked,
-                      opponent_player_id: null,
-                      opponent_leader_id: null,
-                      won_die_roll: null,
-                      turn_order: null,
-                      won_match: e.target.checked ? true : null,
-                    })
-                  }
-                />
-                Bye (ronda libre, sin oponente)
-              </label>
-
-              {!round.is_bye && (
-                <>
-                  {/* Oponente */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Contra quién jugaste
-                    </label>
-                    <SimpleSelect
-                      value={round.opponent_player_id ?? ""}
-                      onChange={(v) => onChange({ opponent_player_id: v || null })}
-                      placeholder="Selecciona oponente…"
-                      options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
-                    />
-                  </div>
-
-                  {/* Leader del oponente */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Leader del oponente
-                    </label>
-                    <OpponentLeaderSelect
-                      gameId={gameId}
-                      value={round.opponent_leader ?? null}
-                      onChange={(d) => {
-                        onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
-                      }}
-                    />
-                  </div>
-
-                  {/* Dado — 2 toggle buttons */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Dado
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_die_roll: true })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_die_roll === true
-                            ? "bg-emerald-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-emerald-500/40 hover:text-emerald-400"
-                        }`}
-                      >
-                        Gané
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_die_roll: false })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_die_roll === false
-                            ? "bg-red-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-red-500/40 hover:text-red-400"
-                        }`}
-                      >
-                        Perdí
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Turno — 2 toggle buttons */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Turno
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onChange({ turn_order: "first" })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.turn_order === "first"
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-primary/40 hover:text-primary"
-                        }`}
-                      >
-                        Primero
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onChange({ turn_order: "second" })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.turn_order === "second"
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-primary/40 hover:text-primary"
-                        }`}
-                      >
-                        Segundo
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Resultado — 2 toggle buttons */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Resultado
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_match: true })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_match === true
-                            ? "bg-emerald-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-emerald-500/40 hover:text-emerald-400"
-                        }`}
-                      >
-                        Victoria
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_match: false })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_match === false
-                            ? "bg-red-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-red-500/40 hover:text-red-400"
-                        }`}
-                      >
-                        Derrota
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Notas */}
+          {!round.is_bye && (
+            <>
               <div>
-                <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                  Notas (opcional)
-                </label>
-                <textarea
-                  value={round.notes ?? ""}
-                  onChange={(e) => onChange({ notes: e.target.value || null })}
-                  rows={2}
-                  placeholder="Estrategia, observaciones…"
-                  className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-primary"
+                <RoundFieldLabel>Contra quién jugaste</RoundFieldLabel>
+                <SimpleSelect
+                  value={round.opponent_player_id ?? ""}
+                  onChange={(v) => onChange({ opponent_player_id: v || null })}
+                  placeholder="Selecciona oponente…"
+                  options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
                 />
               </div>
 
-              {/* Save button — full width */}
-              <button
-                type="button"
-                onClick={async () => {
-                  await onSave();
-                  setOpen(false);
-                }}
-                disabled={saving}
-                className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50 transition hover:brightness-110"
-              >
-                {saving ? "Guardando…" : "Guardar Ronda"}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+              <div>
+                <RoundFieldLabel>Leader del oponente</RoundFieldLabel>
+                <LeaderSearchSelect
+                  gameId={gameId}
+                  value={round.opponent_leader ?? null}
+                  onChange={(d) => {
+                    onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
+                  }}
+                  placeholder="Selecciona leader…"
+                />
+              </div>
+
+              <RoundOutcomeFields round={round} onChange={onChange} />
+            </>
+          )}
+
+          <RoundNotesField value={round.notes} onChange={(notes) => onChange({ notes })} />
+          <RoundSaveButton
+            saving={saving}
+            onClick={async () => {
+              await onSave();
+              close();
+            }}
+          />
+        </>
+      )}
+    </RoundCardFrame>
   );
 }
 
@@ -902,7 +483,7 @@ export function PerformanceTrackerModal({
               </div>
               <div className="min-w-0 flex-1 pb-1">
                 <p className="text-lg font-bold text-white truncate">
-                  {myLeader ? cleanDisplayName(myLeader.base_name) : "Sin leader"}
+                  {myLeader ? cleanLeaderName(myLeader.base_name) : "Sin leader"}
                 </p>
                 <p className="text-xs text-gray-500">Tu leader en este torneo</p>
               </div>

@@ -31,6 +31,7 @@ import {
 import { getMySessionGames } from "@/lib/nexus-player.functions";
 import { cancelSlotRsvp, getMySlotsToLog } from "@/lib/nexus-rsvp.functions";
 import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
+import { cleanLeaderName } from "@/components/tournament-tracker/round-ui";
 import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { sessionsPageQuery } from "@/lib/sessions-queries";
@@ -42,10 +43,6 @@ type DeckIdentifier = {
   card_image: string | null;
   card_set_id: string | null;
 };
-
-function cleanName(name: string): string {
-  return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
-}
 
 export const Route = createFileRoute("/sessions/")({
   head: () => ({ meta: [{ title: "Mis Partidas — Nexus" }] }),
@@ -193,7 +190,7 @@ function SessionCard({
           {session.leader && (
             <>
               <span className="text-gray-700">·</span>
-              <span className="truncate text-gray-400">{cleanName(session.leader.base_name)}</span>
+              <span className="truncate text-gray-400">{cleanLeaderName(session.leader.base_name)}</span>
             </>
           )}
         </div>
@@ -748,7 +745,7 @@ function LeaderSelect({
       >
         <span className="truncate">
           {value ? (
-            cleanName(value.base_name)
+            cleanLeaderName(value.base_name)
           ) : (
             <span className="text-gray-500">Selecciona tu leader…</span>
           )}
@@ -789,7 +786,7 @@ function LeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate">{cleanName(opt.base_name)}</span>
+                  <span className="flex-1 truncate">{cleanLeaderName(opt.base_name)}</span>
                   <ColorDots colors={opt.colors} />
                 </button>
               ))
