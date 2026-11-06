@@ -1,12 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
-import { getNexusAdmin, failDb } from "./nexus-admin.server";
+import { getNexusAdmin, failDb, removeTournamentFile } from "./nexus-admin.server";
+import { tournamentFilePath, tournamentIdOfFile } from "./tournament-file";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import { resolvePlayer, ONE_PIECE_SLUG } from "./player-identity.server";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
 import { logAction, tournamentAuditLabel } from "./nexus-admin-core";
+
+const csvPathSchema = z.string().refine((v) => tournamentFilePath(v) === v, "Archivo inválido");
 
 function computeQualifying(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -135,7 +138,7 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
     const { admin, player } = context;
     const { data: t, error: te } = await admin
       .from("tournaments")
-      .select("id, store_id, status")
+      .select("id, store_id, status, csv_url")
       .eq("id", data.tournament_id)
       .maybeSingle();
     if (te) failDb(te);
@@ -148,18 +151,18 @@ export const deleteDraftTournament = createServerFn({ method: "POST" })
     }
     const { error } = await admin.from("tournaments").delete().eq("id", data.tournament_id);
     if (error) failDb(error);
+    await removeTournamentFile(admin, t.id, t.csv_url);
     return { ok: true };
   });
 
 // ---------- Subir Torneo (DRAFT vacío, legacy) ----------
 export const createTournament = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
-  .inputValidator((d: { game_id: string; tournament_date: string; csv_url?: string | null }) =>
+  .inputValidator((d: { game_id: string; tournament_date: string }) =>
     z
       .object({
         game_id: z.string().uuid(),
         tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        csv_url: z.string().url().max(2048).optional().nullable(),
       })
       .parse(d),
   )
@@ -177,7 +180,6 @@ export const createTournament = createServerFn({ method: "POST" })
         tournament_date: data.tournament_date,
         ...q,
         status: "DRAFT",
-        csv_url: data.csv_url ?? null,
         uploaded_by: player.id,
       } as any)
       .select("id")
@@ -218,7 +220,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
           tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
           rows: z.array(ResultRowSchema).min(1).max(2000),
           tournament_id: z.string().uuid().optional(),
-          csv_url: z.string().url().max(2048).nullable().optional(),
+          csv_url: csvPathSchema.nullable().optional(),
           // null = Liga Semestral / Circuito Nacional (default), uuid = liga interna
           league_id: z.string().uuid().nullable(),
         })
@@ -232,6 +234,9 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       player.home_store_id !== data.store_id
     ) {
       throw new Error("No puedes subir un torneo para esta tienda");
+    }
+    if (data.csv_url && tournamentIdOfFile(data.csv_url) !== data.tournament_id?.toLowerCase()) {
+      throw new Error("Archivo inválido");
     }
 
     // Validar que el manager tiene autoridad sobre este TCG
@@ -352,6 +357,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     const cleanup = async (msg: string): Promise<never> => {
       await admin.from("tournament_results").delete().eq("tournament_id", tournamentId);
       await admin.from("tournaments").delete().eq("id", tournamentId);
+      await removeTournamentFile(admin, tournamentId, data.csv_url);
       throw new Error(msg);
     };
 

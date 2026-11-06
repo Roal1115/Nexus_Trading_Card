@@ -2,6 +2,7 @@
 // Uses the service role key (NEVER ship to client).
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
+import { tournamentFilePath, tournamentIdOfFile } from "./tournament-file";
 
 // Producción por default; NEXUS_URL (o VITE_NEXUS_URL) apunta a un Branch.
 const NEXUS_URL =
@@ -47,6 +48,19 @@ export async function clearOtherStoreOrganizers(
     .eq("home_store_id", storeId)
     .eq("role", "organizer")
     .neq("id", keepPlayerId);
+}
+
+// Sin esto el archivo queda en el bucket, con sus datos personales, aunque el torneo ya no exista.
+export async function removeTournamentFile(
+  admin: ReturnType<typeof getNexusAdmin>,
+  tournamentId: string,
+  stored: string | null | undefined,
+) {
+  const path = tournamentFilePath(stored);
+  // Solo el archivo de este torneo: csv_url nunca debe poder borrar el de otro.
+  if (!path || tournamentIdOfFile(path) !== tournamentId.toLowerCase()) return;
+  const { error } = await admin.storage.from("tournament-files").remove([path]);
+  if (error) console.error("tournament file cleanup:", path, error.message);
 }
 
 export function getNexusAdmin() {
