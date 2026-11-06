@@ -1,6 +1,5 @@
-// Meta público de México: win rates y matchups por líder, combinando rondas
-// de torneos oficiales publicados + Sessions personales no vinculadas a torneo
-// (las vinculadas ya viven como tournament_round_results — evita doble conteo).
+// Meta público de México: win rates y matchups por líder, solo con rondas de
+// torneos oficiales publicados (las Sessions vinculadas ya viven ahí).
 // Endpoints públicos: solo exponen agregados anónimos, nunca rondas crudas.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -30,10 +29,8 @@ type Round = {
 // límite de headers de undici (16KB, ver fix en getMyCasualStats /
 // getStandaloneSessions) — se trocea antes de mandarla.
 const ID_BATCH_SIZE = 150;
-async function fetchRoundsBatched(
+async function fetchTournamentRounds(
   admin: ReturnType<typeof getNexusAdmin>,
-  table: "tournament_round_results" | "standalone_round_results",
-  column: "tournament_id" | "session_id",
   ids: string[],
 ): Promise<Round[]> {
   const batches: string[][] = [];
@@ -42,9 +39,9 @@ async function fetchRoundsBatched(
   const results = await Promise.all(
     batches.map((batch) =>
       admin
-        .from(table)
+        .from("tournament_round_results")
         .select("player_leader_id, opponent_leader_id, won_match, turn_order")
-        .in(column, batch)
+        .in("tournament_id", batch)
         .eq("is_bye", false)
         .not("won_match", "is", null),
     ),
@@ -69,25 +66,10 @@ async function fetchMetaRounds(
   const { data: tournaments } = await tournamentQuery;
   const tournamentIds = (tournaments ?? []).map((t: any) => t.id);
 
-  // Rondas de Sessions personales SIN torneo vinculado
-  let sessionQuery = admin
-    .from("standalone_sessions")
-    .select(data.zone ? "id, stores!inner(zone)" : "id")
-    .eq("game_id", data.game_id)
-    .is("tournament_id", null);
-  if (data.date_from) sessionQuery = sessionQuery.gte("session_date", data.date_from);
-  if (data.date_to) sessionQuery = sessionQuery.lte("session_date", data.date_to);
-  if (data.store_id) sessionQuery = sessionQuery.eq("store_id", data.store_id);
-  if (data.zone) sessionQuery = sessionQuery.eq("stores.zone", data.zone);
-  const { data: sessions } = await sessionQuery;
-  const sessionIds = (sessions ?? []).map((s: any) => s.id);
-
-  const [tournamentRounds, sessionRounds] = await Promise.all([
-    fetchRoundsBatched(admin, "tournament_round_results", "tournament_id", tournamentIds),
-    fetchRoundsBatched(admin, "standalone_round_results", "session_id", sessionIds),
-  ]);
-
-  return { rounds: [...tournamentRounds, ...sessionRounds], tournamentIds };
+  // Solo torneos oficiales: esta función es pública, y las partidas casuales son
+  // personales y sin verificar. Las vinculadas ya entran como rondas del torneo.
+  const rounds = await fetchTournamentRounds(admin, tournamentIds);
+  return { rounds, tournamentIds };
 }
 
 async function fetchInBatches<T>(
