@@ -67,6 +67,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { StoreInvitesPanel } from "@/components/stores/StoreInvitesPanel";
+
 export const Route = createFileRoute("/admin/stores")({
   head: () => ({ meta: [{ title: "Tiendas y Staff — Nexus" }] }),
   component: AdminStoresPage,
@@ -259,6 +261,8 @@ function AdminStoresPage() {
           Administra las tiendas del circuito y el staff asignado.
         </p>
       </header>
+
+      <StoreInvitesPanel onApproved={refresh} />
 
       {/* Tabs */}
       <div className="flex border-b border-white/10">

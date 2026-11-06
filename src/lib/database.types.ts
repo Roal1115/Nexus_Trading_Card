@@ -1719,6 +1719,112 @@ export type Database = {
           },
         ]
       }
+      store_signup_invites: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          game_id: string
+          id: string
+          revoked_at: string | null
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at: string
+          game_id: string
+          id?: string
+          revoked_at?: string | null
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          game_id?: string
+          id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_signup_invites_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_signup_requests: {
+        Row: {
+          city: string
+          created_at: string
+          email: string
+          game_id: string
+          id: string
+          invite_id: string
+          phone: string
+          player_id: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          state: string
+          status: string
+          store_id: string | null
+          store_name: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          email: string
+          game_id: string
+          id?: string
+          invite_id: string
+          phone: string
+          player_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state: string
+          status?: string
+          store_id?: string | null
+          store_name: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          email?: string
+          game_id?: string
+          id?: string
+          invite_id?: string
+          phone?: string
+          player_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string
+          status?: string
+          store_id?: string | null
+          store_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_signup_requests_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_schedules: {
         Row: {
           created_at: string

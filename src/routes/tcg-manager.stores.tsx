@@ -25,6 +25,7 @@ import {
 } from "@/lib/nexus-manager.functions";
 import { StoreSchedulesDialog } from "@/components/admin/StoreSchedulesDialog";
 import { StoreEditModal } from "@/components/stores/StoreEditModal";
+import { StoreInvitesPanel } from "@/components/stores/StoreInvitesPanel";
 import { safeHref } from "@/lib/utils";
 
 export const Route = createFileRoute("/tcg-manager/stores")({
@@ -119,6 +120,8 @@ function ManagerStoresPage() {
           como TCG Manager aquí mantienes al día sus datos de contacto y los horarios de tus TCGs.
         </p>
       </header>
+
+      <StoreInvitesPanel onApproved={refresh} />
 
       <div className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
         <div className="relative min-w-[220px] flex-1">

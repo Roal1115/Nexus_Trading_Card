@@ -180,12 +180,19 @@ export const getManagerResponsibleStores = createServerFn({ method: "POST" })
     const gameIds = await getManagerGameIds(admin, player);
     if (gameIds.length === 0) return { stores: [], games: [] };
 
-    const { data: schedules } = await admin
-      .from("store_schedules")
-      .select("store_id, game_id")
-      .in("game_id", gameIds);
+    const [{ data: scheduled }, { data: invited }] = await Promise.all([
+      admin.from("store_schedules").select("store_id, game_id").in("game_id", gameIds),
+      // Una tienda recién aprobada aún no tiene horario: sin esto el Manager no la vería.
+      admin
+        .from("store_signup_requests")
+        .select("store_id, game_id")
+        .in("game_id", gameIds)
+        .eq("status", "approved")
+        .not("store_id", "is", null),
+    ]);
+    const schedules = [...(scheduled ?? []), ...(invited ?? [])];
 
-    const storeIds = Array.from(new Set((schedules ?? []).map((s: any) => s.store_id)));
+    const storeIds = Array.from(new Set(schedules.map((s: any) => s.store_id)));
     if (storeIds.length === 0) return { stores: [], games: [] };
 
     const { data: stores, error } = await admin
@@ -200,7 +207,7 @@ export const getManagerResponsibleStores = createServerFn({ method: "POST" })
     const { data: games } = await admin.from("games").select("id, name").in("id", gameIds);
 
     const storeGamesMap = new Map<string, string[]>();
-    (schedules ?? []).forEach((s: any) => {
+    schedules.forEach((s: any) => {
       const arr = storeGamesMap.get(s.store_id) ?? [];
       if (!arr.includes(s.game_id)) arr.push(s.game_id);
       storeGamesMap.set(s.store_id, arr);

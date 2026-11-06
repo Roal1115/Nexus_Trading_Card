@@ -47,6 +47,7 @@ import { Route as OrganizerNewRouteImport } from './routes/organizer.new'
 import { Route as OrganizerPlayersRouteImport } from './routes/organizer.players'
 import { Route as OrganizerStoreRouteImport } from './routes/organizer.store'
 import { Route as PlayersPlayerTagRouteImport } from './routes/players.$playerTag'
+import { Route as RegistroTiendaTokenRouteImport } from './routes/registro-tienda.$token'
 import { Route as SessionsIndexRouteImport } from './routes/sessions.index'
 import { Route as SessionsSessionIdRouteImport } from './routes/sessions.$sessionId'
 import { Route as StoresIndexRouteImport } from './routes/stores.index'
@@ -268,6 +269,11 @@ const PlayersPlayerTagRoute = PlayersPlayerTagRouteImport.update({
   path: '/players/$playerTag',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegistroTiendaTokenRoute = RegistroTiendaTokenRouteImport.update({
+  id: '/registro-tienda/$token',
+  path: '/registro-tienda/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SessionsIndexRoute = SessionsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -465,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/organizer/players': typeof OrganizerPlayersRoute
   '/organizer/store': typeof OrganizerStoreRoute
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/registro-tienda/$token': typeof RegistroTiendaTokenRoute
   '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/stores/$slug': typeof StoresSlugRouteWithChildren
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
@@ -530,6 +537,7 @@ export interface FileRoutesByTo {
   '/organizer/players': typeof OrganizerPlayersRoute
   '/organizer/store': typeof OrganizerStoreRoute
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/registro-tienda/$token': typeof RegistroTiendaTokenRoute
   '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
@@ -600,6 +608,7 @@ export interface FileRoutesById {
   '/organizer/players': typeof OrganizerPlayersRoute
   '/organizer/store': typeof OrganizerStoreRoute
   '/players/$playerTag': typeof PlayersPlayerTagRoute
+  '/registro-tienda/$token': typeof RegistroTiendaTokenRoute
   '/sessions/$sessionId': typeof SessionsSessionIdRoute
   '/stores/$slug': typeof StoresSlugRouteWithChildren
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
@@ -672,6 +681,7 @@ export interface FileRouteTypes {
     | '/organizer/players'
     | '/organizer/store'
     | '/players/$playerTag'
+    | '/registro-tienda/$token'
     | '/sessions/$sessionId'
     | '/stores/$slug'
     | '/tcg-manager/analytics'
@@ -737,6 +747,7 @@ export interface FileRouteTypes {
     | '/organizer/players'
     | '/organizer/store'
     | '/players/$playerTag'
+    | '/registro-tienda/$token'
     | '/sessions/$sessionId'
     | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
@@ -806,6 +817,7 @@ export interface FileRouteTypes {
     | '/organizer/players'
     | '/organizer/store'
     | '/players/$playerTag'
+    | '/registro-tienda/$token'
     | '/sessions/$sessionId'
     | '/stores/$slug'
     | '/tcg-manager/analytics'
@@ -858,6 +870,7 @@ export interface RootRouteChildren {
   TcgManagerRoute: typeof TcgManagerRouteWithChildren
   DocsFeaturesRoute: typeof DocsFeaturesRoute
   PlayersPlayerTagRoute: typeof PlayersPlayerTagRoute
+  RegistroTiendaTokenRoute: typeof RegistroTiendaTokenRoute
   TournamentsIdRoute: typeof TournamentsIdRoute
   ApiCronPublishApprovedRoute: typeof ApiCronPublishApprovedRoute
   PlayersPlayerTagAchievementsRoute: typeof PlayersPlayerTagAchievementsRoute
@@ -1130,6 +1143,13 @@ declare module '@tanstack/react-router' {
       path: '/players/$playerTag'
       fullPath: '/players/$playerTag'
       preLoaderRoute: typeof PlayersPlayerTagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registro-tienda/$token': {
+      id: '/registro-tienda/$token'
+      path: '/registro-tienda/$token'
+      fullPath: '/registro-tienda/$token'
+      preLoaderRoute: typeof RegistroTiendaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sessions/': {
@@ -1514,6 +1534,7 @@ const rootRouteChildren: RootRouteChildren = {
   TcgManagerRoute: TcgManagerRouteWithChildren,
   DocsFeaturesRoute: DocsFeaturesRoute,
   PlayersPlayerTagRoute: PlayersPlayerTagRoute,
+  RegistroTiendaTokenRoute: RegistroTiendaTokenRoute,
   TournamentsIdRoute: TournamentsIdRoute,
   ApiCronPublishApprovedRoute: ApiCronPublishApprovedRoute,
   PlayersPlayerTagAchievementsRoute: PlayersPlayerTagAchievementsRoute,

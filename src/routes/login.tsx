@@ -25,6 +25,7 @@ function translateAuthError(msg: string): string {
   if (m.includes("user not found") || m.includes("no user"))
     return "No encontramos una cuenta con ese correo";
   if (m.includes("email not confirmed")) return "Debes verificar tu correo antes de entrar";
+  if (m.includes("banned")) return "Tu cuenta aún no está activa. Si registraste una tienda, sigue en revisión.";
   if (m.includes("invalid email")) return "Ingresa un correo electrónico válido";
   if (m.includes("already registered") || m.includes("user already"))
     return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
