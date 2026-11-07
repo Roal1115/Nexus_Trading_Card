@@ -3,6 +3,7 @@
 // y los scripts de prueba lo usen fuera de Vite. nexus-admin-shared.ts lo reexporta.
 import { failDb, type getNexusAdmin } from "./nexus-admin.server";
 import type { Json } from "./database.types";
+import { notifyStaff } from "./staff-alerts.server";
 
 // ---------- Audit log helper ----------
 export type AuditActor = { id: string | null; role: string; geek_tag: string };
@@ -31,6 +32,7 @@ export async function logAction(
     metadata: metadata ?? null,
   });
   if (error) console.error("audit log error:", action, target_id, error.message);
+  await notifyStaff(action, player.geek_tag, target_label, metadata);
 }
 
 /** Etiqueta legible para auditoría: "TCG — Tienda — fecha". */

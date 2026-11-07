@@ -409,5 +409,13 @@ export const submitStoreSignup = createServerFn({ method: "POST" })
       throw e;
     }
 
+    await logAction(
+      admin,
+      SYSTEM_ACTOR,
+      "STORE_SIGNUP_SUBMITTED",
+      "store_invite",
+      invite.id,
+      `${data.store_name} — ${data.city}`,
+    );
     return { ok: true as const };
   });

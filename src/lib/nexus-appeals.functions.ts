@@ -2,6 +2,7 @@ import { failDb } from "./nexus-admin.server";
 import type { TablesUpdate } from "./database.types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { logAction, tournamentAuditLabel } from "./nexus-admin-core";
 import { requireNexusOrganizer, requireNexusUser } from "./nexus-auth.middleware";
 
 const turnOrderSchema = z.enum(["first", "second"]).nullable().optional();
@@ -100,6 +101,16 @@ export const createAppeal = createServerFn({ method: "POST" })
       .update({ status: "under_appeal" })
       .eq("id", round.id);
     if (updateError) failDb(updateError);
+
+    await logAction(
+      admin,
+      player,
+      "APPEAL_CREATED",
+      "tournament",
+      round.tournament_id,
+      await tournamentAuditLabel(admin, round.tournament_id),
+      { round_number: round.round_number },
+    );
 
     return { success: true };
   });
