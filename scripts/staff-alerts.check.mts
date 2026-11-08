@@ -17,6 +17,11 @@ assert.ok(evil?.includes("\\[Paga aquí\\]\\(http://x.y\\)"));
 assert.ok(!evil?.split("\n")[1].includes("\n"));
 assert.ok((staffAlertText("APPEAL_CREATED", "Ana", "x".repeat(900))?.length ?? 0) < 300);
 
+// Zona de la tienda nueva y campos que cambió su dueño.
+assert.ok(staffAlertText("STORE_SIGNUP_SUBMITTED", "Sistema", "T", { zone: "Zona X" })?.includes("Zona: Zona X"));
+assert.ok(staffAlertText("STORE_SIGNUP_SUBMITTED", "Sistema", "T", { zone: null })?.includes("no sabe"));
+assert.ok(staffAlertText("STORE_UPDATED_BY_OWNER", "Ana", "T", { fields: ["Horario", "Teléfono"] })?.includes("Cambió: Horario, Teléfono"));
+
 // Resumen de la publicación, con y sin fallas.
 const run = (m: unknown) => staffAlertText("SCHEDULED_PUBLICATION_RUN_FINISHED", "Sistema", "P", m);
 assert.ok(run({ published: [1, 2], skipped: [] })?.includes("Publicados: 2 · Omitidos: 0"));

@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BlockSelect } from "@/components/ui/block-select";
+import { listZones } from "@/lib/nexus-zones.functions";
 import {
   PLAYER_STATUS_COLORS,
   PLAYER_STATUS_LABELS,
@@ -10,14 +11,7 @@ import {
   type PlayerStatus,
 } from "@/lib/player-status";
 
-import {
-  Users,
-  Store,
-  MapPin,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-} from "lucide-react";
+import { Users, Store, MapPin, TrendingUp, TrendingDown, Activity } from "lucide-react";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 import {
   AreaChart,
@@ -42,8 +36,6 @@ export const Route = createFileRoute("/tcg-manager/analytics")({
   head: () => ({ meta: [{ title: "Estadísticas — TCG Manager" }] }),
   component: ManagerAnalyticsPage,
 });
-
-const ZONES = ["Zona Monterrey", "Zona Guadalajara", "Zona Centro", "Zona Extendida"];
 
 type Game = { id: string; name: string; slug: string };
 
@@ -149,6 +141,14 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
   const [zone, setZone] = useState("");
+  const fetchZones = useServerFn(listZones);
+  const [zones, setZones] = useState<string[]>([]);
+  useEffect(() => {
+    fetchZones()
+      .then((res) => setZones(res.zones.map((z) => z.name)))
+      .catch(() => setZones([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [storeId, setStoreId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -190,7 +190,7 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
               setStoreId("");
             }}
             placeholder="Todas las zonas"
-            options={ZONES.map((z) => ({ value: z, label: z }))}
+            options={zones.map((z) => ({ value: z, label: z }))}
           />
         </div>
         {overview && overview.store_ranking.length > 0 && (

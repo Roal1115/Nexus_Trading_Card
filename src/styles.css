@@ -355,6 +355,12 @@
   outline-offset: 2px;
 }
 
+/* El buscador de los listados va pegado al borde del popover: el contorno de arriba
+   se salía de su caja. Va aquí, sin capa, porque desde una utilidad no le ganaría. */
+[cmdk-input]:focus-visible {
+  outline: none;
+}
+
 /* Tablas que debajo de lg se apilan como tarjetas: cada <td data-label="…"> muestra
    el nombre de su columna. Sin data-label la celda es de acciones. */
 @media (max-width: 1023.98px) {

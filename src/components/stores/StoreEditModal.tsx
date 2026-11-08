@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { LocationSelects, OpeningHoursField } from "@/components/stores/StoreFormFields";
 import { updateStoreData } from "@/lib/nexus-manager.functions";
+import { listZones } from "@/lib/nexus-zones.functions";
 
 type StoreLike = {
   id: string;
@@ -18,16 +20,15 @@ type StoreLike = {
   website?: string | null;
   twitter?: string | null;
   twitch?: string | null;
+  zone?: string | null;
+  subzone?: string | null;
 };
 
 const FIELDS: { key: keyof Omit<StoreLike, "id" | "description">; label: string }[] = [
   { key: "name", label: "Nombre *" },
-  { key: "city", label: "Ciudad" },
-  { key: "state", label: "Estado" },
   { key: "address", label: "Dirección" },
   { key: "phone", label: "Teléfono" },
   { key: "google_maps_url", label: "Google Maps URL" },
-  { key: "opening_hours", label: "Horario" },
   { key: "instagram", label: "Instagram (@usuario)" },
   { key: "website", label: "Sitio web" },
   { key: "twitter", label: "X / Twitter (@usuario)" },
@@ -57,7 +58,19 @@ export function StoreEditModal({
     website: store.website ?? "",
     twitter: store.twitter ?? "",
     twitch: store.twitch ?? "",
+    zone: store.zone ?? "",
+    subzone: store.subzone ?? "",
   });
+  const fetchZones = useServerFn(listZones);
+  const [zones, setZones] = useState<{ name: string; subzones: { name: string }[] }[]>([]);
+  const [hoursValid, setHoursValid] = useState(true);
+  useEffect(() => {
+    fetchZones()
+      .then((res) => setZones(res.zones))
+      .catch(() => toast.error("No se pudieron cargar las zonas"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const subzoneOptions = zones.find((z) => z.name === form.zone)?.subzones ?? [];
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -103,20 +116,64 @@ export function StoreEditModal({
                 <label className="text-xs text-gray-400">{label}</label>
                 <input
                   value={(form as any)[key] ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, [key]: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
                 />
               </div>
             ))}
+            <LocationSelects
+              state={form.state}
+              city={form.city}
+              onChange={(next) => setForm((f) => ({ ...f, ...next }))}
+            />
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs text-gray-400">Zona</label>
+              <select
+                aria-label="Zona"
+                value={form.zone}
+                onChange={(e) => setForm((f) => ({ ...f, zone: e.target.value, subzone: "" }))}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
+              >
+                {zones.map((z) => (
+                  <option key={z.name} value={z.name}>
+                    {z.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {subzoneOptions.length > 0 && (
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-gray-400">Subzona</label>
+                <select
+                  aria-label="Subzona"
+                  value={form.subzone}
+                  onChange={(e) => setForm((f) => ({ ...f, subzone: e.target.value }))}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
+                >
+                  <option value="">Sin subzona</option>
+                  {subzoneOptions.map((s) => (
+                    <option key={s.name} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="space-y-1 sm:col-span-2">
+              <span className="text-xs text-gray-400">Horario</span>
+              <OpeningHoursField
+                value={form.opening_hours}
+                onChange={(opening_hours, valid) => {
+                  setForm((f) => ({ ...f, opening_hours }));
+                  setHoursValid(valid);
+                }}
+              />
+            </div>
             <div className="space-y-1 sm:col-span-2">
               <label className="text-xs text-gray-400">Descripción</label>
               <textarea
                 value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={3}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary resize-none"
               />
@@ -132,7 +189,7 @@ export function StoreEditModal({
             </button>
             <button
               onClick={() => setConfirmOpen(true)}
-              disabled={!form.name.trim()}
+              disabled={!form.name.trim() || !hoursValid}
               className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition disabled:opacity-50"
             >
               Guardar cambios

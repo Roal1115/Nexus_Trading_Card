@@ -5,7 +5,22 @@ import { failDb } from "./nexus-admin.server";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
-import { httpUrlSchema } from "./nexus-admin-shared";
+import { httpUrlSchema, logAction } from "./nexus-admin-shared";
+
+const STORE_FIELD_LABELS = {
+  name: "Nombre",
+  city: "Ciudad",
+  state: "Estado",
+  address: "Dirección",
+  phone: "Teléfono",
+  google_maps_url: "Google Maps",
+  description: "Descripción",
+  opening_hours: "Horario",
+  instagram: "Instagram",
+  website: "Página web",
+  twitter: "X / Twitter",
+  twitch: "Twitch",
+} as const;
 
 export const getOrganizerOverview = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
@@ -111,6 +126,17 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
       throw new Error("Solo puedes editar tu tienda asignada");
     }
     const { store_id, ...fields } = data;
+    const { data: before, error: readError } = await admin
+      .from("stores")
+      .select(`slug, ${Object.keys(STORE_FIELD_LABELS).join(", ")}`)
+      .eq("id", store_id)
+      .single();
+    if (readError) failDb(readError);
+    const previous = before as unknown as Record<string, string | null> | null;
+    const changed = (Object.keys(STORE_FIELD_LABELS) as (keyof typeof STORE_FIELD_LABELS)[]).filter(
+      (key) => (fields[key] ?? "") !== (previous?.[key] ?? ""),
+    );
+
     const { error } = await admin
       .from("stores")
       .update({
@@ -129,6 +155,33 @@ export const updateStoreInfo = createServerFn({ method: "POST" })
       })
       .eq("id", store_id);
     if (error) failDb(error);
+
+    // Solo el dueño avisa: lo que edita Admin o Manager ya lo hizo el staff.
+    if (player.role === "organizer" && changed.length > 0) {
+      const labels = changed.map((key) => STORE_FIELD_LABELS[key]);
+      await logAction(admin, player, "STORE_UPDATED_BY_OWNER", "store", store_id, fields.name, {
+        fields: labels,
+      });
+      // ponytail: avisa a todo Manager; filtrar por TCG cuando haya más de un juego activo.
+      const { data: staff, error: staffError } = await admin
+        .from("players")
+        .select("id")
+        .in("role", ["admin", "tcg_manager"]);
+      // Un aviso fallido no debe deshacer un guardado que ya ocurrió.
+      if (staffError) console.error("store change notify:", staffError.message);
+      else if (staff?.length) {
+        const { error: notifyError } = await admin.from("notifications").insert(
+          staff.map((s) => ({
+            player_id: s.id,
+            type: "store_changed",
+            title: `${fields.name} actualizó sus datos`,
+            body: `Cambió: ${labels.join(", ")}.`,
+            url: `/stores/${previous?.slug}`,
+          })),
+        );
+        if (notifyError) console.error("store change notify:", notifyError.message);
+      }
+    }
     return { ok: true };
   });
 

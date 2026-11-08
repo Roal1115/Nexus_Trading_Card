@@ -32,8 +32,6 @@ export const Route = createFileRoute("/stores/")({
   component: TiendasPage,
 });
 
-const ZONES = ["Zona Monterrey", "Zona Guadalajara", "Zona Centro", "Zona Extendida"];
-
 type StoreCard = {
   id: string;
   slug: string;
@@ -302,7 +300,7 @@ function TiendasPage() {
         <h2 className="text-xl font-bold uppercase tracking-wider text-white">Todas las tiendas</h2>
       )}
 
-      {ZONES.map((zone) => {
+      {[...new Set(otherStores.map((s) => s.zone))].sort().map((zone) => {
         const zoneStores = otherStores.filter((s) => s.zone === zone);
         if (zoneStores.length === 0) return null;
         return (

@@ -18,7 +18,11 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
-import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
+import {
+  SkeletonLine,
+  SkeletonBlock,
+  TournamentRowSkeleton,
+} from "@/components/ui/skeleton-loader";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   listStoresWithOrganizers,
@@ -67,7 +71,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { StoreInvitesPanel } from "@/components/stores/StoreInvitesPanel";
+import { StoreAdminTabs } from "@/components/stores/StoreInvitesPanel";
+import { LocationSelects, OpeningHoursField } from "@/components/stores/StoreFormFields";
+import { listZones } from "@/lib/nexus-zones.functions";
 
 export const Route = createFileRoute("/admin/stores")({
   head: () => ({ meta: [{ title: "Tiendas y Staff — Nexus" }] }),
@@ -89,6 +95,8 @@ type Store = {
   website: string | null;
   twitter: string | null;
   twitch: string | null;
+  zone: string | null;
+  subzone: string | null;
 };
 type Organizer = {
   id: string;
@@ -98,11 +106,10 @@ type Organizer = {
   home_store_id: string | null;
 };
 
-
 function AdminStoresPage() {
   const { player } = useNexusRole();
   const email = player?.email ?? null;
-  const [activeTab, setActiveTab] = useState<"stores" | "staff">("stores");
+  const [activeTab, setActiveTab] = useState("stores");
   const fetchAll = useServerFn(listStoresWithOrganizers);
   const create = useServerFn(createStore);
   const toggleActive = useServerFn(setStoreActive);
@@ -114,14 +121,36 @@ function AdminStoresPage() {
   const [loading, setLoading] = useState(true);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", city: "", state: "", address: "", phone: "" });
-
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    city: "",
+    state: "",
+    address: "",
+    phone: "",
+    zone: "",
+  });
+  const fetchZones = useServerFn(listZones);
+  const [zones, setZones] = useState<string[]>([]);
+  const [subzones, setSubzones] = useState<Record<string, string[]>>({});
+  useEffect(() => {
+    fetchZones()
+      .then((res) => {
+        setZones(res.zones.map((z) => z.name));
+        setSubzones(
+          Object.fromEntries(res.zones.map((z) => [z.name, z.subzones.map((s) => s.name)])),
+        );
+      })
+      .catch(() => toast.error("No se pudieron cargar las zonas"));
+    // Al cambiar de pestaña: las zonas y subzonas se administran en otra.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // Search & filters
   const [searchRaw, setSearchRaw] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [orgFilter, setOrgFilter] = useState<"all" | "with" | "without">("all");
+  const [zoneFilter, setZoneFilter] = useState("all");
 
   // Action modals
   const [editStore, setEditStore] = useState<Store | null>(null);
@@ -184,6 +213,7 @@ function AdminStoresPage() {
     return stores.filter((s) => {
       if (statusFilter === "active" && !s.is_active) return false;
       if (statusFilter === "inactive" && s.is_active) return false;
+      if (zoneFilter !== "all" && s.zone !== zoneFilter) return false;
       const hasOrg = (orgsByStore[s.id] ?? []).length > 0;
       if (orgFilter === "with" && !hasOrg) return false;
       if (orgFilter === "without" && hasOrg) return false;
@@ -193,15 +223,25 @@ function AdminStoresPage() {
       }
       return true;
     });
-  }, [stores, statusFilter, orgFilter, search, orgsByStore]);
+  }, [stores, statusFilter, orgFilter, zoneFilter, search, orgsByStore]);
 
   const submitCreate = async () => {
     if (!createForm.name) return toast.error("El nombre es obligatorio");
+    if (!createForm.zone) return toast.error("La zona es obligatoria");
     try {
-      await create({ data: { name: createForm.name, city: createForm.city, state: createForm.state, address: createForm.address || undefined, phone: createForm.phone || undefined } });
+      await create({
+        data: {
+          name: createForm.name,
+          zone: createForm.zone,
+          city: createForm.city,
+          state: createForm.state,
+          address: createForm.address || undefined,
+          phone: createForm.phone || undefined,
+        },
+      });
       toast.success("Tienda creada");
       setCreateOpen(false);
-      setCreateForm({ name: "", city: "", state: "", address: "", phone: "" });
+      setCreateForm({ name: "", city: "", state: "", address: "", phone: "", zone: "" });
 
       await refresh();
     } catch (e) {
@@ -253,160 +293,168 @@ function AdminStoresPage() {
     <div className="space-y-6">
       {/* Header */}
       <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Red
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Red</p>
         <h1 className="text-3xl font-bold text-white">Tiendas y Staff</h1>
         <p className="text-sm text-gray-400">
           Administra las tiendas del circuito y el staff asignado.
         </p>
       </header>
 
-      <StoreInvitesPanel onApproved={refresh} />
-
-      {/* Tabs */}
-      <div className="flex border-b border-white/10">
-        <button
-          onClick={() => setActiveTab("stores")}
-          className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition ${
-            activeTab === "stores"
-              ? "border-primary text-white"
-              : "border-transparent text-gray-400 hover:text-white"
-          }`}
-        >
-          Tiendas
-        </button>
-        <button
-          onClick={() => setActiveTab("staff")}
-          className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition ${
-            activeTab === "staff"
-              ? "border-primary text-white"
-              : "border-transparent text-gray-400 hover:text-white"
-          }`}
-        >
-          Staff
-        </button>
-      </div>
+      <StoreAdminTabs
+        active={activeTab}
+        onChange={setActiveTab}
+        extraTabs={[{ id: "staff", label: "Staff" }]}
+        onApproved={refresh}
+      />
 
       {activeTab === "staff" && <StaffTab />}
 
-      {activeTab === "stores" && (<>
+      {activeTab === "stores" && (
+        <>
+          {/* Stats */}
+          <section className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+            <StatCard icon={<StoreIcon size={16} />} label="Total tiendas" value={stats.total} />
+            <StatCard icon={<CheckCircle2 size={16} />} label="Activas" value={stats.active} />
+            <StatCard
+              icon={<AlertTriangle size={16} />}
+              label="Sin organizador"
+              value={stats.withoutOrg}
+            />
+            <StatCard icon={<MapPin size={16} />} label="Ciudades" value={stats.cities} />
+          </section>
 
-
-      {/* Stats */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={<StoreIcon size={16} />} label="Total tiendas" value={stats.total} />
-        <StatCard icon={<CheckCircle2 size={16} />} label="Activas" value={stats.active} />
-        <StatCard icon={<AlertTriangle size={16} />} label="Sin organizador" value={stats.withoutOrg} />
-        <StatCard icon={<MapPin size={16} />} label="Ciudades" value={stats.cities} />
-      </section>
-
-      {/* Filters bar */}
-      <section className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
-        <div className="relative min-w-[220px] flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <Input
-            value={searchRaw}
-            onChange={(e) => setSearchRaw(e.target.value)}
-            placeholder="Buscar por nombre o ciudad..."
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="active">Activas</SelectItem>
-            <SelectItem value="inactive">Inactivas</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={orgFilter} onValueChange={(v) => setOrgFilter(v as typeof orgFilter)}>
-          <SelectTrigger className="w-[190px]">
-            <SelectValue placeholder="Organizador" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="with">Con organizador</SelectItem>
-            <SelectItem value="without">Sin organizador</SelectItem>
-          </SelectContent>
-        </Select>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus size={14} className="mr-1" /> Nueva tienda
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Crear tienda</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-400">Nombre</Label>
-                <Input
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-gray-400">Ciudad</Label>
-                  <Input
-                    value={createForm.city}
-                    onChange={(e) => setCreateForm({ ...createForm, city: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-gray-400">Estado</Label>
-                  <Input
-                    value={createForm.state}
-                    onChange={(e) => setCreateForm({ ...createForm, state: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-400">Dirección</Label>
-                <Input
-                  value={createForm.address}
-                  onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
-                  placeholder="Calle, número, colonia"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-400">Teléfono</Label>
-                <Input
-                  value={createForm.phone}
-                  onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                  placeholder="+52..."
-                />
-              </div>
+          {/* Filters bar */}
+          <section className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
+            <div className="relative min-w-[220px] flex-1">
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              />
+              <Input
+                value={searchRaw}
+                onChange={(e) => setSearchRaw(e.target.value)}
+                placeholder="Buscar por nombre o ciudad..."
+                className="pl-9"
+              />
             </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="active">Activas</SelectItem>
+                <SelectItem value="inactive">Inactivas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={orgFilter} onValueChange={(v) => setOrgFilter(v as typeof orgFilter)}>
+              <SelectTrigger className="w-[190px]">
+                <SelectValue placeholder="Organizador" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="with">Con organizador</SelectItem>
+                <SelectItem value="without">Sin organizador</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={zoneFilter} onValueChange={setZoneFilter}>
+              <SelectTrigger className="w-[190px]" aria-label="Filtrar por zona">
+                <SelectValue placeholder="Zona" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las zonas</SelectItem>
+                {zones.map((z) => (
+                  <SelectItem key={z} value={z}>
+                    {z}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus size={14} className="mr-1" /> Nueva tienda
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Crear tienda</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-400">Nombre</Label>
+                    <Input
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <LocationSelects
+                      state={createForm.state}
+                      city={createForm.city}
+                      onChange={(next) => setCreateForm({ ...createForm, ...next })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-400">Zona</Label>
+                    <select
+                      aria-label="Zona"
+                      value={createForm.zone}
+                      onChange={(e) => setCreateForm({ ...createForm, zone: e.target.value })}
+                      className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+                    >
+                      <option value="">Elige la zona</option>
+                      {zones.map((z) => (
+                        <option key={z} value={z}>
+                          {z}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-400">Dirección</Label>
+                    <Input
+                      value={createForm.address}
+                      onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
+                      placeholder="Calle, número, colonia"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-400">Teléfono</Label>
+                    <Input
+                      value={createForm.phone}
+                      onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                      placeholder="+52..."
+                    />
+                  </div>
+                </div>
 
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setCreateOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={submitCreate}>Crear</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </section>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setCreateOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={submitCreate}>Crear</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </section>
 
-      {/* Table (desktop) / Cards (mobile) */}
-      <section className="glass overflow-hidden rounded-2xl">
-        {filtered.length === 0 ? (
-          <div className="p-8 text-sm text-gray-400">
-            No hay tiendas que coincidan con los filtros.
-          </div>
-        ) : (
-          <>
-            {/* Desktop table */}
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-sm">
-                <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
-                  <tr>
+          {/* Table (desktop) / Cards (mobile) */}
+          <section className="glass overflow-hidden rounded-2xl">
+            {filtered.length === 0 ? (
+              <div className="p-8 text-sm text-gray-400">
+                No hay tiendas que coincidan con los filtros.
+              </div>
+            ) : (
+              <>
+                {/* Desktop table */}
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full text-sm">
+                    <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
+                      <tr>
                         <th scope="col" className="px-4 py-3">
                           Tienda
                         </th>
@@ -414,7 +462,7 @@ function AdminStoresPage() {
                           Ciudad
                         </th>
                         <th scope="col" className="px-4 py-3">
-                          Estado (MX)
+                          Zona
                         </th>
                         <th scope="col" className="px-4 py-3">
                           Organizador
@@ -425,59 +473,103 @@ function AdminStoresPage() {
                         <th scope="col" className="px-4 py-3 text-right">
                           Acciones
                         </th>
-                  </tr>
-                </thead>
-                <tbody>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((s) => {
+                        const orgs = orgsByStore[s.id] ?? [];
+                        return (
+                          <tr
+                            key={s.id}
+                            className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
+                          >
+                            <td className="px-4 py-3">
+                              <div className="font-bold text-white">{s.name}</div>
+                              {s.address && (
+                                <div className="text-xs text-gray-500">{s.address}</div>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-gray-300">
+                              {[s.city, s.state].filter(Boolean).join(", ") || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-300">
+                              {s.zone ? `${s.zone}${s.subzone ? ` · ${s.subzone}` : ""}` : "—"}
+                            </td>
+                            <td className="px-4 py-3">
+                              {orgs.length === 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge className="border-orange-400/40 bg-orange-500/20 text-orange-200">
+                                    Sin asignar
+                                  </Badge>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAssignStore(s);
+                                    }}
+                                    className="text-xs font-semibold text-primary hover:underline"
+                                  >
+                                    + Asignar
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {orgs.map((o) => (
+                                    <span
+                                      key={o.id}
+                                      className="flex items-center gap-1.5 text-sm text-gray-200"
+                                    >
+                                      {o.geek_tag}
+                                      <Badge variant="secondary" className="text-[10px] uppercase">
+                                        {o.role}
+                                      </Badge>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                              <Switch
+                                aria-label={`Activar ${s.name}`}
+                                checked={!!s.is_active}
+                                onCheckedChange={() => setToggleStore(s)}
+                              />
+                            </td>
+                            <td
+                              className="px-4 py-3 text-right"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <RowActions
+                                store={s}
+                                onEdit={() => setEditStore(s)}
+                                onAssign={() => setAssignStore(s)}
+                                onToggle={() => setToggleStore(s)}
+                                onSchedules={() => setSchedStore(s)}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="space-y-3 p-3 md:hidden">
                   {filtered.map((s) => {
                     const orgs = orgsByStore[s.id] ?? [];
                     return (
-                      <tr key={s.id} className="cursor-pointer border-t border-white/5 transition hover:bg-white/5">
-                        <td className="px-4 py-3">
-                          <div className="font-bold text-white">{s.name}</div>
-                          {s.address && <div className="text-xs text-gray-500">{s.address}</div>}
-
-                        </td>
-                        <td className="px-4 py-3 text-gray-300">
-                          {[s.city, s.state].filter(Boolean).join(", ") || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-gray-300">{s.state || "—"}</td>
-                        <td className="px-4 py-3">
-                          {orgs.length === 0 ? (
-                            <div className="flex items-center gap-2">
-                              <Badge className="border-orange-400/40 bg-orange-500/20 text-orange-200">
-                                Sin asignar
-                              </Badge>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAssignStore(s);
-                                }}
-                                className="text-xs font-semibold text-primary hover:underline"
-                              >
-                                + Asignar
-                              </button>
+                      <div
+                        key={s.id}
+                        className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-bold text-white">{s.name}</div>
+                            {s.address && <div className="text-xs text-gray-500">{s.address}</div>}
+                            <div className="mt-1 text-xs text-gray-400">
+                              {[s.city, s.state].filter(Boolean).join(", ") || "Sin ubicación"}
                             </div>
-                          ) : (
-                            <div className="flex flex-wrap items-center gap-2">
-                              {orgs.map((o) => (
-                                <span key={o.id} className="flex items-center gap-1.5 text-sm text-gray-200">
-                                  {o.geek_tag}
-                                  <Badge variant="secondary" className="text-[10px] uppercase">
-                                    {o.role}
-                                  </Badge>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                          <Switch
-                                aria-label={`Activar ${s.name}`}
-                            checked={!!s.is_active}
-                            onCheckedChange={() => setToggleStore(s)}
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          </div>
                           <RowActions
                             store={s}
                             onEdit={() => setEditStore(s)}
@@ -485,148 +577,113 @@ function AdminStoresPage() {
                             onToggle={() => setToggleStore(s)}
                             onSchedules={() => setSchedStore(s)}
                           />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile cards */}
-            <div className="space-y-3 p-3 md:hidden">
-              {filtered.map((s) => {
-                const orgs = orgsByStore[s.id] ?? [];
-                return (
-                  <div key={s.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-bold text-white">{s.name}</div>
-                        {s.address && <div className="text-xs text-gray-500">{s.address}</div>}
-                        <div className="mt-1 text-xs text-gray-400">
-                          {[s.city, s.state].filter(Boolean).join(", ") || "Sin ubicación"}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
+                          <div className="text-xs text-gray-400">
+                            {orgs.length === 0 ? (
+                              <Badge className="border-orange-400/40 bg-orange-500/20 text-orange-200">
+                                Sin organizador
+                              </Badge>
+                            ) : (
+                              orgs.map((o) => o.geek_tag).join(", ")
+                            )}
+                          </div>
+                          <Switch
+                            aria-label={`Activar ${s.name}`}
+                            checked={!!s.is_active}
+                            onCheckedChange={() => setToggleStore(s)}
+                          />
                         </div>
                       </div>
-                      <RowActions
-                        store={s}
-                        onEdit={() => setEditStore(s)}
-                        onAssign={() => setAssignStore(s)}
-                        onToggle={() => setToggleStore(s)}
-                        onSchedules={() => setSchedStore(s)}
-                      />
-                    </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
-                      <div className="text-xs text-gray-400">
-                        {orgs.length === 0 ? (
-                          <Badge className="border-orange-400/40 bg-orange-500/20 text-orange-200">
-                            Sin organizador
-                          </Badge>
-                        ) : (
-                          orgs.map((o) => o.geek_tag).join(", ")
-                        )}
-                      </div>
-                      <Switch
-                            aria-label={`Activar ${s.name}`}
-                        checked={!!s.is_active}
-                        onCheckedChange={() => setToggleStore(s)}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </section>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
 
-      {/* Edit modal */}
-      <EditStoreDialog
-        store={editStore}
-        onClose={() => setEditStore(null)}
-        onSubmit={async (payload) => {
-          try {
-            await updateStoreFn({ data: payload });
-            toast.success("Tienda actualizada correctamente");
-            setEditStore(null);
-            await refresh();
-          } catch (e) {
-            toast.error(String((e as Error).message ?? e));
-          }
-        }}
-      />
+          {/* Edit modal */}
+          <EditStoreDialog
+            zones={zones}
+            subzones={subzones}
+            store={editStore}
+            onClose={() => setEditStore(null)}
+            onSubmit={async (payload) => {
+              try {
+                await updateStoreFn({ data: payload });
+                toast.success("Tienda actualizada correctamente");
+                setEditStore(null);
+                await refresh();
+              } catch (e) {
+                toast.error(String((e as Error).message ?? e));
+              }
+            }}
+          />
 
-      {/* Assign organizer modal */}
-      <AssignOrganizerDialog
-        store={assignStore}
-        currentOrganizers={assignStore ? orgsByStore[assignStore.id] ?? [] : []}
-        candidates={unassignedOrganizers}
-        onClose={() => setAssignStore(null)}
-        onSubmit={async (player_id) => {
-          if (!assignStore) return;
-          try {
-            await assignFn({ data: { store_id: assignStore.id, player_id } });
-            toast.success("Organizador asignado correctamente");
-            setAssignStore(null);
-            await refresh();
-          } catch (e) {
-            toast.error(String((e as Error).message ?? e));
-          }
-        }}
-      />
+          {/* Assign organizer modal */}
+          <AssignOrganizerDialog
+            store={assignStore}
+            currentOrganizers={assignStore ? (orgsByStore[assignStore.id] ?? []) : []}
+            candidates={unassignedOrganizers}
+            onClose={() => setAssignStore(null)}
+            onSubmit={async (player_id) => {
+              if (!assignStore) return;
+              try {
+                await assignFn({ data: { store_id: assignStore.id, player_id } });
+                toast.success("Organizador asignado correctamente");
+                setAssignStore(null);
+                await refresh();
+              } catch (e) {
+                toast.error(String((e as Error).message ?? e));
+              }
+            }}
+          />
 
-      {/* Toggle active confirmation */}
-      <Dialog open={!!toggleStore} onOpenChange={(o) => !o && setToggleStore(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {toggleStore?.is_active ? "Desactivar tienda" : "Activar tienda"}
-            </DialogTitle>
-            <DialogDescription>
-              {toggleStore?.is_active
-                ? `¿Desactivar ${toggleStore?.name}? Los torneos existentes no se verán afectados.`
-                : `¿Activar ${toggleStore?.name}?`}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setToggleStore(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleToggleConfirm}>Confirmar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {/* Toggle active confirmation */}
+          <Dialog open={!!toggleStore} onOpenChange={(o) => !o && setToggleStore(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {toggleStore?.is_active ? "Desactivar tienda" : "Activar tienda"}
+                </DialogTitle>
+                <DialogDescription>
+                  {toggleStore?.is_active
+                    ? `¿Desactivar ${toggleStore?.name}? Los torneos existentes no se verán afectados.`
+                    : `¿Activar ${toggleStore?.name}?`}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setToggleStore(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleToggleConfirm}>Confirmar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-      {/* Store schedules modal */}
-      <StoreSchedulesDialog
-        store={schedStore ? { id: schedStore.id, name: schedStore.name } : null}
-        onClose={() => setSchedStore(null)}
-        fns={{
-          fetch: fetchSchedulesFn as any,
-          upsert: upsertScheduleFn as any,
-          remove: deleteScheduleFn as any,
-        }}
-      />
-      </>)}
+          {/* Store schedules modal */}
+          <StoreSchedulesDialog
+            store={schedStore ? { id: schedStore.id, name: schedStore.name } : null}
+            onClose={() => setSchedStore(null)}
+            fns={{
+              fetch: fetchSchedulesFn as any,
+              upsert: upsertScheduleFn as any,
+              remove: deleteScheduleFn as any,
+            }}
+          />
+        </>
+      )}
     </div>
-
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
-    <div className="glass rounded-2xl p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
-        {icon} {label}
+    <div className="glass flex items-center justify-between gap-2 rounded-xl px-4 py-2.5">
+      <div className="flex min-w-0 items-center gap-2 text-xs text-gray-400">
+        {icon} <span className="leading-tight">{label}</span>
       </div>
-      <div className="mt-2 text-2xl font-bold text-white">{value}</div>
+      <div className="text-lg font-bold text-white">{value}</div>
     </div>
   );
 }
@@ -687,6 +744,8 @@ function RowActions({
 type EditStorePayload = {
   store_id: string;
   name: string;
+  zone?: string;
+  subzone?: string | null;
   city: string;
   state: string;
   country: string;
@@ -701,17 +760,23 @@ type EditStorePayload = {
   twitch?: string;
 };
 
-
 function EditStoreDialog({
   store,
+  zones,
+  subzones,
   onClose,
   onSubmit,
 }: {
   store: Store | null;
+  zones: string[];
+  subzones: Record<string, string[]>;
   onClose: () => void;
   onSubmit: (data: EditStorePayload) => Promise<void>;
 }) {
+  const [hoursValid, setHoursValid] = useState(true);
   const [form, setForm] = useState({
+    zone: "",
+    subzone: "",
     name: "",
     city: "",
     state: "",
@@ -730,7 +795,10 @@ function EditStoreDialog({
 
   useEffect(() => {
     if (store) {
+      setHoursValid(true);
       setForm({
+        zone: store.zone ?? "",
+        subzone: store.subzone ?? "",
         name: store.name,
         city: store.city ?? "",
         state: store.state ?? "",
@@ -751,11 +819,15 @@ function EditStoreDialog({
   const submit = async () => {
     if (!store) return;
     if (!form.name.trim()) return toast.error("El nombre es obligatorio");
-    if (!form.city.trim()) return toast.error("La ciudad es obligatoria");
-    if (!form.state.trim()) return toast.error("El estado es obligatorio");
+    // Solo impide borrar un dato; una tienda vieja sin estado puede guardarse igual.
+    if (store.city && !form.city.trim()) return toast.error("La ciudad es obligatoria");
+    if (store.state && !form.state.trim()) return toast.error("El estado es obligatorio");
+    if (!hoursValid) return toast.error("Revisa el horario de la tienda");
     setSaving(true);
     try {
       await onSubmit({
+        zone: form.zone || undefined,
+        subzone: form.subzone || null,
         store_id: store.id,
         name: form.name.trim(),
         city: form.city.trim(),
@@ -776,8 +848,9 @@ function EditStoreDialog({
     }
   };
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm({ ...form, [k]: e.target.value });
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm({ ...form, [k]: e.target.value });
 
   return (
     <Dialog open={!!store} onOpenChange={(o) => !o && onClose()}>
@@ -796,22 +869,45 @@ function EditStoreDialog({
               <Input value={form.name} onChange={set("name")} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-400">Ciudad *</Label>
-                <Input value={form.city} onChange={set("city")} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-400">Estado *</Label>
-                <Input value={form.state} onChange={set("state")} />
-              </div>
+              <LocationSelects
+                state={form.state}
+                city={form.city}
+                onChange={(next) => setForm({ ...form, ...next })}
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">Zona del circuito</Label>
-              <p className="rounded-md border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-gray-300">
-                {(store as any)?.zone ?? "—"}
-              </p>
-              <p className="text-[11px] text-gray-500">Se calcula automáticamente según la ciudad. Para cambiarla, edita la ciudad.</p>
+              <select
+                aria-label="Zona del circuito"
+                value={form.zone}
+                onChange={(e) => setForm({ ...form, zone: e.target.value, subzone: "" })}
+                className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              >
+                {zones.map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
             </div>
+            {(subzones[form.zone] ?? []).length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-400">Subzona</Label>
+                <select
+                  aria-label="Subzona"
+                  value={form.subzone}
+                  onChange={(e) => setForm({ ...form, subzone: e.target.value })}
+                  className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+                >
+                  <option value="">Sin subzona</option>
+                  {subzones[form.zone].map((z) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">País</Label>
               <Input
@@ -822,7 +918,11 @@ function EditStoreDialog({
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">Dirección</Label>
-              <Input value={form.address} onChange={set("address")} placeholder="Calle, número, colonia" />
+              <Input
+                value={form.address}
+                onChange={set("address")}
+                placeholder="Calle, número, colonia"
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">Teléfono</Label>
@@ -830,11 +930,22 @@ function EditStoreDialog({
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">Google Maps URL</Label>
-              <Input value={form.google_maps_url} onChange={set("google_maps_url")} placeholder="https://maps.google.com/..." />
+              <Input
+                value={form.google_maps_url}
+                onChange={set("google_maps_url")}
+                placeholder="https://maps.google.com/..."
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">Horario</Label>
-              <Input value={form.opening_hours} onChange={set("opening_hours")} placeholder="Lun-Vie 11:00-21:00" />
+              <OpeningHoursField
+                key={store?.id}
+                value={store?.opening_hours ?? ""}
+                onChange={(opening_hours, valid) => {
+                  setForm((f) => ({ ...f, opening_hours }));
+                  setHoursValid(valid);
+                }}
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">Descripción</Label>
@@ -853,7 +964,9 @@ function EditStoreDialog({
           <div className="space-y-3 pt-4 border-t border-white/10">
             <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
               Presencia digital
-              <span className="ml-2 text-gray-600 normal-case tracking-normal font-normal">— Opcional</span>
+              <span className="ml-2 text-gray-600 normal-case tracking-normal font-normal">
+                — Opcional
+              </span>
             </h3>
             <div className="space-y-1">
               <Label className="text-xs text-gray-400">Página web</Label>
@@ -910,7 +1023,6 @@ function EditStoreDialog({
     </Dialog>
   );
 }
-
 
 function AssignOrganizerDialog({
   store,
@@ -1040,7 +1152,14 @@ function StaffTab() {
     work_schedule: string;
     contact_primary: string;
     contact_backup: string;
-  }>({ email: "", geek_tag: "", role: "organizer", work_schedule: "", contact_primary: "", contact_backup: "" });
+  }>({
+    email: "",
+    geek_tag: "",
+    role: "organizer",
+    work_schedule: "",
+    contact_primary: "",
+    contact_backup: "",
+  });
   const [addLoading, setAddLoading] = useState(false);
 
   const [assignModal, setAssignModal] = useState<{
@@ -1051,7 +1170,9 @@ function StaffTab() {
 
   const [allGames, setAllGames] = useState<{ id: string; name: string }[]>([]);
   const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
-  const [allStores, setAllStores] = useState<{ id: string; name: string; city: string | null }[]>([]);
+  const [allStores, setAllStores] = useState<{ id: string; name: string; city: string | null }[]>(
+    [],
+  );
   const [selectedStore, setSelectedStore] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
   const [opFields, setOpFields] = useState<{
@@ -1126,7 +1247,14 @@ function StaffTab() {
       const role = addForm.role;
       const nexusTag = addForm.geek_tag;
       setAddModal(false);
-      setAddForm({ email: "", geek_tag: "", role: "organizer", work_schedule: "", contact_primary: "", contact_backup: "" });
+      setAddForm({
+        email: "",
+        geek_tag: "",
+        role: "organizer",
+        work_schedule: "",
+        contact_primary: "",
+        contact_backup: "",
+      });
       await refresh();
       if (playerId) {
         await openAssignmentFor(playerId, nexusTag, role);
@@ -1187,9 +1315,7 @@ function StaffTab() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">Staff del circuito</h2>
-          <p className="text-xs text-gray-400">
-            Managers y Organizadores activos en la plataforma
-          </p>
+          <p className="text-xs text-gray-400">Managers y Organizadores activos en la plataforma</p>
         </div>
         <Button onClick={() => setAddModal(true)}>
           <UserPlus size={14} className="mr-2" />
@@ -1199,12 +1325,14 @@ function StaffTab() {
 
       {/* Role tabs */}
       <div className="flex gap-2 border-b border-white/10">
-        {([
-          { k: "all", label: "Todos" },
-          { k: "admin", label: "Admins" },
-          { k: "tcg_manager", label: "Managers" },
-          { k: "organizer", label: "Organizadores" },
-        ] as const).map((t) => {
+        {(
+          [
+            { k: "all", label: "Todos" },
+            { k: "admin", label: "Admins" },
+            { k: "tcg_manager", label: "Managers" },
+            { k: "organizer", label: "Organizadores" },
+          ] as const
+        ).map((t) => {
           const count = t.k === "all" ? staff.length : staff.filter((s) => s.role === t.k).length;
           return (
             <button
@@ -1251,12 +1379,24 @@ function StaffTab() {
             <tbody>
               {Array.from({ length: 6 }).map((_, i) => (
                 <tr key={i} className="border-t border-white/5">
-                  <td className="px-4 py-3"><SkeletonLine width="w-24" height="h-3" /></td>
-                  <td className="px-4 py-3"><SkeletonLine width="w-32" height="h-3" /></td>
-                  <td className="px-4 py-3"><SkeletonLine width="w-16" height="h-5" className="rounded-md" /></td>
-                  <td className="px-4 py-3"><SkeletonLine width="w-24" height="h-3" /></td>
-                  <td className="px-4 py-3"><SkeletonLine width="w-14" height="h-5" className="rounded-md" /></td>
-                  <td className="px-4 py-3"><SkeletonBlock className="w-6 h-6 rounded-md" /></td>
+                  <td className="px-4 py-3">
+                    <SkeletonLine width="w-24" height="h-3" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <SkeletonLine width="w-32" height="h-3" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <SkeletonLine width="w-16" height="h-5" className="rounded-md" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <SkeletonLine width="w-24" height="h-3" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <SkeletonLine width="w-14" height="h-5" className="rounded-md" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <SkeletonBlock className="w-6 h-6 rounded-md" />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1298,12 +1438,8 @@ function StaffTab() {
                   ) : (
                     filteredStaff.map((p) => (
                       <tr key={p.id} className="border-t border-white/5">
-                        <td className="px-4 py-3 text-white font-medium">
-                          {p.geek_tag}
-                        </td>
-                        <td className="px-4 py-3 text-gray-300">
-                          {p.email ?? "—"}
-                        </td>
+                        <td className="px-4 py-3 text-white font-medium">{p.geek_tag}</td>
+                        <td className="px-4 py-3 text-gray-300">{p.email ?? "—"}</td>
                         <td className="px-4 py-3">
                           <Badge
                             className={
@@ -1314,7 +1450,11 @@ function StaffTab() {
                                   : "bg-orange-500/20 text-orange-400"
                             }
                           >
-                            {p.role === "admin" ? "Admin" : p.role === "tcg_manager" ? "TCG Manager" : "Organizador"}
+                            {p.role === "admin"
+                              ? "Admin"
+                              : p.role === "tcg_manager"
+                                ? "TCG Manager"
+                                : "Organizador"}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
@@ -1373,7 +1513,9 @@ function StaffTab() {
                               <DropdownMenuSeparator />
                               {p.is_active ? (
                                 <DropdownMenuItem
-                                  onClick={() => setConfirmAction({ player: p, action: "deactivate" })}
+                                  onClick={() =>
+                                    setConfirmAction({ player: p, action: "deactivate" })
+                                  }
                                   className="text-amber-400 focus:text-amber-300"
                                 >
                                   <PowerOff size={14} className="mr-2" />
@@ -1418,7 +1560,11 @@ function StaffTab() {
                                 : "bg-orange-500/20 text-orange-400"
                           }
                         >
-                          {p.role === "admin" ? "Admin" : p.role === "tcg_manager" ? "Manager" : "Org"}
+                          {p.role === "admin"
+                            ? "Admin"
+                            : p.role === "tcg_manager"
+                              ? "Manager"
+                              : "Org"}
                         </Badge>
                         <Badge variant={p.is_active ? "default" : "secondary"}>
                           {p.is_active ? "Activo" : "Inactivo"}
@@ -1489,8 +1635,8 @@ function StaffTab() {
           <DialogHeader>
             <DialogTitle>Agregar Staff</DialogTitle>
             <DialogDescription>
-              Si el correo ya existe en la plataforma, el sistema actualizará su
-              rol automáticamente.
+              Si el correo ya existe en la plataforma, el sistema actualizará su rol
+              automáticamente.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -1562,9 +1708,7 @@ function StaffTab() {
               Cancelar
             </Button>
             <Button onClick={handleAddStaff} disabled={addLoading}>
-              {addLoading ? (
-                <Loader2 size={14} className="mr-2 animate-spin" />
-              ) : null}
+              {addLoading ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
               {addLoading ? "Procesando..." : "Continuar"}
             </Button>
           </DialogFooter>
@@ -1576,9 +1720,7 @@ function StaffTab() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {assignModal?.role === "tcg_manager"
-                ? "Asignar TCGs"
-                : "Asignar tienda"}
+              {assignModal?.role === "tcg_manager" ? "Asignar TCGs" : "Asignar tienda"}
             </DialogTitle>
             <DialogDescription>
               {assignModal?.role === "tcg_manager"
@@ -1611,9 +1753,7 @@ function StaffTab() {
                   >
                     <span
                       className={`flex h-5 w-5 items-center justify-center rounded border ${
-                        isSelected
-                          ? "bg-primary border-primary text-white"
-                          : "border-white/20"
+                        isSelected ? "bg-primary border-primary text-white" : "border-white/20"
                       }`}
                     >
                       {isSelected ? <Check size={12} /> : null}
@@ -1653,9 +1793,7 @@ function StaffTab() {
                 <input
                   id="op-work-schedule"
                   value={opFields.work_schedule}
-                  onChange={(e) =>
-                    setOpFields((f) => ({ ...f, work_schedule: e.target.value }))
-                  }
+                  onChange={(e) => setOpFields((f) => ({ ...f, work_schedule: e.target.value }))}
                   placeholder="Lun-Vie 18:00-22:00"
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
                 />
@@ -1682,9 +1820,7 @@ function StaffTab() {
                   <input
                     id="op-contact-backup"
                     value={opFields.contact_backup}
-                    onChange={(e) =>
-                      setOpFields((f) => ({ ...f, contact_backup: e.target.value }))
-                    }
+                    onChange={(e) => setOpFields((f) => ({ ...f, contact_backup: e.target.value }))}
                     placeholder="+52 81 9876 5432"
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
                   />
@@ -1693,15 +1829,12 @@ function StaffTab() {
             </div>
           ) : null}
 
-
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAssignModal(null)}>
               Omitir
             </Button>
             <Button onClick={handleSaveAssignment} disabled={assignLoading}>
-              {assignLoading ? (
-                <Loader2 size={14} className="mr-2 animate-spin" />
-              ) : null}
+              {assignLoading ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
               {assignLoading ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>
@@ -1739,9 +1872,7 @@ function StaffTab() {
                     },
                   });
                   toast.success(
-                    confirmAction.action === "deactivate"
-                      ? "Staff desactivado"
-                      : "Staff removido",
+                    confirmAction.action === "deactivate" ? "Staff desactivado" : "Staff removido",
                   );
                   setConfirmAction(null);
                   await refresh();

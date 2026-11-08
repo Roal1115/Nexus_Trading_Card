@@ -74,7 +74,8 @@ export const upsertStoreScheduleManager = createServerFn({ method: "POST" })
           day_of_week: data.day_of_week,
           start_time: data.start_time,
         })
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .in("game_id", gameIds); // Sin esto podría tomar el horario de otro TCG.
       if (error) failDb(error);
     } else {
       const { error } = await admin.from("store_schedules").upsert(
@@ -198,7 +199,7 @@ export const getManagerResponsibleStores = createServerFn({ method: "POST" })
     const { data: stores, error } = await admin
       .from("stores")
       .select(
-        "id, name, city, state, country, is_active, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch, zone",
+        "id, name, city, state, country, is_active, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch, zone, subzone",
       )
       .in("id", storeIds)
       .order("name");
@@ -228,6 +229,8 @@ export const updateStoreData = createServerFn({ method: "POST" })
     (d: {
       store_id: string;
       name: string;
+      zone?: string;
+      subzone?: string | null;
       city?: string;
       state?: string;
       address?: string;
@@ -244,6 +247,8 @@ export const updateStoreData = createServerFn({ method: "POST" })
         .object({
           store_id: z.string().uuid(),
           name: z.string().min(1).max(120),
+          zone: z.string().trim().min(2).max(60).optional(),
+          subzone: z.string().trim().max(60).nullable().optional(),
           city: z.string().max(120).optional(),
           state: z.string().max(120).optional(),
           address: z.string().max(300).optional(),
@@ -270,7 +275,18 @@ export const updateStoreData = createServerFn({ method: "POST" })
         .in("game_id", gameIds)
         .limit(1)
         .maybeSingle();
-      if (!schedule) {
+      // Una tienda recién aprobada aún no tiene torneos: se valida por su solicitud.
+      const { data: approved } = schedule
+        ? { data: true }
+        : await admin
+            .from("store_signup_requests")
+            .select("id")
+            .eq("store_id", data.store_id)
+            .eq("status", "approved")
+            .in("game_id", gameIds)
+            .limit(1)
+            .maybeSingle();
+      if (!approved) {
         throw new Error("No tienes permisos sobre esta tienda");
       }
     }
@@ -279,6 +295,7 @@ export const updateStoreData = createServerFn({ method: "POST" })
     const { error } = await admin
       .from("stores")
       .update({
+        ...(fields.zone ? { zone: fields.zone, subzone: fields.subzone || null } : {}),
         name: fields.name,
         city: fields.city || null,
         state: fields.state || null,

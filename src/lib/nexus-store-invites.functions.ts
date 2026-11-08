@@ -7,7 +7,18 @@ import { slugify } from "./nexus-admin-stores.functions";
 import { requireNexusManager } from "./nexus-auth.middleware";
 import { assertManagerOwnsGame, getManagerGameIds } from "./nexus-manager-shared";
 import { checkRateLimit, getClientIp } from "./rate-limit.server";
-import { hashInviteToken, INVITE_DAYS, newInviteToken, storeTagBase } from "./store-invite-rules";
+import {
+  decryptInviteToken,
+  encryptInviteToken,
+  hashInviteToken,
+  INVITE_DAYS,
+  isGoogleMapsUrl,
+  newInviteToken,
+  storeTagBase,
+  subzoneIsValid,
+} from "./store-invite-rules";
+import { formatWeekHours, isValidWeek, TIME_OPTIONS, type WeekHours } from "./store-hours";
+import locations from "@/data/mx-locations.json";
 
 const INVALID_LINK = "Este enlace no es válido o ya venció.";
 // Hasta aprobarse la cuenta no puede iniciar sesión. Cien años: Supabase no tiene "indefinido".
@@ -65,6 +76,18 @@ async function authUserIdOf(admin: Admin, playerId: string | null): Promise<stri
   return data.auth_user_id;
 }
 
+async function zoneList(admin: Admin) {
+  const { data, error } = await admin
+    .from("zones")
+    .select("name, description, subzones(name, description)")
+    .order("name");
+  if (error) failDb(error);
+  return (data ?? []).map((z) => ({
+    ...z,
+    subzones: [...z.subzones].sort((a, b) => a.name.localeCompare(b.name)),
+  }));
+}
+
 // ── Panel de Admin y Manager ───────────────────────────────────────
 export const getStoreSignupPanel = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
@@ -73,10 +96,10 @@ export const getStoreSignupPanel = createServerFn({ method: "POST" })
     const gameIds = await getManagerGameIds(admin, player);
     const scope = gameIds.length ? gameIds : [NO_GAME];
 
-    const [invites, requests, games] = await Promise.all([
+    const [invites, requests, games, zones] = await Promise.all([
       admin
         .from("store_signup_invites")
-        .select("id, email, expires_at, created_at, games(name)")
+        .select("id, email, expires_at, created_at, token_encrypted, games(name)")
         .in("game_id", scope)
         .is("used_at", null)
         .is("revoked_at", null)
@@ -84,20 +107,28 @@ export const getStoreSignupPanel = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false }),
       admin
         .from("store_signup_requests")
-        .select("id, email, store_name, city, state, phone, created_at, games(name)")
+        .select(
+          "id, email, store_name, city, state, phone, zone, subzone, address, google_maps_url, opening_hours, instagram, twitter, twitch, website, created_at, games(name)",
+        )
         .in("game_id", scope)
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
       admin.from("games").select("id, name").in("id", scope).order("name"),
+      zoneList(admin),
     ]);
     if (invites.error) failDb(invites.error);
     if (requests.error) failDb(requests.error);
     if (games.error) failDb(games.error);
 
     return {
-      invites: invites.data ?? [],
+      // El valor cifrado no sale del servidor: la pantalla solo necesita saber si existe.
+      invites: (invites.data ?? []).map(({ token_encrypted, ...invite }) => ({
+        ...invite,
+        can_copy: Boolean(token_encrypted),
+      })),
       requests: requests.data ?? [],
       games: games.data ?? [],
+      zones,
     };
   });
 
@@ -115,10 +146,14 @@ export const createStoreInvite = createServerFn({ method: "POST" })
     }
 
     const token = newInviteToken();
+    const secret = process.env.STORE_INVITE_TOKEN_KEY;
+    // Sin la clave el enlace funciona igual; solo no se podrá volver a copiar.
+    if (!secret) console.error("STORE_INVITE_TOKEN_KEY no está configurada");
     const { data: invite, error } = await admin
       .from("store_signup_invites")
       .insert({
         token_hash: await hashInviteToken(token),
+        token_encrypted: secret ? await encryptInviteToken(token, secret) : null,
         email,
         game_id: data.game_id,
         created_by: player.id,
@@ -131,7 +166,45 @@ export const createStoreInvite = createServerFn({ method: "POST" })
     await logAction(admin, player, "STORE_INVITE_CREATED", "store_invite", invite.id, email, {
       game_id: data.game_id,
     });
-    // Única vez que el token sale del servidor: en la base solo queda su hash.
+    return { token, can_copy_later: Boolean(secret) };
+  });
+
+export const getStoreInviteLink = createServerFn({ method: "POST" })
+  .middleware([requireNexusManager])
+  .inputValidator((d: { invite_id: string }) => z.object({ invite_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: invite, error } = await admin
+      .from("store_signup_invites")
+      .select("email, game_id, token_encrypted")
+      .eq("id", data.invite_id)
+      .is("used_at", null)
+      .is("revoked_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (error) failDb(error);
+    if (!invite) throw new Error("Este enlace ya no está activo.");
+    await assertManagerOwnsGame(admin, player, invite.game_id);
+
+    const secret = process.env.STORE_INVITE_TOKEN_KEY;
+    if (!invite.token_encrypted || !secret) {
+      throw new Error("Este enlace no se puede recuperar. Revócalo y genera uno nuevo.");
+    }
+    let token: string;
+    try {
+      token = await decryptInviteToken(invite.token_encrypted, secret);
+    } catch {
+      // Pasa si la clave cambió después de crear el enlace.
+      throw new Error("Este enlace no se puede recuperar. Revócalo y genera uno nuevo.");
+    }
+    await logAction(
+      admin,
+      player,
+      "STORE_INVITE_LINK_COPIED",
+      "store_invite",
+      data.invite_id,
+      invite.email,
+    );
     return { token };
   });
 
@@ -168,8 +241,14 @@ export const revokeStoreInvite = createServerFn({ method: "POST" })
 
 export const approveStoreSignup = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
-  .inputValidator((d: { request_id: string }) =>
-    z.object({ request_id: z.string().uuid() }).parse(d),
+  .inputValidator((d: { request_id: string; zone: string; subzone: string | null }) =>
+    z
+      .object({
+        request_id: z.string().uuid(),
+        zone: z.string().trim().min(2).max(60),
+        subzone: z.string().trim().min(2).max(60).nullable(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
@@ -190,8 +269,13 @@ export const approveStoreSignup = createServerFn({ method: "POST" })
       p_request_id: data.request_id,
       p_reviewer_id: player.id,
       p_slug: slug,
+      p_zone: data.zone,
+      p_subzone: data.subzone,
     });
     if (approveError) {
+      if (approveError.message === "SUBZONE_REQUIRED") {
+        throw new Error("Elige la subzona de esta tienda.");
+      }
       if (approveError.message === "REQUEST_NOT_PENDING") {
         throw new Error("Esta solicitud ya fue revisada.");
       }
@@ -205,7 +289,12 @@ export const approveStoreSignup = createServerFn({ method: "POST" })
       "store",
       storeId as unknown as string,
       request.store_name,
-      { request_id: data.request_id, game_id: request.game_id },
+      {
+        request_id: data.request_id,
+        game_id: request.game_id,
+        zone: data.zone,
+        subzone: data.subzone,
+      },
     );
 
     // Al final a propósito: si esto falla, la cuenta sigue bloqueada en vez de quedar abierta.
@@ -306,35 +395,66 @@ export const getStoreInvite = createServerFn({ method: "POST" })
       valid: true as const,
       email: invite.email,
       game_name: (invite.games as { name: string } | null)?.name ?? "TCG",
+      zones: await zoneList(admin),
     };
   });
 
-export const submitStoreSignup = createServerFn({ method: "POST" })
-  .inputValidator(
-    (d: {
-      token: string;
-      password: string;
-      store_name: string;
-      city: string;
-      state: string;
-      phone: string;
-    }) =>
+const catalog = locations as Record<string, string[]>;
+const handleSchema = z.string().trim().max(100);
+const timeSchema = z.string().refine((t) => TIME_OPTIONS.includes(t));
+
+const storeSignupSchema = z
+  .object({
+    token: tokenSchema,
+    password: z.string().min(8).max(200).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/),
+    store_name: z.string().trim().min(2).max(120),
+    state: z.string(),
+    city: z.string(),
+    phone: z.string().trim().min(7).max(20),
+    address: z.string().trim().min(5).max(300),
+    google_maps_url: z.string().trim().max(500).refine(isGoogleMapsUrl),
+    week: z
+      .array(z.object({ open: timeSchema, close: timeSchema }).nullable())
+      .refine((week) => isValidWeek(week as WeekHours)),
+    // null = "No sé": Admin o Manager la definen al aprobar.
+    zone: z.string().trim().min(2).max(60).nullable(),
+    subzone: z.string().trim().min(2).max(60).nullable(),
+    instagram: handleSchema,
+    twitter: handleSchema,
+    twitch: handleSchema,
+    website: z.union([
+      z.literal(""),
       z
-        .object({
-          token: tokenSchema,
-          password: z.string().min(8).max(200).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/),
-          store_name: z.string().trim().min(2).max(120),
-          city: z.string().trim().min(2).max(120),
-          state: z.string().trim().min(2).max(120),
-          phone: z.string().trim().min(7).max(20),
-        })
-        .parse(d),
-  )
+        .string()
+        .trim()
+        .url()
+        .max(300)
+        .regex(/^https?:\/\//i),
+    ]),
+  })
+  .refine((d) => catalog[d.state]?.includes(d.city), { message: "Ciudad o estado no válidos" })
+  .refine((d) => d.instagram || d.twitter || d.twitch || d.website, {
+    message: "Agrega al menos una red social o tu página web",
+  });
+
+export type StoreSignupInput = z.infer<typeof storeSignupSchema>;
+
+export const submitStoreSignup = createServerFn({ method: "POST" })
+  .inputValidator((d: StoreSignupInput) => storeSignupSchema.parse(d))
   .handler(async ({ data }) => {
     if (!checkRateLimit(`store_signup_${getClientIp()}`, 10, 600_000)) {
       throw new Error("Demasiados intentos. Espera unos minutos e intenta de nuevo.");
     }
     const admin = getNexusAdmin();
+
+    // Antes de reclamar el enlace: una zona inválida no debe gastarlo.
+    const zones = await zoneList(admin);
+    if (
+      (data.zone && !zones.some((z) => z.name === data.zone)) ||
+      !subzoneIsValid(zones, data.zone, data.subzone)
+    ) {
+      throw new Error("Esa zona ya no existe. Recarga la página y elige otra.");
+    }
 
     // Un solo UPDATE reclama el enlace: dos envíos simultáneos no pueden usarlo ambos.
     const { data: claimed, error: claimError } = await admin
@@ -387,6 +507,15 @@ export const submitStoreSignup = createServerFn({ method: "POST" })
         city: data.city,
         state: data.state,
         phone: data.phone,
+        zone: data.zone,
+        subzone: data.subzone,
+        address: data.address,
+        google_maps_url: data.google_maps_url,
+        opening_hours: formatWeekHours(data.week as WeekHours),
+        instagram: data.instagram || null,
+        twitter: data.twitter || null,
+        twitch: data.twitch || null,
+        website: data.website || null,
       });
       if (requestError) failDb(requestError);
     } catch (e) {
@@ -416,6 +545,7 @@ export const submitStoreSignup = createServerFn({ method: "POST" })
       "store_invite",
       invite.id,
       `${data.store_name} — ${data.city}`,
+      { zone: data.zone, subzone: data.subzone },
     );
     return { ok: true as const };
   });

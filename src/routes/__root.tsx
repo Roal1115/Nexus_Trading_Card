@@ -263,15 +263,17 @@ function RootComponent() {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/organizer") ||
     pathname.startsWith("/tcg-manager");
+  // Formulario público de una sola vez: quien llega por el enlace no navega la app.
+  const isBare = pathname.startsWith("/registro-tienda");
 
   return (
     <TCGProvider>
       <NexusAuthProvider>
         <div className="min-h-dvh bg-radial-nexus lg:flex">
-          {!isPanel && <PlayerSidebar />}
+          {!isPanel && !isBare && <PlayerSidebar />}
           <div className="min-w-0 flex-1">
-            {!isPanel && <AppHeader />}
-            <div className="pb-16 lg:pb-0">
+            {!isPanel && !isBare && <AppHeader />}
+            <div className={isBare ? undefined : "pb-16 lg:pb-0"}>
               <Outlet />
             </div>
           </div>
@@ -286,7 +288,7 @@ function RootComponent() {
               },
             }}
           />
-          <BottomNav />
+          {!isBare && <BottomNav />}
         </div>
       </NexusAuthProvider>
     </TCGProvider>

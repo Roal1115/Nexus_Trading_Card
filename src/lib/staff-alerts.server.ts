@@ -9,7 +9,17 @@ const count = (value: unknown) => (Array.isArray(value) ? value.length : 0);
 
 const ALERTS: Record<string, Alert> = {
   // Requieren acción
-  STORE_SIGNUP_SUBMITTED: { title: "🏪 Nueva tienda por revisar" },
+  STORE_SIGNUP_SUBMITTED: {
+    title: "🏪 Nueva tienda por revisar",
+    detail: (m) =>
+      m?.zone
+        ? `Zona: ${String(m.zone)}${m.subzone ? ` · ${String(m.subzone)}` : ""}`
+        : "Zona: no sabe, hay que contactarla.",
+  },
+  STORE_UPDATED_BY_OWNER: {
+    title: "✏️ Tienda modificada por su dueño",
+    detail: (m) => (count(m?.fields) ? `Cambió: ${(m?.fields as string[]).join(", ")}` : null),
+  },
   TOURNAMENT_UPLOADED: {
     title: "📥 Torneo subido",
     detail: (m) => (m?.published_directly ? "Publicado directo en liga interna." : "Por revisar."),

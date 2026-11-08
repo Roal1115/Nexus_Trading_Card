@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { LocationSelects, OpeningHoursField } from "@/components/stores/StoreFormFields";
 import { useEffect, useState } from "react";
 import { Store, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 import { useNexusRole } from "@/hooks/use-nexus-role";
-import {
-  getOrganizerOverview,
-  updateStoreInfo,
-} from "@/lib/nexus-organizer.functions";
+import { getOrganizerOverview, updateStoreInfo } from "@/lib/nexus-organizer.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +67,7 @@ function OrganizerHome() {
 
   const fetchOverview = useServerFn(getOrganizerOverview);
   const saveStoreInfo = useServerFn(updateStoreInfo);
+  const [hoursValid, setHoursValid] = useState(true);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,18 +81,18 @@ function OrganizerHome() {
       setHomeStore(res.homeStore);
       if (res.homeStore) {
         setForm({
-          name:            res.homeStore.name ?? "",
-          city:            res.homeStore.city ?? "",
-          state:           res.homeStore.state ?? "",
-          address:         res.homeStore.address ?? "",
-          phone:           res.homeStore.phone ?? "",
+          name: res.homeStore.name ?? "",
+          city: res.homeStore.city ?? "",
+          state: res.homeStore.state ?? "",
+          address: res.homeStore.address ?? "",
+          phone: res.homeStore.phone ?? "",
           google_maps_url: res.homeStore.google_maps_url ?? "",
-          description:     res.homeStore.description ?? "",
-          opening_hours:   res.homeStore.opening_hours ?? "",
-          instagram:       res.homeStore.instagram ?? "",
-          website:         res.homeStore.website ?? "",
-          twitter:         res.homeStore.twitter ?? "",
-          twitch:          res.homeStore.twitch ?? "",
+          description: res.homeStore.description ?? "",
+          opening_hours: res.homeStore.opening_hours ?? "",
+          instagram: res.homeStore.instagram ?? "",
+          website: res.homeStore.website ?? "",
+          twitter: res.homeStore.twitter ?? "",
+          twitch: res.homeStore.twitch ?? "",
         });
       } else {
         setForm(emptyForm);
@@ -113,23 +112,27 @@ function OrganizerHome() {
 
   const handleSaveInfo = async () => {
     if (!email || !homeStore) return;
+    if (!hoursValid) {
+      toast.error("Revisa el horario: marca al menos un día y que el cierre sea después de abrir");
+      return;
+    }
     setSaving(true);
     try {
       await saveStoreInfo({
         data: {
-          store_id:        homeStore.id,
-          name:            form.name,
-          city:            form.city,
-          state:           form.state,
-          address:         form.address,
-          phone:           form.phone,
+          store_id: homeStore.id,
+          name: form.name,
+          city: form.city,
+          state: form.state,
+          address: form.address,
+          phone: form.phone,
           google_maps_url: form.google_maps_url,
-          description:     form.description,
-          opening_hours:   form.opening_hours,
-          instagram:       form.instagram,
-          website:         form.website,
-          twitter:         form.twitter,
-          twitch:          form.twitch,
+          description: form.description,
+          opening_hours: form.opening_hours,
+          instagram: form.instagram,
+          website: form.website,
+          twitter: form.twitter,
+          twitch: form.twitch,
         },
       });
       toast.success("Datos de la tienda actualizados");
@@ -153,15 +156,9 @@ function OrganizerHome() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Mi Tienda
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-white">
-          Información de tu tienda
-        </h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Edita los datos de la tienda que organizas.
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Mi Tienda</p>
+        <h1 className="mt-2 text-3xl font-bold text-white">Información de tu tienda</h1>
+        <p className="mt-1 text-sm text-gray-400">Edita los datos de la tienda que organizas.</p>
       </header>
 
       <section className="glass space-y-3 rounded-2xl p-6">
@@ -187,9 +184,7 @@ function OrganizerHome() {
       {homeStore && (
         <section className="glass space-y-6 rounded-2xl p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-white">
-              Información de mi tienda
-            </h2>
+            <h2 className="text-sm font-semibold text-white">Información de mi tienda</h2>
             <Button onClick={handleSaveInfo} disabled={saving}>
               {saving ? (
                 <Loader2 size={14} className="animate-spin mr-1" />
@@ -213,20 +208,11 @@ function OrganizerHome() {
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Ciudad</Label>
-                <Input
-                  value={form.city}
-                  onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Estado</Label>
-                <Input
-                  value={form.state}
-                  onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
-                />
-              </div>
+              <LocationSelects
+                state={form.state}
+                city={form.city}
+                onChange={(next) => setForm((f) => ({ ...f, ...next }))}
+              />
               <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-xs text-gray-400">Dirección física</Label>
                 <Input
@@ -251,12 +237,15 @@ function OrganizerHome() {
                   placeholder="+52 81 1234 5678"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-xs text-gray-400">Horarios de atención</Label>
-                <Input
+                <OpeningHoursField
+                  key={homeStore.id}
                   value={form.opening_hours}
-                  onChange={(e) => setForm((f) => ({ ...f, opening_hours: e.target.value }))}
-                  placeholder="Lun-Vie 12:00-21:00"
+                  onChange={(opening_hours, valid) => {
+                    setForm((f) => ({ ...f, opening_hours }));
+                    setHoursValid(valid);
+                  }}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">

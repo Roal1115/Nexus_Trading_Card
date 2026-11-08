@@ -12,7 +12,7 @@ export const listStoresWithOrganizers = createServerFn({ method: "POST" })
       admin
         .from("stores")
         .select(
-          "id, slug, name, city, state, country, is_active, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch, created_at",
+          "id, slug, name, city, state, country, is_active, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch, created_at, zone, subzone",
         )
         .order("city", { ascending: true })
         .order("name", { ascending: true }),
@@ -48,6 +48,7 @@ export const createStore = createServerFn({ method: "POST" })
   .inputValidator(
     (d: {
       name: string;
+      zone: string;
       city?: string;
       state?: string;
       slug?: string;
@@ -64,6 +65,7 @@ export const createStore = createServerFn({ method: "POST" })
       z
         .object({
           name: z.string().min(1).max(120),
+          zone: z.string().trim().min(2).max(60),
           city: z.string().max(120).optional(),
           state: z.string().max(120).optional(),
           slug: z.string().max(80).optional(),
@@ -87,6 +89,7 @@ export const createStore = createServerFn({ method: "POST" })
       .from("stores")
       .insert({
         slug,
+        zone: data.zone,
         name: data.name,
         city: data.city || null,
         state: data.state || null,
@@ -138,6 +141,8 @@ export const updateStore = createServerFn({ method: "POST" })
     (d: {
       store_id: string;
       name: string;
+      zone?: string;
+      subzone?: string | null;
       city?: string;
       state?: string;
       country?: string;
@@ -155,6 +160,8 @@ export const updateStore = createServerFn({ method: "POST" })
         .object({
           store_id: z.string().uuid(),
           name: z.string().min(1).max(120),
+          zone: z.string().trim().min(2).max(60).optional(),
+          subzone: z.string().trim().max(60).nullable().optional(),
           city: z.string().max(120).optional(),
           state: z.string().max(120).optional(),
           country: z.string().min(2).max(2).optional(),
@@ -175,6 +182,7 @@ export const updateStore = createServerFn({ method: "POST" })
     const { error } = await admin
       .from("stores")
       .update({
+        ...(data.zone ? { zone: data.zone, subzone: data.subzone || null } : {}),
         name: data.name,
         city: data.city || null,
         state: data.state || null,
