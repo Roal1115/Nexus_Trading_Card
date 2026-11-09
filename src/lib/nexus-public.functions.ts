@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { toLocalDateStr, todayInMexicoStr } from "./utils";
 import { getClientIp } from "./rate-limit.server";
+import { storeRegion } from "./store-regions";
 
 // ─── Dedupe de vistas de tienda por IP+sección ────────────────────────────
 // ponytail: mismo patrón que registerAdView (dedupe en memoria del worker,
@@ -197,6 +198,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     (d: {
       game_id?: string | null;
       zone?: string | null;
+      region?: string | null;
       store_id?: string | null;
       store_ids?: string[] | null;
       week_start: string; // "YYYY-MM-DD" — lunes (semana Lun–Dom, estandarizada con el resto de la app, ver mondayOfWeek en utils)
@@ -205,6 +207,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
         .object({
           game_id: z.string().uuid().nullable().optional(),
           zone: z.string().nullable().optional(),
+          region: z.string().max(120).nullable().optional(),
           store_id: z.string().uuid().nullable().optional(),
           store_ids: z.array(z.string().uuid()).max(5).nullable().optional(),
           week_start: z.string(),
@@ -225,6 +228,18 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
     // el toISOString() de UTC ya marca mañana, ocultando torneos de hoy.
     const today = todayInMexicoStr();
     const fromDate = data.week_start < today ? today : data.week_start;
+
+    let regionStoreIds: string[] | null = null;
+    if (data.zone && data.region) {
+      const { data: zoneStores, error: zoneStoresError } = await admin
+        .from("stores")
+        .select("id, city, subzone")
+        .eq("zone", data.zone);
+      if (zoneStoresError) failDb(zoneStoresError);
+      regionStoreIds = (zoneStores ?? [])
+        .filter((s) => storeRegion(s) === data.region)
+        .map((s) => s.id);
+    }
 
     // 1. Torneos reales publicados en esta semana
     let tournamentQuery = admin
@@ -248,6 +263,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       tournamentQuery = tournamentQuery.eq("store_id", data.store_id);
     }
     if (data.zone) tournamentQuery = tournamentQuery.eq("stores.zone", data.zone);
+    if (regionStoreIds) tournamentQuery = tournamentQuery.in("store_id", regionStoreIds);
 
     const { data: tournaments, error } = await tournamentQuery;
     if (error) failDb(error);
@@ -268,6 +284,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       scheduleQuery = scheduleQuery.eq("store_id", data.store_id);
     }
     if (data.zone) scheduleQuery = scheduleQuery.eq("stores.zone", data.zone);
+    if (regionStoreIds) scheduleQuery = scheduleQuery.in("store_id", regionStoreIds);
 
     const { data: schedules, error: scheduleError } = await scheduleQuery;
     if (scheduleError) failDb(scheduleError);
@@ -293,6 +310,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
       leagueScheduleQuery = leagueScheduleQuery.eq("store_id", data.store_id);
     }
     if (data.zone) leagueScheduleQuery = leagueScheduleQuery.eq("stores.zone", data.zone);
+    if (regionStoreIds) leagueScheduleQuery = leagueScheduleQuery.in("store_id", regionStoreIds);
 
     const { data: leagueSchedules, error: leagueScheduleError } = await leagueScheduleQuery;
     if (leagueScheduleError) failDb(leagueScheduleError);
@@ -503,7 +521,7 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
 
     const { data: stores } = await admin
       .from("stores")
-      .select("id, name, city, zone")
+      .select("id, name, city, zone, subzone")
       .eq("is_active", true)
       .order("name");
 

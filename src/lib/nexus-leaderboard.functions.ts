@@ -2,6 +2,7 @@
 // All reads go through the admin client server-side to keep RLS simple.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { storeRegion } from "./store-regions";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 
 // ── Caché en memoria ─────────────────────────────────────────────
@@ -134,9 +135,8 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         .eq("is_active", true)
         .eq("zone", data.zone);
       if (error) failDb(error);
-      // La región es la subzona; en zonas sin subzonas (Extendida) es la ciudad.
       cityStoreIds = (zoneStores ?? [])
-        .filter((s) => !data.region || (s.subzone ?? s.city) === data.region)
+        .filter((s) => !data.region || storeRegion(s) === data.region)
         .map((s) => s.id);
     }
 

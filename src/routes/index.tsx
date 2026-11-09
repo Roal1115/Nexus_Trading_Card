@@ -16,6 +16,7 @@ import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
 import { ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
 import { PillSelect } from "@/components/ui/pill-select";
+import { regionsForZone, storeRegion } from "@/lib/store-regions";
 
 type Period = "monthly" | "semestral";
 
@@ -337,21 +338,11 @@ function LeaderboardPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es-MX"));
   }, [stores]);
 
-  // Región = subzona. Una zona sin subzonas (Extendida) se divide por ciudad.
-  const regions = useMemo(() => {
-    const inZone = stores.filter((s) => s.zone === zone);
-    const values = inZone.some((s) => s.subzone)
-      ? inZone.map((s) => s.subzone)
-      : inZone.map((s) => s.city);
-    const set = new Set(values.filter((v): v is string => Boolean(v)));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "es-MX"));
-  }, [stores, zone]);
+  const regions = useMemo(() => regionsForZone(stores, zone), [stores, zone]);
 
   const visibleStores = useMemo(() => {
     return stores.filter(
-      (s) =>
-        (zone === ALL || s.zone === zone) &&
-        (region === ALL || (s.subzone ?? s.city) === region),
+      (s) => (zone === ALL || s.zone === zone) && (region === ALL || storeRegion(s) === region),
     );
   }, [stores, zone, region]);
 

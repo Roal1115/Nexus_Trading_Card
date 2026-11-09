@@ -4,6 +4,7 @@ import { getPublicCalendar } from "./nexus-public.functions";
 export type CalendarFilters = {
   game_id: string | null;
   zone: string | null;
+  region?: string | null;
   store_id: string | null;
   store_ids: string[] | null;
   week_start: string;

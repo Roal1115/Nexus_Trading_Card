@@ -17,6 +17,7 @@ import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { publicCalendarQuery } from "@/lib/calendar-queries";
 import { CalendarPreferencesPrompt } from "@/components/calendar/preferences-prompt";
 import { acceptsSlotRsvp, useMySlotRsvps } from "@/components/calendar/slot-rsvp";
+import { regionsForZone, storeRegion } from "@/lib/store-regions";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
@@ -36,6 +37,7 @@ function CalendarPage() {
   const { weekDates, weekStartStr, goToPrevWeek, goToNextWeek, goToToday, weekLabel } =
     useWeekNav();
   const [filterZone, setFilterZone] = useState<string | null>(null);
+  const [filterRegion, setFilterRegion] = useState<string | null>(null);
   const [filterStore, setFilterStore] = useState<string | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
@@ -47,6 +49,7 @@ function CalendarPage() {
     publicCalendarQuery({
       game_id: activeTcg?.id ?? null,
       zone: filterZone,
+      region: filterRegion,
       store_id: onlyFavorites ? null : filterStore,
       store_ids: onlyFavorites && favoriteIds.length > 0 ? favoriteIds : null,
       week_start: weekStartStr,
@@ -58,6 +61,22 @@ function CalendarPage() {
   const events = useMemo(() => calendarData?.events ?? [], [calendarData]);
   const stores = calendarData?.stores ?? [];
   const zones = calendarData?.zones ?? [];
+  const regions = useMemo(() => regionsForZone(stores, filterZone), [stores, filterZone]);
+  const visibleStores = stores.filter(
+    (s) =>
+      (!filterZone || s.zone === filterZone) && (!filterRegion || storeRegion(s) === filterRegion),
+  );
+
+  // La región y la tienda dependen de la zona: al cambiarla ya no aplican.
+  const changeZone = (zone: string | null) => {
+    setFilterZone(zone);
+    setFilterRegion(null);
+    setFilterStore(null);
+  };
+  const changeRegion = (region: string | null) => {
+    setFilterRegion(region);
+    setFilterStore(null);
+  };
 
   useEffect(() => {
     registerView()
@@ -165,7 +184,7 @@ function CalendarPage() {
               const match = tcgs.find((t) => t.id === gameId);
               if (match) setActiveTcg(match);
             }
-            if (zone) setFilterZone(zone);
+            if (zone) changeZone(zone);
           }}
         />
 
@@ -225,7 +244,7 @@ function CalendarPage() {
 
             <select
               value={filterZone ?? ""}
-              onChange={(e) => setFilterZone(e.target.value || null)}
+              onChange={(e) => changeZone(e.target.value || null)}
               className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-primary"
             >
               <option value="">Todas las zonas</option>
@@ -236,6 +255,22 @@ function CalendarPage() {
               ))}
             </select>
 
+            {filterZone && (
+              <select
+                aria-label="Región"
+                value={filterRegion ?? ""}
+                onChange={(e) => changeRegion(e.target.value || null)}
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-primary"
+              >
+                <option value="">Todas las regiones</option>
+                {regions.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <select
               value={filterStore ?? ""}
               onChange={(e) => setFilterStore(e.target.value || null)}
@@ -245,7 +280,7 @@ function CalendarPage() {
               }`}
             >
               <option value="">Todas las tiendas</option>
-              {stores.map((s: any) => (
+              {visibleStores.map((s: any) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
