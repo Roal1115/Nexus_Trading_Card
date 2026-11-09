@@ -51,6 +51,17 @@ export function PanelSidebar({
   const [tabletOpen, setTabletOpen] = useState(false);
   const overlayOpen = isTablet && tabletOpen;
   const collapsed = isTablet ? !tabletOpen : userCollapsed;
+  // Sigue flotando mientras se encoge: si vuelve antes al flujo, empuja el contenido.
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    if (overlayOpen) {
+      setFloating(true);
+      return;
+    }
+    const timer = setTimeout(() => setFloating(false), 200);
+    return () => clearTimeout(timer);
+  }, [overlayOpen]);
 
   useEffect(() => {
     if (!overlayOpen) return;
@@ -178,19 +189,17 @@ export function PanelSidebar({
       />
 
       {overlayOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/60"
-            onClick={() => setTabletOpen(false)}
-            aria-hidden
-          />
-          {/* La barra abierta sale del flujo: esto conserva el ancho compacto. */}
-          <div aria-hidden className="w-[4.5rem] shrink-0" />
-        </>
+        <div
+          className="fixed inset-0 z-40 bg-black/60"
+          onClick={() => setTabletOpen(false)}
+          aria-hidden
+        />
       )}
+      {/* La barra flotante sale del flujo: esto conserva el ancho compacto. */}
+      {(floating || overlayOpen) && <div aria-hidden className="w-[4.5rem] shrink-0" />}
 
       <aside
-        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out ${overlayOpen ? "md:fixed md:z-50" : "md:sticky md:top-0 md:z-auto"} md:translate-x-0 md:pb-4 ${
+        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out ${floating || overlayOpen ? "md:fixed md:z-50" : "md:sticky md:top-0 md:z-auto"} md:translate-x-0 md:pb-4 ${
           mobileOpen ? "translate-x-0" : "invisible -translate-x-full md:visible md:translate-x-0"
         }`}
         style={{ height: "100dvh" }}
