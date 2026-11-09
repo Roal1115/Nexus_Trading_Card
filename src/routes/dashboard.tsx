@@ -56,7 +56,11 @@ const RANK_TIER_BOX: Record<Exclude<RankTier, null>, string> = {
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { dismissOnboarding, toggleProfilePrivacy } from "@/lib/nexus-player.functions";
-import { myDashboardQuery, tournamentDetailQuery } from "@/lib/dashboard-queries";
+import {
+  myDashboardQuery,
+  tournamentDetailQuery,
+  tournamentRoundsQuery,
+} from "@/lib/dashboard-queries";
 import { playerAchievementsQuery } from "@/lib/player-profile-queries";
 import { shareProfileWithCard } from "@/lib/share-card";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
@@ -65,7 +69,12 @@ import { PerformanceTrackerModal } from "@/components/tournament-tracker/Perform
 import { RoundsAccordionReadOnly } from "@/components/tournament-tracker/RoundsAccordionReadOnly";
 import { motion, AnimatePresence } from "framer-motion";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { TournamentRowSkeleton, SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
+import {
+  PerformanceTrackerSkeleton,
+  TournamentRowSkeleton,
+  SkeletonLine,
+  SkeletonBlock,
+} from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/dashboard")({
   // NO se espera esta promesa a propósito: getMyDashboard es una query
@@ -114,6 +123,7 @@ function DashboardPage() {
   const [roundsReloadKey, setRoundsReloadKey] = useState(0);
   const exitTrackerEditMode = () => {
     setEditingTrackerInModal(false);
+    queryClient.removeQueries({ queryKey: ["tournament-rounds"] });
     setRoundsReloadKey((k) => k + 1);
   };
 
@@ -200,6 +210,7 @@ function DashboardPage() {
   const openTournament = (tournament_id: string) => {
     setEditingTrackerInModal(false);
     setSelectedTournamentId(tournament_id);
+    void queryClient.prefetchQuery(tournamentRoundsQuery(tournament_id));
   };
 
   const closeModal = () => {
@@ -226,7 +237,9 @@ function DashboardPage() {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
         <h2 className="text-2xl font-bold text-foreground">Debes iniciar sesión</h2>
-        <p className="mt-2 text-sm text-foreground-secondary">Tu dashboard muestra tu historial competitivo.</p>
+        <p className="mt-2 text-sm text-foreground-secondary">
+          Tu dashboard muestra tu historial competitivo.
+        </p>
         <Link
           to="/login"
           className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
@@ -249,7 +262,8 @@ function DashboardPage() {
         subtitle: storeCity ?? null,
         rankLabel: activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : null,
         rankCaption: activeTcg?.game_name ?? null,
-        statsLine: globalRecord.total > 0 ? `${globalRecord.wins}W · ${globalRecord.losses}L` : null,
+        statsLine:
+          globalRecord.total > 0 ? `${globalRecord.wins}W · ${globalRecord.losses}L` : null,
         footerLine:
           (data?.totalTournamentsAttended ?? 0) > 0
             ? `${data?.totalTournamentsAttended} torneos jugados`
@@ -302,7 +316,9 @@ function DashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                 Tu Nexus Tag
               </p>
-              <h1 className="mt-2 break-words text-5xl font-bold text-foreground sm:text-7xl">{tag}</h1>
+              <h1 className="mt-2 break-words text-5xl font-bold text-foreground sm:text-7xl">
+                {tag}
+              </h1>
               {storeCity && <p className="mt-2 text-sm text-foreground-secondary">{storeCity}</p>}
             </div>
             {loading ? (
@@ -372,7 +388,9 @@ function DashboardPage() {
                       <Crown size={9} /> Mensual
                     </div>
                     <div className="font-mono text-lg font-bold text-foreground">
-                      {activeTcg?.monthly_rank_position > 0 ? `#${activeTcg.monthly_rank_position}` : "—"}
+                      {activeTcg?.monthly_rank_position > 0
+                        ? `#${activeTcg.monthly_rank_position}`
+                        : "—"}
                     </div>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
@@ -472,7 +490,9 @@ function DashboardPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-xs text-foreground-subtle">Sin partidas con resultados registrados aún.</div>
+                  <div className="text-xs text-foreground-subtle">
+                    Sin partidas con resultados registrados aún.
+                  </div>
                 )}
 
                 {/* Derecha — CTA Ver mis stats */}
@@ -546,7 +566,9 @@ function DashboardPage() {
             ancho completo apiladas (cada una con su propio header), ahora
             son tiles de igual altura en una sola fila. Mismo contenido,
             mitad del alto vertical antes de llegar a Torneos Recientes. */}
-        {(!showSteps || achievementsLoading || (achievements && achievements.unlocked_count > 0)) && (
+        {(!showSteps ||
+          achievementsLoading ||
+          (achievements && achievements.unlocked_count > 0)) && (
           <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {achievementsLoading ? (
               <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4">
@@ -559,33 +581,36 @@ function DashboardPage() {
             ) : (
               achievements &&
               achievements.unlocked_count > 0 && (
-              <Link
-                to="/players/$playerTag/achievements"
-                params={{ playerTag: tag }}
-                className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary transition group-hover:scale-105">
-                    {achievements.total_count > 0
-                      ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
-                      : 0}
-                    %
+                <Link
+                  to="/players/$playerTag/achievements"
+                  params={{ playerTag: tag }}
+                  className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary transition group-hover:scale-105">
+                      {achievements.total_count > 0
+                        ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
+                        : 0}
+                      %
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {achievements.unlocked_count}
+                        <span className="text-foreground-subtle">
+                          {" "}
+                          / {achievements.total_count} logros
+                        </span>
+                      </p>
+                      <p className="truncate text-xs text-foreground-subtle">
+                        {achievements.total_lp} Puntos de Logro
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">
-                      {achievements.unlocked_count}
-                      <span className="text-foreground-subtle"> / {achievements.total_count} logros</span>
-                    </p>
-                    <p className="truncate text-xs text-foreground-subtle">
-                      {achievements.total_lp} Puntos de Logro
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight
-                  size={16}
-                  className="flex-shrink-0 text-foreground-subtle transition group-hover:text-primary"
-                />
-              </Link>
+                  <ChevronRight
+                    size={16}
+                    className="flex-shrink-0 text-foreground-subtle transition group-hover:text-primary"
+                  />
+                </Link>
               )
             )}
 
@@ -714,7 +739,9 @@ function DashboardPage() {
         )}
 
         {/* Recent */}
-        <section className={`glass mt-6 overflow-hidden rounded-2xl ${hideEmptySections ? "hidden" : ""}`}>
+        <section
+          className={`glass mt-6 overflow-hidden rounded-2xl ${hideEmptySections ? "hidden" : ""}`}
+        >
           <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="text-primary" size={18} />
@@ -778,7 +805,7 @@ function DashboardPage() {
                 {loading ? (
                   <>
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <TournamentRowSkeleton key={i} />
+                      <TournamentRowSkeleton key={i} actionClassName="h-[30px] w-[110px]" />
                     ))}
                   </>
                 ) : events.length === 0 ? (
@@ -795,9 +822,12 @@ function DashboardPage() {
                         onClick={() => openTournament(t.id)}
                         className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition"
                       >
-                        <td className="px-4 py-3 text-foreground-secondary font-mono-stat text-xs">{t.date}</td>
+                        <td className="px-4 py-3 text-foreground-secondary font-mono-stat text-xs">
+                          {t.date}
+                        </td>
                         <td className="px-4 py-3 text-foreground">
-                          {t.store} <span className="text-xs text-foreground-subtle">· {t.city}</span>
+                          {t.store}{" "}
+                          <span className="text-xs text-foreground-subtle">· {t.city}</span>
                           {t.tournament_status === "APPROVED" && (
                             <span className="ml-2 inline-block rounded bg-yellow-500/15 px-1.5 py-0.5 text-xs font-medium text-yellow-300 align-middle">
                               Pendiente de conteo oficial
@@ -867,12 +897,15 @@ function DashboardPage() {
             {loading ? (
               <div className="divide-y divide-white/5">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="px-4 py-3 flex items-center justify-between gap-3">
-                    <div className="space-y-2 flex-1">
-                      <div className="h-3 w-40 rounded bg-white/[0.06] animate-pulse" />
-                      <div className="h-2 w-24 rounded bg-white/[0.06] animate-pulse" />
+                  <div key={i} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="flex-1 space-y-2">
+                      <SkeletonLine width="w-40" height="h-4" />
+                      <SkeletonLine width="w-28" height="h-3" />
                     </div>
-                    <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
+                    <div className="flex flex-col items-end gap-1">
+                      <SkeletonBlock className="h-[30px] w-16 rounded-md" />
+                      <SkeletonLine width="w-10" height="h-3" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -993,268 +1026,247 @@ function DashboardPage() {
                         transition={{ duration: 0.25, ease: "easeOut" }}
                         className="glass relative w-full max-w-6xl max-h-[calc(100vh-4rem-env(safe-area-inset-bottom))] lg:max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
                       >
-                <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                      Detalle del Torneo
-                    </p>
-                    <DialogPrimitive.Title asChild>
-                      <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">
-                        {loadingDetail ? "Cargando…" : (tournamentDetail?.game?.name ?? "—")}
-                      </h2>
-                    </DialogPrimitive.Title>
-                  </div>
-                  <button
-                    onClick={closeModal}
-                    className="rounded-md p-1.5 text-foreground-secondary hover:bg-white/10 hover:text-foreground"
-                    aria-label="Cerrar"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <div className="overflow-y-auto flex-1 min-h-0 px-6 pb-16 sm:pb-8 sm:px-8">
-                  {loadingDetail ? (
-                    <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-                      {/* Columna principal */}
-                      <div className="space-y-6 lg:col-span-2">
-                        {/* Metadata grid */}
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                          {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="space-y-2">
-                              <SkeletonLine width="w-16" height="h-2" />
-                              <SkeletonLine width="w-24" height="h-4" />
-                              <SkeletonLine width="w-16" height="h-3" />
-                            </div>
-                          ))}
+                        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                              Detalle del Torneo
+                            </p>
+                            <DialogPrimitive.Title asChild>
+                              <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">
+                                {loadingDetail
+                                  ? "Cargando…"
+                                  : (tournamentDetail?.game?.name ?? "—")}
+                              </h2>
+                            </DialogPrimitive.Title>
+                          </div>
+                          <button
+                            onClick={closeModal}
+                            className="rounded-md p-1.5 text-foreground-secondary hover:bg-white/10 hover:text-foreground"
+                            aria-label="Cerrar"
+                          >
+                            <X size={18} />
+                          </button>
                         </div>
+                        <div className="overflow-y-auto flex-1 min-h-0 px-6 pb-16 sm:pb-8 sm:px-8">
+                          {loadingDetail ? (
+                            <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                              {/* Columna principal */}
+                              <div className="space-y-6 lg:col-span-2">
+                                {/* Metadata grid */}
+                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                  {Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="space-y-2">
+                                      <SkeletonLine width="w-16" height="h-2" />
+                                      <SkeletonLine width="w-24" height="h-4" />
+                                      <SkeletonLine width="w-16" height="h-3" />
+                                    </div>
+                                  ))}
+                                </div>
 
-                        {/* Tabla de resultados */}
-                        <div className="space-y-3">
-                          <SkeletonLine width="w-40" height="h-4" />
-                          <div className="overflow-hidden rounded-xl border border-white/10">
-                            <div className="bg-black/40 px-3 py-2">
-                              <div className="grid grid-cols-5 gap-3">
-                                {["w-4", "w-24", "w-12", "w-12", "w-16"].map((w, i) => (
-                                  <SkeletonLine key={i} width={w} height="h-2" />
-                                ))}
-                              </div>
-                            </div>
-                            <div className="divide-y divide-white/5">
-                              {Array.from({ length: 8 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="px-3 py-2.5 grid grid-cols-5 gap-3 items-center"
-                                >
-                                  <SkeletonLine width="w-6" height="h-3" />
-                                  <SkeletonLine width="w-28" height="h-3" />
-                                  <SkeletonLine width="w-10" height="h-3" />
-                                  <SkeletonLine width="w-10" height="h-3" />
-                                  <div className="flex justify-end">
-                                    <SkeletonLine width="w-14" height="h-3" />
+                                {/* Tabla de resultados */}
+                                <div className="space-y-3">
+                                  <SkeletonLine width="w-40" height="h-4" />
+                                  <div className="overflow-hidden rounded-xl border border-white/10">
+                                    <div className="bg-black/40 px-3 py-2">
+                                      <div className="grid grid-cols-5 gap-3">
+                                        {["w-4", "w-24", "w-12", "w-12", "w-16"].map((w, i) => (
+                                          <SkeletonLine key={i} width={w} height="h-2" />
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div className="divide-y divide-white/5">
+                                      {Array.from({ length: 8 }).map((_, i) => (
+                                        <div
+                                          key={i}
+                                          className="px-3 py-2.5 grid grid-cols-5 gap-3 items-center"
+                                        >
+                                          <SkeletonLine width="w-6" height="h-3" />
+                                          <SkeletonLine width="w-28" height="h-3" />
+                                          <SkeletonLine width="w-10" height="h-3" />
+                                          <SkeletonLine width="w-10" height="h-3" />
+                                          <div className="flex justify-end">
+                                            <SkeletonLine width="w-14" height="h-3" />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                              </div>
 
-                      {/* Columna Performance Tracker */}
-                      <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
-                        <SkeletonLine width="w-40" height="h-4" className="mb-4" />
-                        {/* Summary card skeleton */}
-                        <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
-                          <SkeletonLine width="w-32" height="h-4" />
-                          <SkeletonLine width="w-20" height="h-3" />
-                          <div className="flex items-center gap-3 mt-3">
-                            <SkeletonBlock className="h-14 w-10 rounded-md flex-shrink-0" />
-                            <div className="space-y-2">
-                              <SkeletonLine width="w-16" height="h-2" />
-                              <SkeletonLine width="w-24" height="h-4" />
+                              {/* Columna Performance Tracker */}
+                              <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+                                <SkeletonLine width="w-40" height="h-4" className="mb-4" />
+                                <PerformanceTrackerSkeleton />
+                              </div>
                             </div>
-                          </div>
-                          <div className="text-center space-y-1 mt-3">
-                            <SkeletonLine width="w-16" height="h-2" className="mx-auto" />
-                            <SkeletonLine width="w-24" height="h-8" className="mx-auto" />
-                          </div>
-                        </div>
-                        {/* Rondas skeleton */}
-                        {Array.from({ length: 4 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="mb-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-3">
-                              <SkeletonBlock className="h-6 w-6 rounded-md" />
-                              <SkeletonLine width="w-28" height="h-3" />
+                          ) : tournamentDetail ? (
+                            <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                              <div className="space-y-6 lg:col-span-2">
+                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                  <div>
+                                    <p className="text-xs uppercase tracking-widest text-foreground-subtle">
+                                      Tienda
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold text-foreground">
+                                      {tournamentDetail.store.name}
+                                    </p>
+                                    <p className="text-xs text-foreground-subtle">
+                                      {tournamentDetail.store.city}, {tournamentDetail.store.state}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs uppercase tracking-widest text-foreground-subtle">
+                                      Fecha
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold text-foreground">
+                                      {new Date(
+                                        tournamentDetail.date + "T12:00:00",
+                                      ).toLocaleDateString("es-MX", {
+                                        day: "numeric",
+                                        month: "long",
+                                        year: "numeric",
+                                      })}
+                                    </p>
+                                    <p className="text-xs text-foreground-subtle">
+                                      S{tournamentDetail.semester} {tournamentDetail.year}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs uppercase tracking-widest text-foreground-subtle">
+                                      Participantes
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold text-foreground">
+                                      {tournamentDetail.total_participants}
+                                    </p>
+                                    {tournamentDetail.my_rank && (
+                                      <p className="text-xs text-primary">
+                                        Tu posición: #{tournamentDetail.my_rank}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-secondary">
+                                    Resultados del torneo
+                                  </h3>
+                                  <div className="overflow-x-auto rounded-xl border border-white/10">
+                                    <table className="w-full text-sm">
+                                      <thead className="bg-black/40 text-xs uppercase tracking-wider text-foreground-subtle">
+                                        <tr>
+                                          <th className="px-3 py-2 text-left">#</th>
+                                          <th className="px-3 py-2 text-left">Nexus Tag</th>
+                                          <th className="px-3 py-2 text-center whitespace-nowrap">
+                                            V / D
+                                          </th>
+                                          <th className="px-3 py-2 text-right">OMW%</th>
+                                          <th className="px-3 py-2 text-right">Puntos</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {tournamentDetail.rankings.map((r) => (
+                                          <tr
+                                            key={r.player_id}
+                                            onClick={() => {
+                                              if (!r.is_me) {
+                                                closeModal();
+                                                navigate({
+                                                  to: "/players/$playerTag",
+                                                  params: { playerTag: r.geek_tag },
+                                                });
+                                              }
+                                            }}
+                                            className={`border-t border-white/5 transition ${
+                                              r.is_me
+                                                ? "bg-primary/15"
+                                                : "cursor-pointer hover:bg-white/5"
+                                            }`}
+                                          >
+                                            <td className="px-3 py-2">
+                                              <span
+                                                className={`font-mono-stat text-sm font-semibold ${
+                                                  rankTier(r.rank)
+                                                    ? RANK_TIER_TEXT[rankTier(r.rank)!]
+                                                    : "text-foreground"
+                                                }`}
+                                              >
+                                                {String(r.rank).padStart(2, "0")}
+                                              </span>
+                                            </td>
+                                            <td className="px-3 py-2 text-foreground">
+                                              {r.is_me ? (
+                                                <span className="font-semibold text-primary">
+                                                  {r.geek_tag}
+                                                  <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-xs uppercase tracking-wider text-primary">
+                                                    Tú
+                                                  </span>
+                                                </span>
+                                              ) : (
+                                                <span className="font-semibold text-foreground">
+                                                  {r.geek_tag}
+                                                </span>
+                                              )}
+                                            </td>
+
+                                            <td className="px-3 py-2 text-center font-mono-stat text-xs text-foreground-secondary whitespace-nowrap">
+                                              {r.wins != null && r.losses != null
+                                                ? `${r.wins} / ${r.losses}`
+                                                : "—"}
+                                            </td>
+                                            <td className="px-3 py-2 text-right font-mono-stat text-xs text-foreground-secondary">
+                                              {r.omw_percentage != null
+                                                ? `${Number(r.omw_percentage).toFixed(1)}%`
+                                                : "—"}
+                                            </td>
+                                            <td className="px-3 py-2 text-right font-mono-stat font-semibold text-foreground">
+                                              {r.points_earned}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="min-h-0 min-w-0 max-h-[50vh] overflow-y-auto border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[calc(90vh-80px)] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:sticky lg:top-0">
+                                <div className="mb-4 flex items-center justify-between">
+                                  <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
+                                    Mis Partidas
+                                  </h3>
+                                  {editingTrackerInModal && (
+                                    <button
+                                      type="button"
+                                      onClick={exitTrackerEditMode}
+                                      className="text-xs font-semibold text-foreground-secondary hover:text-foreground"
+                                    >
+                                      Listo
+                                    </button>
+                                  )}
+                                </div>
+                                {editingTrackerInModal ? (
+                                  <PerformanceTrackerModal
+                                    embedded
+                                    tournamentId={tournamentDetail.tournament_id}
+                                    gameId={tournamentDetail.game_id}
+                                    onClose={exitTrackerEditMode}
+                                  />
+                                ) : (
+                                  <RoundsAccordionReadOnly
+                                    key={roundsReloadKey}
+                                    tournamentId={tournamentDetail.tournament_id}
+                                    gameId={tournamentDetail.game_id}
+                                    onAddTracker={() => setEditingTrackerInModal(true)}
+                                  />
+                                )}
+                              </div>
                             </div>
-                            <SkeletonLine width="w-14" height="h-5" className="rounded-md" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : tournamentDetail ? (
-                    <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-                      <div className="space-y-6 lg:col-span-2">
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                              Tienda
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-foreground">
-                              {tournamentDetail.store.name}
-                            </p>
-                            <p className="text-xs text-foreground-subtle">
-                              {tournamentDetail.store.city}, {tournamentDetail.store.state}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                              Fecha
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-foreground">
-                              {new Date(tournamentDetail.date + "T12:00:00").toLocaleDateString(
-                                "es-MX",
-                                {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                },
-                              )}
-                            </p>
-                            <p className="text-xs text-foreground-subtle">
-                              S{tournamentDetail.semester} {tournamentDetail.year}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                              Participantes
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-foreground">
-                              {tournamentDetail.total_participants}
-                            </p>
-                            {tournamentDetail.my_rank && (
-                              <p className="text-xs text-primary">
-                                Tu posición: #{tournamentDetail.my_rank}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-secondary">
-                            Resultados del torneo
-                          </h3>
-                          <div className="overflow-x-auto rounded-xl border border-white/10">
-                            <table className="w-full text-sm">
-                              <thead className="bg-black/40 text-xs uppercase tracking-wider text-foreground-subtle">
-                                <tr>
-                                  <th className="px-3 py-2 text-left">#</th>
-                                  <th className="px-3 py-2 text-left">Nexus Tag</th>
-                                  <th className="px-3 py-2 text-center whitespace-nowrap">V / D</th>
-                                  <th className="px-3 py-2 text-right">OMW%</th>
-                                  <th className="px-3 py-2 text-right">Puntos</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {tournamentDetail.rankings.map((r) => (
-                                  <tr
-                                    key={r.player_id}
-                                    onClick={() => {
-                                      if (!r.is_me) {
-                                        closeModal();
-                                        navigate({
-                                          to: "/players/$playerTag",
-                                          params: { playerTag: r.geek_tag },
-                                        });
-                                      }
-                                    }}
-                                    className={`border-t border-white/5 transition ${
-                                      r.is_me ? "bg-primary/15" : "cursor-pointer hover:bg-white/5"
-                                    }`}
-                                  >
-                                    <td className="px-3 py-2">
-                                      <span
-                                        className={`font-mono-stat text-sm font-semibold ${
-                                          rankTier(r.rank) ? RANK_TIER_TEXT[rankTier(r.rank)!] : "text-foreground"
-                                        }`}
-                                      >
-                                        {String(r.rank).padStart(2, "0")}
-                                      </span>
-                                    </td>
-                                    <td className="px-3 py-2 text-foreground">
-                                      {r.is_me ? (
-                                        <span className="font-semibold text-primary">
-                                          {r.geek_tag}
-                                          <span className="ml-2 rounded bg-primary/30 px-1.5 py-0.5 text-xs uppercase tracking-wider text-primary">
-                                            Tú
-                                          </span>
-                                        </span>
-                                      ) : (
-                                        <span className="font-semibold text-foreground">
-                                          {r.geek_tag}
-                                        </span>
-                                      )}
-                                    </td>
-
-                                    <td className="px-3 py-2 text-center font-mono-stat text-xs text-foreground-secondary whitespace-nowrap">
-                                      {r.wins != null && r.losses != null
-                                        ? `${r.wins} / ${r.losses}`
-                                        : "—"}
-                                    </td>
-                                    <td className="px-3 py-2 text-right font-mono-stat text-xs text-foreground-secondary">
-                                      {r.omw_percentage != null
-                                        ? `${Number(r.omw_percentage).toFixed(1)}%`
-                                        : "—"}
-                                    </td>
-                                    <td className="px-3 py-2 text-right font-mono-stat font-semibold text-foreground">
-                                      {r.points_earned}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="min-h-0 min-w-0 max-h-[50vh] overflow-y-auto border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[calc(90vh-80px)] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:sticky lg:top-0">
-                        <div className="mb-4 flex items-center justify-between">
-                          <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
-                            Mis Partidas
-                          </h3>
-                          {editingTrackerInModal && (
-                            <button
-                              type="button"
-                              onClick={exitTrackerEditMode}
-                              className="text-xs font-semibold text-foreground-secondary hover:text-foreground"
-                            >
-                              Listo
-                            </button>
+                          ) : (
+                            <div className="py-16 text-center text-sm text-foreground-subtle">
+                              No se pudo cargar el torneo.
+                            </div>
                           )}
                         </div>
-                        {editingTrackerInModal ? (
-                          <PerformanceTrackerModal
-                            embedded
-                            tournamentId={tournamentDetail.tournament_id}
-                            gameId={tournamentDetail.game_id}
-                            onClose={exitTrackerEditMode}
-                          />
-                        ) : (
-                          <RoundsAccordionReadOnly
-                            key={roundsReloadKey}
-                            tournamentId={tournamentDetail.tournament_id}
-                            gameId={tournamentDetail.game_id}
-                            onAddTracker={() => setEditingTrackerInModal(true)}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-16 text-center text-sm text-foreground-subtle">
-                      No se pudo cargar el torneo.
-                    </div>
-                  )}
-                </div>
                       </motion.div>
                     </DialogPrimitive.Content>
                   </motion.div>
@@ -1276,7 +1288,10 @@ function DashboardPage() {
               <PerformanceTrackerModal
                 tournamentId={trackerTournament.id}
                 gameId={trackerTournament.game_id}
-                onClose={() => setTrackerTournament(null)}
+                onClose={() => {
+                  queryClient.removeQueries({ queryKey: ["tournament-rounds"] });
+                  setTrackerTournament(null);
+                }}
               />
             </motion.div>
           )}
@@ -1367,7 +1382,9 @@ function TcgRankCard({
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
-              tab === t ? "bg-primary text-primary-foreground" : "text-foreground-secondary hover:text-foreground"
+              tab === t
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground-secondary hover:text-foreground"
             }`}
           >
             {t === "global" ? "Global" : "Mensual"}

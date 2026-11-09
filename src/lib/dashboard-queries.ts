@@ -1,3 +1,4 @@
+import { getTournamentRoundsForPlayer } from "./nexus-tournament-tracker.functions";
 import { queryOptions } from "@tanstack/react-query";
 import { getMyDashboard, getTournamentDetail } from "./nexus-player.functions";
 
@@ -17,4 +18,13 @@ export const tournamentDetailQuery = (tournamentId: string) =>
     queryFn: () => getTournamentDetail({ data: { tournament_id: tournamentId } }),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+  });
+
+// Se pide al abrir el modal, a la par del detalle del torneo.
+export const tournamentRoundsQuery = (tournamentId: string) =>
+  queryOptions({
+    queryKey: ["tournament-rounds", tournamentId],
+    queryFn: () => getTournamentRoundsForPlayer({ data: { tournament_id: tournamentId } }),
+    staleTime: 30_000,
+    gcTime: 60_000,
   });

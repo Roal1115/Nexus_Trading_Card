@@ -1,6 +1,8 @@
+import { PerformanceTrackerSkeleton } from "@/components/ui/skeleton-loader";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getTournamentRoundsForPlayer } from "@/lib/nexus-tournament-tracker.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { tournamentRoundsQuery } from "@/lib/dashboard-queries";
 import { AppealForm } from "@/components/tournament-tracker/AppealForm";
 import { cleanLeaderName } from "@/components/tournament-tracker/round-ui";
 import { AnimatePresence } from "framer-motion";
@@ -81,7 +83,9 @@ function SummaryCard({
             {summary.toughest_opponent_tag}
           </span>
           {summary.toughest_opponent_rank && (
-            <span className="text-foreground-subtle flex-shrink-0">(#{summary.toughest_opponent_rank})</span>
+            <span className="text-foreground-subtle flex-shrink-0">
+              (#{summary.toughest_opponent_rank})
+            </span>
           )}
         </div>
       )}
@@ -192,7 +196,9 @@ function RoundAccordionItem({
                 {round.won_die_roll !== null && (
                   <span className="text-xs text-foreground-subtle">
                     Dado:{" "}
-                    <span className="text-foreground-secondary">{round.won_die_roll ? "Yo" : "Oponente"}</span>
+                    <span className="text-foreground-secondary">
+                      {round.won_die_roll ? "Yo" : "Oponente"}
+                    </span>
                   </span>
                 )}
                 {round.turn_order !== null && (
@@ -291,7 +297,9 @@ function RoundAccordionItem({
               </div>
             </div>
           ) : (
-            <p className="py-2 text-center text-sm text-foreground-secondary">Bye — victoria automática</p>
+            <p className="py-2 text-center text-sm text-foreground-secondary">
+              Bye — victoria automática
+            </p>
           )}
           {!round.is_bye && (
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-foreground-secondary">
@@ -313,7 +321,9 @@ function RoundAccordionItem({
               </div>
             </div>
           )}
-          {round.notes && <p className="mt-2 text-xs text-foreground-secondary italic">{round.notes}</p>}
+          {round.notes && (
+            <p className="mt-2 text-xs text-foreground-secondary italic">{round.notes}</p>
+          )}
           {round.is_auto_populated && !underAppeal && !isConfirmed && (
             <div className="mt-3 flex flex-col gap-2">
               {/* Aceptar resultado */}
@@ -374,7 +384,7 @@ export function RoundsAccordionReadOnly({
   // aparte, perdiendo el contexto del torneo que se estaba viendo.
   onAddTracker?: () => void;
 }) {
-  const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState<RoundWithLeaders[]>([]);
   const [opponentMap, setOpponentMap] = useState<Record<string, string>>({});
@@ -391,9 +401,11 @@ export function RoundsAccordionReadOnly({
     null,
   );
 
-  const reload = () => {
+  // Sin argumento aprovecha la consulta lanzada al abrir el modal; tras un cambio pide datos frescos.
+  const reload = (fresh = false) => {
     setLoading(true);
-    fetchRounds({ data: { tournament_id: tournamentId } })
+    queryClient
+      .fetchQuery({ ...tournamentRoundsQuery(tournamentId), staleTime: fresh ? 0 : 30_000 })
       .then((res: any) => {
         setRounds(res.rounds ?? []);
         setSummary(res.summary ?? null);
@@ -412,13 +424,15 @@ export function RoundsAccordionReadOnly({
   }, [tournamentId]);
 
   if (loading) {
-    return <p className="py-6 text-center text-sm text-foreground-secondary">Cargando rondas…</p>;
+    return <PerformanceTrackerSkeleton />;
   }
 
   if (rounds.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <p className="text-sm text-foreground-secondary">Aún no has registrado rondas para este torneo.</p>
+        <p className="text-sm text-foreground-secondary">
+          Aún no has registrado rondas para este torneo.
+        </p>
         {onAddTracker && (
           <button
             type="button"
@@ -456,8 +470,8 @@ export function RoundsAccordionReadOnly({
             round={r}
             opponentTag={r.opponent_player_id ? (opponentMap[r.opponent_player_id] ?? "—") : "—"}
             gameId={gameId}
-            onAppealSubmitted={reload}
-            onConfirmed={reload} // ← agrega esto
+            onAppealSubmitted={() => reload(true)}
+            onConfirmed={() => reload(true)} // ← agrega esto
           />
         ))}
       </div>

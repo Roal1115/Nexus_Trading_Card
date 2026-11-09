@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X, Plus, Trophy, ChevronDown, Trash2, ShieldQuestion } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PerformanceTrackerSkeleton } from "@/components/ui/skeleton-loader";
 
 import { toast } from "sonner";
 import {
@@ -136,7 +137,11 @@ function SimpleSelect({
         className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
       >
         <span className="truncate">
-          {selected ? selected.label : <span className="text-foreground-subtle">{placeholder}</span>}
+          {selected ? (
+            selected.label
+          ) : (
+            <span className="text-foreground-subtle">{placeholder}</span>
+          )}
         </span>
         <ChevronDown size={14} className="text-foreground-subtle flex-shrink-0" />
       </button>
@@ -453,7 +458,7 @@ export function PerformanceTrackerModal({
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-foreground-secondary">Cargando…</p>
+        <PerformanceTrackerSkeleton />
       ) : (
         <div className="space-y-4">
           {/* Hero header — leader image + record, same format as /sessions/$sessionId */}
@@ -505,8 +510,12 @@ export function PerformanceTrackerModal({
           {/* Table header */}
           {rounds.length > 0 && (
             <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
-              <span className="text-xs uppercase tracking-widest text-foreground-subtle">Round</span>
-              <span className="text-xs uppercase tracking-widest text-foreground-subtle">Rival</span>
+              <span className="text-xs uppercase tracking-widest text-foreground-subtle">
+                Round
+              </span>
+              <span className="text-xs uppercase tracking-widest text-foreground-subtle">
+                Rival
+              </span>
               <span className="text-center text-xs uppercase tracking-widest text-foreground-subtle">
                 Dado
               </span>
@@ -630,7 +639,7 @@ export function PerformanceTrackerModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:items-center sm:p-4"
           onClick={onClose}
         >
           <motion.div
@@ -640,7 +649,7 @@ export function PerformanceTrackerModal({
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
-            className="glass relative w-full max-w-3xl max-h-[90vh] min-h-[500px] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+            className="glass relative max-h-[calc(90dvh-4rem)] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-white/10 bg-black/85 p-5 sm:max-h-[90vh] sm:min-h-[500px] sm:rounded-2xl sm:p-8"
           >
             {content}
           </motion.div>
