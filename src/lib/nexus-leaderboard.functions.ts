@@ -25,7 +25,7 @@ export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(
     admin.from("games").select("id, slug, name").eq("is_active", true).order("name"),
     admin
       .from("stores")
-      .select("id, name, city")
+      .select("id, name, city, zone, subzone")
       .eq("is_active", true)
       .order("city", { ascending: true })
       .order("name", { ascending: true }),
@@ -99,14 +99,16 @@ export const getLeaderboard = createServerFn({ method: "POST" })
   .inputValidator(
     (d: {
       game_id?: string | null;
-      city?: string | null;
+      zone?: string | null;
+      region?: string | null;
       store_id?: string | null;
       month?: string | null;
     }) =>
       z
         .object({
           game_id: z.string().uuid().nullable().optional(),
-          city: z.string().max(120).nullable().optional(),
+          zone: z.string().max(60).nullable().optional(),
+          region: z.string().max(120).nullable().optional(),
           store_id: z.string().uuid().nullable().optional(),
           month: z
             .string()
@@ -125,14 +127,17 @@ export const getLeaderboard = createServerFn({ method: "POST" })
 
     // 1. Resolver cityStoreIds
     let cityStoreIds: string[] | null = null;
-    if (data.city) {
-      const { data: cityStores, error } = await admin
+    if (data.zone) {
+      const { data: zoneStores, error } = await admin
         .from("stores")
-        .select("id")
+        .select("id, city, subzone")
         .eq("is_active", true)
-        .eq("city", data.city);
+        .eq("zone", data.zone);
       if (error) failDb(error);
-      cityStoreIds = (cityStores ?? []).map((s) => s.id);
+      // La región es la subzona; en zonas sin subzonas (Extendida) es la ciudad.
+      cityStoreIds = (zoneStores ?? [])
+        .filter((s) => !data.region || (s.subzone ?? s.city) === data.region)
+        .map((s) => s.id);
     }
 
     // 2. Resolver monthValue PRIMERO

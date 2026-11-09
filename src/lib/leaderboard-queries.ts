@@ -3,7 +3,8 @@ import { getLeaderboard, getLeaderboardOptions } from "./nexus-leaderboard.funct
 
 export type LeaderboardFilters = {
   game_id: string | null;
-  city: string | null;
+  zone: string | null;
+  region: string | null;
   store_id: string | null;
   month: string | null;
 };

@@ -20,7 +20,8 @@ import { PillSelect } from "@/components/ui/pill-select";
 type Period = "monthly" | "semestral";
 
 type LeaderboardSearch = {
-  city?: string;
+  zone?: string;
+  region?: string;
   store?: string;
   month?: string;
   q?: string;
@@ -29,7 +30,8 @@ type LeaderboardSearch = {
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): LeaderboardSearch => ({
-    city: typeof s.city === "string" && s.city ? s.city : undefined,
+    zone: typeof s.zone === "string" && s.zone ? s.zone : undefined,
+    region: typeof s.region === "string" && s.region ? s.region : undefined,
     store: typeof s.store === "string" && s.store ? s.store : undefined,
     month: typeof s.month === "string" && /^\d{4}-\d{2}$/.test(s.month) ? s.month : undefined,
     q: typeof s.q === "string" && s.q ? s.q : undefined,
@@ -48,7 +50,13 @@ export const Route = createFileRoute("/")({
   component: LeaderboardPage,
 });
 
-type Store = { id: string; name: string; city: string | null };
+type Store = {
+  id: string;
+  name: string;
+  city: string | null;
+  zone: string | null;
+  subzone: string | null;
+};
 type Row = {
   player_id: string;
   geek_tag: string;
@@ -227,7 +235,9 @@ function PeriodSegmentedControl({
           aria-selected={period === o.value}
           onClick={() => onChange(o.value)}
           className={`rounded px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-            period === o.value ? "bg-primary/15 text-primary" : "text-foreground-secondary hover:text-foreground-secondary"
+            period === o.value
+              ? "bg-primary/15 text-primary"
+              : "text-foreground-secondary hover:text-foreground-secondary"
           }`}
         >
           {o.label}
@@ -263,7 +273,8 @@ function LeaderboardPage() {
   // sobrevive atrás/adelante y refresh). La temporada 1 es solo One Piece.
   const urlSearch = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
-  const city = urlSearch.city ?? ALL;
+  const zone = urlSearch.zone ?? ALL;
+  const region = zone === ALL ? ALL : (urlSearch.region ?? ALL);
   const storeId = urlSearch.store ?? ALL;
   const month = urlSearch.month ?? ALL;
   const search = urlSearch.q ?? "";
@@ -281,7 +292,9 @@ function LeaderboardPage() {
       replace,
     });
 
-  const setCity = (v: string) => patchSearch({ city: v === ALL ? undefined : v });
+  // Las regiones dependen de la zona: al cambiarla, la región elegida ya no aplica.
+  const setZone = (v: string) => patchSearch({ zone: v === ALL ? undefined : v, region: undefined });
+  const setRegion = (v: string) => patchSearch({ region: v === ALL ? undefined : v });
   const setStoreId = (v: string) => patchSearch({ store: v === ALL ? undefined : v });
   const setMonth = (v: string) => patchSearch({ month: v === ALL ? undefined : v });
   // Teclear no debe ensuciar el historial: replace en vez de push.
@@ -296,7 +309,8 @@ function LeaderboardPage() {
   const boardQuery = useQuery({
     ...leaderboardQuery({
       game_id: activeTcg?.id ?? null,
-      city: city === ALL ? null : city,
+      zone: zone === ALL ? null : zone,
+      region: region === ALL ? null : region,
       store_id: storeId === ALL ? null : storeId,
       month: month === ALL ? null : month,
     }),
@@ -317,16 +331,29 @@ function LeaderboardPage() {
     if (boardQuery.isError) toast.error("Error al cargar el ranking. Intenta de nuevo.");
   }, [boardQuery.isError]);
 
-  const cities = useMemo(() => {
+  const zones = useMemo(() => {
     const set = new Set<string>();
-    for (const s of stores) if (s.city) set.add(s.city);
+    for (const s of stores) if (s.zone) set.add(s.zone);
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es-MX"));
   }, [stores]);
 
+  // Región = subzona. Una zona sin subzonas (Extendida) se divide por ciudad.
+  const regions = useMemo(() => {
+    const inZone = stores.filter((s) => s.zone === zone);
+    const values = inZone.some((s) => s.subzone)
+      ? inZone.map((s) => s.subzone)
+      : inZone.map((s) => s.city);
+    const set = new Set(values.filter((v): v is string => Boolean(v)));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es-MX"));
+  }, [stores, zone]);
+
   const visibleStores = useMemo(() => {
-    if (city === ALL) return stores;
-    return stores.filter((s) => s.city === city);
-  }, [stores, city]);
+    return stores.filter(
+      (s) =>
+        (zone === ALL || s.zone === zone) &&
+        (region === ALL || (s.subzone ?? s.city) === region),
+    );
+  }, [stores, zone, region]);
 
   useEffect(() => {
     if (storeId !== ALL && stores.length > 0 && !visibleStores.some((s) => s.id === storeId)) {
@@ -376,14 +403,25 @@ function LeaderboardPage() {
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap w-full items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer ... min-w-[180px]">
               <PillSelect
-                label="Ciudad"
-                value={city}
-                onChange={(v) => setCity(v)}
+                label="Zona"
+                value={zone}
+                onChange={setZone}
                 options={[
                   { value: ALL, label: "Todas" },
-                  ...cities.map((c) => ({ value: c, label: c })),
+                  ...zones.map((z) => ({ value: z, label: z })),
                 ]}
               />
+              {zone !== ALL && (
+                <PillSelect
+                  label="Región"
+                  value={region}
+                  onChange={setRegion}
+                  options={[
+                    { value: ALL, label: "Todas" },
+                    ...regions.map((r) => ({ value: r, label: r })),
+                  ]}
+                />
+              )}
               <PillSelect
                 label="Tienda"
                 value={storeId}
@@ -463,7 +501,9 @@ function LeaderboardPage() {
 
 function RankDelta({ delta }: { delta: number | null }) {
   if (delta === null) {
-    return <span className="text-xs font-semibold text-foreground-secondary leading-none">NEW</span>;
+    return (
+      <span className="text-xs font-semibold text-foreground-secondary leading-none">NEW</span>
+    );
   }
   if (delta === 0) {
     return <span className="text-xs font-semibold text-foreground-secondary leading-none">—</span>;
@@ -631,7 +671,7 @@ function LeaderboardTable({
                 : "Sin resultados para estos filtros"}
             </p>
             <p className="mt-1 text-xs text-foreground-subtle">
-              Prueba cambiando la ciudad, la tienda o el mes
+              Prueba cambiando la zona, la región, la tienda o el mes
             </p>
             {search && onClearSearch && (
               <button
@@ -714,7 +754,9 @@ function LeaderboardTable({
                     <span className="text-right font-mono text-xs text-foreground-secondary">
                       {r.tournaments_won}
                     </span>
-                    <span className="text-right font-mono text-xs text-foreground-secondary">{omwFor(r)}%</span>
+                    <span className="text-right font-mono text-xs text-foreground-secondary">
+                      {omwFor(r)}%
+                    </span>
                   </div>
                   {/* Mobile */}
                   <div
