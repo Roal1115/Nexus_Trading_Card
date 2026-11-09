@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import { getStoreFichas } from "./nexus-schedule-events.functions";
 import {
   getPublicStoresList,
   getStoreProfile,
@@ -27,4 +28,11 @@ export const storeTournamentHistoryQuery = (slug: string) =>
     queryFn: () => getStoreTournamentHistory({ data: { slug } }),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+  });
+
+export const storeFichasQuery = (storeId: string) =>
+  queryOptions({
+    queryKey: ["store-fichas", storeId],
+    queryFn: () => getStoreFichas({ data: { store_id: storeId } }),
+    staleTime: 60_000,
   });

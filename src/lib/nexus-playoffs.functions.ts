@@ -1,4 +1,4 @@
-// Playoffs públicos, Nivel 1. Se calcula al vuelo con los torneos publicados.
+// Playoffs públicos. Se calcula al vuelo con los torneos publicados.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
@@ -24,6 +24,7 @@ import {
   standingsOf,
   weeksOfMonths,
   type PlayoffResult,
+  type SeedingStats,
 } from "./playoffs";
 
 export type FrozenMatch = {
@@ -126,9 +127,7 @@ async function computeLevelOne() {
   const rows = await fetchSeasonResults(admin, gameRes.data.id, season);
   if (rows.length === 0) return null;
 
-  // ponytail: la temporada no guarda cuándo empieza la clasificación; se toma
-  // el primer mes con torneos. Si Admin define la fecha, usarla aquí.
-  const months = qualifyingMonths(rows.map(monthOf).sort()[0]);
+  const months = qualifyingMonths(season.start_date);
   const windowRows = rows.filter((row) => months.includes(monthOf(row)));
 
   const subregionOf = new Map(
@@ -172,9 +171,20 @@ async function computeLevelOne() {
     ];
   });
 
+  // Ranking general: 2 mejores de la semana sin importar la subregión.
+  const generalResults: PlayoffResult[] = windowRows.map((row) => ({
+    playerId: row.player_id,
+    subregion: "general",
+    date: row.tournaments.tournament_date,
+    month: monthOf(row),
+    points: row.points_earned ?? 0,
+    omw: Number(row.omw_percentage),
+  }));
+
   const closedMonths = months.filter((month) => month < today.slice(0, 7));
   const lists = classify({
     results,
+    generalResults,
     subregions,
     closedMonths,
     seasonFinished: closedMonths.length === months.length,
@@ -188,20 +198,8 @@ async function computeLevelOne() {
   if (playersRes.error) failDb(playersRes.error);
   const tags = new Map((playersRes.data ?? []).map((p) => [p.id, p.geek_tag]));
 
-  // Ranking general: 2 mejores de la semana sin importar la subregión.
-  const generalPoints = new Map(
-    standingsOf(
-      windowRows.map((row) => ({
-        playerId: row.player_id,
-        subregion: "general",
-        date: row.tournaments.tournament_date,
-        month: monthOf(row),
-        points: row.points_earned ?? 0,
-        omw: Number(row.omw_percentage),
-      })),
-    ).map((s) => [s.playerId, s.points]),
-  );
-  const frozen = await loadFrozenEvents(admin, season.id, gameRes.data.id);
+  const generalPoints = new Map(standingsOf(generalResults).map((s) => [s.playerId, s.points]));
+  const frozen = await loadFrozenEvents(admin, season, gameRes.data.id);
   const brackets = await loadBracketEvents(admin, season.id, gameRes.data.id);
   const parents = Array.from(new Set(subregions.map(parentRegion))).map((name) => {
     const children = subregions.filter((s) => parentRegion(s) === name);
@@ -414,7 +412,7 @@ export const savePlayoffMatch = createServerFn({ method: "POST" })
       .eq("id", match.id);
     if (updateError) failDb(updateError);
 
-    if (!isBracket) await createBracketIfGroupsDone(db, match.event_id);
+    if (!isBracket) await createBracketIfGroupsDone(db, match.event_id, event.game_id);
     if (advances && data.winner_id) {
       const { data: pair, error: pairError } = await db
         .from("playoff_matches")
@@ -449,7 +447,7 @@ export const savePlayoffMatch = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-async function createBracketIfGroupsDone(db: any, eventId: string) {
+async function createBracketIfGroupsDone(db: any, eventId: string, gameId: string) {
   const [entriesRes, matchesRes] = await Promise.all([
     db
       .from("playoff_entries")
@@ -465,12 +463,15 @@ async function createBracketIfGroupsDone(db: any, eventId: string) {
   if (matchesRes.error) failDb(matchesRes.error);
   const matches = matchesRes.data ?? [];
   if (matches.some((m: any) => !m.winner_id)) return;
+  const season = await getActiveSeason(db);
+  if (!season) throw new Error("No hay temporada activa.");
+  const stats = await loadSeedingStats(db, gameId, season);
 
   const qualified = SEED_GROUPS.map((_, groupIndex) => {
     const table = groupStandings(
       (entriesRes.data ?? [])
         .filter((e: any) => e.group_index === groupIndex)
-        .map((e: any) => ({ playerId: e.player_id, seed: e.seed, points: Number(e.points) })),
+        .map((e: any) => tieEntry(e, stats)),
       matches
         .filter((m: any) => Math.floor(m.slot / 2) === groupIndex)
         .map((m: any) => ({ playerA: m.player_a, playerB: m.player_b, winnerId: m.winner_id })),
@@ -487,14 +488,14 @@ async function createBracketIfGroupsDone(db: any, eventId: string) {
 
 async function loadFrozenEvents(
   admin: ReturnType<typeof getNexusAdmin>,
-  seasonId: string,
+  season: { id: string; start_date: string; end_date: string },
   gameId: string,
 ) {
   const db = admin as any;
   const { data: events, error } = await db
     .from("playoff_events")
     .select("id, region")
-    .eq("season_id", seasonId)
+    .eq("season_id", season.id)
     .eq("game_id", gameId)
     .eq("level", 1);
   if (error) failDb(error);
@@ -520,6 +521,7 @@ async function loadFrozenEvents(
   if (matchesRes.error) failDb(matchesRes.error);
   const entries: any[] = entriesRes.data ?? [];
   const matches: any[] = matchesRes.data ?? [];
+  const stats = await loadSeedingStats(admin, gameId, season);
 
   const playersRes = await admin
     .from("players")
@@ -549,9 +551,7 @@ async function loadFrozenEvents(
       );
       const done = groupMatches.every((m) => m.winner_id);
       const table = groupStandings(
-        eventEntries
-          .filter((e) => e.group_index === groupIndex)
-          .map((e) => ({ playerId: e.player_id, seed: e.seed, points: Number(e.points) })),
+        eventEntries.filter((e) => e.group_index === groupIndex).map((e) => tieEntry(e, stats)),
         groupMatches.map((m) => ({
           playerA: m.player_a,
           playerB: m.player_b,
@@ -650,6 +650,42 @@ async function loadBracketEvents(
   return brackets;
 }
 
+/** Legacy Points de cada jugador. */
+async function loadLegacyPoints(admin: ReturnType<typeof getNexusAdmin>) {
+  const totals = new Map<string, number>();
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await (admin as any)
+      .from("player_achievements")
+      .select("id, player_id, achievement_definitions(base_lp)")
+      .order("id")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) failDb(error);
+    for (const row of data ?? []) {
+      totals.set(
+        row.player_id,
+        (totals.get(row.player_id) ?? 0) + (row.achievement_definitions?.base_lp ?? 0),
+      );
+    }
+    if ((data ?? []).length < PAGE_SIZE) return totals;
+  }
+}
+
+/** Datos de desempate de un jugador del grupo. */
+function tieEntry(
+  e: { player_id: string; seed: number; points: number | string },
+  stats: Map<string, SeedingStats>,
+) {
+  const s = stats.get(e.player_id);
+  return {
+    playerId: e.player_id,
+    seed: e.seed,
+    points: Number(e.points),
+    omw: s?.omw,
+    played: s?.played,
+    legacy: s?.legacy,
+  };
+}
+
 /** Puntos del ranking general y desempates de cada jugador de la temporada. */
 async function loadSeedingStats(
   admin: ReturnType<typeof getNexusAdmin>,
@@ -657,8 +693,9 @@ async function loadSeedingStats(
   season: { start_date: string; end_date: string },
 ) {
   const rows = await fetchSeasonResults(admin, gameId, season);
-  const months = qualifyingMonths(rows.map(monthOf).sort()[0]);
+  const months = qualifyingMonths(season.start_date);
   const window = rows.filter((row) => months.includes(monthOf(row)));
+  const legacy = await loadLegacyPoints(admin);
   const firstDates = new Map<string, string>();
   for (const row of rows) {
     const date = row.tournaments.tournament_date;
@@ -675,7 +712,14 @@ async function loadSeedingStats(
         points: row.points_earned ?? 0,
         omw: Number(row.omw_percentage),
       })),
-    ).map((s) => [s.playerId, { ...s, firstDate: firstDates.get(s.playerId) ?? "9999-12-31" }]),
+    ).map((s) => [
+      s.playerId,
+      {
+        ...s,
+        firstDate: firstDates.get(s.playerId) ?? "9999-12-31",
+        legacy: legacy.get(s.playerId) ?? 0,
+      },
+    ]),
   );
 }
 
@@ -706,9 +750,10 @@ export const createPlayoffBracket = createServerFn({ method: "POST" })
         .filter((s) => parentRegion(s.name) === data.region)
         .flatMap((s) => s.frozen!.top_four_ids);
     } else {
-      if (!current.final.ready) throw new Error("Faltan regiones por terminar su Nivel 2.");
+      if (!current.final.ready)
+        throw new Error("Faltan regiones por terminar su Playoff de Ciudad.");
       if (new Set(data.extended_tags).size !== 4) {
-        throw new Error("Captura los 4 jugadores de Zona Extendida, sin repetir.");
+        throw new Error("Captura los 4 jugadores de Región Extendida, sin repetir.");
       }
       const { data: extended, error } = await admin
         .from("players")
@@ -739,6 +784,7 @@ export const createPlayoffBracket = createServerFn({ method: "POST" })
             omw: 0,
             played: 0,
             firstDate: "9999-12-31",
+            legacy: 0,
           },
       )
       .sort(compareSeeding);

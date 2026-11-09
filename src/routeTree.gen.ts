@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as CheckInboxRouteImport } from './routes/check-inbox'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MetaRouteImport } from './routes/meta'
 import { Route as MyStatsRouteImport } from './routes/my-stats'
@@ -30,6 +31,7 @@ import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AdminAdsRouteImport } from './routes/admin.ads'
 import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
+import { Route as AdminFichasRouteImport } from './routes/admin.fichas'
 import { Route as AdminHistoryRouteImport } from './routes/admin.history'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminPlayoffsRouteImport } from './routes/admin.playoffs'
@@ -58,6 +60,7 @@ import { Route as TcgManagerIndexRouteImport } from './routes/tcg-manager.index'
 import { Route as TcgManagerAnalyticsRouteImport } from './routes/tcg-manager.analytics'
 import { Route as TcgManagerApprovedRouteImport } from './routes/tcg-manager.approved'
 import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.calendar'
+import { Route as TcgManagerFichasRouteImport } from './routes/tcg-manager.fichas'
 import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
 import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my-history'
 import { Route as TcgManagerPlayersRouteImport } from './routes/tcg-manager.players'
@@ -105,6 +108,11 @@ const CheckInboxRoute = CheckInboxRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -185,6 +193,11 @@ const AdminApprovedRoute = AdminApprovedRouteImport.update({
 const AdminCalendarRoute = AdminCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFichasRoute = AdminFichasRouteImport.update({
+  id: '/fichas',
+  path: '/fichas',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminHistoryRoute = AdminHistoryRouteImport.update({
@@ -327,6 +340,11 @@ const TcgManagerCalendarRoute = TcgManagerCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => TcgManagerRoute,
 } as any)
+const TcgManagerFichasRoute = TcgManagerFichasRouteImport.update({
+  id: '/fichas',
+  path: '/fichas',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
 const TcgManagerHistoryRoute = TcgManagerHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -458,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof CalendarRoute
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
@@ -473,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/fichas': typeof AdminFichasRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRoute
   '/admin/playoffs': typeof AdminPlayoffsRoute
@@ -497,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
+  '/tcg-manager/fichas': typeof TcgManagerFichasRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
@@ -531,6 +552,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
@@ -542,6 +564,7 @@ export interface FileRoutesByTo {
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/fichas': typeof AdminFichasRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRoute
   '/admin/playoffs': typeof AdminPlayoffsRoute
@@ -565,6 +588,7 @@ export interface FileRoutesByTo {
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
+  '/tcg-manager/fichas': typeof TcgManagerFichasRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
@@ -601,6 +625,7 @@ export interface FileRoutesById {
   '/calendar': typeof CalendarRoute
   '/check-inbox': typeof CheckInboxRoute
   '/dashboard': typeof DashboardRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
@@ -616,6 +641,7 @@ export interface FileRoutesById {
   '/admin/ads': typeof AdminAdsRoute
   '/admin/approved': typeof AdminApprovedRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/fichas': typeof AdminFichasRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRoute
   '/admin/playoffs': typeof AdminPlayoffsRoute
@@ -640,6 +666,7 @@ export interface FileRoutesById {
   '/tcg-manager/analytics': typeof TcgManagerAnalyticsRoute
   '/tcg-manager/approved': typeof TcgManagerApprovedRoute
   '/tcg-manager/calendar': typeof TcgManagerCalendarRoute
+  '/tcg-manager/fichas': typeof TcgManagerFichasRoute
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
@@ -677,6 +704,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/check-inbox'
     | '/dashboard'
+    | '/faq'
     | '/login'
     | '/meta'
     | '/my-stats'
@@ -692,6 +720,7 @@ export interface FileRouteTypes {
     | '/admin/ads'
     | '/admin/approved'
     | '/admin/calendar'
+    | '/admin/fichas'
     | '/admin/history'
     | '/admin/players'
     | '/admin/playoffs'
@@ -716,6 +745,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
+    | '/tcg-manager/fichas'
     | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
@@ -750,6 +780,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/check-inbox'
     | '/dashboard'
+    | '/faq'
     | '/login'
     | '/meta'
     | '/my-stats'
@@ -761,6 +792,7 @@ export interface FileRouteTypes {
     | '/admin/ads'
     | '/admin/approved'
     | '/admin/calendar'
+    | '/admin/fichas'
     | '/admin/history'
     | '/admin/players'
     | '/admin/playoffs'
@@ -784,6 +816,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
+    | '/tcg-manager/fichas'
     | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
@@ -819,6 +852,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/check-inbox'
     | '/dashboard'
+    | '/faq'
     | '/login'
     | '/meta'
     | '/my-stats'
@@ -834,6 +868,7 @@ export interface FileRouteTypes {
     | '/admin/ads'
     | '/admin/approved'
     | '/admin/calendar'
+    | '/admin/fichas'
     | '/admin/history'
     | '/admin/players'
     | '/admin/playoffs'
@@ -858,6 +893,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/analytics'
     | '/tcg-manager/approved'
     | '/tcg-manager/calendar'
+    | '/tcg-manager/fichas'
     | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
@@ -894,6 +930,7 @@ export interface RootRouteChildren {
   CalendarRoute: typeof CalendarRoute
   CheckInboxRoute: typeof CheckInboxRoute
   DashboardRoute: typeof DashboardRoute
+  FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   MetaRoute: typeof MetaRoute
   MyStatsRoute: typeof MyStatsRoute
@@ -949,6 +986,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1061,6 +1105,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/admin/calendar'
       preLoaderRoute: typeof AdminCalendarRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/fichas': {
+      id: '/admin/fichas'
+      path: '/fichas'
+      fullPath: '/admin/fichas'
+      preLoaderRoute: typeof AdminFichasRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/history': {
@@ -1259,6 +1310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TcgManagerCalendarRouteImport
       parentRoute: typeof TcgManagerRoute
     }
+    '/tcg-manager/fichas': {
+      id: '/tcg-manager/fichas'
+      path: '/fichas'
+      fullPath: '/tcg-manager/fichas'
+      preLoaderRoute: typeof TcgManagerFichasRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
     '/tcg-manager/history': {
       id: '/tcg-manager/history'
       path: '/history'
@@ -1428,6 +1486,7 @@ interface AdminRouteChildren {
   AdminAdsRoute: typeof AdminAdsRoute
   AdminApprovedRoute: typeof AdminApprovedRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
+  AdminFichasRoute: typeof AdminFichasRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminPlayersRoute: typeof AdminPlayersRoute
   AdminPlayoffsRoute: typeof AdminPlayoffsRoute
@@ -1446,6 +1505,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAdsRoute: AdminAdsRoute,
   AdminApprovedRoute: AdminApprovedRoute,
   AdminCalendarRoute: AdminCalendarRoute,
+  AdminFichasRoute: AdminFichasRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminPlayersRoute: AdminPlayersRoute,
   AdminPlayoffsRoute: AdminPlayoffsRoute,
@@ -1544,6 +1604,7 @@ interface TcgManagerRouteChildren {
   TcgManagerAnalyticsRoute: typeof TcgManagerAnalyticsRoute
   TcgManagerApprovedRoute: typeof TcgManagerApprovedRoute
   TcgManagerCalendarRoute: typeof TcgManagerCalendarRoute
+  TcgManagerFichasRoute: typeof TcgManagerFichasRoute
   TcgManagerHistoryRoute: typeof TcgManagerHistoryRoute
   TcgManagerMyHistoryRoute: typeof TcgManagerMyHistoryRoute
   TcgManagerPlayersRoute: typeof TcgManagerPlayersRoute
@@ -1561,6 +1622,7 @@ const TcgManagerRouteChildren: TcgManagerRouteChildren = {
   TcgManagerAnalyticsRoute: TcgManagerAnalyticsRoute,
   TcgManagerApprovedRoute: TcgManagerApprovedRoute,
   TcgManagerCalendarRoute: TcgManagerCalendarRoute,
+  TcgManagerFichasRoute: TcgManagerFichasRoute,
   TcgManagerHistoryRoute: TcgManagerHistoryRoute,
   TcgManagerMyHistoryRoute: TcgManagerMyHistoryRoute,
   TcgManagerPlayersRoute: TcgManagerPlayersRoute,
@@ -1584,6 +1646,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarRoute: CalendarRoute,
   CheckInboxRoute: CheckInboxRoute,
   DashboardRoute: DashboardRoute,
+  FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   MetaRoute: MetaRoute,
   MyStatsRoute: MyStatsRoute,

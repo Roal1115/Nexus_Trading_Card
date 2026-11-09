@@ -8,6 +8,7 @@ import { logStorePageView } from "@/lib/nexus-public.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { storeProfileQuery } from "@/lib/stores-queries";
+import { StoreHero } from "@/components/stores/store-hero";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/stores/$slug")({
@@ -134,13 +135,22 @@ function StoreLayout() {
     );
   }
 
-  return (
-    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
-      <aside className="hidden xl:block">
-        <AdVertical sponsor={sponsor} />
-      </aside>
+  // Sin patrocinador no se reserva el espacio de las columnas laterales.
+  const hasSideAds = Boolean(sponsor?.vertical_url);
 
-      <main className="min-w-0 max-w-4xl space-y-6 py-10">
+  return (
+    <div
+      className={`mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 ${
+        hasSideAds ? "xl:grid-cols-[160px_minmax(0,1fr)_160px]" : ""
+      }`}
+    >
+      {hasSideAds && (
+        <aside className="hidden xl:block">
+          <AdVertical sponsor={sponsor} />
+        </aside>
+      )}
+
+      <main className="mx-auto w-full min-w-0 max-w-4xl space-y-6 py-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             to="/stores"
@@ -153,6 +163,8 @@ function StoreLayout() {
         {/* Ad horizontal mobile */}
         <AdHorizontal sponsor={sponsor} />
 
+        <StoreHero store={store} />
+
         <nav className="flex gap-1 border-b border-white/10">
           {TABS.map((tab) => {
             const to = tab.to.replace("$slug", slug);
@@ -164,6 +176,7 @@ function StoreLayout() {
                 key={tab.to}
                 to={tab.to}
                 params={{ slug }}
+                activeOptions={{ exact: tab.exact }}
                 className={`flex items-center gap-1.5 border-b-2 -mb-px px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition ${
                   active
                     ? "border-primary text-white"
@@ -180,9 +193,11 @@ function StoreLayout() {
         <Outlet />
       </main>
 
-      <aside className="hidden xl:block">
-        <AdVertical sponsor={sponsor} />
-      </aside>
+      {hasSideAds && (
+        <aside className="hidden xl:block">
+          <AdVertical sponsor={sponsor} />
+        </aside>
+      )}
     </div>
   );
 }

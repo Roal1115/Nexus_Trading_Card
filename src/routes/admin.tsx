@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Calendar,
   CalendarRange,
+  ClipboardCheck,
   LayoutDashboard,
   Loader2,
   Megaphone,
@@ -19,6 +20,7 @@ import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
 import { useBadgeCounts, useActivityLastSeen } from "@/hooks/use-badge-counts";
 import { getAdminBadgeCounts } from "@/lib/nexus-admin.functions";
+import { usePendingFichasCount } from "@/components/calendar/occurrence-panel";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Panel Administrador — Nexus" }] }),
@@ -36,6 +38,7 @@ function AdminLayout() {
     activity_last_seen: getLastSeen(),
   }));
   const tournamentsBadge = (counts?.pending ?? 0) + (counts?.approvedActive ?? 0);
+  const pendingFichas = usePendingFichasCount();
 
   useEffect(() => {
     if (loading) return;
@@ -66,6 +69,17 @@ function AdminLayout() {
                 badge: tournamentsBadge,
               },
               { to: "/admin/calendar", label: "Calendario", icon: <Calendar size={16} /> },
+            ],
+          },
+          {
+            title: "Moderación",
+            items: [
+              {
+                to: "/admin/fichas",
+                label: "Fichas de tienda",
+                icon: <ClipboardCheck size={16} />,
+                badge: pendingFichas,
+              },
             ],
           },
           {

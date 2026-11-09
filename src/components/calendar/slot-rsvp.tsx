@@ -20,8 +20,11 @@ type Slot = { store_id: string; game_id: string; date: string };
 const slotKey = (s: Slot) => `${s.store_id}_${s.game_id}_${s.date}`;
 
 // Los horarios de liga interna no pasan por la app de Bandai.
-export const acceptsSlotRsvp = (entry: { is_scheduled?: boolean; league_id?: string | null }) =>
-  Boolean(entry.is_scheduled) && !entry.league_id;
+export const acceptsSlotRsvp = (entry: {
+  is_scheduled?: boolean;
+  league_id?: string | null;
+  cancellation_reason?: string | null;
+}) => Boolean(entry.is_scheduled) && !entry.league_id && !entry.cancellation_reason;
 
 export function useMySlotRsvps(playerId: string | undefined) {
   const fetchMine = useServerFn(getMySlotRsvps);

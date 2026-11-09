@@ -11,6 +11,8 @@ import {
   Trophy,
   Upload,
 } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
+import { usePendingFichasCount } from "@/components/calendar/occurrence-panel";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
 import { PanelBottomNav } from "@/components/layout/PanelBottomNav";
@@ -30,6 +32,7 @@ function TcgManagerLayout() {
   const fetchCounts = useServerFn(getManagerBadgeCounts);
   const { counts } = useBadgeCounts(fetchCounts);
   const tournamentsBadge = (counts?.pending ?? 0) + (counts?.approved ?? 0);
+  const pendingFichas = usePendingFichasCount();
 
   useEffect(() => {
     if (loading) return;
@@ -50,7 +53,7 @@ function TcgManagerLayout() {
         action={{ to: "/tcg-manager/upload", label: "Subir torneo", icon: <Upload size={16} /> }}
         sections={[
           {
-            title: "Moderación",
+            title: "Operación",
             items: [
               {
                 to: "/tcg-manager",
@@ -66,6 +69,17 @@ function TcgManagerLayout() {
               },
               { to: "/tcg-manager/calendar", label: "Calendario", icon: <Calendar size={16} /> },
               { to: "/tcg-manager/playoffs", label: "Playoffs", icon: <Trophy size={16} /> },
+            ],
+          },
+          {
+            title: "Moderación",
+            items: [
+              {
+                to: "/tcg-manager/fichas",
+                label: "Fichas de tienda",
+                icon: <ClipboardCheck size={16} />,
+                badge: pendingFichas,
+              },
             ],
           },
           {

@@ -67,7 +67,13 @@ export function colorsForZone(zone: string): ZoneColor {
 // Épica 4: acento de borde para distinguir ligas internas del Circuito
 // Nacional (sin liga = sin acento). Color determinista por league_id para no
 // necesitar una tabla de colores por liga.
-const LEAGUE_ACCENTS = ["border-l-fuchsia-400", "border-l-teal-400", "border-l-rose-400", "border-l-lime-400", "border-l-violet-400"];
+const LEAGUE_ACCENTS = [
+  "border-l-fuchsia-400",
+  "border-l-teal-400",
+  "border-l-rose-400",
+  "border-l-lime-400",
+  "border-l-violet-400",
+];
 
 export function leagueAccentClass(leagueId: string | null | undefined): string {
   if (!leagueId) return "";
@@ -75,3 +81,6 @@ export function leagueAccentClass(leagueId: string | null | undefined): string {
   for (let i = 0; i < leagueId.length; i++) hash = (hash * 31 + leagueId.charCodeAt(i)) >>> 0;
   return `border-l-4 ${LEAGUE_ACCENTS[hash % LEAGUE_ACCENTS.length]}`;
 }
+
+/** Tarjeta de torneo cancelado: igual en todos los calendarios. */
+export const CANCELLED_TILE_CLASS = "border-red-500/70 bg-red-500/20 text-red-200";

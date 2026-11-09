@@ -2,6 +2,7 @@ import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser, optionalNexusUser } from "./nexus-auth.middleware";
+import { entryOf, monthRows, seasonRows, tableOf } from "./nexus-rankings.server";
 
 export const getMyDashboard = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
@@ -25,70 +26,44 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     const semKey = (activeSeason?.slug as string | undefined) ?? null;
     const semesterLabel = (activeSeason?.name as string | undefined) ?? "Sin temporada";
 
-    const snapshotsRes = semKey
-      ? await admin
-          .from("leaderboard_snapshots")
-          .select("game_id, total_points, tournaments_played, tournaments_won, rank_position")
-          .eq("player_id", player.id)
-          .eq("timeframe_type", "SEMESTRAL")
-          .eq("timeframe_value", semKey)
-      : { data: [] as any[] };
-    const rawSnapshots = snapshotsRes.data ?? [];
-    const snapshots = Array.from(
-      rawSnapshots
-        .reduce((map: Map<string, any>, s: any) => {
-          const existing = map.get(s.game_id);
-          if (!existing || (s.total_points ?? 0) > (existing.total_points ?? 0)) {
-            map.set(s.game_id, s);
-          }
-          return map;
-        }, new Map<string, any>())
-        .values(),
-    );
-
+    const snapshotsRes =
+      semKey && activeSeason
+        ? await admin
+            .from("leaderboard_snapshots")
+            .select("game_id")
+            .eq("player_id", player.id)
+            .eq("timeframe_type", "SEMESTRAL")
+            .eq("timeframe_value", semKey)
+        : { data: [] as Array<{ game_id: string }> };
+    const snapGameIds = Array.from(new Set((snapshotsRes.data ?? []).map((s) => s.game_id)));
     const monthKey = `${year}-${String(month).padStart(2, "0")}`;
-    const { data: monthlyRaw } = semKey
-      ? await admin
-          .from("leaderboard_snapshots")
-          .select("game_id, rank_position, total_points")
-          .eq("player_id", player.id)
-          .eq("timeframe_type", "MONTHLY")
-          .eq("timeframe_value", monthKey)
-      : { data: [] as any[] };
-    const monthlyMap = new Map<string, { rank: number; points: number }>();
-    for (const m of monthlyRaw ?? []) {
-      const existing = monthlyMap.get(m.game_id);
-      const rank = m.rank_position ?? 0;
-      const pts = m.total_points ?? 0;
-      if (
-        !existing ||
-        (rank > 0 && (existing.rank === 0 || rank < existing.rank)) ||
-        pts > existing.points
-      ) {
-        monthlyMap.set(m.game_id, { rank, points: pts });
-      }
-    }
 
-    const snapGameIds = (snapshots ?? []).map((s) => s.game_id);
     const { data: snapGames } = snapGameIds.length
       ? await admin.from("games").select("id, name, slug").in("id", snapGameIds)
       : { data: [] as Array<{ id: string; name: string; slug: string }> };
 
     const snapGameMap = new Map((snapGames ?? []).map((g) => [g.id, g]));
 
-    const tcgStats = (snapshots ?? [])
-      .map((s) => ({
-        game_id: s.game_id,
-        game_name: snapGameMap.get(s.game_id)?.name ?? "—",
-        game_slug: snapGameMap.get(s.game_id)?.slug ?? "",
-        total_points: s.total_points ?? 0,
-        tournaments_played: s.tournaments_played ?? 0,
-        tournaments_won: s.tournaments_won ?? 0,
-        rank_position: s.rank_position ?? 0,
-        monthly_rank_position: monthlyMap.get(s.game_id)?.rank ?? 0,
-        monthly_total_points: monthlyMap.get(s.game_id)?.points ?? 0,
-      }))
-      .sort((a, b) => b.total_points - a.total_points);
+    const tcgStats = (
+      await Promise.all(
+        snapGameIds.map(async (game_id) => {
+          const [seasonResults, monthResults] = await Promise.all([
+            seasonRows(admin, game_id, activeSeason!.id as string),
+            monthRows(admin, game_id, monthKey),
+          ]);
+          const general = entryOf(tableOf(seasonResults), player.id);
+          const monthly = entryOf(tableOf(monthResults), player.id);
+          return {
+            game_id,
+            game_name: snapGameMap.get(game_id)?.name ?? "—",
+            game_slug: snapGameMap.get(game_id)?.slug ?? "",
+            ...general,
+            monthly_rank_position: monthly.rank_position,
+            monthly_total_points: monthly.total_points,
+          };
+        }),
+      )
+    ).sort((a, b) => b.total_points - a.total_points);
 
     const { data: tcgIdRows } = await admin
       .from("player_tcg_ids" as any)
@@ -646,7 +621,7 @@ export const getPublicProfile = createServerFn({ method: "POST" })
 
     const { data: activeSeason } = await admin
       .from("seasons")
-      .select("slug")
+      .select("id, slug")
       .eq("is_active", true)
       .maybeSingle();
     const semKey = (activeSeason?.slug as string | undefined) ?? null;
@@ -681,74 +656,16 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         .limit(100),
     ]);
 
-    // El leaderboard público suma los puntos de un jugador entre TODAS sus
-    // tiendas (cuando no hay filtro de tienda) y rankea contra todos los
-    // demás jugadores en ese agregado — ver shape() en
-    // nexus-leaderboard.functions.ts. Antes acá solo se tomaba el snapshot
-    // de la tienda con más puntos (rank_position local a esa tienda), así
-    // que un jugador que juega en 2+ tiendas veía un rank/puntos que no
-    // coincidía con el leaderboard (ej. #2 local con 80 pts en vez de #1
-    // global con 80+66.67=146.67 pts). Replicar el mismo agregado acá.
+    // Misma Tabla General que la home.
     const gameIdsThisSeason = Array.from(
-      new Set(((snapshotsRes.data ?? []) as any[]).map((s: any) => s.game_id)),
+      new Set(((snapshotsRes.data ?? []) as any[]).map((s: any) => s.game_id as string)),
     );
-
-    let snaps: any[] = [];
-    if (semKey && gameIdsThisSeason.length > 0) {
-      const { data: allSnapsForGames } = await admin
-        .from("leaderboard_snapshots")
-        .select(
-          "player_id, game_id, total_points, omw_percentage, tournaments_played, tournaments_won",
-        )
-        .eq("timeframe_type", "SEMESTRAL")
-        .eq("timeframe_value", semKey)
-        .in("game_id", gameIdsThisSeason);
-
-      snaps = gameIdsThisSeason.map((game_id) => {
-        const rowsForGame = ((allSnapsForGames ?? []) as any[]).filter(
-          (r) => r.game_id === game_id,
-        );
-        const agg = new Map<
-          string,
-          { points: number; omw_sum: number; omw_count: number; played: number; won: number }
-        >();
-        for (const r of rowsForGame) {
-          let a = agg.get(r.player_id);
-          if (!a) {
-            a = { points: 0, omw_sum: 0, omw_count: 0, played: 0, won: 0 };
-            agg.set(r.player_id, a);
-          }
-          a.points += r.total_points ?? 0;
-          a.played += r.tournaments_played ?? 0;
-          a.won += r.tournaments_won ?? 0;
-          if (r.omw_percentage != null) {
-            a.omw_sum += Number(r.omw_percentage);
-            a.omw_count += 1;
-          }
-        }
-        const ranked = Array.from(agg.entries())
-          .map(([player_id, a]) => ({
-            player_id,
-            total_points: a.points,
-            omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
-            tournaments_played: a.played,
-            tournaments_won: a.won,
-          }))
-          // Mismo tiebreak que el leaderboard público — ver shape() en
-          // nexus-leaderboard.functions.ts.
-          .sort((a, b) => b.total_points - a.total_points || b.omw_percentage - a.omw_percentage);
-        const idx = ranked.findIndex((r) => r.player_id === t.id);
-        const mine =
-          idx >= 0 ? ranked[idx] : { total_points: 0, tournaments_played: 0, tournaments_won: 0 };
-        return {
-          game_id,
-          total_points: mine.total_points,
-          rank_position: idx >= 0 ? idx + 1 : 0,
-          tournaments_played: mine.tournaments_played,
-          tournaments_won: mine.tournaments_won,
-        };
-      });
-    }
+    const snaps = await Promise.all(
+      gameIdsThisSeason.map(async (game_id) => ({
+        game_id,
+        ...entryOf(tableOf(await seasonRows(admin, game_id, activeSeason!.id as string)), t.id),
+      })),
+    );
 
     const results = (resultsRes.data ?? []) as any[];
 
@@ -1330,12 +1247,10 @@ export const getMyStats = createServerFn({ method: "POST" })
       leaders: leaderStats,
       no_leader_rounds: allRounds
         .filter((r: any) => !r.player_leader_id)
-        .map(
-          (r: any): NoLeaderRound => ({
-            date: tournamentMetaMap.get(r.tournament_id)?.date ?? null,
-            won: r.won_match === true,
-          }),
-        ),
+        .map((r: any): NoLeaderRound => ({
+          date: tournamentMetaMap.get(r.tournament_id)?.date ?? null,
+          won: r.won_match === true,
+        })),
     };
   });
 
@@ -1688,12 +1603,10 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
       leaders,
       no_leader_rounds: (allRounds as any[])
         .filter((r) => !r.player_leader_id)
-        .map(
-          (r): NoLeaderRound => ({
-            date: (sessionMap.get(r.session_id) as any)?.session_date ?? null,
-            won: r.won_match === true,
-          }),
-        ),
+        .map((r): NoLeaderRound => ({
+          date: (sessionMap.get(r.session_id) as any)?.session_date ?? null,
+          won: r.won_match === true,
+        })),
     };
   });
 
@@ -1953,12 +1866,10 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
       leaders,
       no_leader_rounds: (allRounds as any[])
         .filter((r) => !r.player_leader_id)
-        .map(
-          (r): NoLeaderRound => ({
-            date: (sessionMap.get(r.session_id) as any)?.session_date ?? null,
-            won: r.won_match === true,
-          }),
-        ),
+        .map((r): NoLeaderRound => ({
+          date: (sessionMap.get(r.session_id) as any)?.session_date ?? null,
+          won: r.won_match === true,
+        })),
     };
   });
 

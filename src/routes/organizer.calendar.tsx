@@ -27,6 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CANCELLED_TILE_CLASS } from "@/lib/game-colors";
+import { CancelOccurrenceSection, FichaSection } from "@/components/calendar/occurrence-panel";
 import { SlotRsvpList } from "@/components/calendar/slot-rsvp";
 
 export const Route = createFileRoute("/organizer/calendar")({
@@ -50,7 +52,10 @@ type CalEntry = {
   start_time: string;
   is_today: boolean;
   is_future: boolean;
-  report_status: "submitted" | "overdue" | "pending" | "upcoming";
+  report_status: "submitted" | "overdue" | "pending" | "upcoming" | "cancelled";
+  cancellation_reason: string | null;
+  has_ended: boolean;
+  is_ongoing: boolean;
   league_id: string | null;
   league_name: string | null;
   league_schedule_id: string | null;
@@ -334,13 +339,20 @@ function OrganizerCalendarPage() {
                             key={e.id}
                             onClick={() => (isEditableLeague ? openEdit(e) : setRsvpEntry(e))}
                             className={`w-full text-left rounded px-1.5 py-1 mb-0.5 border cursor-pointer transition hover:brightness-125 ${
-                              e.league_id
-                                ? "bg-amber-500/10 border-amber-500/30"
-                                : "bg-primary/10 border-primary/30"
+                              e.cancellation_reason
+                                ? CANCELLED_TILE_CLASS
+                                : e.league_id
+                                  ? "bg-amber-500/10 border-amber-500/30"
+                                  : "bg-primary/10 border-primary/30"
                             }`}
                           >
+                            {e.cancellation_reason && (
+                              <div className="text-[9px] font-bold uppercase text-red-300">
+                                Cancelado
+                              </div>
+                            )}
                             <div
-                              className={`text-[10px] truncate ${e.league_id ? "text-amber-300" : "text-primary"}`}
+                              className={`text-[10px] truncate ${e.cancellation_reason ? "text-red-200 line-through" : e.league_id ? "text-amber-300" : "text-primary"}`}
                             >
                               {e.override_label || e.game_name}
                             </div>
@@ -366,20 +378,32 @@ function OrganizerCalendarPage() {
       </div>
 
       <Dialog open={rsvpEntry !== null} onOpenChange={(o) => !o && setRsvpEntry(null)}>
-        <DialogContent>
+        <DialogContent className="z-[90] max-h-dvh overflow-y-auto sm:max-h-[calc(100dvh-2rem)]">
           <DialogHeader>
             <DialogTitle>
               {rsvpEntry?.override_label || rsvpEntry?.game_name} · {rsvpEntry?.date} ·{" "}
               {rsvpEntry?.start_time}
             </DialogTitle>
           </DialogHeader>
-          {rsvpEntry && <SlotRsvpList slot={rsvpEntry} />}
+          {rsvpEntry && (
+            <div className="space-y-4">
+              <CancelOccurrenceSection
+                entry={rsvpEntry}
+                onSaved={() => {
+                  reload();
+                  setRsvpEntry(null);
+                }}
+              />
+              <FichaSection entry={rsvpEntry} />
+              <SlotRsvpList slot={rsvpEntry} />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Editar una sola ocurrencia de un horario de liga interna */}
       <Dialog open={editingEntry !== null} onOpenChange={(o) => !o && setEditingEntry(null)}>
-        <DialogContent>
+        <DialogContent className="z-[90] max-h-dvh overflow-y-auto sm:max-h-[calc(100dvh-2rem)]">
           <DialogHeader>
             <DialogTitle>
               {editingEntry?.league_name} —{" "}
@@ -389,6 +413,14 @@ function OrganizerCalendarPage() {
           </DialogHeader>
           {editingEntry && (
             <div className="space-y-4">
+              <CancelOccurrenceSection
+                entry={editingEntry}
+                onSaved={() => {
+                  reload();
+                  setEditingEntry(null);
+                }}
+              />
+              <FichaSection entry={editingEntry} />
               <p className="text-xs text-gray-400">
                 Este cambio aplica solo a esta fecha. El horario recurrente (
                 {editingEntry.game_name}, todos los {DAY_NAMES[editingEntry.day_of_week]}) no se

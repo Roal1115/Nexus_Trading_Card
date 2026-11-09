@@ -11,10 +11,11 @@ import {
   savePlayoffMatch,
   type FrozenMatch,
 } from "@/lib/nexus-playoffs.functions";
+import { FINAL_REGION, LEVEL_NAMES } from "@/lib/playoffs";
 
 const QUERY_KEY = ["playoffs-level-one"];
 
-/** Captura del Nivel 1: congelar grupos y registrar partidas. Admin y Manager. */
+/** Captura del Playoff Subregional: congelar grupos y registrar partidas. Admin y Manager. */
 export function PlayoffsPanel() {
   const fetchLevelOne = useServerFn(getPlayoffsLevelOne);
   const freeze = useServerFn(freezePlayoffGroups);
@@ -49,7 +50,7 @@ export function PlayoffsPanel() {
     <div>
       <PageHeader
         eyebrow={`${data.season_name} · One Piece`}
-        title="Playoffs · Captura Nivel 1"
+        title="Playoffs · Captura"
         description="Congela los grupos al cerrar la clasificación y registra los resultados."
       />
 
@@ -61,7 +62,7 @@ export function PlayoffsPanel() {
             aria-pressed={n === level}
             onClick={() => setLevel(n)}
           >
-            Nivel {n}
+            {LEVEL_NAMES[n]}
           </Button>
         ))}
       </div>
@@ -159,7 +160,7 @@ export function PlayoffsPanel() {
                 )}
                 {frozen.top_four.length > 0 && (
                   <p className="mt-3 text-sm text-foreground">
-                    Suben a Nivel 2: {frozen.top_four.join(", ")}
+                    Suben al Playoff de Ciudad: {frozen.top_four.join(", ")}
                   </p>
                 )}
               </section>
@@ -189,7 +190,7 @@ function BracketCapture({ data, level }: { data: PlayoffsData; level: 2 | 3 }) {
   });
 
   const parent = data.parents.find((p) => p.name === selected) ?? data.parents[0];
-  const region = level === 2 ? parent.name : "Final Nacional";
+  const region = level === 2 ? parent.name : FINAL_REGION;
   const bracket = level === 2 ? parent.bracket : data.final.bracket;
   const ready = level === 2 ? parent.ready : data.final.ready;
 
@@ -223,15 +224,15 @@ function BracketCapture({ data, level }: { data: PlayoffsData; level: 2 | 3 }) {
               ? `${region} ya tiene a sus clasificados. Al crear la llave se ordenan del 1 al 16 con el ranking general.`
               : level === 2
                 ? `Faltan subregiones de ${region} por terminar su Top 8.`
-                : "Faltan regiones por terminar su Nivel 2."}
+                : "Faltan regiones por terminar su Playoff de Ciudad."}
           </p>
           {level === 3 && ready && (
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {tags.map((tag, index) => (
                 <input
                   key={index}
-                  aria-label={`Jugador ${index + 1} de Zona Extendida`}
-                  placeholder={`Zona Extendida ${index + 1} (Geek Tag)`}
+                  aria-label={`Jugador ${index + 1} de Región Extendida`}
+                  placeholder={`Región Extendida ${index + 1} (Geek Tag)`}
                   value={tag}
                   onChange={(e) => setTags(tags.map((t, i) => (i === index ? e.target.value : t)))}
                   className="rounded-md border border-white/10 bg-background px-3 py-2 text-sm text-foreground"
@@ -267,7 +268,7 @@ function BracketCapture({ data, level }: { data: PlayoffsData; level: 2 | 3 }) {
             ))}
           {bracket.top_four.length > 0 && (
             <p className="text-sm text-foreground">
-              Suben a la Final: {bracket.top_four.join(", ")}
+              Suben al Torneo Nacional: {bracket.top_four.join(", ")}
             </p>
           )}
           {bracket.champion && (

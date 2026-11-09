@@ -531,7 +531,7 @@ function PublicProfilePage() {
                         </p>
                         <p className="text-xs text-foreground-subtle">
                           {achievements.unlocked_count > 0
-                            ? `${achievements.total_lp} Puntos de Logro`
+                            ? `${achievements.total_lp} Legacy Points`
                             : "Empieza a competir para desbloquear logros"}
                         </p>
                       </div>
@@ -660,7 +660,7 @@ function PublicProfilePage() {
                   <th className="px-4 py-2 text-right">Posición</th>
                   <th
                     className="px-4 py-2 text-right"
-                    title="Puntos de ranking otorgados por ese torneo — distintos de los Puntos de Logro de achievements."
+                    title="Puntos de ranking otorgados por ese torneo — distintos de los Legacy Points de achievements."
                   >
                     Puntos
                   </th>

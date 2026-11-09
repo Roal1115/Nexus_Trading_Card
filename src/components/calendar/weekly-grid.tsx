@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CalendarDays, CheckCircle2, Heart } from "lucide-react";
+import { Ban } from "lucide-react";
+import { CANCELLED_TILE_CLASS } from "@/lib/game-colors";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MoreEntriesPopover } from "@/components/calendar/more-entries-popover";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
@@ -91,9 +93,16 @@ export function CalendarEntry({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded border px-1.5 py-1 transition hover:brightness-110 ${colorClass} ${accentClass} ${compact ? "py-0.5" : ""}`}
+      className={`w-full text-left rounded border px-1.5 py-1 transition hover:brightness-110 ${entry.cancellation_reason ? CANCELLED_TILE_CLASS : `${colorClass} ${accentClass}`} ${compact ? "py-0.5" : ""}`}
     >
-      <p className={`font-semibold truncate ${compact ? "text-[9px]" : "text-[10px]"}`}>
+      {entry.cancellation_reason && (
+        <p className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-wide text-red-300">
+          <Ban size={8} aria-hidden="true" /> Cancelado
+        </p>
+      )}
+      <p
+        className={`font-semibold truncate ${compact ? "text-[9px]" : "text-[10px]"} ${entry.cancellation_reason ? "line-through" : ""}`}
+      >
         {entry.store_name}
         {attended && <CheckCircle2 size={8} className="inline text-emerald-400 ml-1" />}
         {entry.my_rsvp && (

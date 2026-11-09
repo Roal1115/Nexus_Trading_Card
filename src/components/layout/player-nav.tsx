@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarDays,
+  CircleHelp,
   LayoutDashboard,
   Settings,
   Shield,
@@ -39,6 +40,7 @@ export function playerNavSections(role: string, nexusTag?: string): SidebarSecti
         { to: "/playoffs", label: "Playoffs", icon: <Swords size={16} /> },
         { to: "/meta", label: "Meta", icon: <TrendingUp size={16} /> },
         { to: "/stores", label: "Tiendas", icon: <Store size={16} /> },
+        { to: "/faq", label: "FAQ", icon: <CircleHelp size={16} /> },
       ],
     },
     {

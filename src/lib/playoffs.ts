@@ -1,4 +1,4 @@
-// Reglas de clasificación a playoffs (Nivel 1, subregión). Sin dependencias:
+// Reglas de clasificación a playoffs (Playoff Subregional). Sin dependencias:
 // se prueba con npx tsx scripts/playoffs.check.mts
 
 export type PlayoffResult = {
@@ -59,10 +59,17 @@ export function groupSchedule(groups: string[][]) {
   );
 }
 
-export type GroupEntry = { playerId: string; seed: number; points: number };
+export type GroupEntry = {
+  playerId: string;
+  seed: number;
+  points: number;
+  omw?: number;
+  played?: number;
+  legacy?: number;
+};
 export type GroupMatch = { playerA: string; playerB: string; winnerId: string | null };
 
-/** Tabla del grupo: victorias y, si empatan, más puntos en el ranking general. */
+/** Tabla del grupo: victorias y, si empatan, puntos generales, OMW, asistencia y Legacy. */
 export function groupStandings(entries: GroupEntry[], matches: GroupMatch[]) {
   return entries
     .map((entry) => {
@@ -72,7 +79,15 @@ export function groupStandings(entries: GroupEntry[], matches: GroupMatch[]) {
       const wins = played.filter((m) => m.winnerId === entry.playerId).length;
       return { ...entry, wins, losses: played.length - wins };
     })
-    .sort((a, b) => b.wins - a.wins || b.points - a.points || a.seed - b.seed);
+    .sort(
+      (a, b) =>
+        b.wins - a.wins ||
+        b.points - a.points ||
+        (b.omw ?? 0) - (a.omw ?? 0) ||
+        (b.played ?? 0) - (a.played ?? 0) ||
+        (b.legacy ?? 0) - (a.legacy ?? 0) ||
+        a.seed - b.seed,
+    );
 }
 
 /** Cuartos: 1.º de A vs 2.º de D, 1.º de B vs 2.º de C, y así. */
@@ -85,17 +100,24 @@ export function quarterFinals(groups: Array<[string, string]>) {
   }));
 }
 
-export const FINAL_REGION = "Final Nacional";
+export const FINAL_REGION = "Torneo Nacional";
 
-export type SeedingStats = Standing & { firstDate: string };
+export const LEVEL_NAMES = {
+  1: "Playoff Subregional",
+  2: "Playoff de Ciudad",
+  3: "Torneo Nacional",
+} as const;
 
-/** Orden de Niveles 2 y 3: puntos, OMW, asistencia y quien jugó primero. */
+export type SeedingStats = Standing & { firstDate: string; legacy: number };
+
+/** Orden del Playoff de Ciudad y el Torneo Nacional: puntos, OMW, asistencia, quien jugó primero y Legacy. */
 export function compareSeeding(a: SeedingStats, b: SeedingStats): number {
   return (
     b.points - a.points ||
     b.omw - a.omw ||
     b.played - a.played ||
     a.firstDate.localeCompare(b.firstDate) ||
+    b.legacy - a.legacy ||
     a.playerId.localeCompare(b.playerId)
   );
 }
@@ -113,7 +135,7 @@ export function firstRound(players: string[]) {
   }));
 }
 
-/** Nivel 2 termina en cuartos (salen 4); Nivel 3 se juega hasta el campeón. */
+/** El Playoff de Ciudad termina en cuartos (salen 4); el Torneo Nacional llega al campeón. */
 export function lastRound(level: number): number {
   return level === 2 ? 1 : 3;
 }
@@ -211,7 +233,12 @@ function pick(
   tables: Map<string, Standing[]>,
   spots: (subregion: string) => number,
   taken: Set<string>,
+  firstDate: (subregion: string, playerId: string) => string,
+  // Con qué tabla se decide si un jugador sale en dos subregiones.
+  conflictTables: Map<string, Standing[]> = tables,
 ): Map<string, Standing[]> {
+  const inConflictTable = (subregion: string, standing: Standing) =>
+    conflictTables.get(subregion)?.find((s) => s.playerId === standing.playerId) ?? standing;
   const banned = new Set<string>();
   for (;;) {
     const picks = new Map<string, Standing[]>();
@@ -239,7 +266,12 @@ function pick(
       if (list.length < 2) continue;
       const [, ...losers] = [...list].sort(
         (a, b) =>
-          compareStandings(a.standing, b.standing) || a.subregion.localeCompare(b.subregion),
+          compareStandings(
+            inConflictTable(a.subregion, a.standing),
+            inConflictTable(b.subregion, b.standing),
+          ) ||
+          firstDate(a.subregion, playerId).localeCompare(firstDate(b.subregion, playerId)) ||
+          a.subregion.localeCompare(b.subregion),
       );
       for (const loser of losers) banned.add(`${loser.subregion}:${playerId}`);
       changed = true;
@@ -263,12 +295,21 @@ function tablesOf(results: PlayoffResult[], subregions: string[]): Map<string, S
  */
 export function classify(input: {
   results: PlayoffResult[];
+  // Todos los resultados del circuito, para el ranking general.
+  generalResults?: PlayoffResult[];
   subregions: string[];
   closedMonths: string[];
   seasonFinished: boolean;
   ineligible: Set<string>;
 }): Map<string, Qualified[]> {
-  const results = input.results.filter((r) => !input.ineligible.has(r.playerId));
+  const results = input.results;
+  const firstDates = new Map<string, string>();
+  for (const r of results) {
+    const key = `${r.subregion}:${r.playerId}`;
+    if (r.date < (firstDates.get(key) ?? "9999-12-31")) firstDates.set(key, r.date);
+  }
+  const firstDate = (subregion: string, playerId: string) =>
+    firstDates.get(`${subregion}:${playerId}`) ?? "9999-12-31";
   const taken = new Set<string>();
   const lists = new Map<string, Qualified[]>(input.subregions.map((s) => [s, []]));
   const add = (
@@ -288,16 +329,34 @@ export function classify(input: {
       results.filter((r) => r.month === month),
       input.subregions,
     );
-    const picks = pick(tables, () => SPOTS_PER_MONTH, taken);
+    const picks = pick(tables, () => SPOTS_PER_MONTH, taken, firstDate);
     for (const [subregion, standings] of picks) {
-      for (const standing of standings) add(subregion, standing, "month", month, true);
+      for (const standing of standings) {
+        // Sin el 60% gana el mes pero pierde el lugar: pasa a los de puntos.
+        if (input.ineligible.has(standing.playerId)) taken.add(standing.playerId);
+        else add(subregion, standing, "month", month, true);
+      }
     }
   }
 
+  // Lugares por puntos: ranking general, solo entre los jugadores de cada subregión.
+  const eligible = (r: PlayoffResult) => !input.ineligible.has(r.playerId);
+  const subregionTables = tablesOf(results.filter(eligible), input.subregions);
+  const general = new Map(
+    standingsOf((input.generalResults ?? results).filter(eligible)).map((s) => [s.playerId, s]),
+  );
+  const generalTables = new Map(
+    Array.from(subregionTables, ([subregion, table]) => [
+      subregion,
+      table.map((s) => general.get(s.playerId) ?? s).sort(compareStandings),
+    ]),
+  );
   const picks = pick(
-    tablesOf(results, input.subregions),
+    generalTables,
     (subregion) => PLAYOFF_SIZE - lists.get(subregion)!.length,
     taken,
+    firstDate,
+    subregionTables,
   );
   for (const [subregion, standings] of picks) {
     for (const standing of standings) {

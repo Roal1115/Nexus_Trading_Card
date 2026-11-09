@@ -546,6 +546,9 @@ export function TournamentUploadForm({
         return;
       }
       toast.success("Torneo enviado correctamente. Un administrador lo revisará pronto.");
+      if ((result as { was_cancelled?: boolean }).was_cancelled) {
+        toast.warning("Esta fecha estaba marcada como cancelada. Avisa a quien revise el torneo.");
+      }
       navigate({ to: successTo });
     } catch (e) {
       const msg = (e as Error).message ?? String(e);

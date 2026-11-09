@@ -2,23 +2,17 @@
 // All reads go through the admin client server-side to keep RLS simple.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { storeRegion } from "./store-regions";
+import { getActiveSeason } from "./nexus-admin-core";
+import { optionalNexusUser } from "./nexus-auth.middleware";
+import { mostPlayedRegion, storeRegion } from "./store-regions";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
-
-// ── Caché en memoria ─────────────────────────────────────────────
-const leaderboardCache = new Map<string, { data: any; ts: number }>();
-const CACHE_TTL = 3 * 60 * 1000; // 3 minutos
-
-function getCached(key: string) {
-  const entry = leaderboardCache.get(key);
-  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
-  return null;
-}
-
-function setCache(key: string, data: any) {
-  leaderboardCache.set(key, { data, ts: Date.now() });
-}
-// ─────────────────────────────────────────────────────────────────
+import {
+  monthRows,
+  seasonRows,
+  tableOf,
+  type RankingEntry,
+  type RankingRow,
+} from "./nexus-rankings.server";
 
 export const getLeaderboardOptions = createServerFn({ method: "POST" }).handler(async () => {
   const admin = getNexusAdmin();
@@ -120,10 +114,6 @@ export const getLeaderboard = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data }) => {
-    const cacheKey = JSON.stringify(data);
-    const cached = getCached(cacheKey);
-    if (cached) return cached;
-
     const admin = getNexusAdmin();
 
     // 1. Resolver cityStoreIds
@@ -163,89 +153,37 @@ export const getLeaderboard = createServerFn({ method: "POST" })
     const season = await getSeasonForMonth(admin, monthValue);
     const seasonKey = season?.slug ?? "";
 
-    // 4. Definir queries
-    async function querySnapshots(
-      timeframeType: "MONTHLY" | "SEMESTRAL",
-      timeframeValue: string,
-      opts: { applyStoreId: boolean },
-    ) {
-      if (!timeframeValue) return [];
-      let q = admin
-        .from("leaderboard_snapshots")
-        .select(
-          "player_id, store_id, total_points, tournaments_played, tournaments_won, rank_position, omw_percentage",
-        )
-        .eq("timeframe_type", timeframeType)
-        .eq("timeframe_value", timeframeValue);
-      if (data.game_id) q = q.eq("game_id", data.game_id);
-
-      if (opts.applyStoreId && data.store_id) {
-        q = q.eq("store_id", data.store_id);
-      } else if (cityStoreIds) {
-        if (cityStoreIds.length === 0) return [];
-        q = q.in("store_id", cityStoreIds);
-      }
-
-      const { data: rows, error } = await q;
-      if (error) {
-        console.error(
-          `[leaderboard] querySnapshots(${timeframeType}, ${timeframeValue}) failed:`,
-          error.message,
-        );
-        return [];
-      }
-      return rows ?? [];
-    }
-
-    async function queryPrevSnapshots() {
-      let q = admin
-        .from("leaderboard_snapshots")
-        .select("player_id, game_id, store_id, rank_position")
-        .eq("timeframe_type", "MONTHLY")
-        .eq("timeframe_value", prevMonth);
-
-      if (data.game_id) q = q.eq("game_id", data.game_id);
-
-      if (data.store_id) {
-        q = q.eq("store_id", data.store_id);
-      } else if (cityStoreIds) {
-        if (cityStoreIds.length === 0) return [];
-        q = q.in("store_id", cityStoreIds);
-      }
-
-      const { data: rows, error } = await q;
-      if (error) {
-        console.error(`[leaderboard] queryPrevSnapshots failed:`, error.message);
-        return [];
-      }
-      return rows ?? [];
-    }
-
-    // 5. Queries paralelas
-    const [monthlyRaw, semestralRaw, prevMonthlyRaw] = await Promise.all([
-      querySnapshots("MONTHLY", monthValue, { applyStoreId: true }),
-      querySnapshots("SEMESTRAL", seasonKey, { applyStoreId: false }),
-      queryPrevSnapshots(),
-    ]);
-
-    // 6. Construir maps
-    const playerIds = Array.from(new Set([...monthlyRaw, ...semestralRaw].map((r) => r.player_id)));
-
-    const prevRankMap = new Map<string, number>();
-    for (const r of prevMonthlyRaw) {
-      if (r.rank_position != null) {
-        const existing = prevRankMap.get(r.player_id);
-        if (existing == null || r.rank_position < existing) {
-          prevRankMap.set(r.player_id, r.rank_position);
-        }
-      }
-    }
-
-    const allStoreIds = Array.from(
-      new Set(
-        [...monthlyRaw, ...semestralRaw].map((r) => r.store_id).filter((v): v is string => !!v),
-      ),
+    // 4. Tabla Mensual: tope semanal sobre las tiendas del filtro.
+    const inFilter = (rows: RankingRow[]) => {
+      if (data.store_id) return rows.filter((r) => r.tournaments.store_id === data.store_id);
+      if (!cityStoreIds) return rows;
+      const ids = new Set(cityStoreIds);
+      return rows.filter((r) => ids.has(r.tournaments.store_id));
+    };
+    const gameId = data.game_id;
+    const [monthResults, prevResults, seasonResults] = gameId
+      ? await Promise.all([
+          monthRows(admin, gameId, monthValue),
+          monthRows(admin, gameId, prevMonth),
+          season ? seasonRows(admin, gameId, season.id) : [],
+        ])
+      : [[], [], []];
+    const monthlyTable = tableOf(inFilter(monthResults));
+    const prevRankMap = new Map(
+      tableOf(inFilter(prevResults)).map((entry, i) => [entry.playerId, i + 1]),
     );
+
+    // 5. Tabla General: puntos de todo el circuito, filtrando solo qué jugadores
+    // aparecen (los que tienen resultados en la zona o región elegida).
+    const zoneStoreIds = cityStoreIds && new Set(cityStoreIds);
+    const semestralTable = tableOf(seasonResults).filter(
+      (entry) => !zoneStoreIds || [...entry.storeIds].some((id) => zoneStoreIds.has(id)),
+    );
+
+    // 6. Datos para mostrar
+    const shown = [...monthlyTable, ...semestralTable];
+    const playerIds = Array.from(new Set(shown.map((entry) => entry.playerId)));
+    const allStoreIds = Array.from(new Set(shown.flatMap((entry) => [...entry.storeIds])));
 
     const [playersRes, storesRes] = await Promise.all([
       playerIds.length
@@ -261,109 +199,52 @@ export const getLeaderboard = createServerFn({ method: "POST" })
     const playerMap = new Map((playersRes.data ?? []).map((p) => [p.id, p]));
     const storeMap = new Map((storesRes.data ?? []).map((s) => [s.id, s]));
 
-    // 7. Definir shape() — tiene acceso a playerMap, storeMap, prevRankMap
-    type Row = {
-      player_id: string;
-      geek_tag: string;
-      city: string;
-      points: number;
-      tournaments_won: number;
-      tournaments_played: number;
-      omw_percentage: number;
-      rank_position: number;
-      rank_delta: number | null;
-    };
-
-    function shape(
-      raws: Array<{
-        player_id: string;
-        store_id: string | null;
-        total_points: number | null;
-        tournaments_played: number | null;
-        tournaments_won: number | null;
-        omw_percentage: number | null;
-        rank_position: number | null;
-      }>,
-    ): Row[] {
-      const agg = new Map<
-        string,
-        {
-          points: number;
-          won: number;
-          played: number;
-          cities: Set<string>;
-          omw_sum: number;
-          omw_count: number;
-        }
-      >();
-      for (const r of raws) {
-        let a = agg.get(r.player_id);
-        if (!a) {
-          a = {
-            points: 0,
-            won: 0,
-            played: 0,
-            cities: new Set(),
-            omw_sum: 0,
-            omw_count: 0,
-          };
-          agg.set(r.player_id, a);
-        }
-        a.points += r.total_points ?? 0;
-        a.won += r.tournaments_won ?? 0;
-        a.played += r.tournaments_played ?? 0;
-        if (r.omw_percentage != null) {
-          a.omw_sum += Number(r.omw_percentage);
-          a.omw_count += 1;
-        }
-        const city = r.store_id ? storeMap.get(r.store_id)?.city : null;
-        if (city) a.cities.add(city);
-      }
-
-      const sorted = Array.from(agg.entries())
-        .map(([pid, a]) => ({
-          player_id: pid,
-          geek_tag: playerMap.get(pid)?.geek_tag ?? "—",
-          city: a.cities.size === 1 ? Array.from(a.cities)[0] : a.cities.size > 1 ? "Varias" : "—",
-          points: a.points,
-          tournaments_won: a.won,
-          tournaments_played: a.played,
-          omw_percentage: a.omw_count > 0 ? Math.round((a.omw_sum / a.omw_count) * 100) / 100 : 0,
-        }))
-        .sort((x, y) => y.points - x.points || y.omw_percentage - x.omw_percentage);
-
-      return sorted.map((r, i) => {
-        const currentRank = i + 1;
-        const prevRank = prevRankMap.get(r.player_id) ?? null;
-        // positivo = subió (era 5, ahora es 2 → delta +3)
-        // negativo = bajó (era 2, ahora es 5 → delta -3)
-        // null = jugador nuevo este mes
-        const rank_delta = prevRank != null ? prevRank - currentRank : null;
-
+    // Positivo = subió; negativo = bajó; null = no jugó el mes anterior.
+    const shape = (table: RankingEntry[]) =>
+      table.map((entry, i) => {
+        const cities = new Set([...entry.storeIds].flatMap((id) => storeMap.get(id)?.city ?? []));
+        const prevRank = prevRankMap.get(entry.playerId) ?? null;
         return {
-          player_id: r.player_id,
-          geek_tag: r.geek_tag,
-          city: r.city,
-          points: r.points,
-          tournaments_won: r.tournaments_won,
-          tournaments_played: r.tournaments_played,
-          omw_percentage: r.omw_percentage,
-          rank_position: currentRank,
-          rank_delta,
+          player_id: entry.playerId,
+          geek_tag: playerMap.get(entry.playerId)?.geek_tag ?? "—",
+          city: cities.size === 1 ? [...cities][0] : cities.size > 1 ? "Varias" : "—",
+          points: entry.points,
+          tournaments_won: entry.won,
+          tournaments_played: entry.played,
+          omw_percentage: entry.omw,
+          rank_position: i + 1,
+          rank_delta: prevRank != null ? prevRank - (i + 1) : null,
         };
       });
-    }
 
-    // 8. Ejecutar y cachear
-    const result = {
-      monthly: shape(monthlyRaw),
-      semestral: shape(semestralRaw),
+    return {
+      monthly: shape(monthlyTable),
+      semestral: shape(semestralTable),
       month_label: monthLabel(monthValue),
       semester_label: season?.name ?? "Sin temporada activa",
       month_value: monthValue,
       semester_key: seasonKey,
     };
+  });
 
-    setCache(cacheKey, result);
-    return result;
+/** Región que abre la Tabla Mensual de un jugador con sesión; null para visitantes. */
+export const getMyDefaultRegion = createServerFn({ method: "POST" })
+  .middleware([optionalNexusUser])
+  .inputValidator((d: { game_id: string }) => z.object({ game_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (!player) return null;
+    const [season, storesRes] = await Promise.all([
+      getActiveSeason(admin),
+      admin.from("stores").select("id, zone, subzone, city").eq("is_active", true),
+    ]);
+    if (storesRes.error) failDb(storesRes.error);
+    const rows = season ? await seasonRows(admin, data.game_id, season.id) : [];
+    const played = rows
+      .filter((row) => row.player_id === player.id)
+      .map((row) => ({
+        store_id: row.tournaments.store_id,
+        date: row.tournaments.tournament_date,
+      }));
+    return mostPlayedRegion(played, storesRes.data ?? [], player.home_store_id ?? null);
   });

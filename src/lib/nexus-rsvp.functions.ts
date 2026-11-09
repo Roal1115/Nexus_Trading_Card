@@ -172,6 +172,17 @@ export const createSlotRsvp = createServerFn({ method: "POST" })
       .maybeSingle();
     if (oe) failDb(oe);
 
+    const { data: cancelled, error: ce } = await (admin as any)
+      .from("schedule_cancellations")
+      .select("id")
+      .eq("store_id", data.store_id)
+      .eq("game_id", data.game_id)
+      .is("league_id", null)
+      .eq("occurrence_date", data.date)
+      .maybeSingle();
+    if (ce) failDb(ce);
+    if (cancelled) throw new Error("Este torneo fue cancelado");
+
     const state = slotRsvpState({
       date: data.date,
       startTime: override?.start_time || schedule.start_time,
@@ -304,7 +315,15 @@ export const getMySlotsToLog = createServerFn({ method: "POST" })
 
     const key = (store: string | null, game: string, date: string | null) =>
       `${store}_${game}_${date}`;
+    const { data: cancelled, error: ce } = await (admin as any)
+      .from("schedule_cancellations")
+      .select("store_id, game_id, occurrence_date")
+      .is("league_id", null)
+      .in("store_id", [...new Set(rsvps.map((r) => r.store_id))])
+      .gte("occurrence_date", from);
+    if (ce) failDb(ce);
     const logged = new Set([
+      ...(cancelled ?? []).map((c: any) => key(c.store_id, c.game_id, c.occurrence_date)),
       ...(sessions.data ?? []).map((s) => key(s.store_id, s.game_id, s.session_date)),
       ...(results.data ?? []).map((r) =>
         key(r.tournaments.store_id, r.tournaments.game_id, r.tournaments.tournament_date),
@@ -321,8 +340,7 @@ export const getMySlotsToLog = createServerFn({ method: "POST" })
           s.day_of_week === new Date(r.occurrence_date + "T12:00:00").getDay(),
       );
       const override = overrides?.find(
-        (o) =>
-          o.national_schedule_id === schedule?.id && o.occurrence_date === r.occurrence_date,
+        (o) => o.national_schedule_id === schedule?.id && o.occurrence_date === r.occurrence_date,
       );
       const startTime = override?.start_time || schedule?.start_time || null;
       const state = slotRsvpState({ date: r.occurrence_date, startTime, today, nowTime });

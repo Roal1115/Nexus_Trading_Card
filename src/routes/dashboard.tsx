@@ -580,7 +580,7 @@ function DashboardPage() {
                         </span>
                       </p>
                       <p className="truncate text-xs text-foreground-subtle">
-                        {achievements.total_lp} Puntos de Logro
+                        {achievements.total_lp} Legacy Points
                       </p>
                     </div>
                   </div>

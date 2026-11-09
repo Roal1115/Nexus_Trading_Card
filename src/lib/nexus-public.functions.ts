@@ -1,3 +1,4 @@
+import { loadCancellations, occurrenceKey } from "./nexus-schedule-events.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
@@ -88,7 +89,7 @@ export const getStoreProfile = createServerFn({ method: "POST" })
     const { data: store, error } = await admin
       .from("stores")
       .select(
-        "id, slug, name, city, state, zone, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch",
+        "id, slug, name, city, state, zone, subzone, address, phone, google_maps_url, description, opening_hours, instagram, website, twitter, twitch",
       )
       .eq("slug", data.slug)
       .eq("is_active", true)
@@ -476,6 +477,13 @@ export const getPublicCalendar = createServerFn({ method: "POST" })
           league_name: s.store_leagues?.name ?? "Liga interna",
         });
       }
+    }
+
+    const eventStoreIds = Array.from(new Set(scheduledEvents.map((e) => e.store_id as string)));
+    const cancellations = await loadCancellations(admin, eventStoreIds, fromDate, weekEndStr);
+    for (const e of scheduledEvents) {
+      e.cancellation_reason =
+        cancellations.get(occurrenceKey(e.store_id, e.game_id, e.league_id, e.date)) ?? null;
     }
 
     const allEvents = [

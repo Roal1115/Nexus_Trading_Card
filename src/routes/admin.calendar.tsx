@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
+  Ban,
   CheckCircle2,
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -15,8 +16,9 @@ import {
   X,
 } from "lucide-react";
 import { getManagerCalendar } from "@/lib/nexus-manager.functions";
-import { ZONE_COLORS } from "@/lib/game-colors";
+import { CANCELLED_TILE_CLASS, ZONE_COLORS } from "@/lib/game-colors";
 import { NationalScheduleEditSection } from "@/components/calendar/national-schedule-edit-section";
+import { CancelOccurrenceSection, FichaSection } from "@/components/calendar/occurrence-panel";
 import { SlotRsvpList } from "@/components/calendar/slot-rsvp";
 import { MoreEntriesPopover } from "@/components/calendar/more-entries-popover";
 
@@ -46,7 +48,8 @@ type CalEntry = {
   is_future: boolean;
   is_ongoing: boolean;
   has_ended: boolean;
-  report_status: "submitted" | "overdue" | "pending" | "upcoming";
+  report_status: "submitted" | "overdue" | "pending" | "upcoming" | "cancelled";
+  cancellation_reason: string | null;
   tournament_id: string | null;
   tournament_status: string | null;
   organizer_tag: string | null;
@@ -540,11 +543,11 @@ function AdminCalendarPage() {
       {/* Modal */}
       {selectedEntry && (
         <div
-          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[90] bg-black/70 flex items-center justify-center sm:p-4"
           onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="bg-[#0e0e10] border border-white/10 rounded-2xl w-full max-w-lg p-6 space-y-5"
+            className="bg-[#0e0e10] border-white/10 w-full h-dvh overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-5 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-lg sm:rounded-2xl sm:border sm:p-6"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-start justify-between">
@@ -605,6 +608,16 @@ function AdminCalendarPage() {
                 )}
               </div>
             </div>
+
+            <CancelOccurrenceSection
+              entry={selectedEntry}
+              onSaved={() => {
+                reload();
+                setSelectedEntry(null);
+              }}
+            />
+
+            <FichaSection entry={selectedEntry} />
 
             <NationalScheduleEditSection
               entry={selectedEntry}
@@ -677,14 +690,22 @@ function CalendarEntry({
 }) {
   const colors = ZONE_COLORS[entry.zone] ?? ZONE_COLORS["Zona Extendida"];
   const isOverdue = entry.report_status === "overdue";
+  const isCancelled = entry.report_status === "cancelled";
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded px-1.5 py-1 ${colors.bg} ${colors.border} border hover:brightness-125 transition`}
+      title={isCancelled ? `Cancelado: ${entry.cancellation_reason ?? ""}` : undefined}
+      aria-label={isCancelled ? `${entry.store_name}, cancelado` : undefined}
+      className={`w-full text-left rounded px-1.5 py-1 ${isCancelled ? CANCELLED_TILE_CLASS : `${colors.bg} ${colors.border}`} border hover:brightness-125 transition`}
     >
       <div className="flex items-center gap-1">
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${colors.dot}`} />
-        <span className={`text-[10px] truncate ${colors.text}`}>{entry.store_name}</span>
+        {isCancelled && <Ban size={10} className="shrink-0 text-red-300" aria-hidden="true" />}
+        <span
+          className={`text-[10px] truncate ${isCancelled ? "text-red-200 line-through" : colors.text}`}
+        >
+          {entry.store_name}
+        </span>
       </div>
       {!compact && entry.game_name && (
         <div className="text-[9px] text-gray-400 truncate mt-0.5">
@@ -696,6 +717,9 @@ function CalendarEntry({
       {!compact && (
         <div className="flex items-center gap-1 mt-0.5">
           {isOverdue && <span className="text-[9px] text-red-400 font-semibold">OVERDUE</span>}
+          {isCancelled && (
+            <span className="text-[9px] font-bold uppercase text-red-300">Cancelado</span>
+          )}
           {entry.report_status === "submitted" && (
             <span className="text-[9px] text-green-400">✓</span>
           )}
@@ -712,6 +736,7 @@ function StatusBadge({ status }: { status: string }) {
       className: "bg-green-500/20 text-green-400",
     },
     overdue: { label: "Overdue", className: "bg-red-500/20 text-red-400" },
+    cancelled: { label: "Cancelado", className: "bg-red-500/20 text-red-300" },
     pending: {
       label: "Pendiente",
       className: "bg-yellow-500/20 text-yellow-400",

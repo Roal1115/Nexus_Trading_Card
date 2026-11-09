@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
+import { loadCancellations, occurrenceKey } from "./nexus-schedule-events.server";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
 
@@ -102,6 +103,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       tournamentMap.set(`${t.store_id}-${t.game_id}-${d.getDay()}-${t.league_id ?? "national"}`, t);
     });
 
+    const cancellations = await loadCancellations(admin, [player.home_store_id], mondayStr, sundayStr);
     const nowMs = Date.now();
     const buildEntry = (
       s: { id?: string; store_id: string; game_id: string; day_of_week: number; start_time: string; stores?: any },
@@ -129,8 +131,10 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       const isSubmitted =
         tournament &&
         (tournament.status !== "DRAFT" || (tournament.status === "DRAFT" && !tournament.rejection_reason));
-      let reportStatus: "submitted" | "overdue" | "pending" | "upcoming";
+      let reportStatus: "submitted" | "overdue" | "pending" | "upcoming" | "cancelled";
+      const cancellationReason = cancellations.get(occurrenceKey(s.store_id, s.game_id, leagueId, entryDateStr)) ?? null;
       if (isSubmitted) reportStatus = "submitted";
+      else if (cancellationReason && !tournament) reportStatus = "cancelled";
       else if (hasEnded && !tournament) reportStatus = "overdue";
       else if (isFuture) reportStatus = "upcoming";
       else reportStatus = "pending";
@@ -153,6 +157,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
         is_ongoing: isOngoing,
         has_ended: hasEnded,
         report_status: reportStatus,
+        cancellation_reason: cancellationReason,
         tournament_id: tournament?.id ?? null,
         tournament_status: tournament?.status ?? null,
         league_id: leagueId,
@@ -174,7 +179,7 @@ export const getOrganizerCalendar = createServerFn({ method: "POST" })
       ),
     ];
 
-    const elapsedEntries = entries.filter((e: any) => !e.is_future);
+    const elapsedEntries = entries.filter((e: any) => !e.is_future && e.report_status !== "cancelled");
     const uploadedSoFar = elapsedEntries.filter((e: any) => e.report_status === "submitted").length;
     const totalOverdue = entries.filter((e: any) => e.report_status === "overdue").length;
     return {

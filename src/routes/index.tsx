@@ -10,6 +10,7 @@ import { useNexusRole } from "@/hooks/use-nexus-role";
 import { useQuery } from "@tanstack/react-query";
 import { useTCG } from "@/context/tcg.context";
 import { leaderboardOptionsQuery, leaderboardQuery } from "@/lib/leaderboard-queries";
+import { getMyDefaultRegion } from "@/lib/nexus-leaderboard.functions";
 import { listActiveSponsors, getActiveBanner } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
@@ -71,6 +72,7 @@ type Row = {
 };
 
 const ALL = "__all__";
+const ALL_ZONES_PARAM = "all";
 
 const MONTH_NAMES = [
   "Enero",
@@ -219,8 +221,8 @@ function PeriodSegmentedControl({
   onChange: (p: Period) => void;
 }) {
   const options: Array<{ value: Period; label: string }> = [
-    { value: "monthly", label: "Mensual" },
-    { value: "semestral", label: "Temporada" },
+    { value: "monthly", label: "Tabla Mensual" },
+    { value: "semestral", label: "Tabla General" },
   ];
   return (
     <div
@@ -251,7 +253,7 @@ function PeriodSegmentedControl({
 function LeaderboardPage() {
   const fetchActiveSponsors = useServerFn(listActiveSponsors);
   const fetchBanner = useServerFn(getActiveBanner);
-  const { player: viewer, role } = useNexusRole();
+  const { player: viewer, role, loading: authLoading } = useNexusRole();
   const myNexusTag = viewer?.geek_tag ?? null;
 
   const isStaff = role === "admin" || role === "tcg_manager" || role === "organizer";
@@ -274,12 +276,28 @@ function LeaderboardPage() {
   // sobrevive atrás/adelante y refresh). La temporada 1 es solo One Piece.
   const urlSearch = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
-  const zone = urlSearch.zone ?? ALL;
-  const region = zone === ALL ? ALL : (urlSearch.region ?? ALL);
   const storeId = urlSearch.store ?? ALL;
   const month = urlSearch.month ?? ALL;
   const search = urlSearch.q ?? "";
   const period: Period = urlSearch.period ?? "monthly";
+  const { activeTcg } = useTCG();
+
+  // Sin filtros, la Tabla Mensual de un jugador abre en su región. No se escribe
+  // en la URL: "zone=all" guarda que eligió ver todo y un link explícito no cambia.
+  const autoRegion = period === "monthly" && !urlSearch.zone && !urlSearch.store;
+  const fetchDefaultRegion = useServerFn(getMyDefaultRegion);
+  const defaultRegionQuery = useQuery({
+    queryKey: ["my-default-region", viewer?.id, activeTcg?.id],
+    queryFn: () => fetchDefaultRegion({ data: { game_id: activeTcg!.id } }),
+    enabled: autoRegion && !!viewer && !!activeTcg,
+    staleTime: 5 * 60_000,
+  });
+  const suggested = autoRegion && viewer ? (defaultRegionQuery.data ?? null) : null;
+  const regionReady = !autoRegion || (!authLoading && (!viewer || defaultRegionQuery.isFetched));
+
+  const urlZone = urlSearch.zone === ALL_ZONES_PARAM ? undefined : urlSearch.zone;
+  const zone = suggested?.zone ?? urlZone ?? ALL;
+  const region = zone === ALL ? ALL : (suggested?.region ?? urlSearch.region ?? ALL);
 
   const patchSearch = (patch: Partial<LeaderboardSearch>, replace = false) =>
     navigate({
@@ -294,9 +312,18 @@ function LeaderboardPage() {
     });
 
   // Las regiones dependen de la zona: al cambiarla, la región elegida ya no aplica.
-  const setZone = (v: string) => patchSearch({ zone: v === ALL ? undefined : v, region: undefined });
-  const setRegion = (v: string) => patchSearch({ region: v === ALL ? undefined : v });
-  const setStoreId = (v: string) => patchSearch({ store: v === ALL ? undefined : v });
+  const setZone = (v: string) =>
+    patchSearch({ zone: v === ALL ? ALL_ZONES_PARAM : v, region: undefined });
+  // Cambiar región o tienda fija en la URL la zona que se estaba mostrando.
+  const shownZone = zone === ALL ? urlSearch.zone : zone;
+  const setRegion = (v: string) =>
+    patchSearch({ zone: shownZone, region: v === ALL ? undefined : v });
+  const setStoreId = (v: string) =>
+    patchSearch({
+      zone: shownZone,
+      region: region === ALL ? undefined : region,
+      store: v === ALL ? undefined : v,
+    });
   const setMonth = (v: string) => patchSearch({ month: v === ALL ? undefined : v });
   // Teclear no debe ensuciar el historial: replace en vez de push.
   const setSearch = (v: string) => patchSearch({ q: v || undefined }, true);
@@ -306,7 +333,6 @@ function LeaderboardPage() {
   const stores = (optionsQuery.data?.stores ?? []) as Store[];
   const months = (optionsQuery.data?.months ?? []) as string[];
 
-  const { activeTcg } = useTCG();
   const boardQuery = useQuery({
     ...leaderboardQuery({
       game_id: activeTcg?.id ?? null,
@@ -315,7 +341,7 @@ function LeaderboardPage() {
       store_id: storeId === ALL ? null : storeId,
       month: month === ALL ? null : month,
     }),
-    enabled: !!activeTcg,
+    enabled: !!activeTcg && regionReady,
   });
   const monthly = (boardQuery.data?.monthly ?? []) as Row[];
   const semestral = (boardQuery.data?.semestral ?? []) as Row[];
@@ -450,6 +476,24 @@ function LeaderboardPage() {
           </div>
         </div>
 
+        {suggested && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground-secondary">
+            <span>
+              Tu región:{" "}
+              <strong className="text-foreground">
+                {suggested.zone} · {suggested.region}
+              </strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setZone(ALL)}
+              className="font-semibold text-primary hover:underline"
+            >
+              Ver nacional
+            </button>
+          </div>
+        )}
+
         {selectedStore && (
           <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground-secondary">
             Mostrando resultados de:{" "}
@@ -467,7 +511,7 @@ function LeaderboardPage() {
         <div className="lg:hidden">{!isStaff && <AdHorizontal sponsor={activeSponsor} />}</div>
 
         <LeaderboardTable
-          title={period === "semestral" ? "Ranking de Temporada" : "Ranking Mensual"}
+          title={period === "semestral" ? "Tabla General" : "Tabla Mensual"}
           badge={period === "semestral" ? semesterLbl : monthLbl.toUpperCase()}
           subtitle={
             period === "semestral"

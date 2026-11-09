@@ -16,6 +16,13 @@ import {
   weeksOfMonths,
   type PlayoffResult,
 } from "../src/lib/playoffs.ts";
+import { mostPlayedRegion } from "../src/lib/store-regions.ts";
+import {
+  addDays,
+  describeFichaChanges,
+  pickFichaVersions,
+  sameCommercialTerms,
+} from "../src/lib/ficha.ts";
 
 const r = (
   playerId: string,
@@ -119,6 +126,53 @@ const out = classify({
 }).get("Sur")!;
 assert.equal(out[0].playerId, "p1");
 
+// Ganador de mes sin el 60%: su lugar pasa a los de puntos, no al siguiente del mes.
+const lostSpot = classify({
+  ...base,
+  closedMonths: ["2026-08"],
+  ineligible: new Set(["p0"]),
+  results: many,
+}).get("Sur")!;
+assert.deepEqual(
+  lostSpot.slice(0, 2).map((q) => [q.playerId, q.source]),
+  [
+    ["p1", "month"],
+    ["p2", "points"],
+  ],
+);
+assert.equal(lostSpot.length, 16);
+assert.ok(!lostSpot.some((q) => q.playerId === "p0"));
+
+// Empate exacto entre subregiones: se queda donde jugó su primer torneo.
+const sameData = classify({
+  ...base,
+  subregions: ["Norte", "Sur"],
+  closedMonths: ["2026-08"],
+  results: [r("x", "Norte", "2026-08-04", 20), r("x", "Sur", "2026-08-03", 20)],
+});
+assert.equal(sameData.get("Sur")!.length, 1);
+assert.equal(sameData.get("Norte")!.length, 0);
+
+// Lugares por puntos: manda el ranking general, solo entre jugadores de la subregión.
+const generalOrder = classify({
+  ...base,
+  closedMonths: [],
+  results: [r("a", "Sur", "2026-08-03", 50), r("b", "Sur", "2026-08-03", 40)],
+  generalResults: [
+    r("a", "Sur", "2026-08-03", 50),
+    r("b", "Sur", "2026-08-03", 40),
+    r("b", "Norte", "2026-08-10", 90),
+    r("z", "Norte", "2026-08-10", 100),
+  ],
+}).get("Sur")!;
+assert.deepEqual(
+  generalOrder.map((q) => [q.playerId, q.points]),
+  [
+    ["b", 130],
+    ["a", 50],
+  ],
+);
+
 // 60%: alcanza mientras lo asistido más lo que falta llegue al mínimo.
 const weeks = weeksOfMonths(["2026-08", "2026-09"]);
 const need = requiredWeeks(weeks.length);
@@ -188,12 +242,19 @@ assert.deepEqual([round[7].player_a, round[7].player_b], ["s2", "s15"]);
 assert.equal(new Set(round.flatMap((m) => [m.player_a, m.player_b])).size, 16);
 
 // Desempates de orden: puntos, OMW, asistencia, quien jugó primero.
-const stat = (playerId: string, points: number, omw: number, played: number, firstDate: string) => ({
+const stat = (
+  playerId: string,
+  points: number,
+  omw: number,
+  played: number,
+  firstDate: string,
+) => ({
   playerId,
   points,
   omw,
   played,
   firstDate,
+  legacy: 0,
 });
 assert.deepEqual(
   [
@@ -207,8 +268,83 @@ assert.deepEqual(
     .map((s) => s.playerId),
   ["a", "b", "c", "d", "e"],
 );
+const legacyTie = (playerId: string, legacy: number) => ({
+  ...stat(playerId, 1, 1, 1, "2026-08-01"),
+  legacy,
+});
+assert.deepEqual(
+  [legacyTie("a", 5), legacyTie("b", 9)].sort(compareSeeding).map((s) => s.playerId),
+  ["b", "a"],
+);
+assert.deepEqual(
+  groupStandings(
+    [
+      { playerId: "x", seed: 1, points: 10, omw: 40, played: 2, legacy: 1 },
+      { playerId: "y", seed: 8, points: 10, omw: 60, played: 1, legacy: 0 },
+    ],
+    [],
+  ).map((p) => p.playerId),
+  ["y", "x"],
+);
 assert.equal(lastRound(2), 1);
 assert.equal(lastRound(3), 3);
 assert.equal(parentRegion("Ciudad de México Norte"), "Ciudad de México");
+
+// Región por default: más torneos, luego tienda principal, luego la más reciente.
+const placeStores = [
+  { id: "s", zone: "Zona Monterrey", subzone: "Sur", city: "Monterrey" },
+  { id: "n", zone: "Zona Monterrey", subzone: "Norte", city: "Monterrey" },
+  { id: "x", zone: "Zona Extendida", subzone: null, city: "Puebla" },
+  { id: "z", zone: null, subzone: null, city: null },
+];
+const played = (...ids: string[]) =>
+  ids.map((store_id, i) => ({ store_id, date: `2026-08-0${i + 1}` }));
+assert.equal(mostPlayedRegion(played("s", "n", "n"), placeStores, "s")?.region, "Norte");
+assert.equal(mostPlayedRegion(played("n", "s"), placeStores, "n")?.region, "Norte");
+assert.equal(mostPlayedRegion(played("n", "s"), placeStores, null)?.region, "Sur");
+assert.equal(mostPlayedRegion(played("x"), placeStores, null)?.region, "Puebla");
+assert.equal(mostPlayedRegion([], placeStores, "s")?.region, "Sur");
+assert.equal(mostPlayedRegion(played("z"), placeStores, null), null);
+
+// Datos del torneo: lo aprobado sigue vigente hasta su fecha.
+assert.equal(addDays("2026-12-25", 14), "2027-01-08");
+const fichaV = (id: string, status: string, effective_date: string | null) => ({
+  id,
+  status,
+  effective_date,
+  created_at: `2026-11-0${id}T00:00:00Z`,
+});
+const picked = pickFichaVersions(
+  [
+    fichaV("1", "approved", "2026-08-01"),
+    fichaV("2", "approved", "2026-10-01"),
+    fichaV("3", "approved", "2026-12-01"),
+    fichaV("4", "pending", null),
+  ],
+  "2026-11-09",
+);
+assert.equal(picked.current?.id, "2");
+assert.equal(picked.upcoming?.id, "3");
+const termsA = { entry_fee_mxn: 150, pool_percent: 80, prizes: [] };
+assert.equal(sameCommercialTerms(termsA, { ...termsA }), true);
+assert.equal(sameCommercialTerms(termsA, { ...termsA, pool_percent: 70 }), false);
+
+// El aviso de cambio solo menciona lo que cambia.
+const firstPrize = { place: "1.º", kind: "booster_pack" as const, amount: 3 };
+const participation = { place: "Participación", kind: "booster_pack" as const, amount: 1 };
+assert.deepEqual(
+  describeFichaChanges(
+    { entry_fee_mxn: 150, pool_percent: null, prizes: [firstPrize] },
+    { entry_fee_mxn: 150, pool_percent: null, prizes: [firstPrize, participation] },
+  ),
+  ["Se agrega Participación: 1 Booster Packs"],
+);
+assert.deepEqual(
+  describeFichaChanges(
+    { entry_fee_mxn: 150, pool_percent: null, prizes: [firstPrize] },
+    { entry_fee_mxn: 200, pool_percent: null, prizes: [] },
+  ),
+  ["Costo: de $150 MXN a $200 MXN", "Se quita 1.º"],
+);
 
 console.log("playoffs.check OK");

@@ -420,11 +420,24 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       },
     );
 
+    // Un resultado real no se pierde aunque la fecha estuviera cancelada.
+    let cancelledQuery = (admin as any)
+      .from("schedule_cancellations")
+      .select("id")
+      .eq("store_id", data.store_id)
+      .eq("game_id", data.game_id)
+      .eq("occurrence_date", data.tournament_date);
+    cancelledQuery = data.league_id
+      ? cancelledQuery.eq("league_id", data.league_id)
+      : cancelledQuery.is("league_id", null);
+    const { data: cancelled } = await cancelledQuery.maybeSingle();
+
     return {
       ok: true as const,
       id: tournamentId,
       inserted: baseRows.length,
       created_players: createdPlayers,
+      was_cancelled: Boolean(cancelled),
     };
   });
 

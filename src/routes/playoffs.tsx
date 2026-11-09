@@ -8,7 +8,7 @@ import {
   type BracketEvent,
   type FrozenEvent,
 } from "@/lib/nexus-playoffs.functions";
-import { SEED_GROUPS } from "@/lib/playoffs";
+import { LEVEL_NAMES, SEED_GROUPS } from "@/lib/playoffs";
 
 export const Route = createFileRoute("/playoffs")({
   head: () => ({ meta: [{ title: "Playoffs — Nexus" }] }),
@@ -91,7 +91,7 @@ function FrozenView({ event }: { event: FrozenEvent }) {
           </ul>
           {event.top_four.length > 0 && (
             <p className="mt-3 text-sm text-foreground">
-              Suben a Nivel 2: {event.top_four.join(", ")}
+              Suben al Playoff de Ciudad: {event.top_four.join(", ")}
             </p>
           )}
         </section>
@@ -141,7 +141,7 @@ function BracketView({ title, bracket }: { title: string; bracket: BracketEvent 
             ))}
           {bracket.top_four.length > 0 && (
             <p className="text-sm text-foreground">
-              Suben a la Final: {bracket.top_four.join(", ")}
+              Suben al Torneo Nacional: {bracket.top_four.join(", ")}
             </p>
           )}
           {bracket.champion && (
@@ -200,7 +200,7 @@ function PlayoffsPage() {
     <main className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader
         eyebrow={`${data.season_name} · One Piece`}
-        title={`Playoffs · Nivel ${level}`}
+        title={`Playoffs · ${LEVEL_NAMES[level]}`}
         description={`Clasificación de ${monthName(data.months[0])} a ${monthName(data.months[4])}. Meses cerrados: ${data.closed_months.length} de ${data.months.length}.`}
       />
 
@@ -217,7 +217,7 @@ function PlayoffsPage() {
                 : "border-white/10 text-foreground-secondary hover:border-white/25"
             }`}
           >
-            Nivel {n}
+            {LEVEL_NAMES[n]}
           </button>
         ))}
       </div>
@@ -229,7 +229,7 @@ function PlayoffsPage() {
           ))}
         </div>
       )}
-      {level === 3 && <BracketView title="Final Nacional" bracket={data.final.bracket} />}
+      {level === 3 && <BracketView title={LEVEL_NAMES[3]} bracket={data.final.bracket} />}
       {level === 1 && (
         <>
           <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Subregión">
@@ -307,7 +307,7 @@ function PlayoffsPage() {
           <p className="mt-5 text-xs text-foreground-secondary">
             Para jugar el playoff se necesita asistir al menos a un torneo en {data.required_weeks}{" "}
             de las {data.total_weeks} semanas de la clasificación. Pasan los 2 mejores de cada grupo
-            al Top 8; los 4 ganadores de cuartos suben al Nivel 2.
+            al Top 8; los 4 ganadores de cuartos suben al Playoff de Ciudad.
           </p>
         </>
       )}

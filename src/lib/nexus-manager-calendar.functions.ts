@@ -1,3 +1,4 @@
+import { loadCancellations, occurrenceKey } from "./nexus-schedule-events.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { failDb } from "./nexus-admin.server";
@@ -185,6 +186,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       tournamentMap.set(`${t.store_id}-${t.game_id}-${dow}`, t);
     });
 
+    const cancellations = await loadCancellations(admin, storeIds, mondayStr, sundayStr);
     const nowMs = Date.now();
 
     // Build entries
@@ -218,13 +220,17 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
       const hasEnded = isPast || (isToday && nowMs > tEnd.getTime());
 
       // Report status
-      let reportStatus: "submitted" | "overdue" | "pending" | "upcoming";
+      let reportStatus: "submitted" | "overdue" | "pending" | "upcoming" | "cancelled";
       const isSubmitted =
         tournament &&
         (tournament.status !== "DRAFT" ||
           (tournament.status === "DRAFT" && !tournament.rejection_reason));
+      const cancellationReason =
+        cancellations.get(occurrenceKey(s.store_id, s.game_id, null, entryDateStr)) ?? null;
       if (isSubmitted) {
         reportStatus = "submitted";
+      } else if (cancellationReason && !tournament) {
+        reportStatus = "cancelled";
       } else if (hasEnded && !tournament) {
         reportStatus = "overdue";
       } else if (isFuture) {
@@ -256,6 +262,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
         is_ongoing: isOngoing,
         has_ended: hasEnded,
         report_status: reportStatus,
+        cancellation_reason: cancellationReason,
         tournament_id: tournament?.id ?? null,
         tournament_status: tournament?.status ?? null,
         organizer_tag: organizer?.geek_tag ?? null,
@@ -264,7 +271,9 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     });
 
     // Stats
-    const elapsedEntries = entries.filter((e: any) => !e.is_future);
+    const elapsedEntries = entries.filter(
+      (e: any) => !e.is_future && e.report_status !== "cancelled",
+    );
     const uploadedSoFar = elapsedEntries.filter((e: any) => e.report_status === "submitted").length;
     const totalOverdue = entries.filter((e: any) => e.report_status === "overdue").length;
 

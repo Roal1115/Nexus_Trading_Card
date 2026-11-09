@@ -102,7 +102,7 @@ function buildEventIcs(entry: any) {
   });
 }
 
-function fullDate(date: string): string {
+export function fullDate(date: string): string {
   const text = new Date(`${date}T12:00:00`).toLocaleDateString("es-MX", {
     weekday: "long",
     day: "numeric",
@@ -196,6 +196,12 @@ function TournamentDetail({
         )}
       </div>
 
+      {entry.cancellation_reason && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <strong>Torneo cancelado.</strong> {entry.cancellation_reason}
+        </div>
+      )}
+
       {playerId && !entry.is_scheduled && attended && (
         <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
           <CheckCircle2 size={14} className="text-emerald-400" />
@@ -211,7 +217,7 @@ function TournamentDetail({
             Ver resultados
           </Link>
         )}
-        {!isPast && (
+        {!isPast && !entry.cancellation_reason && (
           <a
             href={icsDataUri(buildEventIcs(entry))}
             download={icsFileName(`${entry.game_name}-${entry.store_name}-${entry.date}`)}

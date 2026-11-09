@@ -13,6 +13,7 @@ const GUEST_LINKS = [
   { to: "/playoffs", label: "Playoffs" },
   { to: "/meta", label: "Meta" },
   { to: "/stores", label: "Tiendas" },
+  { to: "/faq", label: "FAQ" },
 ];
 
 export function AppHeader() {
