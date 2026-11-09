@@ -4,6 +4,7 @@
 import { failDb, type getNexusAdmin } from "./nexus-admin.server";
 import type { Json } from "./database.types";
 import { notifyStaff } from "./staff-alerts.server";
+import { getWeekKey } from "./playoffs";
 
 // ---------- Audit log helper ----------
 export type AuditActor = { id: string | null; role: string; geek_tag: string };
@@ -93,22 +94,6 @@ export async function getActiveSeason(admin: ReturnType<typeof getNexusAdmin>) {
 
 export function tfMonth(month: number, year: number) {
   return `${year}-${String(month).padStart(2, "0")}`;
-}
-
-// Returns ISO week key "YYYY-WNN" for a given date string "YYYY-MM-DD"
-// Week starts on Monday
-function getWeekKey(dateStr: string): string {
-  const date = new Date(dateStr + "T12:00:00Z");
-  const day = date.getUTCDay(); // 0=Sun, 1=Mon ... 6=Sat
-  const diff = day === 0 ? -6 : 1 - day; // adjust to Monday
-  const monday = new Date(date);
-  monday.setUTCDate(date.getUTCDate() + diff);
-  const year = monday.getUTCFullYear();
-  const startOfYear = new Date(Date.UTC(year, 0, 1));
-  const weekNum = Math.ceil(
-    ((monday.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getUTCDay() + 1) / 7,
-  );
-  return `${year}-W${String(weekNum).padStart(2, "0")}`;
 }
 
 // Recompute leaderboard snapshots for a given game+timeframe based on

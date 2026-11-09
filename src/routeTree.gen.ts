@@ -18,6 +18,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MetaRouteImport } from './routes/meta'
 import { Route as MyStatsRouteImport } from './routes/my-stats'
 import { Route as OrganizerRouteImport } from './routes/organizer'
+import { Route as PlayoffsRouteImport } from './routes/playoffs'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -31,6 +32,7 @@ import { Route as AdminApprovedRouteImport } from './routes/admin.approved'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminHistoryRouteImport } from './routes/admin.history'
 import { Route as AdminPlayersRouteImport } from './routes/admin.players'
+import { Route as AdminPlayoffsRouteImport } from './routes/admin.playoffs'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
 import { Route as AdminStoresRouteImport } from './routes/admin.stores'
@@ -59,6 +61,7 @@ import { Route as TcgManagerCalendarRouteImport } from './routes/tcg-manager.cal
 import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.history'
 import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my-history'
 import { Route as TcgManagerPlayersRouteImport } from './routes/tcg-manager.players'
+import { Route as TcgManagerPlayoffsRouteImport } from './routes/tcg-manager.playoffs'
 import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
 import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
@@ -124,6 +127,11 @@ const OrganizerRoute = OrganizerRouteImport.update({
   path: '/organizer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayoffsRoute = PlayoffsRouteImport.update({
+  id: '/playoffs',
+  path: '/playoffs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -187,6 +195,11 @@ const AdminHistoryRoute = AdminHistoryRouteImport.update({
 const AdminPlayersRoute = AdminPlayersRouteImport.update({
   id: '/players',
   path: '/players',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlayoffsRoute = AdminPlayoffsRouteImport.update({
+  id: '/playoffs',
+  path: '/playoffs',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPublishRoute = AdminPublishRouteImport.update({
@@ -329,6 +342,11 @@ const TcgManagerPlayersRoute = TcgManagerPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => TcgManagerRoute,
 } as any)
+const TcgManagerPlayoffsRoute = TcgManagerPlayoffsRouteImport.update({
+  id: '/playoffs',
+  path: '/playoffs',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
 const TcgManagerStoresRoute = TcgManagerStoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -444,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
+  '/playoffs': typeof PlayoffsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -456,6 +475,7 @@ export interface FileRoutesByFullPath {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRoute
+  '/admin/playoffs': typeof AdminPlayoffsRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
@@ -480,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
+  '/tcg-manager/playoffs': typeof TcgManagerPlayoffsRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
@@ -513,6 +534,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
+  '/playoffs': typeof PlayoffsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -522,6 +544,7 @@ export interface FileRoutesByTo {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRoute
+  '/admin/playoffs': typeof AdminPlayoffsRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
@@ -545,6 +568,7 @@ export interface FileRoutesByTo {
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
+  '/tcg-manager/playoffs': typeof TcgManagerPlayoffsRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
@@ -581,6 +605,7 @@ export interface FileRoutesById {
   '/meta': typeof MetaRoute
   '/my-stats': typeof MyStatsRoute
   '/organizer': typeof OrganizerRouteWithChildren
+  '/playoffs': typeof PlayoffsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sessions': typeof SessionsRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -593,6 +618,7 @@ export interface FileRoutesById {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/players': typeof AdminPlayersRoute
+  '/admin/playoffs': typeof AdminPlayoffsRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
   '/admin/stores': typeof AdminStoresRoute
@@ -617,6 +643,7 @@ export interface FileRoutesById {
   '/tcg-manager/history': typeof TcgManagerHistoryRoute
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
+  '/tcg-manager/playoffs': typeof TcgManagerPlayoffsRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
@@ -654,6 +681,7 @@ export interface FileRouteTypes {
     | '/meta'
     | '/my-stats'
     | '/organizer'
+    | '/playoffs'
     | '/reset-password'
     | '/sessions'
     | '/settings'
@@ -666,6 +694,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/history'
     | '/admin/players'
+    | '/admin/playoffs'
     | '/admin/publish'
     | '/admin/seasons'
     | '/admin/stores'
@@ -690,6 +719,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
+    | '/tcg-manager/playoffs'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
@@ -723,6 +753,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/meta'
     | '/my-stats'
+    | '/playoffs'
     | '/reset-password'
     | '/settings'
     | '/signup'
@@ -732,6 +763,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/history'
     | '/admin/players'
+    | '/admin/playoffs'
     | '/admin/publish'
     | '/admin/seasons'
     | '/admin/stores'
@@ -755,6 +787,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
+    | '/tcg-manager/playoffs'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
@@ -790,6 +823,7 @@ export interface FileRouteTypes {
     | '/meta'
     | '/my-stats'
     | '/organizer'
+    | '/playoffs'
     | '/reset-password'
     | '/sessions'
     | '/settings'
@@ -802,6 +836,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/history'
     | '/admin/players'
+    | '/admin/playoffs'
     | '/admin/publish'
     | '/admin/seasons'
     | '/admin/stores'
@@ -826,6 +861,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/history'
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
+    | '/tcg-manager/playoffs'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
@@ -862,6 +898,7 @@ export interface RootRouteChildren {
   MetaRoute: typeof MetaRoute
   MyStatsRoute: typeof MyStatsRoute
   OrganizerRoute: typeof OrganizerRouteWithChildren
+  PlayoffsRoute: typeof PlayoffsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SessionsRoute: typeof SessionsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
@@ -940,6 +977,13 @@ declare module '@tanstack/react-router' {
       path: '/organizer'
       fullPath: '/organizer'
       preLoaderRoute: typeof OrganizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/playoffs': {
+      id: '/playoffs'
+      path: '/playoffs'
+      fullPath: '/playoffs'
+      preLoaderRoute: typeof PlayoffsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1031,6 +1075,13 @@ declare module '@tanstack/react-router' {
       path: '/players'
       fullPath: '/admin/players'
       preLoaderRoute: typeof AdminPlayersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/playoffs': {
+      id: '/admin/playoffs'
+      path: '/playoffs'
+      fullPath: '/admin/playoffs'
+      preLoaderRoute: typeof AdminPlayoffsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/publish': {
@@ -1229,6 +1280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TcgManagerPlayersRouteImport
       parentRoute: typeof TcgManagerRoute
     }
+    '/tcg-manager/playoffs': {
+      id: '/tcg-manager/playoffs'
+      path: '/playoffs'
+      fullPath: '/tcg-manager/playoffs'
+      preLoaderRoute: typeof TcgManagerPlayoffsRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
     '/tcg-manager/stores': {
       id: '/tcg-manager/stores'
       path: '/stores'
@@ -1372,6 +1430,7 @@ interface AdminRouteChildren {
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminPlayersRoute: typeof AdminPlayersRoute
+  AdminPlayoffsRoute: typeof AdminPlayoffsRoute
   AdminPublishRoute: typeof AdminPublishRoute
   AdminSeasonsRoute: typeof AdminSeasonsRoute
   AdminStoresRoute: typeof AdminStoresRoute
@@ -1389,6 +1448,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCalendarRoute: AdminCalendarRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminPlayersRoute: AdminPlayersRoute,
+  AdminPlayoffsRoute: AdminPlayoffsRoute,
   AdminPublishRoute: AdminPublishRoute,
   AdminSeasonsRoute: AdminSeasonsRoute,
   AdminStoresRoute: AdminStoresRoute,
@@ -1487,6 +1547,7 @@ interface TcgManagerRouteChildren {
   TcgManagerHistoryRoute: typeof TcgManagerHistoryRoute
   TcgManagerMyHistoryRoute: typeof TcgManagerMyHistoryRoute
   TcgManagerPlayersRoute: typeof TcgManagerPlayersRoute
+  TcgManagerPlayoffsRoute: typeof TcgManagerPlayoffsRoute
   TcgManagerStoresRoute: typeof TcgManagerStoresRoute
   TcgManagerTournamentsPanelRoute: typeof TcgManagerTournamentsPanelRoute
   TcgManagerUploadRoute: typeof TcgManagerUploadRoute
@@ -1503,6 +1564,7 @@ const TcgManagerRouteChildren: TcgManagerRouteChildren = {
   TcgManagerHistoryRoute: TcgManagerHistoryRoute,
   TcgManagerMyHistoryRoute: TcgManagerMyHistoryRoute,
   TcgManagerPlayersRoute: TcgManagerPlayersRoute,
+  TcgManagerPlayoffsRoute: TcgManagerPlayoffsRoute,
   TcgManagerStoresRoute: TcgManagerStoresRoute,
   TcgManagerTournamentsPanelRoute: TcgManagerTournamentsPanelRoute,
   TcgManagerUploadRoute: TcgManagerUploadRoute,
@@ -1526,6 +1588,7 @@ const rootRouteChildren: RootRouteChildren = {
   MetaRoute: MetaRoute,
   MyStatsRoute: MyStatsRoute,
   OrganizerRoute: OrganizerRouteWithChildren,
+  PlayoffsRoute: PlayoffsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SessionsRoute: SessionsRouteWithChildren,
   SettingsRoute: SettingsRoute,

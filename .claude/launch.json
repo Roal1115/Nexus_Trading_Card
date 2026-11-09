@@ -7,6 +7,10 @@
       "runtimeArgs": ["run", "dev"],
       "port": 8080,
       "url": "http://localhost:8080"
+    },
+    {
+      "name": "dev-sandbox",
+      "url": "http://localhost:8081"
     }
   ]
 }

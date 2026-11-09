@@ -79,6 +79,7 @@ function AdminLayout() {
             title: "Configuración",
             items: [
               { to: "/admin/seasons", label: "Temporadas", icon: <CalendarRange size={16} /> },
+              { to: "/admin/playoffs", label: "Playoffs", icon: <Trophy size={16} /> },
               { to: "/admin/ads", label: "Sponsors", icon: <Megaphone size={16} /> },
             ],
           },

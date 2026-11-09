@@ -36,6 +36,7 @@ export function playerNavSections(role: string, nexusTag?: string): SidebarSecti
       items: [
         { to: "/", label: "Ranking", icon: <Trophy size={16} />, exact: true },
         { to: "/calendar", label: "Calendario", icon: <CalendarDays size={16} /> },
+        { to: "/playoffs", label: "Playoffs", icon: <Swords size={16} /> },
         { to: "/meta", label: "Meta", icon: <TrendingUp size={16} /> },
         { to: "/stores", label: "Tiendas", icon: <Store size={16} /> },
       ],

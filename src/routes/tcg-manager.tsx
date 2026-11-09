@@ -65,6 +65,7 @@ function TcgManagerLayout() {
                 badge: tournamentsBadge,
               },
               { to: "/tcg-manager/calendar", label: "Calendario", icon: <Calendar size={16} /> },
+              { to: "/tcg-manager/playoffs", label: "Playoffs", icon: <Trophy size={16} /> },
             ],
           },
           {

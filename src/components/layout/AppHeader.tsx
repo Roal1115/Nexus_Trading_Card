@@ -10,6 +10,7 @@ import { NotificationBell } from "@/components/layout/NotificationBell";
 const GUEST_LINKS = [
   { to: "/", label: "Ranking" },
   { to: "/calendar", label: "Calendario" },
+  { to: "/playoffs", label: "Playoffs" },
   { to: "/meta", label: "Meta" },
   { to: "/stores", label: "Tiendas" },
 ];
