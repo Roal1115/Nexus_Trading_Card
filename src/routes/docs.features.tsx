@@ -169,7 +169,7 @@ const ROLE_SECTIONS: RoleSection[] = [
       {
         title: "Torneos y asistencia",
         features: [
-          { title: "Pedir o quitar preferencia en torneos", desc: "Da prioridad, no un lugar asegurado. El staff ve la lista en orden de llegada; la inscripción oficial sigue en la app de Bandai.", fn: "createSlotRsvp · cancelSlotRsvp" },
+          { title: "Marcar o quitar «Me interesa ir» en torneos", desc: "No es un lugar asegurado. El staff ve la lista en orden de llegada; la inscripción oficial sigue en la app de Bandai.", fn: "createSlotRsvp · cancelSlotRsvp" },
           { title: "Historial de torneos jugados", desc: "Registro completo de participación." },
           { title: "Tiendas favoritas", desc: "Seguimiento rápido de las tiendas que frecuenta." },
         ],

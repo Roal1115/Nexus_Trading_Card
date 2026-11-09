@@ -176,8 +176,8 @@ function SessionCard({
                 session.win_rate === 100
                   ? "text-yellow-400"
                   : session.win_rate >= 50
-                  ? "text-emerald-400"
-                  : "text-red-400"
+                    ? "text-emerald-400"
+                    : "text-red-400"
               }`}
             >
               {session.win_rate}% WR
@@ -190,7 +190,9 @@ function SessionCard({
           {session.leader && (
             <>
               <span className="text-gray-700">·</span>
-              <span className="truncate text-gray-400">{cleanLeaderName(session.leader.base_name)}</span>
+              <span className="truncate text-gray-400">
+                {cleanLeaderName(session.leader.base_name)}
+              </span>
             </>
           )}
         </div>
@@ -299,11 +301,16 @@ function TrackedTournamentCard({ tournament }: { tournament: TrackedTournament }
       </div>
 
       <div className="hidden sm:block flex-shrink-0 text-right">
-        <div className="text-xs text-gray-300">{formatTournamentDate(tournament.tournament_date)}</div>
+        <div className="text-xs text-gray-300">
+          {formatTournamentDate(tournament.tournament_date)}
+        </div>
         <div className="mt-0.5 text-[11px] text-gray-500">Registro oficial</div>
       </div>
 
-      <ChevronRight size={16} className="flex-shrink-0 text-gray-600 transition group-hover:text-primary" />
+      <ChevronRight
+        size={16}
+        className="flex-shrink-0 text-gray-600 transition group-hover:text-primary"
+      />
     </Link>
   );
 }
@@ -419,9 +426,7 @@ function SessionsPage() {
       <main className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="glass rounded-2xl border border-white/10 p-8 text-center">
           <h1 className="text-xl font-bold text-white">Debes iniciar sesión</h1>
-          <p className="mt-2 text-sm text-gray-400">
-            Inicia sesión para ver y crear tus partidas.
-          </p>
+          <p className="mt-2 text-sm text-gray-400">Inicia sesión para ver y crear tus partidas.</p>
           <Link
             to="/login"
             className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
@@ -469,7 +474,7 @@ function SessionsPage() {
         icon={<Trophy size={14} />}
         title="Registra tu partida"
         count={slotsToLog.length}
-        subtitle="Pediste preferencia en estos torneos. Los datos ya vienen llenos."
+        subtitle="Marcaste que te interesaba ir a estos torneos. Los datos ya vienen llenos."
       >
         {slotsToLog.map((slot) => (
           <div
@@ -1013,10 +1018,7 @@ function CreateSessionSheet({
                 </button>
               </div>
 
-              <div
-                className="overflow-y-auto px-5 py-5"
-                style={{ maxHeight: "calc(85vh - 60px)" }}
-              >
+              <div className="overflow-y-auto px-5 py-5" style={{ maxHeight: "calc(85vh - 60px)" }}>
                 {step === 1 && (
                   <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:grid-cols-2">
                     <button
@@ -1089,9 +1091,7 @@ function CreateSessionSheet({
                       {gamesLoading ? (
                         <div className="mt-1.5 text-xs text-gray-500">Cargando…</div>
                       ) : games.length === 0 ? (
-                        <div className="mt-1.5 text-xs text-gray-500">
-                          No hay TCGs disponibles.
-                        </div>
+                        <div className="mt-1.5 text-xs text-gray-500">No hay TCGs disponibles.</div>
                       ) : (
                         <div className="mt-1.5 flex flex-wrap gap-2">
                           {games.map((g) => {
@@ -1130,9 +1130,7 @@ function CreateSessionSheet({
                     {/* Fecha */}
                     <div>
                       <label className="text-[11px] uppercase tracking-wider text-gray-500">
-                        {sessionType === "competitive"
-                          ? "Fecha del torneo *"
-                          : "Fecha (opcional)"}
+                        {sessionType === "competitive" ? "Fecha del torneo *" : "Fecha (opcional)"}
                       </label>
                       <input
                         type="date"
@@ -1222,9 +1220,7 @@ function CreateSessionSheet({
                                     >
                                       <span className="font-medium">{s.name}</span>
                                       {s.city && (
-                                        <span className="text-[11px] text-gray-500">
-                                          {s.city}
-                                        </span>
+                                        <span className="text-[11px] text-gray-500">{s.city}</span>
                                       )}
                                     </button>
                                   ))}
@@ -1265,4 +1261,3 @@ function CreateSessionSheet({
     </AnimatePresence>
   );
 }
-

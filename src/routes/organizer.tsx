@@ -42,6 +42,7 @@ function OrganizerLayout() {
   return (
     <div className="flex min-h-screen">
       <PanelSidebar
+        collapsible
         title="Organizador"
         subtitle="Panel"
         userLabel={player?.geek_tag ?? "Organizador"}

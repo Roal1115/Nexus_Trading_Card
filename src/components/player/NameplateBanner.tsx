@@ -96,7 +96,7 @@ export function NameplateBanner({
           aria-expanded={open}
           aria-haspopup="dialog"
           aria-controls="nameplate-popover"
-          className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400 transition active:scale-95 sm:hover:border-primary/40 sm:hover:text-primary"
+          className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-foreground-secondary transition active:scale-95 sm:hover:border-primary/40 sm:hover:text-primary"
         >
           Elegir nameplate
         </button>
@@ -111,21 +111,21 @@ export function NameplateBanner({
         >
           {equipped && (
             <div className="border-b border-white/10 pb-3">
-              <p className="text-[10px] uppercase tracking-widest text-gray-500">
+              <p className="text-xs uppercase tracking-widest text-foreground-subtle">
                 Desbloqueado por el achievement
               </p>
               <p className={`mt-0.5 text-sm font-bold ${banner.text}`}>{equipped.name}</p>
-              <p className="mt-1 text-xs text-gray-400">{equipped.requirement_text}</p>
+              <p className="mt-1 text-xs text-foreground-secondary">{equipped.requirement_text}</p>
               <div className="mt-2 flex items-center gap-1.5">
-                <span className="rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gray-300">
+                <span className="rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-foreground-secondary">
                   {equipped.tier}
                 </span>
-                <span className="text-[10px] font-semibold text-gray-500">
+                <span className="text-xs font-semibold text-foreground-subtle">
                   +{equipped.base_lp} PL
                 </span>
               </div>
               {equipped.reward_detail && (
-                <p className="mt-1.5 text-[11px] leading-snug text-primary/80">
+                <p className="mt-1.5 text-xs leading-snug text-primary/80">
                   {equipped.reward_detail}
                 </p>
               )}
@@ -134,7 +134,7 @@ export function NameplateBanner({
 
           {isOwner && (
             <div className={equipped ? "pt-3" : ""}>
-              <p className="mb-1.5 text-[10px] uppercase tracking-widest text-gray-500">
+              <p className="mb-1.5 text-xs uppercase tracking-widest text-foreground-subtle">
                 Tus nameplates desbloqueados
               </p>
               <div className="max-h-52 space-y-1 overflow-y-auto">
@@ -150,11 +150,11 @@ export function NameplateBanner({
                       className={`flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs font-semibold transition ${
                         isEquipped
                           ? "border-primary/40 bg-primary/15 text-primary"
-                          : "border-white/10 bg-white/5 text-gray-300 sm:hover:border-white/20 sm:hover:text-white"
+                          : "border-white/10 bg-white/5 text-foreground-secondary sm:hover:border-white/20 sm:hover:text-foreground"
                       }`}
                     >
                       <span className="truncate">{n.name}</span>
-                      {isEquipped && <span className="flex-shrink-0 text-[10px]">✓ Equipado</span>}
+                      {isEquipped && <span className="flex-shrink-0 text-xs">✓ Equipado</span>}
                     </button>
                   );
                 })}

@@ -83,7 +83,7 @@ function LeaderSelect({
           />
           {artVariants.length > 1 && (
             <div>
-              <p className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">
+              <p className="mb-1 text-xs uppercase tracking-widest text-foreground-subtle">
                 Cambiar arte
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -133,12 +133,12 @@ function SimpleSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
       >
         <span className="truncate">
-          {selected ? selected.label : <span className="text-gray-500">{placeholder}</span>}
+          {selected ? selected.label : <span className="text-foreground-subtle">{placeholder}</span>}
         </span>
-        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
+        <ChevronDown size={14} className="text-foreground-subtle flex-shrink-0" />
       </button>
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
@@ -151,7 +151,7 @@ function SimpleSelect({
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className="flex w-full items-center px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
+                className="flex w-full items-center px-3 py-2.5 text-left text-sm text-foreground bg-transparent hover:bg-white/10 transition"
               >
                 {opt.label}
               </button>
@@ -195,7 +195,7 @@ function RoundCard({
     >
       {(close) => (
         <>
-          <label className="flex items-center gap-2 text-xs text-gray-300">
+          <label className="flex items-center gap-2 text-xs text-foreground-secondary">
             <input
               type="checkbox"
               checked={round.is_bye}
@@ -424,8 +424,8 @@ export function PerformanceTrackerModal({
         <div className="flex items-start gap-3">
           <Trophy className="text-primary mt-1" size={22} />
           <div>
-            <h2 className="text-xl font-extrabold text-white">Mis Partidas</h2>
-            <p className="mt-1 text-xs text-gray-400">
+            <h2 className="text-xl font-extrabold text-foreground">Mis Partidas</h2>
+            <p className="mt-1 text-xs text-foreground-secondary">
               Registra el detalle de cada ronda: contra quién jugaste, qué leader usaste, y el
               resultado.
             </p>
@@ -436,7 +436,7 @@ export function PerformanceTrackerModal({
             type="button"
             onClick={() => setConfirmingClear(true)}
             title="Eliminar todo el historial de este torneo"
-            className="rounded-md p-1.5 text-gray-400 hover:bg-red-500/15 hover:text-red-400 transition"
+            className="rounded-md p-1.5 text-foreground-secondary hover:bg-red-500/15 hover:text-red-400 transition"
           >
             <Trash2 size={18} />
           </button>
@@ -445,7 +445,7 @@ export function PerformanceTrackerModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+            className="rounded-md p-1.5 text-foreground-secondary hover:bg-white/10 hover:text-foreground"
           >
             <X size={18} />
           </button>
@@ -453,7 +453,7 @@ export function PerformanceTrackerModal({
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-gray-400">Cargando…</p>
+        <p className="py-10 text-center text-sm text-foreground-secondary">Cargando…</p>
       ) : (
         <div className="space-y-4">
           {/* Hero header — leader image + record, same format as /sessions/$sessionId */}
@@ -468,30 +468,30 @@ export function PerformanceTrackerModal({
                   />
                 ) : (
                   <div className="flex h-24 w-16 items-center justify-center rounded-xl border border-white/10 bg-black/40">
-                    <ShieldQuestion size={20} className="text-gray-600" />
+                    <ShieldQuestion size={20} className="text-foreground-subtle" />
                   </div>
                 )}
                 {(wins > 0 || losses > 0) && (
                   <div className="absolute bottom-1 left-0 right-0 flex justify-center">
-                    <span className="rounded-full bg-black/80 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                    <span className="rounded-full bg-black/80 px-2 py-0.5 font-mono text-xs font-bold text-foreground">
                       <span className="text-emerald-400">{wins}V</span>
-                      <span className="text-gray-500"> · </span>
+                      <span className="text-foreground-subtle"> · </span>
                       <span className="text-red-400">{losses}D</span>
                     </span>
                   </div>
                 )}
               </div>
               <div className="min-w-0 flex-1 pb-1">
-                <p className="text-lg font-bold text-white truncate">
+                <p className="text-lg font-bold text-foreground truncate">
                   {myLeader ? cleanLeaderName(myLeader.base_name) : "Sin leader"}
                 </p>
-                <p className="text-xs text-gray-500">Tu leader en este torneo</p>
+                <p className="text-xs text-foreground-subtle">Tu leader en este torneo</p>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+            <label className="mb-1.5 block text-xs uppercase tracking-widest text-foreground-subtle">
               Cambiar tu leader
             </label>
             <LeaderSelect
@@ -505,15 +505,15 @@ export function PerformanceTrackerModal({
           {/* Table header */}
           {rounds.length > 0 && (
             <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
-              <span className="text-[10px] uppercase tracking-widest text-gray-600">Round</span>
-              <span className="text-[10px] uppercase tracking-widest text-gray-600">Rival</span>
-              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+              <span className="text-xs uppercase tracking-widest text-foreground-subtle">Round</span>
+              <span className="text-xs uppercase tracking-widest text-foreground-subtle">Rival</span>
+              <span className="text-center text-xs uppercase tracking-widest text-foreground-subtle">
                 Dado
               </span>
-              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+              <span className="text-center text-xs uppercase tracking-widest text-foreground-subtle">
                 Turno
               </span>
-              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+              <span className="text-center text-xs uppercase tracking-widest text-foreground-subtle">
                 Res
               </span>
             </div>
@@ -527,14 +527,14 @@ export function PerformanceTrackerModal({
                   className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4"
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-sm font-bold text-foreground">
                       Ronda {round.round_number}{" "}
-                      <span className="ml-1 text-[10px] font-normal uppercase tracking-wider text-amber-400">
+                      <span className="ml-1 text-xs font-normal uppercase tracking-wider text-amber-400">
                         Reportada por tu oponente
                       </span>
                     </p>
                   </div>
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-foreground-secondary">
                     Este resultado fue registrado por tu rival en esta ronda. Por ahora no se puede
                     editar desde aquí.
                   </p>
@@ -564,7 +564,7 @@ export function PerformanceTrackerModal({
                   key={n}
                   type="button"
                   onClick={() => addRound(n)}
-                  className="flex items-center gap-1.5 rounded-md border border-dashed border-white/20 px-4 py-2 text-sm font-medium text-gray-300 hover:border-primary hover:text-primary transition"
+                  className="flex items-center gap-1.5 rounded-md border border-dashed border-white/20 px-4 py-2 text-sm font-medium text-foreground-secondary hover:border-primary hover:text-primary transition"
                 >
                   <Plus size={14} /> Ronda {n}
                 </button>
@@ -581,10 +581,10 @@ export function PerformanceTrackerModal({
       {confirmingClear && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0f1117] p-6 text-center shadow-2xl">
-            <p className="text-base font-bold text-white">
+            <p className="text-base font-bold text-foreground">
               ¿Eliminar todo el historial de este torneo?
             </p>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-foreground-secondary">
               Se borrarán todas las rondas que registraste para este torneo. Esta acción no se puede
               deshacer.
             </p>
@@ -593,7 +593,7 @@ export function PerformanceTrackerModal({
                 type="button"
                 onClick={handleClearAll}
                 disabled={clearing}
-                className="rounded-md bg-red-500 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-50"
+                className="rounded-md bg-red-500 px-4 py-2 text-xs font-bold uppercase tracking-widest text-foreground disabled:opacity-50"
               >
                 {clearing ? "Eliminando…" : "Sí, eliminar todo"}
               </button>
@@ -601,7 +601,7 @@ export function PerformanceTrackerModal({
                 type="button"
                 onClick={() => setConfirmingClear(false)}
                 disabled={clearing}
-                className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white"
+                className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground"
               >
                 Cancelar
               </button>

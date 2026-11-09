@@ -41,6 +41,7 @@ function TcgManagerLayout() {
   return (
     <div className="flex min-h-screen">
       <PanelSidebar
+        collapsible
         title="TCG Manager"
         subtitle="Panel"
         userLabel={player?.geek_tag ?? "Manager"}

@@ -250,11 +250,11 @@ function PublicProfilePage() {
   if (notFound || !profile) {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold text-white">Jugador no encontrado</h2>
-        <p className="mt-2 text-sm text-gray-400">No existe un jugador con ese Nexus Tag.</p>
+        <h2 className="text-2xl font-bold text-foreground">Jugador no encontrado</h2>
+        <p className="mt-2 text-sm text-foreground-secondary">No existe un jugador con ese Nexus Tag.</p>
         <Link
           to="/"
-          className="mt-6 inline-block rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white"
+          className="mt-6 inline-block rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-foreground"
         >
           Volver al inicio
         </Link>
@@ -265,15 +265,15 @@ function PublicProfilePage() {
   if (profile.is_private) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <Lock className="mb-4 text-gray-500" size={40} />
-        <h2 className="text-2xl font-bold text-white">Perfil privado</h2>
-        <p className="mt-2 text-sm text-gray-400">
+        <Lock className="mb-4 text-foreground-subtle" size={40} />
+        <h2 className="text-2xl font-bold text-foreground">Perfil privado</h2>
+        <p className="mt-2 text-sm text-foreground-secondary">
           El perfil de <span className="font-semibold text-primary">@{profile.geek_tag}</span> es
           privado.
         </p>
         <Link
           to="/"
-          className="mt-6 rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white"
+          className="mt-6 rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-foreground"
         >
           Volver al inicio
         </Link>
@@ -308,7 +308,7 @@ function PublicProfilePage() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                 Nexus Tag
               </p>
-              <h1 className="mt-1 break-words text-3xl font-bold text-white sm:text-5xl">
+              <h1 className="mt-1 break-words text-3xl font-bold text-foreground sm:text-5xl">
                 {profile.geek_tag}
               </h1>
               <NameplateBanner
@@ -332,10 +332,10 @@ function PublicProfilePage() {
                 </div>
               )}
               {profile.store_city && (
-                <p className="mt-1 text-sm text-gray-400">{profile.store_city}</p>
+                <p className="mt-1 text-sm text-foreground-secondary">{profile.store_city}</p>
               )}
               {profile.member_since && (
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-foreground-subtle">
                   Miembro desde{" "}
                   {new Date(profile.member_since).toLocaleDateString("es-MX", {
                     month: "long",
@@ -355,22 +355,22 @@ function PublicProfilePage() {
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
                   {!!profile.total_tournaments_won && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
                         Torneos Ganados
                       </p>
-                      <p className="font-mono-stat text-lg font-bold text-white">
+                      <p className="font-mono-stat text-lg font-bold text-foreground">
                         🏆 {profile.total_tournaments_won}
                       </p>
                     </div>
                   )}
                   {record.winRate != null && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
                         Win rate
                       </p>
-                      <p className="font-mono-stat text-lg font-bold text-white">
+                      <p className="font-mono-stat text-lg font-bold text-foreground">
                         {record.winRate}%{" "}
-                        <span className="text-xs font-normal text-gray-500">
+                        <span className="text-xs font-normal text-foreground-subtle">
                           ({record.wins}V-{record.losses}D)
                         </span>
                       </p>
@@ -378,10 +378,10 @@ function PublicProfilePage() {
                   )}
                   {profile.main_leader && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
                         Leader principal
                       </p>
-                      <p className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                         {profile.main_leader.image && (
                           <img
                             src={profile.main_leader.image}
@@ -395,7 +395,7 @@ function PublicProfilePage() {
                   )}
                   {recentForm.length > 0 && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
                         Últimos resultados
                       </p>
                       <div className="mt-0.5 flex items-center gap-1">
@@ -406,7 +406,7 @@ function PublicProfilePage() {
                             className={`flex h-5 w-5 items-center justify-center rounded-full font-mono-stat text-[9px] font-bold ${
                               t.placement <= 3
                                 ? "bg-primary/20 text-primary"
-                                : "bg-white/10 text-gray-400"
+                                : "bg-white/10 text-foreground-secondary"
                             }`}
                           >
                             {t.placement}
@@ -444,7 +444,7 @@ function PublicProfilePage() {
                     },
                   });
                 }}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-white/10"
               >
                 {copied ? (
                   <>
@@ -466,35 +466,35 @@ function PublicProfilePage() {
             módulo, un solo header. */}
         {(profile.rankings.length > 0 || achievements || achievementsQuery.isPending) && (
           <section className="mt-6">
-            <h2 className="mb-3 text-lg font-semibold text-white">Ranking</h2>
+            <h2 className="mb-3 text-lg font-semibold text-foreground">Ranking</h2>
             <div className="flex flex-wrap gap-4">
               {profile.rankings.map((r: any) => (
                 <div
                   key={r.game_id}
                   className="glass flex w-full flex-col gap-3 rounded-2xl border border-white/10 p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
                 >
-                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white">
+                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
                     <Crown size={14} className="text-primary" /> {r.game_name}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                      <p className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
                         <Crown size={10} /> Temporada
                       </p>
-                      <p className="mt-1 font-mono-stat text-3xl font-bold text-white">
+                      <p className="mt-1 font-mono-stat text-3xl font-bold text-foreground">
                         {r.rank_position > 0 ? `#${r.rank_position}` : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500">
+                      <p className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
                         <Target size={10} className="text-primary" /> Puntos
                       </p>
-                      <p className="mt-1 font-mono-stat text-3xl font-bold text-white">
+                      <p className="mt-1 font-mono-stat text-3xl font-bold text-foreground">
                         {Number(r.total_points).toFixed(0)}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <div className="flex items-center gap-3 text-xs text-foreground-secondary">
                     <span>{r.tournaments_played} jugados esta temporada</span>
                     <span>·</span>
                     <span>{r.tournaments_won} ganados</span>
@@ -520,7 +520,7 @@ function PublicProfilePage() {
                     params={{ playerTag }}
                     className="glass flex w-full flex-col justify-between gap-3 rounded-2xl border border-white/10 p-5 transition hover:border-primary/30 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
                   >
-                    <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white">
+                    <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
                       <Trophy size={14} className="text-primary" /> Logros
                     </div>
                     <div className="flex items-center gap-3">
@@ -533,14 +533,14 @@ function PublicProfilePage() {
                         %
                       </div>
                       <div>
-                        <p className="font-mono-stat text-2xl font-bold text-white">
+                        <p className="font-mono-stat text-2xl font-bold text-foreground">
                           {achievements.unlocked_count}
-                          <span className="text-base text-gray-500 font-sans">
+                          <span className="text-base text-foreground-subtle font-sans">
                             {" "}
                             / {achievements.total_count}
                           </span>
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-foreground-subtle">
                           {achievements.unlocked_count > 0
                             ? `${achievements.total_lp} Puntos de Logro`
                             : "Empieza a competir para desbloquear logros"}
@@ -563,9 +563,9 @@ function PublicProfilePage() {
           <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="text-primary" size={18} />
-              <h2 className="text-lg font-semibold text-white">Historial de torneos</h2>
+              <h2 className="text-lg font-semibold text-foreground">Historial de torneos</h2>
             </div>
-            <span className="text-xs uppercase tracking-wider text-gray-500">
+            <span className="text-xs uppercase tracking-wider text-foreground-subtle">
               {filteredTournaments.length} torneos
             </span>
           </header>
@@ -579,8 +579,8 @@ function PublicProfilePage() {
                 }}
                 className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                   historyTcg === null
-                    ? "border-primary text-white"
-                    : "border-transparent text-gray-400 hover:text-gray-200"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-foreground-secondary hover:text-foreground-secondary"
                 }`}
               >
                 Todos ({tournaments.length})
@@ -597,8 +597,8 @@ function PublicProfilePage() {
                     }}
                     className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                       historyTcg === g.id
-                        ? "border-primary text-white"
-                        : "border-transparent text-gray-400 hover:text-gray-200"
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-foreground-secondary hover:text-foreground-secondary"
                     }`}
                   >
                     {g.name} ({count})
@@ -615,10 +615,10 @@ function PublicProfilePage() {
                   setHistoryLeague(null);
                   setPage(1);
                 }}
-                className={`px-4 py-2 text-[11px] font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                   historyLeague === null
-                    ? "border-fuchsia-400 text-white"
-                    : "border-transparent text-gray-500 hover:text-gray-300"
+                    ? "border-fuchsia-400 text-foreground"
+                    : "border-transparent text-foreground-subtle hover:text-foreground-secondary"
                 }`}
               >
                 Todas las ligas
@@ -628,10 +628,10 @@ function PublicProfilePage() {
                   setHistoryLeague(NATIONAL_LEAGUE);
                   setPage(1);
                 }}
-                className={`px-4 py-2 text-[11px] font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                   historyLeague === NATIONAL_LEAGUE
-                    ? "border-fuchsia-400 text-white"
-                    : "border-transparent text-gray-500 hover:text-gray-300"
+                    ? "border-fuchsia-400 text-foreground"
+                    : "border-transparent text-foreground-subtle hover:text-foreground-secondary"
                 }`}
               >
                 Circuito Nacional
@@ -643,10 +643,10 @@ function PublicProfilePage() {
                     setHistoryLeague(l.id);
                     setPage(1);
                   }}
-                  className={`px-4 py-2 text-[11px] font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                  className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                     historyLeague === l.id
-                      ? "border-fuchsia-400 text-white"
-                      : "border-transparent text-gray-500 hover:text-gray-300"
+                      ? "border-fuchsia-400 text-foreground"
+                      : "border-transparent text-foreground-subtle hover:text-foreground-secondary"
                   }`}
                 >
                   {l.name}
@@ -658,7 +658,7 @@ function PublicProfilePage() {
           {/* Desktop */}
           <div className="overflow-x-auto hidden sm:block">
             <table className="w-full text-sm">
-              <thead className="bg-black/30 text-xs uppercase tracking-wider text-gray-500">
+              <thead className="bg-black/30 text-xs uppercase tracking-wider text-foreground-subtle">
                 <tr>
                   <th className="px-4 py-2 text-left">Fecha</th>
                   {/* Columna TCG solo si el jugador compite en más de un
@@ -685,10 +685,10 @@ function PublicProfilePage() {
                         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
                           <Trophy size={24} className="text-primary" />
                         </div>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-semibold text-foreground">
                           Aún sin torneos registrados
                         </p>
-                        <p className="mt-2 text-xs text-gray-500">
+                        <p className="mt-2 text-xs text-foreground-subtle">
                           Participa en un torneo en tu tienda local para aparecer en el circuito.
                         </p>
                         <Link
@@ -707,7 +707,7 @@ function PublicProfilePage() {
                       onClick={() => goToTournament(t.id)}
                       className="border-b border-white/5 cursor-pointer hover:bg-white/[0.03]"
                     >
-                      <td className="px-4 py-3 text-gray-400 font-mono-stat text-xs">
+                      <td className="px-4 py-3 text-foreground-secondary font-mono-stat text-xs">
                         {t.date !== "—"
                           ? new Date(t.date + "T12:00:00").toLocaleDateString("es-MX", {
                               day: "numeric",
@@ -717,7 +717,7 @@ function PublicProfilePage() {
                           : "—"}
                       </td>
                       {uniqueGames.length > 1 && (
-                        <td className="px-4 py-3 text-xs text-gray-400">
+                        <td className="px-4 py-3 text-xs text-foreground-secondary">
                           {t.tcg}
                           {t.league_name && t.store_slug && (
                             <Link
@@ -733,8 +733,8 @@ function PublicProfilePage() {
                           )}
                         </td>
                       )}
-                      <td className="px-4 py-3 text-white">
-                        {t.store} <span className="text-xs text-gray-500">· {t.city}</span>
+                      <td className="px-4 py-3 text-foreground">
+                        {t.store} <span className="text-xs text-foreground-subtle">· {t.city}</span>
                         {uniqueGames.length <= 1 && t.league_name && t.store_slug && (
                           <Link
                             to="/stores/$slug"
@@ -748,19 +748,19 @@ function PublicProfilePage() {
                           </Link>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-gray-300 whitespace-nowrap">
+                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-foreground-secondary whitespace-nowrap">
                         {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span
                           className={`font-mono-stat text-sm font-semibold ${
-                            t.placement <= 3 ? "text-primary" : "text-white"
+                            t.placement <= 3 ? "text-primary" : "text-foreground"
                           }`}
                         >
                           #{t.placement}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono-stat font-semibold text-white">
+                      <td className="px-4 py-3 text-right font-mono-stat font-semibold text-foreground">
                         +{t.pointsEarned}
                       </td>
                     </tr>
@@ -778,8 +778,8 @@ function PublicProfilePage() {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
                     <Trophy size={24} className="text-primary" />
                   </div>
-                  <p className="text-sm font-semibold text-white">Aún sin torneos registrados</p>
-                  <p className="mt-2 text-xs text-gray-500">
+                  <p className="text-sm font-semibold text-foreground">Aún sin torneos registrados</p>
+                  <p className="mt-2 text-xs text-foreground-subtle">
                     Participa en un torneo en tu tienda local para aparecer en el circuito.
                   </p>
                   <Link
@@ -803,13 +803,13 @@ function PublicProfilePage() {
                         <div className="flex items-center gap-2">
                           <span
                             className={`font-mono-stat text-sm font-semibold ${
-                              t.placement <= 3 ? "text-primary" : "text-white"
+                              t.placement <= 3 ? "text-primary" : "text-foreground"
                             }`}
                           >
                             #{t.placement}
                           </span>
                           {uniqueGames.length > 1 && (
-                            <span className="text-xs text-gray-400">{t.tcg}</span>
+                            <span className="text-xs text-foreground-secondary">{t.tcg}</span>
                           )}
                           {t.league_name && t.store_slug && (
                             <Link
@@ -822,12 +822,12 @@ function PublicProfilePage() {
                               {t.league_name}
                             </Link>
                           )}
-                          <span className="text-xs text-gray-600">—</span>
-                          <span className="text-sm font-semibold text-white truncate">
+                          <span className="text-xs text-foreground-subtle">—</span>
+                          <span className="text-sm font-semibold text-foreground truncate">
                             {t.store}
                           </span>
                         </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                        <div className="mt-1 flex items-center gap-2 text-xs text-foreground-subtle flex-wrap">
                           <span>{t.city}</span>
                           <span>·</span>
                           <span>
@@ -849,7 +849,7 @@ function PublicProfilePage() {
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
-                        <p className="text-xs font-mono-stat font-semibold text-white">
+                        <p className="text-xs font-mono-stat font-semibold text-foreground">
                           +{t.pointsEarned}
                         </p>
                       </div>
@@ -873,7 +873,7 @@ function PublicProfilePage() {
           {/* getPublicProfile trae como máximo 100 torneos — si el jugador
               tiene más, avisamos en vez de cortar en silencio. */}
           {!hasMoreTournaments && tournaments.length === 100 && (
-            <p className="px-4 py-3 text-center text-[11px] text-gray-500 border-t border-white/5">
+            <p className="px-4 py-3 text-center text-xs text-foreground-subtle border-t border-white/5">
               Mostrando los 100 torneos más recientes.
             </p>
           )}
@@ -882,8 +882,8 @@ function PublicProfilePage() {
         {/* CTA
         {!profile.is_owner && (
           <section className="glass mt-6 rounded-2xl border border-primary/20 p-6 text-center">
-            <h3 className="text-lg font-bold text-white">¿Quieres ver tu propio ranking?</h3>
-            <p className="mt-2 text-sm text-gray-400">
+            <h3 className="text-lg font-bold text-foreground">¿Quieres ver tu propio ranking?</h3>
+            <p className="mt-2 text-sm text-foreground-secondary">
               Regístrate y accede a tu historial completo, rankings por TCG y estadísticas
               detalladas.
             </p>
@@ -896,7 +896,7 @@ function PublicProfilePage() {
               </Link>
               <Link
                 to="/login"
-                className="rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white"
+                className="rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold uppercase tracking-widest text-foreground"
               >
                 Iniciar sesión
               </Link>

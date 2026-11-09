@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Heart } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { CalendarDays, CheckCircle2, Heart } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MoreEntriesPopover } from "@/components/calendar/more-entries-popover";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { toLocalDateStr, mondayOfWeek } from "@/lib/utils";
 
@@ -94,7 +97,7 @@ export function CalendarEntry({
         {entry.store_name}
         {attended && <CheckCircle2 size={8} className="inline text-emerald-400 ml-1" />}
         {entry.my_rsvp && (
-          <Heart size={8} className="inline fill-current ml-1" aria-label="Con preferencia" />
+          <Heart size={8} className="inline fill-current ml-1" aria-label="Te interesa ir" />
         )}
       </p>
       {!compact && (
@@ -104,7 +107,9 @@ export function CalendarEntry({
         </p>
       )}
       {!compact && entry.league_name && (
-        <p className="text-[8px] font-semibold uppercase tracking-wide opacity-80 truncate">{entry.league_name}</p>
+        <p className="text-[8px] font-semibold uppercase tracking-wide opacity-80 truncate">
+          {entry.league_name}
+        </p>
       )}
     </button>
   );
@@ -138,10 +143,16 @@ export function WeeklyGrid({
 
   if (totalEntries === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 p-12 text-center">
-        <p className="text-sm font-semibold text-white">Sin torneos esta semana</p>
-        <p className="text-xs text-gray-500">Prueba con otra semana o quita los filtros aplicados.</p>
-      </div>
+      <EmptyState
+        icon={<CalendarDays size={20} />}
+        title="Sin torneos esta semana"
+        description="Prueba con otra semana, quita los filtros o mira qué tiendas hay cerca."
+        action={
+          <Link to="/stores" className="text-sm font-semibold text-primary hover:underline">
+            Ver tiendas
+          </Link>
+        }
+      />
     );
   }
 
@@ -154,80 +165,94 @@ export function WeeklyGrid({
         onSelectEntry={onSelectEntry}
       />
       <div className="hidden overflow-x-auto sm:block">
-      <div style={{ minWidth: "760px", width: "100%" }}>
-        <div
-          style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
-          className="border-b border-white/10"
-        >
-          <div className="border-r border-white/5" />
-          {weekDates.map((d, i) => {
-            const isToday = d.toDateString() === new Date().toDateString();
-            return (
-              <div
-                key={i}
-                className={`p-2 text-center border-l border-white/10 ${isToday ? "bg-primary/10" : ""}`}
-                style={{ minWidth: 0 }}
-              >
-                <div className="text-[10px] uppercase text-gray-400">{DAY_NAMES[d.getDay()]}</div>
-                <div className={`text-sm font-semibold ${isToday ? "text-primary" : "text-white"}`}>
-                  {d.getDate()}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {HOURS.map((hour) => (
+        <div style={{ minWidth: "760px", width: "100%" }}>
           <div
-            key={hour}
             style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
-            className="border-b border-white/5"
+            className="border-b border-white/10"
           >
-            <div className="p-2 text-[10px] text-gray-500 text-right border-r border-white/5 flex items-start justify-end pt-2">
-              {hour}:00
-            </div>
-            {[0, 1, 2, 3, 4, 5, 6].map((colIdx) => {
-              const cellEntries = calendarGrid.get(colIdx)?.get(hour) ?? [];
-              const isToday = weekDates[colIdx]?.toDateString() === new Date().toDateString();
+            <div className="border-r border-white/5" />
+            {weekDates.map((d, i) => {
+              const isToday = d.toDateString() === new Date().toDateString();
               return (
                 <div
-                  key={colIdx}
-                  className={`min-h-[60px] p-1 border-l border-white/10 ${isToday ? "bg-primary/5" : ""}`}
-                  style={{ minWidth: 0, overflow: "hidden" }}
+                  key={i}
+                  className={`p-2 text-center border-l border-white/10 ${isToday ? "bg-primary/10" : ""}`}
+                  style={{ minWidth: 0 }}
                 >
-                  {cellEntries.length === 0 ? null : cellEntries.length === 1 ? (
-                    <CalendarEntry
-                      entry={cellEntries[0]}
-                      attended={attendedIds.has(cellEntries[0].id)}
-                      onClick={() => onSelectEntry(cellEntries[0])}
-                    />
-                  ) : (
-                    <div className="space-y-0.5">
-                      {cellEntries.slice(0, 2).map((e) => (
-                        <CalendarEntry
-                          key={e.id}
-                          entry={e}
-                          compact
-                          attended={attendedIds.has(e.id)}
-                          onClick={() => onSelectEntry(e)}
-                        />
-                      ))}
-                      {cellEntries.length > 2 && (
-                        <button
-                          onClick={() => onSelectEntry(cellEntries[2])}
-                          className="text-[9px] text-gray-500 hover:text-white text-left px-1"
-                        >
-                          +{cellEntries.length - 2} más
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <div className="text-[10px] uppercase text-foreground-secondary">{DAY_NAMES[d.getDay()]}</div>
+                  <div
+                    className={`text-sm font-semibold ${isToday ? "text-primary" : "text-foreground"}`}
+                  >
+                    {d.getDate()}
+                  </div>
                 </div>
               );
             })}
           </div>
-        ))}
-      </div>
+
+          {HOURS.map((hour) => (
+            <div
+              key={hour}
+              style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
+              className="border-b border-white/5"
+            >
+              <div className="p-2 text-[10px] text-foreground-subtle text-right border-r border-white/5 flex items-start justify-end pt-2">
+                {hour}:00
+              </div>
+              {[0, 1, 2, 3, 4, 5, 6].map((colIdx) => {
+                const cellEntries = calendarGrid.get(colIdx)?.get(hour) ?? [];
+                const isToday = weekDates[colIdx]?.toDateString() === new Date().toDateString();
+                return (
+                  <div
+                    key={colIdx}
+                    className={`min-h-[60px] p-1 border-l border-white/10 ${isToday ? "bg-primary/5" : ""}`}
+                    style={{ minWidth: 0, overflow: "hidden" }}
+                  >
+                    {cellEntries.length === 0 ? null : cellEntries.length === 1 ? (
+                      <CalendarEntry
+                        entry={cellEntries[0]}
+                        attended={attendedIds.has(cellEntries[0].id)}
+                        onClick={() => onSelectEntry(cellEntries[0])}
+                      />
+                    ) : (
+                      <div className="space-y-0.5">
+                        {cellEntries.slice(0, 2).map((e) => (
+                          <CalendarEntry
+                            key={e.id}
+                            entry={e}
+                            compact
+                            attended={attendedIds.has(e.id)}
+                            onClick={() => onSelectEntry(e)}
+                          />
+                        ))}
+                        {cellEntries.length > 2 && (
+                          <MoreEntriesPopover
+                            hiddenCount={cellEntries.length - 2}
+                            title={`${DAY_NAMES[weekDates[colIdx].getDay()]} ${weekDates[colIdx].getDate()} · ${hour}:00`}
+                          >
+                            {(close) =>
+                              cellEntries.map((e) => (
+                                <CalendarEntry
+                                  key={e.id}
+                                  entry={e}
+                                  attended={attendedIds.has(e.id)}
+                                  onClick={() => {
+                                    close();
+                                    onSelectEntry(e);
+                                  }}
+                                />
+                              ))
+                            }
+                          </MoreEntriesPopover>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </>
   );
@@ -254,11 +279,13 @@ function MobileWeeklyList({
 
         return (
           <div key={colIdx} className="p-3">
-            <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${isToday ? "text-primary" : "text-gray-400"}`}>
+            <p
+              className={`mb-2 text-xs font-semibold uppercase tracking-wide ${isToday ? "text-primary" : "text-foreground-secondary"}`}
+            >
               {DAY_NAMES[d.getDay()]} {d.getDate()}
             </p>
             {dayEntries.length === 0 ? (
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-foreground-subtle">
                 {d < new Date() && !isToday ? "—" : "Sin torneos"}
               </p>
             ) : (

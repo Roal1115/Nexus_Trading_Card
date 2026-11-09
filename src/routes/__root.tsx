@@ -12,6 +12,7 @@ import type { ErrorComponentProps } from "@tanstack/react-router";
 import { NexusAuthProvider } from "../context/nexus-auth.context";
 import { TCGProvider } from "@/context/tcg.context";
 import appCss from "../styles.css?url";
+import { MotionConfig } from "framer-motion";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { PlayerSidebar } from "@/components/layout/PlayerSidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -267,30 +268,32 @@ function RootComponent() {
   const isBare = pathname.startsWith("/registro-tienda");
 
   return (
-    <TCGProvider>
-      <NexusAuthProvider>
-        <div className="min-h-dvh bg-radial-nexus lg:flex">
-          {!isPanel && !isBare && <PlayerSidebar />}
-          <div className="min-w-0 flex-1">
-            {!isPanel && !isBare && <AppHeader />}
-            <div className={isBare ? undefined : "pb-16 lg:pb-0"}>
-              <Outlet />
+    <MotionConfig reducedMotion="user">
+      <TCGProvider>
+        <NexusAuthProvider>
+          <div className="min-h-dvh bg-radial-nexus lg:flex">
+            {!isPanel && !isBare && <PlayerSidebar />}
+            <div className="min-w-0 flex-1">
+              {!isPanel && !isBare && <AppHeader />}
+              <div className={isBare ? undefined : "pb-16 lg:pb-0"}>
+                <Outlet />
+              </div>
             </div>
+            <Toaster
+              position="bottom-right"
+              mobileOffset={{ bottom: "9rem" }}
+              toastOptions={{
+                style: {
+                  background: "#1e2130",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "#ffffff",
+                },
+              }}
+            />
+            {!isBare && <BottomNav />}
           </div>
-          <Toaster
-            position="bottom-right"
-            mobileOffset={{ bottom: "9rem" }}
-            toastOptions={{
-              style: {
-                background: "#1e2130",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "#ffffff",
-              },
-            }}
-          />
-          {!isBare && <BottomNav />}
-        </div>
-      </NexusAuthProvider>
-    </TCGProvider>
+        </NexusAuthProvider>
+      </TCGProvider>
+    </MotionConfig>
   );
 }

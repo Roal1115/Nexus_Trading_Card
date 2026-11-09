@@ -47,6 +47,7 @@ function AdminLayout() {
   return (
     <div className="flex min-h-screen">
       <PanelSidebar
+        collapsible
         title="Administración"
         subtitle="Panel"
         userLabel={player?.geek_tag ?? "Admin"}

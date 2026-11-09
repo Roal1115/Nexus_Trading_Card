@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ChevronsLeft, ChevronsRight, LogOut, Trophy, X } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen, Trophy, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { nexus } from "@/integrations/nexus/client";
 import { toast } from "sonner";
@@ -185,16 +185,6 @@ export function PanelSidebar({
           </div>
         </Link>
 
-        {collapsible && (
-          <button
-            onClick={toggleCollapsed}
-            aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
-            className="absolute -right-3 top-7 z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#0B1220] text-gray-400 transition hover:border-primary/40 hover:text-primary lg:flex"
-          >
-            {collapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
-          </button>
-        )}
-
         {topSlot?.(collapsed)}
 
         {action && (
@@ -232,12 +222,33 @@ export function PanelSidebar({
         <div className="flex-shrink-0 space-y-2 border-t border-white/10 pt-4 mt-2">
           <div
             className={`overflow-hidden whitespace-nowrap px-2 text-xs text-gray-400 transition-opacity duration-200 ${
-              collapsed ? "opacity-0" : "opacity-100"
+              collapsed ? "h-0 opacity-0" : "opacity-100"
             }`}
           >
             <div className="text-[10px] uppercase tracking-widest text-gray-500">Sesión</div>
             <div className="truncate text-white">{userLabel}</div>
           </div>
+          {collapsible && (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-expanded={!collapsed}
+              aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+              title={collapsed ? "Expandir menú" : undefined}
+              className="hidden min-h-9 w-full items-center gap-2.5 overflow-hidden rounded-md px-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:flex"
+            >
+              <span className="shrink-0">
+                {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+              </span>
+              <span
+                className={`whitespace-nowrap transition-opacity duration-200 ${
+                  collapsed ? "w-0 opacity-0" : "opacity-100"
+                }`}
+              >
+                Colapsar menú
+              </span>
+            </button>
+          )}
           <button
             onClick={logout}
             title={collapsed ? "Cerrar sesión" : undefined}

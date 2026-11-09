@@ -138,15 +138,15 @@ function PublicTournamentPage() {
   const createMut = useMutation({
     mutationFn: () => createFn({ data: { tournament_id: t.id } }),
     onSuccess: () => {
-      toast.success("Preferencia registrada");
+      toast.success("Marcaste que te interesa ir");
       invalidate();
     },
-    onError: (e: any) => toast.error(e?.message ?? "No se pudo guardar tu preferencia"),
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo guardar tu interés"),
   });
   const cancelMut = useMutation({
     mutationFn: () => cancelFn({ data: { tournament_id: t.id } }),
     onSuccess: () => {
-      toast.success("Quitaste tu preferencia");
+      toast.success("Ya no aparece tu interés");
       invalidate();
     },
     onError: (e: any) => toast.error(e?.message ?? "No se pudo cancelar"),
@@ -219,7 +219,7 @@ function PublicTournamentPage() {
           {data.total_participants > 0 && <span>{data.total_participants} participantes</span>}
           {isFuture ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-secondary-foreground">
-              <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} con preferencia
+              <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} interesados
             </span>
           ) : null}
         </div>
@@ -238,7 +238,7 @@ function PublicTournamentPage() {
               }`}
             >
               <Heart className={`h-4 w-4 ${isRsvped ? "fill-current" : ""}`} />
-              {isRsvped ? "Quitar preferencia" : "Pedir preferencia"}
+              {isRsvped ? "Te interesa ir · Quitar" : "Me interesa ir"}
             </button>
           ) : null}
           {isFuture ? (

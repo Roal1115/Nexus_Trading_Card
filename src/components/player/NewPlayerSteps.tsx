@@ -66,7 +66,7 @@ export function NewPlayerSteps({ zone, onSkip }: { zone: string | null; onSkip: 
           </StepIcon>
           <StepText
             title="2. Busca un torneo"
-            body="Marca tu preferencia en un horario. Tu inscripción oficial sigue en la app de Bandai."
+            body="Marca «Me interesa ir» en un horario. Tu inscripción oficial sigue en la app de Bandai."
           />
           {arrow}
         </Link>

@@ -1,7 +1,6 @@
 // Reglas de la preferencia en torneos. No es una inscripción: el registro oficial
 // se hace en la app de Bandai, y Nexus no puede garantizar un lugar.
-export const RSVP_NOTICE =
-  "Esto te da preferencia, no un lugar asegurado. Tu inscripción oficial se hace en la app de Bandai.";
+export const RSVP_NOTICE = "No es tu inscripción oficial: esa se hace en la app de Bandai.";
 
 export const RSVP_WINDOW_DAYS = 14;
 

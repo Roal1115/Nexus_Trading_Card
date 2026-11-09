@@ -46,8 +46,8 @@ export function CalendarPreferencesPrompt({
 
   return (
     <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
-      <p className="text-sm font-semibold text-white">¿Qué buscas?</p>
-      <p className="mt-0.5 text-xs text-gray-400">
+      <p className="text-sm font-semibold text-foreground">¿Qué buscas?</p>
+      <p className="mt-0.5 text-xs text-foreground-secondary">
         Elige tu zona para ver justo lo que te interesa.
       </p>
 
@@ -55,7 +55,7 @@ export function CalendarPreferencesPrompt({
         <select
           value={zone}
           onChange={(e) => setZone(e.target.value)}
-          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-white outline-none focus:border-primary sm:flex-1"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary sm:flex-1"
         >
           <option value="">Zona</option>
           {zones.map((z) => (
@@ -76,7 +76,7 @@ export function CalendarPreferencesPrompt({
           <button
             onClick={() => persist(null, null)}
             disabled={saving}
-            className="flex flex-shrink-0 items-center gap-1 text-xs text-gray-500 hover:text-gray-300"
+            className="flex flex-shrink-0 items-center gap-1 text-xs text-foreground-subtle hover:text-foreground-secondary"
           >
             <X size={12} /> Ahora no
           </button>

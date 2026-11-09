@@ -180,7 +180,7 @@ export const createSlotRsvp = createServerFn({ method: "POST" })
     });
     if (state === "started") throw new Error("Este torneo ya empezó");
     if (state === "early") {
-      throw new Error(`La preferencia abre ${RSVP_WINDOW_DAYS} días antes del torneo`);
+      throw new Error(`Podrás marcar tu interés ${RSVP_WINDOW_DAYS} días antes del torneo`);
     }
 
     // ignoreDuplicates: repetir la petición no debe mover al jugador de lugar.

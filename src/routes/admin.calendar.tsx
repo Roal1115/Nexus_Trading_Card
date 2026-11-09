@@ -14,13 +14,11 @@ import {
   Store,
   X,
 } from "lucide-react";
-import {
-  getManagerCalendar,
-} from "@/lib/nexus-manager.functions";
+import { getManagerCalendar } from "@/lib/nexus-manager.functions";
 import { ZONE_COLORS } from "@/lib/game-colors";
 import { NationalScheduleEditSection } from "@/components/calendar/national-schedule-edit-section";
 import { SlotRsvpList } from "@/components/calendar/slot-rsvp";
-
+import { MoreEntriesPopover } from "@/components/calendar/more-entries-popover";
 
 export const Route = createFileRoute("/admin/calendar")({
   head: () => ({ meta: [{ title: "Calendario Nacional — Nexus" }] }),
@@ -71,7 +69,6 @@ type CalData = {
   };
 };
 
-
 function AdminCalendarPage() {
   const fetchCalendar = useServerFn(getManagerCalendar);
 
@@ -114,7 +111,6 @@ function AdminCalendarPage() {
       if (storeFilter !== "all" && e.store_id !== storeFilter) return false;
       if (gameFilter !== "all" && e.game_id !== gameFilter) return false;
       return true;
-
     });
   }, [calData, zoneFilter, storeFilter, gameFilter]);
 
@@ -144,9 +140,7 @@ function AdminCalendarPage() {
     });
   }, [weekStart]);
 
-  const uniqueZones = Array.from(
-    new Set((calData?.entries ?? []).map((e) => e.zone)),
-  );
+  const uniqueZones = Array.from(new Set((calData?.entries ?? []).map((e) => e.zone)));
   const uniqueStores = useMemo(() => {
     const src = (calData?.entries ?? []).filter(
       (e) => zoneFilter === "all" || e.zone === zoneFilter,
@@ -171,33 +165,21 @@ function AdminCalendarPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-xs uppercase tracking-wider text-primary">
-          Administrador
-        </div>
-        <h1 className="text-2xl font-bold text-white mt-1">
-          Calendario Nacional
-        </h1>
+        <div className="text-xs uppercase tracking-wider text-primary">Administrador</div>
+        <h1 className="text-2xl font-bold text-white mt-1">Calendario Nacional</h1>
       </div>
-
-
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div
           className={`rounded-xl border bg-black/30 p-5 ${
-            (stats?.total_overdue ?? 0) > 0
-              ? "border-red-500/30"
-              : "border-white/10"
+            (stats?.total_overdue ?? 0) > 0 ? "border-red-500/30" : "border-white/10"
           }`}
         >
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
             <AlertTriangle
               size={14}
-              className={
-                (stats?.total_overdue ?? 0) > 0
-                  ? "text-red-400"
-                  : "text-gray-500"
-              }
+              className={(stats?.total_overdue ?? 0) > 0 ? "text-red-400" : "text-gray-500"}
             />
             Torneos Overdue
           </div>
@@ -222,23 +204,16 @@ function AdminCalendarPage() {
           </div>
           <div className="text-3xl font-bold mt-2 text-white">
             {stats?.uploaded_so_far ?? 0}
-            <span className="text-gray-500 text-lg">
-              {" "}
-              / {stats?.days_elapsed ?? 0}
-            </span>
+            <span className="text-gray-500 text-lg"> / {stats?.days_elapsed ?? 0}</span>
           </div>
-          <div className="text-xs text-gray-400 mt-1">
-            De los torneos que ya debieron jugarse
-          </div>
+          <div className="text-xs text-gray-400 mt-1">De los torneos que ya debieron jugarse</div>
           <div className="mt-3 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div
               className="h-full bg-green-400 transition-all"
               style={{
                 width: `${
                   (stats?.days_elapsed ?? 0) > 0
-                    ? ((stats?.uploaded_so_far ?? 0) /
-                        (stats?.days_elapsed ?? 1)) *
-                      100
+                    ? ((stats?.uploaded_so_far ?? 0) / (stats?.days_elapsed ?? 1)) * 100
                     : 0
                 }%`,
               }}
@@ -251,9 +226,7 @@ function AdminCalendarPage() {
             <CalendarIcon size={14} className="text-primary" />
             Total semanal
           </div>
-          <div className="text-3xl font-bold mt-2 text-white">
-            {filteredEntries.length}
-          </div>
+          <div className="text-3xl font-bold mt-2 text-white">{filteredEntries.length}</div>
           <div className="text-xs text-gray-400 mt-1">
             Torneos programados en el circuito esta semana
           </div>
@@ -324,7 +297,6 @@ function AdminCalendarPage() {
           ))}
         </select>
 
-
         <select
           value={gameFilter}
           onChange={(e) => setGameFilter(e.target.value)}
@@ -338,14 +310,9 @@ function AdminCalendarPage() {
           ))}
         </select>
 
-
-
         <div className="flex flex-wrap items-center gap-3 ml-auto">
           {Object.entries(ZONE_COLORS).map(([zone, colors]) => (
-            <div
-              key={zone}
-              className="flex items-center gap-1.5 text-xs text-gray-400"
-            >
+            <div key={zone} className="flex items-center gap-1.5 text-xs text-gray-400">
               <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
               {zone.replace("Zona ", "")}
             </div>
@@ -364,8 +331,7 @@ function AdminCalendarPage() {
             >
               <div className="border-r border-white/5" />
               {weekDates.map((d, i) => {
-                const isToday =
-                  d.toDateString() === new Date().toDateString();
+                const isToday = d.toDateString() === new Date().toDateString();
                 return (
                   <div
                     key={i}
@@ -378,9 +344,7 @@ function AdminCalendarPage() {
                       {DAY_NAMES[d.getDay()]}
                     </div>
                     <div
-                      className={`text-sm font-semibold ${
-                        isToday ? "text-primary" : "text-white"
-                      }`}
+                      className={`text-sm font-semibold ${isToday ? "text-primary" : "text-white"}`}
                     >
                       {d.getDate()}
                     </div>
@@ -401,9 +365,7 @@ function AdminCalendarPage() {
                 </div>
                 {[0, 1, 2, 3, 4, 5, 6].map((colIdx) => {
                   const cellEntries = calendarGrid[colIdx]?.[hour] ?? [];
-                  const isToday =
-                    weekDates[colIdx]?.toDateString() ===
-                    new Date().toDateString();
+                  const isToday = weekDates[colIdx]?.toDateString() === new Date().toDateString();
                   return (
                     <div
                       key={colIdx}
@@ -412,8 +374,7 @@ function AdminCalendarPage() {
                       }`}
                       style={{ minWidth: 0, overflow: "hidden" }}
                     >
-                      {cellEntries.length === 0 ? null : cellEntries.length ===
-                        1 ? (
+                      {cellEntries.length === 0 ? null : cellEntries.length === 1 ? (
                         <CalendarEntry
                           entry={cellEntries[0]}
                           onClick={() => setSelectedEntry(cellEntries[0])}
@@ -429,12 +390,23 @@ function AdminCalendarPage() {
                             />
                           ))}
                           {cellEntries.length > 2 && (
-                            <button
-                              onClick={() => setSelectedEntry(cellEntries[2])}
-                              className="text-[9px] text-gray-500 hover:text-white text-left px-1"
+                            <MoreEntriesPopover
+                              hiddenCount={cellEntries.length - 2}
+                              title={`${DAY_NAMES[weekDates[colIdx].getDay()]} ${weekDates[colIdx].getDate()} · ${hour}:00`}
                             >
-                              +{cellEntries.length - 2} más
-                            </button>
+                              {(close) =>
+                                cellEntries.map((e) => (
+                                  <CalendarEntry
+                                    key={e.id}
+                                    entry={e}
+                                    onClick={() => {
+                                      close();
+                                      setSelectedEntry(e);
+                                    }}
+                                  />
+                                ))
+                              }
+                            </MoreEntriesPopover>
                           )}
                         </div>
                       )}
@@ -450,9 +422,7 @@ function AdminCalendarPage() {
       {/* Detail table */}
       <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
         <div className="px-5 py-3 border-b border-white/10">
-          <h2 className="text-sm font-semibold text-white">
-            Detalle de torneos
-          </h2>
+          <h2 className="text-sm font-semibold text-white">Detalle de torneos</h2>
         </div>
 
         <div className="overflow-x-auto hidden sm:block">
@@ -478,17 +448,12 @@ function AdminCalendarPage() {
             </thead>
             <tbody>
               {filteredEntries.map((e) => {
-                const zoneColor =
-                  ZONE_COLORS[e.zone] ?? ZONE_COLORS["Zona Extendida"];
-                const waLink = e.phone
-                  ? `https://wa.me/${e.phone.replace(/\D/g, "")}`
-                  : null;
+                const zoneColor = ZONE_COLORS[e.zone] ?? ZONE_COLORS["Zona Extendida"];
+                const waLink = e.phone ? `https://wa.me/${e.phone.replace(/\D/g, "")}` : null;
                 return (
                   <tr key={e.id} className="border-t border-white/5">
                     <td className="px-4 py-3">
-                      <div className="text-white font-medium">
-                        {e.store_name}
-                      </div>
+                      <div className="text-white font-medium">{e.store_name}</div>
                       <div className="text-xs text-gray-400">{e.city}</div>
                     </td>
                     <td className="px-4 py-3">
@@ -509,9 +474,7 @@ function AdminCalendarPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
                         {e.organizer_tag && (
-                          <span className="text-xs text-gray-300">
-                            {e.organizer_tag}
-                          </span>
+                          <span className="text-xs text-gray-300">{e.organizer_tag}</span>
                         )}
                         {waLink && (
                           <a
@@ -524,11 +487,7 @@ function AdminCalendarPage() {
                             WhatsApp
                           </a>
                         )}
-                        {e.phone && (
-                          <span className="text-xs text-gray-500">
-                            {e.phone}
-                          </span>
-                        )}
+                        {e.phone && <span className="text-xs text-gray-500">{e.phone}</span>}
                       </div>
                     </td>
                   </tr>
@@ -541,17 +500,12 @@ function AdminCalendarPage() {
         {/* Mobile cards */}
         <div className="sm:hidden divide-y divide-white/5">
           {filteredEntries.map((e) => {
-            const zoneColor =
-              ZONE_COLORS[e.zone] ?? ZONE_COLORS["Zona Extendida"];
-            const waLink = e.phone
-              ? `https://wa.me/${e.phone.replace(/\D/g, "")}`
-              : null;
+            const zoneColor = ZONE_COLORS[e.zone] ?? ZONE_COLORS["Zona Extendida"];
+            const waLink = e.phone ? `https://wa.me/${e.phone.replace(/\D/g, "")}` : null;
             return (
               <div key={e.id} className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-white">
-                    {e.store_name}
-                  </div>
+                  <div className="text-sm font-medium text-white">{e.store_name}</div>
                   <StatusBadge status={e.report_status} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400">
@@ -599,12 +553,8 @@ function AdminCalendarPage() {
                   <Store size={12} />
                   {selectedEntry.zone}
                 </div>
-                <h2 className="text-xl font-bold text-white">
-                  {selectedEntry.store_name}
-                </h2>
-                <div className="text-sm text-gray-400">
-                  {selectedEntry.city}
-                </div>
+                <h2 className="text-xl font-bold text-white">{selectedEntry.store_name}</h2>
+                <div className="text-sm text-gray-400">{selectedEntry.city}</div>
               </div>
               <button
                 onClick={() => setSelectedEntry(null)}
@@ -616,9 +566,7 @@ function AdminCalendarPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                <div className="text-[10px] uppercase text-gray-500">
-                  Estado del torneo
-                </div>
+                <div className="text-[10px] uppercase text-gray-500">Estado del torneo</div>
                 <div className="flex items-center gap-2 mt-1 text-sm text-white">
                   {selectedEntry.is_ongoing ? (
                     <>
@@ -639,9 +587,7 @@ function AdminCalendarPage() {
                 </div>
               </div>
               <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                <div className="text-[10px] uppercase text-gray-500">
-                  Reporte
-                </div>
+                <div className="text-[10px] uppercase text-gray-500">Reporte</div>
                 <div className="mt-1">
                   <StatusBadge status={selectedEntry.report_status} />
                 </div>
@@ -653,7 +599,9 @@ function AdminCalendarPage() {
               <div className="mt-1 text-sm text-white">
                 {selectedEntry.game_name}
                 {selectedEntry.override_label && (
-                  <span className="ml-2 text-xs text-amber-400">"{selectedEntry.override_label}"</span>
+                  <span className="ml-2 text-xs text-amber-400">
+                    "{selectedEntry.override_label}"
+                  </span>
                 )}
               </div>
             </div>
@@ -672,14 +620,11 @@ function AdminCalendarPage() {
               <div className="text-[10px] uppercase text-gray-500">Horario</div>
               <div className="flex items-center gap-2 mt-1 text-sm text-white">
                 <Clock size={14} className="text-gray-400" />
-                {DAY_NAMES[selectedEntry.day_of_week]}s ·{" "}
-                {selectedEntry.start_time.slice(0, 5)} hrs
+                {DAY_NAMES[selectedEntry.day_of_week]}s · {selectedEntry.start_time.slice(0, 5)} hrs
               </div>
               <div className="text-xs text-gray-400 mt-1">
                 Este torneo:{" "}
-                {new Date(
-                  selectedEntry.date + "T12:00:00",
-                ).toLocaleDateString("es-MX", {
+                {new Date(selectedEntry.date + "T12:00:00").toLocaleDateString("es-MX", {
                   weekday: "long",
                   day: "numeric",
                   month: "long",
@@ -688,9 +633,7 @@ function AdminCalendarPage() {
             </div>
 
             <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-              <div className="text-[10px] uppercase text-gray-500">
-                Organizador
-              </div>
+              <div className="text-[10px] uppercase text-gray-500">Organizador</div>
               {selectedEntry.organizer_tag ? (
                 <div className="space-y-2 mt-1">
                   <div className="flex items-center gap-2 text-sm text-white">
@@ -713,9 +656,7 @@ function AdminCalendarPage() {
                   )}
                 </div>
               ) : (
-                <div className="text-sm text-gray-500 mt-1">
-                  Sin organizador asignado
-                </div>
+                <div className="text-sm text-gray-500 mt-1">Sin organizador asignado</div>
               )}
             </div>
           </div>
@@ -743,9 +684,7 @@ function CalendarEntry({
     >
       <div className="flex items-center gap-1">
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${colors.dot}`} />
-        <span className={`text-[10px] truncate ${colors.text}`}>
-          {entry.store_name}
-        </span>
+        <span className={`text-[10px] truncate ${colors.text}`}>{entry.store_name}</span>
       </div>
       {!compact && entry.game_name && (
         <div className="text-[9px] text-gray-400 truncate mt-0.5">
@@ -756,11 +695,7 @@ function CalendarEntry({
 
       {!compact && (
         <div className="flex items-center gap-1 mt-0.5">
-          {isOverdue && (
-            <span className="text-[9px] text-red-400 font-semibold">
-              OVERDUE
-            </span>
-          )}
+          {isOverdue && <span className="text-[9px] text-red-400 font-semibold">OVERDUE</span>}
           {entry.report_status === "submitted" && (
             <span className="text-[9px] text-green-400">✓</span>
           )}
