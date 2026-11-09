@@ -45,7 +45,18 @@ export function PanelSidebar({
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [collapsed, setCollapsed] = useState(false);
+  const [userCollapsed, setCollapsed] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  // En tablet no hay espacio para la barra completa: siempre va solo con íconos.
+  const collapsed = isTablet || userCollapsed;
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px) and (max-width: 1023.98px)");
+    const update = () => setIsTablet(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   // localStorage solo en cliente (SSR-safe)
   useEffect(() => {
@@ -74,7 +85,7 @@ export function PanelSidebar({
     const active = item.exact
       ? pathname === item.to
       : pathname === item.to || pathname.startsWith(item.to + "/");
-    const cls = `flex min-h-11 items-center gap-2.5 overflow-hidden rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:min-h-0 ${
+    const cls = `flex min-h-11 items-center gap-2.5 overflow-hidden rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:min-h-0 ${
       active ? "bg-primary/15 text-primary" : "text-gray-300 hover:bg-white/5 hover:text-white"
     }`;
     const title = collapsed ? item.label : undefined;
@@ -124,7 +135,7 @@ export function PanelSidebar({
       {/* Overlay en mobile */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 md:hidden"
           onClick={closeMobile}
           aria-hidden
         />
@@ -148,20 +159,20 @@ export function PanelSidebar({
           styles.css. */}
       <div
         aria-hidden
-        className="panel-sidebar-spacer hidden lg:block shrink-0"
+        className="panel-sidebar-spacer hidden md:block shrink-0"
         style={{ "--panel-sidebar-w": collapsed ? "4.5rem" : "16rem" } as React.CSSProperties}
       />
 
       <aside
-        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 lg:pb-4 ${
-          mobileOpen ? "translate-x-0" : "invisible -translate-x-full lg:visible lg:translate-x-0"
+        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out md:sticky md:top-0 md:z-auto md:translate-x-0 md:pb-4 ${
+          mobileOpen ? "translate-x-0" : "invisible -translate-x-full md:visible md:translate-x-0"
         }`}
         style={{ height: "100dvh" }}
       >
         {/* Botón cerrar en mobile */}
         <button
           onClick={closeMobile}
-          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-gray-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-gray-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:hidden"
           aria-label="Cerrar menú"
         >
           <X size={20} />
@@ -192,7 +203,7 @@ export function PanelSidebar({
             to={action.to}
             onClick={closeMobile}
             title={collapsed ? action.label : undefined}
-            className="mb-4 flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black lg:min-h-0"
+            className="mb-4 flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black md:min-h-0"
           >
             <span className="shrink-0" aria-hidden>
               {action.icon}
@@ -252,7 +263,7 @@ export function PanelSidebar({
           <button
             onClick={logout}
             title={collapsed ? "Cerrar sesión" : undefined}
-            className="flex min-h-11 w-full items-center gap-2 overflow-hidden rounded-md border border-white/10 px-3 py-2 text-xs text-gray-300 transition hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:min-h-0"
+            className="flex min-h-11 w-full items-center gap-2 overflow-hidden rounded-md border border-white/10 px-3 py-2 text-xs text-gray-300 transition hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:min-h-0"
           >
             <span className="shrink-0">
               <LogOut size={12} />

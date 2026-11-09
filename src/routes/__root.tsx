@@ -271,11 +271,11 @@ function RootComponent() {
     <MotionConfig reducedMotion="user">
       <TCGProvider>
         <NexusAuthProvider>
-          <div className="min-h-dvh bg-radial-nexus lg:flex">
+          <div className="min-h-dvh bg-radial-nexus md:flex">
             {!isPanel && !isBare && <PlayerSidebar />}
             <div className="min-w-0 flex-1">
               {!isPanel && !isBare && <AppHeader />}
-              <div className={isBare ? undefined : "pb-16 lg:pb-0"}>
+              <div className={isBare ? undefined : "pb-16 md:pb-0"}>
                 <Outlet />
               </div>
             </div>

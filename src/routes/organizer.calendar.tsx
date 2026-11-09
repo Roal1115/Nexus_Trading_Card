@@ -280,7 +280,7 @@ function OrganizerCalendarPage() {
 
       <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
         <div className="overflow-x-auto">
-          <div style={{ minWidth: "760px", width: "100%" }}>
+          <div style={{ minWidth: "600px", width: "100%" }}>
             <div
               style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
               className="border-b border-white/10"

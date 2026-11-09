@@ -174,7 +174,7 @@ export function WeeklyGrid({
         onSelectEntry={onSelectEntry}
       />
       <div className="hidden overflow-x-auto sm:block">
-        <div style={{ minWidth: "760px", width: "100%" }}>
+        <div style={{ minWidth: "600px", width: "100%" }}>
           <div
             style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
             className="border-b border-white/10"

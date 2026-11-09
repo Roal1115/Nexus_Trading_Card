@@ -96,7 +96,7 @@ function AdminLayout() {
         ]}
       />
       <main className="min-w-0 flex-1">
-        <div className="border-b border-white/10 px-4 py-3 text-sm font-semibold text-white lg:hidden">
+        <div className="border-b border-white/10 px-4 py-3 text-sm font-semibold text-white md:hidden">
           Panel Admin
         </div>
 

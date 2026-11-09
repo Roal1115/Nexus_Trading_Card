@@ -17,7 +17,7 @@ export function PlayerSidebar() {
   if (!probablyAuthed) return null;
 
   return (
-    <div className="hidden shrink-0 lg:block">
+    <div className="hidden shrink-0 md:block">
       <PanelSidebar
         collapsible
         title="Nexus"

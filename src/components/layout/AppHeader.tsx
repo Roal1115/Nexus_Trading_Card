@@ -48,7 +48,7 @@ export function AppHeader() {
           en desktop una fracción de segundo antes de que el sidebar aparezca. */}
       <header
         className={`sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl ${
-          probablyAuthed ? "lg:hidden" : ""
+          probablyAuthed ? "md:hidden" : ""
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -65,7 +65,7 @@ export function AppHeader() {
               <span className="hidden sm:inline text-primary">Nexus</span>
             </Link>
             {!probablyAuthed && (
-              <nav aria-label="Secciones" className="hidden items-center gap-4 lg:flex">
+              <nav aria-label="Secciones" className="hidden items-center gap-4 md:flex">
                 {GUEST_LINKS.map((l) => (
                   <Link
                     key={l.to}
