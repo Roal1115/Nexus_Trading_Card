@@ -47,8 +47,17 @@ export function PanelSidebar({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [userCollapsed, setCollapsed] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
-  // En tablet no hay espacio para la barra completa: siempre va solo con íconos.
-  const collapsed = isTablet || userCollapsed;
+  // En tablet la barra va con íconos y se abre encima del contenido, sin empujarlo.
+  const [tabletOpen, setTabletOpen] = useState(false);
+  const overlayOpen = isTablet && tabletOpen;
+  const collapsed = isTablet ? !tabletOpen : userCollapsed;
+
+  useEffect(() => {
+    if (!overlayOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setTabletOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [overlayOpen]);
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 768px) and (max-width: 1023.98px)");
@@ -64,6 +73,10 @@ export function PanelSidebar({
   }, [collapsible]);
 
   const toggleCollapsed = () => {
+    if (isTablet) {
+      setTabletOpen((open) => !open);
+      return;
+    }
     setCollapsed((c) => {
       localStorage.setItem("sidebar-collapsed", c ? "0" : "1");
       return !c;
@@ -71,6 +84,7 @@ export function PanelSidebar({
   };
 
   const closeMobile = () => {
+    setTabletOpen(false);
     onMobileClose?.();
   };
 
@@ -163,8 +177,20 @@ export function PanelSidebar({
         style={{ "--panel-sidebar-w": collapsed ? "4.5rem" : "16rem" } as React.CSSProperties}
       />
 
+      {overlayOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/60"
+            onClick={() => setTabletOpen(false)}
+            aria-hidden
+          />
+          {/* La barra abierta sale del flujo: esto conserva el ancho compacto. */}
+          <div aria-hidden className="w-[4.5rem] shrink-0" />
+        </>
+      )}
+
       <aside
-        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out md:sticky md:top-0 md:z-auto md:translate-x-0 md:pb-4 ${
+        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out ${overlayOpen ? "md:fixed md:z-50" : "md:sticky md:top-0 md:z-auto"} md:translate-x-0 md:pb-4 ${
           mobileOpen ? "translate-x-0" : "invisible -translate-x-full md:visible md:translate-x-0"
         }`}
         style={{ height: "100dvh" }}
@@ -246,7 +272,7 @@ export function PanelSidebar({
               aria-expanded={!collapsed}
               aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
               title={collapsed ? "Expandir menú" : undefined}
-              className="hidden min-h-9 w-full items-center gap-2.5 overflow-hidden rounded-md px-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:flex"
+              className="hidden min-h-9 w-full items-center gap-2.5 overflow-hidden rounded-md px-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:flex"
             >
               <span className="shrink-0">
                 {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}

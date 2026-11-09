@@ -305,11 +305,11 @@ function PublicProfilePage() {
                 {profile.geek_tag.charAt(0).toUpperCase()}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="w-full min-w-0 sm:flex-1">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                 Nexus Tag
               </p>
-              <h1 className="mt-1 break-words text-3xl font-bold text-foreground sm:text-5xl">
+              <h1 className="mt-1 text-3xl font-bold text-foreground [overflow-wrap:anywhere] sm:text-5xl">
                 {profile.geek_tag}
               </h1>
               <NameplateBanner
