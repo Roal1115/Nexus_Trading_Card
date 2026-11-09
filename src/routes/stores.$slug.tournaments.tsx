@@ -13,6 +13,8 @@ import { getStoreActiveLeagues, logStorePageView } from "@/lib/nexus-public.func
 import { storeProfileQuery, storeTournamentHistoryQuery } from "@/lib/stores-queries";
 import { publicCalendarQuery } from "@/lib/calendar-queries";
 import { SkeletonLine } from "@/components/ui/skeleton-loader";
+import { TournamentDetailDialog } from "@/components/calendar/tournament-detail-dialog";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 
 export const Route = createFileRoute("/stores/$slug/tournaments")({
   head: () => ({ meta: [{ title: "Torneos y Liga — Nexus" }] }),
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/stores/$slug/tournaments")({
 function StoreTournamentsPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
+  const { player } = useNexusRole();
 
   // Misma query key que la capa padre (stores.$slug.tsx) — ya está en caché,
   // así que esto no dispara una segunda request de red.
@@ -109,14 +112,14 @@ function StoreTournamentsPage() {
       <section className="glass space-y-4 rounded-2xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-white">Calendario de torneos</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               onClick={goToPrevWeek}
               className="rounded-lg border border-border p-2 text-secondary-foreground hover:text-white transition"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="min-w-[180px] text-center text-sm font-semibold text-white">
+            <span className="min-w-0 flex-1 text-center text-sm font-semibold text-white sm:min-w-[180px] sm:flex-none">
               {weekLabel}
             </span>
             <button
@@ -152,6 +155,7 @@ function StoreTournamentsPage() {
             attendedIds={new Set()}
             loading={calLoading}
             onSelectEntry={setSelectedEntry}
+            hideStoresLink
           />
         </div>
       </section>
@@ -531,44 +535,11 @@ function StoreTournamentsPage() {
       </section>
 
       {selectedEntry && (
-        <div
-          className="animate-in fade-in-0 duration-200 fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={() => setSelectedEntry(null)}
-        >
-          <div
-            className="animate-in fade-in-0 zoom-in-95 duration-200 glass w-full max-w-sm rounded-2xl border border-border p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="inline-block rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary mb-3">
-              {selectedEntry.game_name}
-            </span>
-            {selectedEntry.league_name && (
-              <span className="ml-2 inline-block rounded-full bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-300 mb-3">
-                {selectedEntry.league_name}
-              </span>
-            )}
-            <h3 className="text-lg font-bold text-white">{selectedEntry.store_name}</h3>
-            <div className="mt-3 space-y-2 text-sm text-secondary-foreground">
-              {selectedEntry.time && (
-                <p className="flex items-center gap-2">
-                  <Clock size={14} className="flex-shrink-0 text-muted-foreground" />
-                  {selectedEntry.time.slice(0, 5)} hrs
-                </p>
-              )}
-              <p className="flex items-center gap-2">
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
-                  {selectedEntry.zone}
-                </span>
-              </p>
-            </div>
-            <button
-              onClick={() => setSelectedEntry(null)}
-              className="mt-5 w-full rounded-xl border border-border py-2.5 text-sm font-medium text-secondary-foreground hover:text-white transition"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
+        <TournamentDetailDialog
+          entry={selectedEntry}
+          playerId={player?.id}
+          onClose={() => setSelectedEntry(null)}
+        />
       )}
     </div>
   );

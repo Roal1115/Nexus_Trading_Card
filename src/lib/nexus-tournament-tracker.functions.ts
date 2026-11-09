@@ -467,6 +467,57 @@ export const saveRoundResult = createServerFn({ method: "POST" })
   });
 
 // ============================================================
+// updateMyTournamentLeader
+// ============================================================
+// Aplica el leader a las rondas que el jugador capturó y a la copia pendiente que
+// dejó en cada rival. Las que reportó un rival se aceptan o apelan, no se tocan aquí.
+export const updateMyTournamentLeader = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { tournament_id: string; leader_id: string }) =>
+    z.object({ tournament_id: z.string().uuid(), leader_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    await assertPlayedTournament(admin, data.tournament_id, player.id);
+
+    const { data: tournament, error: tournamentError } = await admin
+      .from("tournaments")
+      .select("game_id")
+      .eq("id", data.tournament_id)
+      .single();
+    if (tournamentError) failDb(tournamentError);
+    const { data: leader, error: leaderError } = await admin
+      .from("deck_identifiers")
+      .select("id")
+      .eq("id", data.leader_id)
+      .eq("game_id", tournament.game_id)
+      .maybeSingle();
+    if (leaderError) failDb(leaderError);
+    if (!leader) throw new Error("Ese leader no pertenece a este juego");
+
+    const updated_at = new Date().toISOString();
+    const { error } = await admin
+      .from("tournament_round_results")
+      .update({ player_leader_id: data.leader_id, updated_at })
+      .eq("tournament_id", data.tournament_id)
+      .eq("player_id", player.id)
+      .eq("is_auto_populated", false)
+      .eq("is_bye", false);
+    if (error) failDb(error);
+
+    const { error: mirrorError } = await admin
+      .from("tournament_round_results")
+      .update({ opponent_leader_id: data.leader_id, updated_at })
+      .eq("tournament_id", data.tournament_id)
+      .eq("opponent_player_id", player.id)
+      .eq("reporter_player_id", player.id)
+      .eq("is_auto_populated", true);
+    if (mirrorError) failDb(mirrorError);
+
+    return { success: true };
+  });
+
+// ============================================================
 // clearTournamentRounds
 // ============================================================
 export const clearTournamentRounds = createServerFn({ method: "POST" })

@@ -126,7 +126,7 @@ export function AppealForm({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -135,7 +135,7 @@ export function AppealForm({
         exit={{ opacity: 0, y: 16, scale: 0.98 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
         onClick={(e) => e.stopPropagation()}
-        className="glass relative w-full max-w-md rounded-2xl border border-amber-500/30 bg-black/90 p-6"
+        className="glass relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-amber-500/30 bg-black/90 p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:rounded-2xl sm:pb-6"
       >
         <div className="flex items-start justify-between">
           <div>

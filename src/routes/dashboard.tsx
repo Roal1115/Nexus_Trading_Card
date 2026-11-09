@@ -312,11 +312,11 @@ function DashboardPage() {
 
           {/* Fila superior — Nexus Tag + Ranks */}
           <div className="relative flex flex-col flex-wrap items-start gap-6 p-8 sm:flex-row sm:items-end sm:justify-between sm:p-12">
-            <div>
+            <div className="w-full min-w-0 sm:w-auto">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                 Tu Nexus Tag
               </p>
-              <h1 className="mt-2 break-words text-5xl font-bold text-foreground sm:text-7xl">
+              <h1 className="mt-2 text-4xl font-bold text-foreground [overflow-wrap:anywhere] sm:text-7xl">
                 {tag}
               </h1>
               {storeCity && <p className="mt-2 text-sm text-foreground-secondary">{storeCity}</p>}

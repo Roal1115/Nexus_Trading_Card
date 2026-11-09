@@ -164,8 +164,8 @@ export function RoundCardFrame({
         onClick={() => !deleteConfirm && setOpen((o) => !o)}
         className={`relative grid ${
           onDelete
-            ? "grid-cols-[40px_1fr_52px_52px_52px_36px]"
-            : "grid-cols-[40px_1fr_52px_52px_52px]"
+            ? "grid-cols-[28px_1fr_40px_40px_28px_28px] sm:grid-cols-[40px_1fr_52px_52px_52px_36px]"
+            : "grid-cols-[28px_1fr_40px_40px_28px] sm:grid-cols-[40px_1fr_52px_52px_52px]"
         } items-center gap-2 px-3 py-3 cursor-pointer transition-colors duration-150 ${
           open ? "bg-white/[0.04]" : "hover:bg-white/[0.04] active:bg-white/[0.07]"
         }`}

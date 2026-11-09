@@ -10,6 +10,7 @@ import {
   getTournamentRoundsForPlayer,
   saveRoundResult,
   clearTournamentRounds,
+  updateMyTournamentLeader,
   deleteRoundResult,
 } from "@/lib/nexus-tournament-tracker.functions";
 import {
@@ -274,6 +275,7 @@ export function PerformanceTrackerModal({
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const saveRound = useServerFn(saveRoundResult);
   const clearRounds = useServerFn(clearTournamentRounds);
+  const saveLeader = useServerFn(updateMyTournamentLeader);
   const deleteRound = useServerFn(deleteRoundResult);
 
   const [loading, setLoading] = useState(true);
@@ -281,6 +283,8 @@ export function PerformanceTrackerModal({
   const [opponents, setOpponents] = useState<Array<{ id: string; geek_tag: string }>>([]);
   const [rounds, setRounds] = useState<RoundRow[]>([]);
   const [myLeader, setMyLeader] = useState<DeckIdentifier | null>(null);
+  const [savedLeaderId, setSavedLeaderId] = useState<string | null>(null);
+  const [savingLeader, setSavingLeader] = useState(false);
   const [savingRound, setSavingRound] = useState<number | null>(null);
   const [deletingRound, setDeletingRound] = useState<number | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -308,6 +312,7 @@ export function PerformanceTrackerModal({
         setMaxRounds(res.max_rounds);
         setOpponents(res.opponents);
         setMyLeader(res.my_tournament_leader ?? null);
+        setSavedLeaderId(res.my_tournament_leader?.id ?? null);
         setRounds(
           res.rounds.map((r: any) => ({
             id: r.id,
@@ -402,6 +407,28 @@ export function PerformanceTrackerModal({
       toast.error(e?.message ?? "Error al guardar la ronda");
     } finally {
       setSavingRound(null);
+    }
+  };
+
+  const savedOwnRounds = rounds.filter((r) => r.id && !r.is_auto_populated && !r.is_bye);
+  const leaderChanged = Boolean(myLeader) && myLeader?.id !== savedLeaderId;
+
+  const handleSaveLeader = async () => {
+    if (!myLeader) return;
+    setSavingLeader(true);
+    try {
+      await saveLeader({ data: { tournament_id: tournamentId, leader_id: myLeader.id } });
+      setSavedLeaderId(myLeader.id);
+      setRounds((prev) =>
+        prev.map((r) =>
+          r.is_auto_populated || r.is_bye ? r : { ...r, player_leader_id: myLeader.id },
+        ),
+      );
+      toast.success("Leader actualizado");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo guardar el leader");
+    } finally {
+      setSavingLeader(false);
     }
   };
 
@@ -505,26 +532,40 @@ export function PerformanceTrackerModal({
               onChange={setMyLeader}
               placeholder="Selecciona tu leader…"
             />
+            {leaderChanged &&
+              (savedOwnRounds.length > 0 ? (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-amber-400">
+                    Sin guardar. Se aplicará a {savedOwnRounds.length}{" "}
+                    {savedOwnRounds.length === 1 ? "ronda capturada" : "rondas capturadas"}.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleSaveLeader}
+                    disabled={savingLeader}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                  >
+                    {savingLeader ? "Guardando…" : "Guardar leader"}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-foreground-secondary">
+                  Se guardará con tu primera ronda.
+                </p>
+              ))}
           </div>
 
           {/* Table header */}
           {rounds.length > 0 && (
-            <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
-              <span className="text-xs uppercase tracking-widest text-foreground-subtle">
-                Round
+            <div className="grid grid-cols-[28px_1fr_40px_40px_28px_28px] gap-2 px-3 pb-1 text-xs uppercase text-foreground-subtle sm:grid-cols-[40px_1fr_52px_52px_52px_36px] sm:tracking-widest">
+              <span>
+                <span className="sm:hidden">#</span>
+                <span className="hidden sm:inline">Round</span>
               </span>
-              <span className="text-xs uppercase tracking-widest text-foreground-subtle">
-                Rival
-              </span>
-              <span className="text-center text-xs uppercase tracking-widest text-foreground-subtle">
-                Dado
-              </span>
-              <span className="text-center text-xs uppercase tracking-widest text-foreground-subtle">
-                Turno
-              </span>
-              <span className="text-center text-xs uppercase tracking-widest text-foreground-subtle">
-                Res
-              </span>
+              <span>Rival</span>
+              <span className="text-center">Dado</span>
+              <span className="text-center">Turno</span>
+              <span className="text-center">Res</span>
             </div>
           )}
 

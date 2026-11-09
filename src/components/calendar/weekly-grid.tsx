@@ -121,12 +121,15 @@ export function WeeklyGrid({
   attendedIds,
   loading,
   onSelectEntry,
+  hideStoresLink = false,
 }: {
   weekDates: Date[];
   calendarGrid: Map<number, Map<number, any[]>>;
   attendedIds: Set<string>;
   loading: boolean;
   onSelectEntry: (entry: any) => void;
+  /** Dentro de la página de una tienda no tiene sentido mandar al directorio. */
+  hideStoresLink?: boolean;
 }) {
   if (loading) {
     return (
@@ -146,11 +149,17 @@ export function WeeklyGrid({
       <EmptyState
         icon={<CalendarDays size={20} />}
         title="Sin torneos esta semana"
-        description="Prueba con otra semana, quita los filtros o mira qué tiendas hay cerca."
+        description={
+          hideStoresLink
+            ? "Prueba con otra semana."
+            : "Prueba con otra semana, quita los filtros o mira qué tiendas hay cerca."
+        }
         action={
-          <Link to="/stores" className="text-sm font-semibold text-primary hover:underline">
-            Ver tiendas
-          </Link>
+          hideStoresLink ? undefined : (
+            <Link to="/stores" className="text-sm font-semibold text-primary hover:underline">
+              Ver tiendas
+            </Link>
+          )
         }
       />
     );
@@ -179,7 +188,9 @@ export function WeeklyGrid({
                   className={`p-2 text-center border-l border-white/10 ${isToday ? "bg-primary/10" : ""}`}
                   style={{ minWidth: 0 }}
                 >
-                  <div className="text-[10px] uppercase text-foreground-secondary">{DAY_NAMES[d.getDay()]}</div>
+                  <div className="text-[10px] uppercase text-foreground-secondary">
+                    {DAY_NAMES[d.getDay()]}
+                  </div>
                   <div
                     className={`text-sm font-semibold ${isToday ? "text-primary" : "text-foreground"}`}
                   >

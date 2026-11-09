@@ -129,7 +129,10 @@ function OrganizerCalendarPage() {
     setSavingOverride(true);
     try {
       await deleteOverrideFn({
-        data: { league_schedule_id: editingEntry.league_schedule_id, occurrence_date: editingEntry.date },
+        data: {
+          league_schedule_id: editingEntry.league_schedule_id,
+          occurrence_date: editingEntry.date,
+        },
       });
       toast.success("Restablecido al horario normal.");
       setEditingEntry(null);
@@ -160,19 +163,14 @@ function OrganizerCalendarPage() {
 
   const filteredEntries = useMemo<CalEntry[]>(() => {
     if (!calData?.entries) return [];
-    return calData.entries.filter(
-      (e) => gameFilter === "all" || e.game_id === gameFilter,
-    );
+    return calData.entries.filter((e) => gameFilter === "all" || e.game_id === gameFilter);
   }, [calData, gameFilter]);
 
   const uniqueGames = useMemo(
     () =>
       Array.from(
         new Map(
-          (calData?.entries ?? []).map((e) => [
-            e.game_id,
-            { id: e.game_id, name: e.game_name },
-          ]),
+          (calData?.entries ?? []).map((e) => [e.game_id, { id: e.game_id, name: e.game_name }]),
         ).values(),
       ),
     [calData],
@@ -197,14 +195,11 @@ function OrganizerCalendarPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-xs uppercase tracking-wider text-primary">
-          Organizador
-        </div>
-        <h1 className="text-2xl font-bold text-white mt-1">
-          Calendario de mi tienda
-        </h1>
+        <div className="text-xs uppercase tracking-wider text-primary">Organizador</div>
+        <h1 className="text-2xl font-bold text-white mt-1">Calendario de mi tienda</h1>
         <p className="text-sm text-gray-400 mt-1">
-          Vista de los torneos programados en tu tienda. Los eventos de ligas internas (en ámbar) se pueden editar por fecha.
+          Vista de los torneos programados en tu tienda. Los eventos de ligas internas (en ámbar) se
+          pueden editar por fecha.
         </p>
       </div>
 
@@ -257,7 +252,7 @@ function OrganizerCalendarPage() {
           >
             <ChevronLeft size={18} />
           </button>
-          <div className="text-sm text-white min-w-[180px] text-center">
+          <div className="text-sm text-white text-center sm:min-w-[180px]">
             {weekDates[0]?.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} —{" "}
             {weekDates[6]?.toLocaleDateString("es-MX", {
               day: "numeric",
@@ -305,9 +300,7 @@ function OrganizerCalendarPage() {
                       {DAY_NAMES[d.getDay()]}
                     </div>
                     <div
-                      className={`text-sm font-semibold ${
-                        isToday ? "text-primary" : "text-white"
-                      }`}
+                      className={`text-sm font-semibold ${isToday ? "text-primary" : "text-white"}`}
                     >
                       {d.getDate()}
                     </div>
@@ -346,7 +339,9 @@ function OrganizerCalendarPage() {
                                 : "bg-primary/10 border-primary/30"
                             }`}
                           >
-                            <div className={`text-[10px] truncate ${e.league_id ? "text-amber-300" : "text-primary"}`}>
+                            <div
+                              className={`text-[10px] truncate ${e.league_id ? "text-amber-300" : "text-primary"}`}
+                            >
                               {e.override_label || e.game_name}
                             </div>
                             <div className="text-[9px] text-gray-400 truncate">
@@ -354,7 +349,9 @@ function OrganizerCalendarPage() {
                               {e.is_override && " · editado"}
                             </div>
                             {e.league_name && (
-                              <div className="text-[9px] text-amber-400/80 truncate">{e.league_name}</div>
+                              <div className="text-[9px] text-amber-400/80 truncate">
+                                {e.league_name}
+                              </div>
                             )}
                           </button>
                         );
@@ -385,15 +382,17 @@ function OrganizerCalendarPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingEntry?.league_name} — {editingEntry && DAY_NAMES[new Date(editingEntry.date + "T12:00:00").getDay()]}{" "}
+              {editingEntry?.league_name} —{" "}
+              {editingEntry && DAY_NAMES[new Date(editingEntry.date + "T12:00:00").getDay()]}{" "}
               {editingEntry?.date}
             </DialogTitle>
           </DialogHeader>
           {editingEntry && (
             <div className="space-y-4">
               <p className="text-xs text-gray-400">
-                Este cambio aplica solo a esta fecha. El horario recurrente ({editingEntry.game_name}, todos los{" "}
-                {DAY_NAMES[editingEntry.day_of_week]}) no se modifica.
+                Este cambio aplica solo a esta fecha. El horario recurrente (
+                {editingEntry.game_name}, todos los {DAY_NAMES[editingEntry.day_of_week]}) no se
+                modifica.
               </p>
               <div className="space-y-2">
                 <Label>Nombre especial (opcional)</Label>
@@ -427,11 +426,19 @@ function OrganizerCalendarPage() {
               <span />
             )}
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setEditingEntry(null)} disabled={savingOverride}>
+              <Button
+                variant="ghost"
+                onClick={() => setEditingEntry(null)}
+                disabled={savingOverride}
+              >
                 Cancelar
               </Button>
               <Button onClick={handleSaveOverride} disabled={savingOverride} className="gap-2">
-                {savingOverride ? <Loader2 className="animate-spin" size={16} /> : <Pencil size={16} />}
+                {savingOverride ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <Pencil size={16} />
+                )}
                 Guardar
               </Button>
             </div>

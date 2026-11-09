@@ -246,7 +246,7 @@ function ManagerCalendarPage() {
           >
             <ChevronLeft size={18} />
           </button>
-          <div className="text-sm text-white min-w-[180px] text-center">
+          <div className="text-sm text-white text-center sm:min-w-[180px]">
             {weekDates[0]?.toLocaleDateString("es-MX", {
               day: "numeric",
               month: "short",
