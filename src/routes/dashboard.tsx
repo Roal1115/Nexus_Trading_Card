@@ -62,7 +62,7 @@ import {
   tournamentRoundsQuery,
 } from "@/lib/dashboard-queries";
 import { playerAchievementsQuery } from "@/lib/player-profile-queries";
-import { shareProfileWithCard } from "@/lib/share-card";
+import { PlayerCardShare } from "@/components/player/PlayerCardShare";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
@@ -131,7 +131,6 @@ function DashboardPage() {
   const dismissOnboardingFn = useServerFn(dismissOnboarding);
   const queryClient = useQueryClient();
   const [isPublic, setIsPublic] = useState(true);
-  const [copiedProfile, setCopiedProfile] = useState(false);
 
   const [statsTcg, setStatsTcg] = useState<string | null>(null);
 
@@ -251,30 +250,6 @@ function DashboardPage() {
   }
 
   const tag = gaPlayer.geek_tag;
-  const handleShareProfile = async () => {
-    const url = `https://mxntcg.lovable.app/players/${tag}`;
-    await shareProfileWithCard({
-      url,
-      title: `${tag} — Nexus`,
-      text: `Mira mi ranking competitivo en Nexus 🏆`,
-      cardData: {
-        nexusTag: tag,
-        subtitle: storeCity ?? null,
-        rankLabel: activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : null,
-        rankCaption: activeTcg?.game_name ?? null,
-        statsLine:
-          globalRecord.total > 0 ? `${globalRecord.wins}W · ${globalRecord.losses}L` : null,
-        footerLine:
-          (data?.totalTournamentsAttended ?? 0) > 0
-            ? `${data?.totalTournamentsAttended} torneos jugados`
-            : null,
-      },
-      onCopied: () => {
-        setCopiedProfile(true);
-        setTimeout(() => setCopiedProfile(false), 2000);
-      },
-    });
-  };
 
   const tcgStats = data?.tcgStats ?? [];
 
@@ -531,20 +506,23 @@ function DashboardPage() {
             >
               Ver mi perfil público →
             </Link>
-            <button
-              onClick={handleShareProfile}
+            <PlayerCardShare
+              url={`https://mxntcg.lovable.app/players/${tag}`}
+              title={`${tag} — TCG League`}
+              text="Mira mi ranking competitivo en TCG League 🏆"
               className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-white/10"
-            >
-              {copiedProfile ? (
-                <>
-                  <Check size={12} /> ¡Link copiado!
-                </>
-              ) : (
-                <>
-                  <Share2 size={12} /> Compartir mi perfil
-                </>
-              )}
-            </button>
+              cardData={{
+                nexusTag: tag,
+                subtitle: storeCity ?? null,
+                rankLabel: activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : null,
+                rankCaption: activeTcg?.game_name ?? null,
+                stats: [
+                  { label: "Win rate", value: winRate != null ? `${winRate}%` : "—" },
+                  { label: "Torneos", value: String(data?.totalTournamentsAttended ?? 0) },
+                  { label: "Ganados", value: String(activeTcg?.tournaments_won ?? 0) },
+                ],
+              }}
+            />
             <button
               onClick={handleTogglePrivacy}
               title={`${isPublic ? "Perfil público — clic para hacer privado" : "Perfil privado — clic para hacer público"}. El staff de las tiendas y TCGs donde jugaste siempre puede ver esos resultados.`}

@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, Crown, Lock, Share2, Sparkles, Target, TrendingUp, Trophy } from "lucide-react";
 import { playerProfileQuery, playerAchievementsQuery } from "@/lib/player-profile-queries";
-import { shareProfileWithCard } from "@/lib/share-card";
+import { PlayerCardShare } from "@/components/player/PlayerCardShare";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
 import { setEquippedNameplate } from "@/lib/nexus-player.functions";
 import { isNameplateReward } from "@/lib/achievement-rewards";
@@ -78,7 +78,6 @@ function PublicProfilePage() {
   const registerView = useServerFn(registerAdView);
 
   const [sponsor, setSponsor] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
   const [historyTcg, setHistoryTcg] = useState<string | null>(null);
@@ -251,7 +250,9 @@ function PublicProfilePage() {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
         <h2 className="text-2xl font-bold text-foreground">Jugador no encontrado</h2>
-        <p className="mt-2 text-sm text-foreground-secondary">No existe un jugador con ese Nexus Tag.</p>
+        <p className="mt-2 text-sm text-foreground-secondary">
+          No existe un jugador con ese Nexus Tag.
+        </p>
         <Link
           to="/"
           className="mt-6 inline-block rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-foreground"
@@ -418,44 +419,32 @@ function PublicProfilePage() {
                 </div>
               )}
 
-              <button
-                onClick={async () => {
-                  const url = `https://mxntcg.lovable.app/players/${profile.geek_tag}`;
-                  const topRanking = profile.rankings?.[0] as any;
-                  await shareProfileWithCard({
-                    url,
-                    title: `${profile.geek_tag} — Nexus`,
-                    text: `Mira el ranking de ${profile.geek_tag} en Nexus 🏆`,
-                    cardData: {
-                      nexusTag: profile.geek_tag,
-                      subtitle: profile.store_city ?? null,
-                      rankLabel:
-                        topRanking?.rank_position > 0 ? `#${topRanking.rank_position}` : null,
-                      rankCaption: topRanking?.game_name ?? null,
-                      statsLine: topRanking
-                        ? `${Number(topRanking.total_points).toFixed(0)} pts · ${topRanking.tournaments_won} ganados`
-                        : null,
-                      footerLine:
-                        tournaments.length > 0 ? `${tournaments.length} torneos jugados` : null,
-                    },
-                    onCopied: () => {
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    },
-                  });
-                }}
+              <PlayerCardShare
+                url={`https://mxntcg.lovable.app/players/${profile.geek_tag}`}
+                title={`${profile.geek_tag} — TCG League`}
+                text={`Mira el ranking de ${profile.geek_tag} en TCG League 🏆`}
                 className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-white/10"
-              >
-                {copied ? (
-                  <>
-                    <Check size={12} /> ¡Link copiado!
-                  </>
-                ) : (
-                  <>
-                    <Share2 size={12} /> Compartir perfil
-                  </>
-                )}
-              </button>
+                cardData={{
+                  nexusTag: profile.geek_tag,
+                  subtitle: profile.store_city ?? null,
+                  badge: profile.equipped_title ?? null,
+                  rankLabel:
+                    (profile.rankings?.[0] as any)?.rank_position > 0
+                      ? `#${(profile.rankings[0] as any).rank_position}`
+                      : null,
+                  rankCaption: (profile.rankings?.[0] as any)?.game_name ?? null,
+                  stats: [
+                    {
+                      label: "Win rate",
+                      value: record.winRate != null ? `${record.winRate}%` : "—",
+                    },
+                    { label: "Torneos", value: String(tournaments.length) },
+                    { label: "Ganados", value: String(profile.total_tournaments_won ?? 0) },
+                  ],
+                  leaderName: profile.main_leader?.name ?? null,
+                  recentPlacements: recentForm.map((t: any) => t.placement),
+                }}
+              />
             </div>
           </div>
         </section>
@@ -778,7 +767,9 @@ function PublicProfilePage() {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
                     <Trophy size={24} className="text-primary" />
                   </div>
-                  <p className="text-sm font-semibold text-foreground">Aún sin torneos registrados</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    Aún sin torneos registrados
+                  </p>
                   <p className="mt-2 text-xs text-foreground-subtle">
                     Participa en un torneo en tu tienda local para aparecer en el circuito.
                   </p>
