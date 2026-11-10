@@ -7,11 +7,14 @@ import {
   ClipboardCheck,
   LayoutDashboard,
   Loader2,
+  Map as MapIcon,
   Megaphone,
   ScrollText,
   Store,
   Trophy,
   Upload,
+  UserCog,
+  UserPlus,
   Users,
 } from "lucide-react";
 
@@ -85,13 +88,26 @@ function AdminLayout() {
           {
             title: "Red",
             items: [
-              { to: "/admin/stores", label: "Tiendas", icon: <Store size={16} /> },
+              {
+                to: "/admin/stores",
+                label: "Tiendas",
+                icon: <Store size={16} />,
+                exact: true,
+              },
+              {
+                to: "/admin/stores/altas",
+                label: "Altas de tiendas",
+                icon: <UserPlus size={16} />,
+                badge: counts?.storeRequests ?? 0,
+              },
               { to: "/admin/players", label: "Usuarios", icon: <Users size={16} /> },
+              { to: "/admin/staff", label: "Staff", icon: <UserCog size={16} /> },
             ],
           },
           {
             title: "Configuración",
             items: [
+              { to: "/admin/zonas", label: "Zonas", icon: <MapIcon size={16} /> },
               { to: "/admin/seasons", label: "Temporadas", icon: <CalendarRange size={16} /> },
               { to: "/admin/playoffs", label: "Playoffs", icon: <Trophy size={16} /> },
               { to: "/admin/ads", label: "Sponsors", icon: <Megaphone size={16} /> },

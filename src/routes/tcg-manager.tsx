@@ -11,7 +11,7 @@ import {
   Trophy,
   Upload,
 } from "lucide-react";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Map as MapIcon, UserPlus } from "lucide-react";
 import { usePendingFichasCount } from "@/components/calendar/occurrence-panel";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
@@ -89,6 +89,13 @@ function TcgManagerLayout() {
                 to: "/tcg-manager/stores",
                 label: "Tiendas a mi cargo",
                 icon: <StoreIcon size={16} />,
+                exact: true,
+              },
+              {
+                to: "/tcg-manager/stores/altas",
+                label: "Altas de tiendas",
+                icon: <UserPlus size={16} />,
+                badge: counts?.storeRequests ?? 0,
               },
               { to: "/tcg-manager/players", label: "Jugadores", icon: <Users size={16} /> },
               {
@@ -97,6 +104,10 @@ function TcgManagerLayout() {
                 icon: <BarChart3 size={16} />,
               },
             ],
+          },
+          {
+            title: "Configuración",
+            items: [{ to: "/tcg-manager/zonas", label: "Zonas", icon: <MapIcon size={16} /> }],
           },
         ]}
       />

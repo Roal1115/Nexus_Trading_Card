@@ -1,5 +1,14 @@
 export const INVITE_DAYS = 7;
 
+// Solo se guarda en la solicitud; la plataforma aún no lo usa.
+export const AFFILIATION_PLANS = ["oro", "platino", "diamante"] as const;
+export type AffiliationPlan = (typeof AFFILIATION_PLANS)[number];
+export const AFFILIATION_PLAN_LABELS: Record<AffiliationPlan, string> = {
+  oro: "Oro",
+  platino: "Platino",
+  diamante: "Diamante",
+};
+
 /** Base del Nexus Tag de una tienda: solo letras y números, sin acentos. */
 export function storeTagBase(storeName: string): string {
   const clean = storeName

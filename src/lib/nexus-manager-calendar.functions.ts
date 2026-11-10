@@ -4,10 +4,14 @@ import { z } from "zod";
 import { failDb } from "./nexus-admin.server";
 import { requireNexusManager, requireNexusAdmin } from "./nexus-auth.middleware";
 import { loadTournamentDetail } from "./nexus-tournament-detail.server";
-import { logAction, recomputeSnapshot, tfMonth, type TournamentStatus } from "./nexus-admin.functions";
+import {
+  logAction,
+  recomputeSnapshot,
+  tfMonth,
+  type TournamentStatus,
+} from "./nexus-admin.functions";
 import { mondayOfWeek, toLocalDateStr } from "./utils";
 import { getManagerGameIds, assertManagerOwnsGame } from "./nexus-manager-shared";
-
 
 export const getManagerHistory = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
@@ -149,7 +153,7 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
     const { data: organizers } = storeIds.length
       ? await admin
           .from("players")
-          .select("id, geek_tag, home_store_id")
+          .select("id, geek_tag, home_store_id, contact_primary")
           .eq("role", "organizer")
           .in("home_store_id", storeIds)
       : { data: [] };
@@ -174,8 +178,14 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
           .gte("occurrence_date", mondayStr)
           .lte("occurrence_date", sundayStr)
       : { data: [] as any[] };
-    const overrideByScheduleAndDate = new Map<string, { start_time: string | null; label: string | null }>(
-      (overrides ?? []).map((o: any) => [`${o.national_schedule_id}_${o.occurrence_date}`, { start_time: o.start_time, label: o.label }]),
+    const overrideByScheduleAndDate = new Map<
+      string,
+      { start_time: string | null; label: string | null }
+    >(
+      (overrides ?? []).map((o: any) => [
+        `${o.national_schedule_id}_${o.occurrence_date}`,
+        { start_time: o.start_time, label: o.label },
+      ]),
     );
 
     // Map: storeId-gameId-dayOfWeek -> tournament
@@ -266,7 +276,8 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
         tournament_id: tournament?.id ?? null,
         tournament_status: tournament?.status ?? null,
         organizer_tag: organizer?.geek_tag ?? null,
-        organizer_phone: null,
+        // El "Contacto principal" que se captura en Staff: a quien se le pide subir el torneo.
+        organizer_phone: organizer?.contact_primary ?? null,
       };
     });
 
@@ -298,7 +309,12 @@ export const getManagerCalendar = createServerFn({ method: "POST" })
 export const upsertScheduleOverride = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
   .inputValidator(
-    (d: { national_schedule_id: string; occurrence_date: string; start_time?: string | null; label?: string | null }) =>
+    (d: {
+      national_schedule_id: string;
+      occurrence_date: string;
+      start_time?: string | null;
+      label?: string | null;
+    }) =>
       z
         .object({
           national_schedule_id: z.string().uuid(),
@@ -370,5 +386,3 @@ export const deleteScheduleOverride = createServerFn({ method: "POST" })
   });
 
 // ==================== Store Schedules (Manager) ====================
-
-

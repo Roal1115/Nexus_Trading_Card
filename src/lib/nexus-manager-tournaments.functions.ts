@@ -281,9 +281,9 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
       gameIds = (data ?? []).map((d: any) => d.game_id);
     }
 
-    if (gameIds.length === 0) return { pending: 0, approved: 0 };
+    if (gameIds.length === 0) return { pending: 0, approved: 0, storeRequests: 0 };
 
-    const [pending, approved] = await Promise.all([
+    const [pending, approved, storeRequests] = await Promise.all([
       admin
         .from("tournaments")
         .select("*", { count: "exact", head: true })
@@ -295,11 +295,17 @@ export const getManagerBadgeCounts = createServerFn({ method: "POST" })
         .select("*", { count: "exact", head: true })
         .eq("status", "APPROVED")
         .in("game_id", gameIds),
+      admin
+        .from("store_signup_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending")
+        .in("game_id", gameIds),
     ]);
 
     return {
       pending: pending.count ?? 0,
       approved: approved.count ?? 0,
+      storeRequests: storeRequests.count ?? 0,
     };
   });
 

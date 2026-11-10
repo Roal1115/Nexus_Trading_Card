@@ -311,10 +311,17 @@
   }
 }
 
-/* Global custom scrollbars — premium dark aesthetic */
+/* Global custom scrollbars — premium dark aesthetic.
+   La barra de la página (html) va oculta a pedido del usuario; las internas
+   (modales, sidebar, tablas) se quedan finas para que se note que hay más.
+   scrollbar-width no se hereda: aquí solo afecta a html. */
 :root {
-  scrollbar-width: thin;
+  scrollbar-width: none;
   scrollbar-color: #404040 transparent;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 *::-webkit-scrollbar {

@@ -9,15 +9,29 @@ const nameSchema = z.string().trim().min(2).max(60);
 export const listZones = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
   .handler(async ({ context }) => {
-    const { data, error } = await context.admin
-      .from("zones")
-      .select("name, description, subzones(name, description)")
-      .order("name");
-    if (error) failDb(error);
+    const [zones, stores] = await Promise.all([
+      context.admin
+        .from("zones")
+        .select("name, description, subzones(name, description)")
+        .order("name"),
+      context.admin.from("stores").select("zone, subzone").not("zone", "is", null),
+    ]);
+    if (zones.error) failDb(zones.error);
+    if (stores.error) failDb(stores.error);
+
+    // ponytail: se cuenta en memoria; pasar a un count agrupado en SQL si las tiendas son miles.
+    const count = (zone: string, subzone?: string) =>
+      (stores.data ?? []).filter(
+        (s) => s.zone === zone && (subzone === undefined || s.subzone === subzone),
+      ).length;
+
     return {
-      zones: (data ?? []).map((z) => ({
+      zones: (zones.data ?? []).map((z) => ({
         ...z,
-        subzones: [...z.subzones].sort((a, b) => a.name.localeCompare(b.name)),
+        store_count: count(z.name),
+        subzones: [...z.subzones]
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((s) => ({ ...s, store_count: count(z.name, s.name) })),
       })),
     };
   });

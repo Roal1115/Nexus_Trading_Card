@@ -8,6 +8,7 @@ import { requireNexusManager } from "./nexus-auth.middleware";
 import { assertManagerOwnsGame, getManagerGameIds } from "./nexus-manager-shared";
 import { checkRateLimit, getClientIp } from "./rate-limit.server";
 import {
+  AFFILIATION_PLANS,
   decryptInviteToken,
   encryptInviteToken,
   hashInviteToken,
@@ -89,14 +90,18 @@ async function zoneList(admin: Admin) {
 }
 
 // ── Panel de Admin y Manager ───────────────────────────────────────
+const HISTORY_DAYS = 30;
+
 export const getStoreSignupPanel = createServerFn({ method: "POST" })
   .middleware([requireNexusManager])
   .handler(async ({ context }) => {
     const { admin, player } = context;
     const gameIds = await getManagerGameIds(admin, player);
     const scope = gameIds.length ? gameIds : [NO_GAME];
+    const now = new Date().toISOString();
+    const historySince = new Date(Date.now() - HISTORY_DAYS * 86_400_000).toISOString();
 
-    const [invites, requests, games, zones] = await Promise.all([
+    const [invites, requests, games, zones, reviewed, lapsed] = await Promise.all([
       admin
         .from("store_signup_invites")
         .select("id, email, expires_at, created_at, token_encrypted, games(name)")
@@ -108,17 +113,54 @@ export const getStoreSignupPanel = createServerFn({ method: "POST" })
       admin
         .from("store_signup_requests")
         .select(
-          "id, email, store_name, city, state, phone, zone, subzone, address, google_maps_url, opening_hours, instagram, twitter, twitch, website, created_at, games(name)",
+          "id, email, store_name, city, state, phone, manager_name, manager_phone, affiliation_plan, zone, subzone, address, google_maps_url, opening_hours, instagram, twitter, twitch, website, created_at, games(name)",
         )
         .in("game_id", scope)
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
       admin.from("games").select("id, name").in("id", scope).order("name"),
       zoneList(admin),
+      admin
+        .from("store_signup_requests")
+        .select("id, store_name, city, state, status, rejection_reason, reviewed_at, games(name)")
+        .in("game_id", scope)
+        .neq("status", "pending")
+        .gte("reviewed_at", historySince)
+        .order("reviewed_at", { ascending: false }),
+      // Enlaces que nunca se usaron: la tienda no llegó a registrarse.
+      admin
+        .from("store_signup_invites")
+        .select("id, email, expires_at, revoked_at, games(name)")
+        .in("game_id", scope)
+        .is("used_at", null)
+        .or(
+          `revoked_at.gte.${historySince},and(revoked_at.is.null,expires_at.lte.${now},expires_at.gte.${historySince})`,
+        ),
     ]);
     if (invites.error) failDb(invites.error);
     if (requests.error) failDb(requests.error);
     if (games.error) failDb(games.error);
+    if (reviewed.error) failDb(reviewed.error);
+    if (lapsed.error) failDb(lapsed.error);
+
+    const history = [
+      ...(reviewed.data ?? []).map((r) => ({
+        id: r.id,
+        title: r.store_name,
+        detail: `${r.city}, ${r.state} · ${r.games?.name ?? "TCG"}`,
+        outcome: r.status as "approved" | "rejected",
+        note: r.rejection_reason,
+        at: r.reviewed_at as string,
+      })),
+      ...(lapsed.data ?? []).map((i) => ({
+        id: i.id,
+        title: i.email,
+        detail: i.games?.name ?? "TCG",
+        outcome: (i.revoked_at ? "revoked" : "expired") as "revoked" | "expired",
+        note: null,
+        at: i.revoked_at ?? i.expires_at,
+      })),
+    ].sort((a, b) => b.at.localeCompare(a.at));
 
     return {
       // El valor cifrado no sale del servidor: la pantalla solo necesita saber si existe.
@@ -129,6 +171,7 @@ export const getStoreSignupPanel = createServerFn({ method: "POST" })
       requests: requests.data ?? [],
       games: games.data ?? [],
       zones,
+      history,
     };
   });
 
@@ -254,7 +297,7 @@ export const approveStoreSignup = createServerFn({ method: "POST" })
     const { admin, player } = context;
     const { data: request, error } = await admin
       .from("store_signup_requests")
-      .select("store_name, game_id, player_id, status")
+      .select("store_name, game_id, player_id, status, manager_phone")
       .eq("id", data.request_id)
       .maybeSingle();
     if (error) failDb(error);
@@ -296,6 +339,18 @@ export const approveStoreSignup = createServerFn({ method: "POST" })
         subzone: data.subzone,
       },
     );
+
+    // El teléfono del encargado pasa a su "Contacto principal" de Staff, que es el WhatsApp
+    // que usa el calendario para pedirle que suba torneos. No pisa uno ya capturado, y si
+    // falla la tienda ya quedó aprobada: se captura a mano en Staff.
+    if (request.manager_phone && request.player_id) {
+      const { error: contactError } = await admin
+        .from("players")
+        .update({ contact_primary: request.manager_phone })
+        .eq("id", request.player_id)
+        .is("contact_primary", null);
+      if (contactError) console.error("contact_primary al aprobar tienda:", contactError);
+    }
 
     // Al final a propósito: si esto falla, la cuenta sigue bloqueada en vez de quedar abierta.
     // ponytail: sin reintento en pantalla; un Admin la desbloquea en Supabase si llega a pasar.
@@ -411,6 +466,9 @@ const storeSignupSchema = z
     state: z.string(),
     city: z.string(),
     phone: z.string().trim().min(7).max(20),
+    manager_name: z.string().trim().min(2).max(120),
+    manager_phone: z.string().trim().min(7).max(20),
+    affiliation_plan: z.enum(AFFILIATION_PLANS),
     address: z.string().trim().min(5).max(300),
     google_maps_url: z.string().trim().max(500).refine(isGoogleMapsUrl),
     week: z
@@ -507,6 +565,9 @@ export const submitStoreSignup = createServerFn({ method: "POST" })
         city: data.city,
         state: data.state,
         phone: data.phone,
+        manager_name: data.manager_name,
+        manager_phone: data.manager_phone,
+        affiliation_plan: data.affiliation_plan,
         zone: data.zone,
         subzone: data.subzone,
         address: data.address,

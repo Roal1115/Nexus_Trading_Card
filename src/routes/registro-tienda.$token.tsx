@@ -13,7 +13,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import locations from "@/data/mx-locations.json";
 import { getStoreInvite, submitStoreSignup } from "@/lib/nexus-store-invites.functions";
 import { CLOSED_WEEK, isValidWeek, type WeekHours } from "@/lib/store-hours";
-import { isGoogleMapsUrl } from "@/lib/store-invite-rules";
+import {
+  AFFILIATION_PLAN_LABELS,
+  AFFILIATION_PLANS,
+  type AffiliationPlan,
+  isGoogleMapsUrl,
+} from "@/lib/store-invite-rules";
 
 export const Route = createFileRoute("/registro-tienda/$token")({
   head: () => ({
@@ -174,6 +179,9 @@ function StoreSignupPage() {
   const [zone, setZone] = useState("");
   const [subzone, setSubzone] = useState("");
   const [phone, setPhone] = useState("");
+  const [managerName, setManagerName] = useState("");
+  const [managerPhone, setManagerPhone] = useState("");
+  const [plan, setPlan] = useState<AffiliationPlan | "">("");
   const [address, setAddress] = useState("");
   const [mapsUrl, setMapsUrl] = useState("");
   const [week, setWeek] = useState<WeekHours>(CLOSED_WEEK);
@@ -236,6 +244,9 @@ function StoreSignupPage() {
   // El orden es el del formulario: al enviar se lleva a la persona al primero.
   const allErrors: Record<string, string | undefined> = {
     name: storeName.trim().length < 2 ? "Escribe el nombre de tu tienda" : undefined,
+    managerName: managerName.trim().length < 2 ? "Escribe el nombre del encargado" : undefined,
+    managerPhone: managerPhone.trim().length < 7 ? "Escribe el WhatsApp del encargado" : undefined,
+    plan: !plan ? "Elige un plan de afiliación" : undefined,
     state: !state ? "Elige tu estado" : undefined,
     city: !city ? "Elige tu ciudad" : undefined,
     zone: !zone ? "Elige una zona o marca «No sé»" : undefined,
@@ -290,6 +301,9 @@ function StoreSignupPage() {
           state,
           city,
           phone,
+          manager_name: managerName,
+          manager_phone: managerPhone,
+          affiliation_plan: plan as AffiliationPlan,
           address,
           google_maps_url: mapsUrl.trim(),
           week,
@@ -335,7 +349,7 @@ function StoreSignupPage() {
                   className={fieldClass}
                 />
               </Field>
-              <Field name="phone" label="Teléfono de contacto" error={errorFor("phone")}>
+              <Field name="phone" label="Teléfono de la tienda" error={errorFor("phone")}>
                 <input
                   type="tel"
                   value={phone}
@@ -348,6 +362,61 @@ function StoreSignupPage() {
                 />
               </Field>
             </div>
+            <div className="grid items-start gap-4 sm:grid-cols-2">
+              <Field
+                name="managerName"
+                label="Nombre del encargado"
+                hint="La persona a cargo de los torneos."
+                error={errorFor("managerName")}
+              >
+                <input
+                  value={managerName}
+                  onChange={(e) => setManagerName(e.target.value)}
+                  maxLength={120}
+                  autoComplete="name"
+                  required
+                  aria-invalid={invalid("managerName")}
+                  placeholder="Juan Pérez"
+                  className={fieldClass}
+                />
+              </Field>
+              <Field
+                name="managerPhone"
+                label="WhatsApp del encargado"
+                hint="Lo usamos como metodo principal de contacto."
+                error={errorFor("managerPhone")}
+              >
+                <input
+                  type="tel"
+                  value={managerPhone}
+                  onChange={(e) => setManagerPhone(e.target.value)}
+                  maxLength={20}
+                  autoComplete="tel"
+                  required
+                  aria-invalid={invalid("managerPhone")}
+                  placeholder="81 1234 5678"
+                  className={fieldClass}
+                />
+              </Field>
+            </div>
+            <Group name="plan" label="Plan de afiliación" error={errorFor("plan")}>
+              <RadioGroup
+                value={plan}
+                onValueChange={(next) => setPlan(next as AffiliationPlan)}
+                aria-label="Plan de afiliación"
+                className="sm:grid-cols-3"
+              >
+                {AFFILIATION_PLANS.map((p) => (
+                  <ZoneRow
+                    key={p}
+                    value={p}
+                    title={AFFILIATION_PLAN_LABELS[p]}
+                    description=""
+                    selected={plan === p}
+                  />
+                ))}
+              </RadioGroup>
+            </Group>
           </Section>
 
           <Section title="Ubicación y zona">

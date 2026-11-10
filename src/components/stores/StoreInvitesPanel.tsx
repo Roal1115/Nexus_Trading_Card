@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Copy, Loader2, Plus, UserPlus } from "lucide-react";
+import { Check, Copy, History, Inbox, Loader2, Send, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -12,7 +12,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { ago } from "@/components/panel/dashboard-format";
+import { refreshBadges } from "@/hooks/use-badge-counts";
 import {
   approveStoreSignup,
   createStoreInvite,
@@ -21,22 +42,24 @@ import {
   rejectStoreSignup,
   revokeStoreInvite,
 } from "@/lib/nexus-store-invites.functions";
-import { deleteSubzone, deleteZone, saveSubzone, saveZone } from "@/lib/nexus-zones.functions";
+import { AFFILIATION_PLAN_LABELS, type AffiliationPlan } from "@/lib/store-invite-rules";
 import { safeHref } from "@/lib/utils";
 
 type Panel = Awaited<ReturnType<typeof getStoreSignupPanel>>;
 type SignupRequest = Panel["requests"][number];
+type Invite = Panel["invites"][number];
 type Zone = Panel["zones"][number];
-
-const fieldClass =
-  "w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary";
-const secondaryButton =
-  "rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50";
-const primaryButton =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50";
+type HistoryItem = Panel["history"][number];
 
 const errorText = (e: unknown, fallback: string) =>
   e instanceof Error && e.message ? e.message : fallback;
+
+const OUTCOMES: Record<HistoryItem["outcome"], { label: string; className: string }> = {
+  approved: { label: "Aprobada", className: "bg-emerald-500/15 text-emerald-400" },
+  rejected: { label: "Rechazada", className: "bg-red-500/15 text-red-400" },
+  revoked: { label: "Invitación revocada", className: "bg-white/10 text-muted-foreground" },
+  expired: { label: "Invitación vencida", className: "bg-white/10 text-muted-foreground" },
+};
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -47,7 +70,48 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
   );
 }
 
-function ReviewDialog({
+// Jerarquía: el encabezado de sección va en su propia franja y más grande que cualquier fila,
+// para que nunca se confunda con el contenido.
+function SectionCard({
+  title,
+  description,
+  count,
+  urgent = false,
+  children,
+}: {
+  title: string;
+  description?: string;
+  count?: number;
+  urgent?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="glass overflow-hidden rounded-2xl">
+      <header className="border-b border-white/10 bg-white/[0.03] px-5 py-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground">{title}</h2>
+          {count !== undefined && count > 0 && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                urgent ? "bg-amber-400 text-black" : "bg-white/10 text-foreground"
+              }`}
+            >
+              {count}
+            </span>
+          )}
+        </div>
+        {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+      </header>
+      <div className="px-5 py-1">{children}</div>
+    </section>
+  );
+}
+
+// Filas en columnas: qué es · cuándo · acción. Igual en las tres secciones.
+const rowClass = "grid items-center gap-x-4 gap-y-2 py-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto]";
+const whenClass = "text-xs text-muted-foreground sm:text-right";
+
+function ReviewSheet({
   request,
   zones,
   onClose,
@@ -101,20 +165,30 @@ function ReviewDialog({
     : [];
 
   return (
-    <Dialog open={Boolean(request)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{request?.store_name}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={Boolean(request)} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>{request?.store_name}</SheetTitle>
+          <SheetDescription>
+            Revisa los datos, asigna la zona y aprueba. Al aprobar, la tienda podrá entrar con su
+            correo.
+          </SheetDescription>
+        </SheetHeader>
         {request && (
-          <div className="space-y-5">
+          <div className="mt-6 space-y-5">
             <dl className="grid gap-3 sm:grid-cols-2">
               <Detail label="Ubicación">
                 {request.city}, {request.state}
               </Detail>
               <Detail label="TCG">{request.games?.name}</Detail>
               <Detail label="Correo">{request.email}</Detail>
-              <Detail label="Teléfono">{request.phone}</Detail>
+              <Detail label="Teléfono de la tienda">{request.phone}</Detail>
+              <Detail label="Encargado">{request.manager_name}</Detail>
+              <Detail label="WhatsApp del encargado">{request.manager_phone}</Detail>
+              <Detail label="Plan de afiliación">
+                {request.affiliation_plan &&
+                  AFFILIATION_PLAN_LABELS[request.affiliation_plan as AffiliationPlan]}
+              </Detail>
               <div className="sm:col-span-2">
                 <Detail label="Dirección">{request.address}</Detail>
               </div>
@@ -137,77 +211,70 @@ function ReviewDialog({
             </dl>
 
             <div className="space-y-1.5 border-t border-border pt-4">
-              <label htmlFor="review-zone" className="text-sm font-medium text-foreground">
-                Zona
-              </label>
+              <Label htmlFor="review-zone">Zona</Label>
               {!request.zone && (
                 <p className="text-xs text-amber-400">
                   La tienda marcó «No sé»: contáctala para definir su zona.
                 </p>
               )}
-              <select
-                id="review-zone"
+              <Select
                 value={zone}
-                onChange={(e) => {
-                  setZone(e.target.value);
+                onValueChange={(next) => {
+                  setZone(next);
                   setSubzone("");
                 }}
-                className={fieldClass}
               >
-                <option value="">Elige la zona</option>
-                {zones.map((z) => (
-                  <option key={z.name} value={z.name}>
-                    {z.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="review-zone">
+                  <SelectValue placeholder="Elige la zona" />
+                </SelectTrigger>
+                <SelectContent>
+                  {zones.map((z) => (
+                    <SelectItem key={z.name} value={z.name}>
+                      {z.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {subzoneOptions.length > 0 && (
               <div className="space-y-1.5">
-                <label htmlFor="review-subzone" className="text-sm font-medium text-foreground">
-                  Subzona
-                </label>
+                <Label htmlFor="review-subzone">Subzona</Label>
                 {!request.subzone && zone === request.zone && (
                   <p className="text-xs text-amber-400">
                     La tienda marcó «No sé»: contáctala para definir su subzona.
                   </p>
                 )}
-                <select
-                  id="review-subzone"
-                  value={subzone}
-                  onChange={(e) => setSubzone(e.target.value)}
-                  className={fieldClass}
-                >
-                  <option value="">Elige la subzona</option>
-                  {subzoneOptions.map((s) => (
-                    <option key={s.name} value={s.name}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={subzone} onValueChange={setSubzone}>
+                  <SelectTrigger id="review-subzone">
+                    <SelectValue placeholder="Elige la subzona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subzoneOptions.map((s) => (
+                      <SelectItem key={s.name} value={s.name}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
             {rejecting ? (
               <div className="space-y-2">
-                <input
-                  aria-label="Motivo del rechazo"
+                <Label htmlFor="reject-reason">Motivo del rechazo</Label>
+                <Input
+                  id="reject-reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Motivo del rechazo"
-                  className={fieldClass}
                 />
                 <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRejecting(false)}
-                    className={secondaryButton}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => setRejecting(false)}>
                     Cancelar
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     disabled={busy || reason.trim().length < 3}
                     onClick={() =>
                       run(
@@ -215,23 +282,18 @@ function ReviewDialog({
                         "Solicitud rechazada",
                       )
                     }
-                    className="rounded-lg bg-red-500 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
                   >
                     Confirmar rechazo
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRejecting(true)}
-                  className={secondaryButton}
-                >
+                <Button variant="outline" size="sm" onClick={() => setRejecting(true)}>
                   Rechazar
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="sm"
                   disabled={busy || !zone || !subzoneReady}
                   onClick={() =>
                     run(
@@ -243,279 +305,35 @@ function ReviewDialog({
                             subzone: subzoneOptions.length > 0 ? subzone : null,
                           },
                         }),
-                      "Tienda aprobada. Agrégale sus torneos con el botón Torneos.",
+                      "Tienda aprobada. Agrégale sus torneos desde Tiendas.",
                     )
                   }
-                  className={primaryButton}
                 >
                   {busy ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                   Aprobar
-                </button>
+                </Button>
               </div>
             )}
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 
-function RequestsTab({ panel, onDone }: { panel: Panel; onDone: () => Promise<unknown> }) {
-  const [reviewing, setReviewing] = useState<SignupRequest | null>(null);
-
-  if (panel.requests.length === 0) {
-    return (
-      <div className="glass rounded-2xl p-8 text-center text-sm text-muted-foreground">
-        No hay solicitudes por revisar.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {panel.requests.map((r) => (
-        <div
-          key={r.id}
-          className="glass flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3"
-        >
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground">{r.store_name}</p>
-            <p className="text-xs text-muted-foreground">
-              {r.city}, {r.state} · {r.games?.name ?? "TCG"} ·{" "}
-              {r.zone ? (
-                `${r.zone}${r.subzone ? ` · ${r.subzone}` : ""}`
-              ) : (
-                <span className="text-amber-400">Zona por definir</span>
-              )}
-            </p>
-          </div>
-          <button type="button" onClick={() => setReviewing(r)} className={primaryButton}>
-            Revisar
-          </button>
-        </div>
-      ))}
-      <ReviewDialog
-        request={reviewing}
-        zones={panel.zones}
-        onClose={() => setReviewing(null)}
-        onDone={onDone}
-      />
-    </div>
-  );
-}
-
-// `parent` indica que es una subzona de esa zona.
-type ZoneDraft = { parent?: string; original?: string; name: string; description: string };
-
-function ZonesSection({ zones, onChanged }: { zones: Zone[]; onChanged: () => Promise<unknown> }) {
-  const save = useServerFn(saveZone);
-  const remove = useServerFn(deleteZone);
-  const [draft, setDraft] = useState<ZoneDraft | null>(null);
-  const saveSub = useServerFn(saveSubzone);
-  const removeSub = useServerFn(deleteSubzone);
-  const [deleting, setDeleting] = useState<{ parent?: string; name: string } | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const run = async (action: () => Promise<unknown>, done: string) => {
-    setBusy(true);
-    try {
-      await action();
-      toast.success(done);
-      setDraft(null);
-      await onChanged();
-    } catch (e) {
-      toast.error(errorText(e, "No se pudo guardar la zona"));
-    } finally {
-      setBusy(false);
-      setDeleting(null);
-    }
-  };
-
-  return (
-    <section className="glass space-y-3 rounded-2xl p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Zonas</h2>
-          <p className="text-xs text-muted-foreground">
-            La nota es lo que lee cada tienda para saber cuál elegir.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setDraft({ name: "", description: "" })}
-          className={`${secondaryButton} inline-flex flex-shrink-0 items-center gap-1`}
-        >
-          <Plus size={12} /> Nueva zona
-        </button>
-      </div>
-
-      <div className="divide-y divide-border">
-        {zones.map((z) => (
-          <div key={z.name} className="py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm text-foreground">{z.name}</p>
-                <p className="text-xs text-muted-foreground">{z.description || "Sin nota"}</p>
-              </div>
-              <div className="flex flex-shrink-0 flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setDraft({ parent: z.name, name: "", description: "" })}
-                  className={`${secondaryButton} inline-flex items-center gap-1`}
-                >
-                  <Plus size={12} /> Subzona
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraft({ original: z.name, name: z.name, description: z.description })
-                  }
-                  className={secondaryButton}
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleting({ name: z.name })}
-                  className={secondaryButton}
-                >
-                  Borrar
-                </button>
-              </div>
-            </div>
-            {z.subzones.length > 0 && (
-              <div className="mt-2 space-y-1 border-l border-border pl-3">
-                {z.subzones.map((sub) => (
-                  <div key={sub.name} className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-medium text-foreground">{sub.name}</p>
-                      {sub.description && (
-                        <p className="text-xs text-muted-foreground">{sub.description}</p>
-                      )}
-                    </div>
-                    <div className="flex flex-shrink-0 gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraft({
-                            parent: z.name,
-                            original: sub.name,
-                            name: sub.name,
-                            description: sub.description,
-                          })
-                        }
-                        className={secondaryButton}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleting({ parent: z.name, name: sub.name })}
-                        className={secondaryButton}
-                      >
-                        Borrar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && setDraft(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {draft?.original ? "Editar" : "Nueva"} {draft?.parent ? "subzona" : "zona"}
-              {draft?.parent ? ` de ${draft.parent}` : ""}
-            </DialogTitle>
-          </DialogHeader>
-          {draft && (
-            <div className="space-y-3">
-              <input
-                aria-label="Nombre de la zona"
-                value={draft.name}
-                maxLength={60}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder={
-                  draft.parent ? "Nombre, por ejemplo Norte" : "Nombre, por ejemplo Zona Puebla"
-                }
-                className={fieldClass}
-              />
-              <input
-                aria-label="Nota de la zona"
-                value={draft.description}
-                maxLength={200}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                placeholder="Quién va aquí, para que cada tienda sepa si le toca"
-                className={fieldClass}
-              />
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setDraft(null)} className={secondaryButton}>
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  disabled={busy || draft.name.trim().length < 2}
-                  onClick={() => {
-                    const { parent, ...fields } = draft;
-                    run(
-                      () =>
-                        parent
-                          ? saveSub({ data: { zone: parent, ...fields } })
-                          : save({ data: fields }),
-                      parent ? "Subzona guardada" : "Zona guardada",
-                    );
-                  }}
-                  className={primaryButton}
-                >
-                  Guardar
-                </button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Borrar {deleting?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Dejará de aparecer al registrar tiendas. Si tiene tiendas no se podrá borrar hasta
-              moverlas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={busy}
-              onClick={() =>
-                deleting &&
-                run(
-                  () =>
-                    deleting.parent
-                      ? removeSub({ data: { zone: deleting.parent, name: deleting.name } })
-                      : remove({ data: { name: deleting.name } }),
-                  "Borrado",
-                )
-              }
-            >
-              Borrar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </section>
-  );
-}
-
-function InvitesSection({ panel, onChanged }: { panel: Panel; onChanged: () => Promise<unknown> }) {
+function InvitesSection({
+  invites,
+  onInvite,
+  onChanged,
+}: {
+  invites: Invite[];
+  onInvite: () => void;
+  onChanged: () => Promise<unknown>;
+}) {
   const revokeInvite = useServerFn(revokeStoreInvite);
   const fetchLink = useServerFn(getStoreInviteLink);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState<Invite | null>(null);
 
   const copy = async (id: string) => {
     setBusyId(id);
@@ -536,61 +354,131 @@ function InvitesSection({ panel, onChanged }: { panel: Panel; onChanged: () => P
     }
   };
 
-  const revoke = async (id: string) => {
-    setBusyId(id);
+  const revoke = async (invite: Invite) => {
+    setBusyId(invite.id);
     try {
-      await revokeInvite({ data: { invite_id: id } });
-      toast.success("Enlace revocado");
+      await revokeInvite({ data: { invite_id: invite.id } });
+      toast.success("Invitación revocada");
       await onChanged();
     } catch (e) {
-      toast.error(errorText(e, "No se pudo revocar el enlace"));
+      toast.error(errorText(e, "No se pudo revocar la invitación"));
     } finally {
       setBusyId(null);
+      setRevoking(null);
     }
   };
 
   return (
-    <section className="glass space-y-3 rounded-2xl p-5">
-      <h2 className="text-base font-semibold text-foreground">Enlaces activos</h2>
-      {panel.invites.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No hay enlaces activos.</p>
+    <SectionCard
+      title="Invitaciones enviadas"
+      count={invites.length}
+      description="Esperando a que la tienda llene su registro. Cada enlace sirve una vez y vence en 7 días."
+    >
+      {invites.length === 0 ? (
+        <EmptyState
+          icon={<Send size={20} />}
+          title="No hay invitaciones pendientes"
+          description="Invita a una tienda y pásale el enlace para que se registre."
+          action={
+            <Button size="sm" variant="outline" onClick={onInvite}>
+              <UserPlus size={14} /> Invitar tienda
+            </Button>
+          }
+        />
       ) : (
         <div className="divide-y divide-border">
-          {panel.invites.map((i) => (
-            <div key={i.id} className="flex items-center justify-between gap-3 py-2.5">
+          {invites.map((i) => (
+            <div key={i.id} className={rowClass}>
               <div className="min-w-0">
-                <p className="truncate text-sm text-foreground">{i.email}</p>
+                <p className="truncate text-sm font-medium text-foreground">{i.email}</p>
                 <p className="text-xs text-muted-foreground">
-                  {i.games?.name ?? "TCG"} · vence{" "}
-                  {new Date(i.expires_at).toLocaleDateString("es-MX")}
+                  {i.games?.name ?? "TCG"}
                   {!i.can_copy && " · URL no recuperable"}
                 </p>
               </div>
-              <div className="flex flex-shrink-0 gap-2">
+              <p className={whenClass}>
+                Vence {new Date(i.expires_at).toLocaleDateString("es-MX")}
+              </p>
+              <div className="flex flex-shrink-0 justify-end gap-2">
                 {i.can_copy && (
-                  <button
-                    type="button"
+                  <Button
+                    size="sm"
+                    variant="outline"
                     disabled={busyId === i.id}
                     onClick={() => copy(i.id)}
-                    className={`${secondaryButton} inline-flex items-center gap-1`}
                   >
                     <Copy size={12} /> Copiar URL
-                  </button>
+                  </Button>
                 )}
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant="ghost"
                   disabled={busyId === i.id}
-                  onClick={() => revoke(i.id)}
-                  className={secondaryButton}
+                  onClick={() => setRevoking(i)}
                 >
                   Revocar
-                </button>
+                </Button>
               </div>
             </div>
           ))}
         </div>
       )}
-    </section>
+
+      <AlertDialog open={Boolean(revoking)} onOpenChange={(open) => !open && setRevoking(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Revocar la invitación a {revoking?.email}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              El enlace dejará de funcionar. Si la tienda aún quiere entrar, tendrás que mandarle
+              una invitación nueva.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={Boolean(busyId)}
+              onClick={() => revoking && revoke(revoking)}
+            >
+              Revocar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </SectionCard>
+  );
+}
+
+function HistorySection({ items }: { items: HistoryItem[] }) {
+  const now = new Date();
+  return (
+    <SectionCard
+      title="Historial"
+      description="Lo que se resolvió en los últimos 30 días: solicitudes revisadas e invitaciones que no se usaron."
+    >
+      {items.length === 0 ? (
+        <EmptyState icon={<History size={20} />} title="Sin movimientos en los últimos 30 días" />
+      ) : (
+        <div className="divide-y divide-border">
+          {items.map((h) => (
+            <div key={h.id} className={rowClass}>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">{h.title}</p>
+                <p className="text-xs text-muted-foreground">{h.detail}</p>
+                {h.note && <p className="text-xs text-muted-foreground">Motivo: {h.note}</p>}
+              </div>
+              <p className={whenClass}>{ago(h.at, now)}</p>
+              <div className="flex justify-end">
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${OUTCOMES[h.outcome].className}`}
+                >
+                  {OUTCOMES[h.outcome].label}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
   );
 }
 
@@ -646,7 +534,7 @@ function InviteDialog({
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Copia el enlace y pásalo directo a {email.trim()}. Sirve una sola vez y vence en 7
-              días.
+              días. Lo verás en «Invitaciones enviadas» hasta que la tienda se registre.
             </p>
             {!canCopyLater && (
               <p role="alert" className="text-sm font-medium text-amber-400">
@@ -657,50 +545,53 @@ function InviteDialog({
             <code className="block break-all rounded-md border border-border bg-card p-3 text-xs text-foreground">
               {link}
             </code>
-            <button
-              type="button"
+            <Button
+              className="w-full"
               onClick={async () => {
                 await navigator.clipboard.writeText(link);
                 toast.success("Enlace copiado");
               }}
-              className={`${primaryButton} w-full`}
             >
-              <Copy size={12} /> Copiar enlace
-            </button>
+              <Copy size={14} /> Copiar enlace
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Revisa bien el correo: la tienda entrará con él.
-            </p>
-            <input
-              type="email"
-              aria-label="Correo de la tienda"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Correo de la tienda"
-              className={fieldClass}
-            />
-            <select
-              aria-label="TCG de la tienda"
-              value={selectedGame}
-              onChange={(e) => setGameId(e.target.value)}
-              className={fieldClass}
-            >
-              {games.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-email">Correo de la tienda</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tienda@correo.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Revísalo bien: la tienda entrará con este correo.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-game">TCG</Label>
+              <Select value={selectedGame} onValueChange={setGameId}>
+                <SelectTrigger id="invite-game">
+                  <SelectValue placeholder="Elige el TCG" />
+                </SelectTrigger>
+                <SelectContent>
+                  {games.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
               disabled={creating || !selectedGame || !/^\S+@\S+\.\S+$/.test(email.trim())}
               onClick={create}
-              className={`${primaryButton} w-full`}
             >
               {creating ? "Generando…" : "Generar enlace"}
-            </button>
+            </Button>
           </div>
         )}
       </DialogContent>
@@ -708,95 +599,128 @@ function InviteDialog({
   );
 }
 
-/** Pestañas de la página de tiendas. "stores" y `extraTabs` los pinta la página; el resto, aquí. */
-export function StoreAdminTabs({
-  active,
-  onChange,
-  extraTabs = [],
-  onApproved,
-}: {
-  active: string;
-  onChange: (tab: string) => void;
-  extraTabs?: { id: string; label: string }[];
-  onApproved?: () => void;
-}) {
+/** Página de altas: todo el camino de una tienda nueva, de la invitación a la aprobación. */
+export function StoreAltasPanel() {
   const fetchPanel = useServerFn(getStoreSignupPanel);
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [failed, setFailed] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [reviewing, setReviewing] = useState<SignupRequest | null>(null);
 
   const refresh = () =>
     fetchPanel()
-      .then(setPanel)
-      .catch(() => toast.error("No se pudieron cargar las invitaciones"));
+      .then((data) => {
+        setPanel(data);
+        setFailed(false);
+      })
+      .catch(() => setFailed(true));
 
   useEffect(() => {
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pendingCount = panel?.requests.length ?? 0;
-  const tabs = [
-    { id: "stores", label: "Tiendas" },
-    { id: "requests", label: "Solicitudes" },
-    { id: "registry", label: "Zonas e invitaciones" },
-    ...extraTabs,
-  ];
+  const invite = () => setInviting(true);
+  const now = new Date();
 
-  const afterReview = async () => {
-    await refresh();
-    onApproved?.();
-  };
+  let body: React.ReactNode;
+  if (panel) {
+    body = (
+      <div className="space-y-6">
+        <SectionCard
+          title="Por revisar"
+          count={panel.requests.length}
+          urgent
+          description="Tiendas que ya llenaron su registro. Revisa sus datos, asigna zona y aprueba."
+        >
+          {panel.requests.length === 0 ? (
+            <EmptyState
+              icon={<Inbox size={20} />}
+              title="No hay solicitudes por revisar"
+              description="Cuando una tienda invitada llene su registro, aparecerá aquí."
+            />
+          ) : (
+            <div className="divide-y divide-border">
+              {panel.requests.map((r) => (
+                <div key={r.id} className={rowClass}>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{r.store_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {r.city}, {r.state} · {r.games?.name ?? "TCG"} ·{" "}
+                      {r.zone ? (
+                        `${r.zone}${r.subzone ? ` · ${r.subzone}` : ""}`
+                      ) : (
+                        <span className="text-amber-400">Zona por definir</span>
+                      )}
+                    </p>
+                  </div>
+                  <p className={whenClass}>Llegó {ago(r.created_at, now)}</p>
+                  <div className="flex justify-end">
+                    <Button size="sm" onClick={() => setReviewing(r)}>
+                      Revisar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        <InvitesSection invites={panel.invites} onInvite={invite} onChanged={refresh} />
+        <HistorySection items={panel.history} />
+
+        <ReviewSheet
+          request={reviewing}
+          zones={panel.zones}
+          onClose={() => setReviewing(null)}
+          onDone={async () => {
+            await refresh();
+            refreshBadges();
+          }}
+        />
+      </div>
+    );
+  } else if (failed) {
+    body = (
+      <div className="glass rounded-2xl">
+        <EmptyState
+          title="No se pudo cargar"
+          description="Revisa tu conexión e intenta de nuevo."
+          action={
+            <Button size="sm" variant="outline" onClick={() => void refresh()}>
+              Reintentar
+            </Button>
+          }
+        />
+      </div>
+    );
+  } else {
+    body = (
+      <div className="flex justify-center py-12">
+        <Loader2 className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10">
-        <div role="tablist" className="flex flex-wrap">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={active === tab.id}
-              onClick={() => onChange(tab.id)}
-              className={`-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition ${
-                active === tab.id
-                  ? "border-primary text-white"
-                  : "border-transparent text-gray-400 hover:text-white"
-              }`}
-            >
-              {tab.label}
-              {tab.id === "requests" && pendingCount > 0 && (
-                <span className="rounded-full bg-amber-400 px-1.5 text-[11px] font-bold text-black">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          disabled={!panel}
-          onClick={() => setInviting(true)}
-          className={`${primaryButton} mb-2`}
-        >
-          <UserPlus size={14} /> Invitar tienda
-        </button>
-      </div>
-
-      {panel && active === "requests" && <RequestsTab panel={panel} onDone={afterReview} />}
-      {panel && active === "registry" && (
-        <div className="space-y-6">
-          <ZonesSection zones={panel.zones} onChanged={refresh} />
-          <InvitesSection panel={panel} onChanged={refresh} />
-        </div>
-      )}
-
+    <div>
+      <PageHeader
+        eyebrow="Red"
+        title="Altas de tiendas"
+        description="Invita tiendas, revisa su registro y apruébalas."
+        actions={
+          <Button onClick={invite} disabled={!panel}>
+            <UserPlus size={14} /> Invitar tienda
+          </Button>
+        }
+      />
+      {body}
       <InviteDialog
         open={inviting}
         games={panel?.games ?? []}
         onOpenChange={setInviting}
         onCreated={refresh}
       />
-    </>
+    </div>
   );
 }

@@ -19,6 +19,7 @@ import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 import { TablePager } from "@/components/ui/table-pager";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePagination } from "@/hooks/use-pagination";
+import { SearchInput } from "@/components/ui/search-input";
 import {
   PLAYER_STATUS_COLORS,
   PLAYER_STATUS_HELP,
@@ -145,19 +146,8 @@ export function PlayersBrowser({
 
   return (
     <>
-      <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3">
-        <Search size={16} className="shrink-0 text-gray-500" aria-hidden />
-        <Input
-          type="search"
-          aria-label="Buscar jugador"
-          placeholder="Buscar jugador…"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            pager.setPage(1);
-          }}
-          className="border-0 bg-transparent px-0 focus-visible:ring-0"
-        />
+      <div className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
+        <SearchInput value={query} onChange={setQuery} placeholder="Buscar jugador por Nexus Tag" />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -241,6 +231,8 @@ export function PlayersBrowser({
               page={pager.page}
               totalPages={pager.totalPages}
               onPageChange={pager.setPage}
+              total={pager.total}
+              pageSize={pager.pageSize}
             />
           </>
         )}

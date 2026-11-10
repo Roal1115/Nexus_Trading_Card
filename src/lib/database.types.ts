@@ -1785,6 +1785,9 @@ export type Database = {
           twitter: string | null;
           twitch: string | null;
           website: string | null;
+          manager_name: string | null;
+          manager_phone: string | null;
+          affiliation_plan: string | null;
         };
         Insert: {
           subzone?: string | null;
@@ -1796,6 +1799,9 @@ export type Database = {
           twitter?: string | null;
           twitch?: string | null;
           website?: string | null;
+          manager_name?: string | null;
+          manager_phone?: string | null;
+          affiliation_plan?: string | null;
           city: string;
           created_at?: string;
           email: string;

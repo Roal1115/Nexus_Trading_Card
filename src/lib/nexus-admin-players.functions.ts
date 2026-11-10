@@ -2,11 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNexusAdmin, failDb, generateTempPassword } from "./nexus-admin.server";
 import { requireNexusAdmin } from "./nexus-auth.middleware";
-import { logAction, PAGE_SIZE } from "./nexus-admin-shared";
+import { logAction } from "./nexus-admin-shared";
 import type { TablesUpdate } from "./database.types";
 import { statusAcrossStores } from "./player-status";
 import { todayInMexicoStr } from "./utils";
 
+// Igual que LIST_PAGE_SIZE en el cliente: todas las listas del panel muestran 12.
+const PAGE_SIZE = 12;
 
 export const listPlayers = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
@@ -157,7 +159,10 @@ export const setPlayerActive = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const { error } = await admin.from("players").update({ is_active: data.is_active }).eq("id", data.player_id);
+    const { error } = await admin
+      .from("players")
+      .update({ is_active: data.is_active })
+      .eq("id", data.player_id);
     if (error) failDb(error);
     return { ok: true };
   });
@@ -173,7 +178,8 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin } = context;
-    const baseCols = "id, geek_tag, display_name, email, avatar_url, role, home_store_id, is_active, created_at";
+    const baseCols =
+      "id, geek_tag, display_name, email, avatar_url, role, home_store_id, is_active, created_at";
     const extraCols = ", gender, birth_date, is_profile_public";
 
     let player: any = null;
@@ -184,7 +190,11 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
         .eq("id", data.player_id)
         .maybeSingle();
       if (r.error && /column .* does not exist/i.test(r.error.message)) {
-        const r2 = await admin.from("players").select(baseCols).eq("id", data.player_id).maybeSingle();
+        const r2 = await admin
+          .from("players")
+          .select(baseCols)
+          .eq("id", data.player_id)
+          .maybeSingle();
         if (r2.error) failDb(r2.error);
         player = r2.data;
       } else if (r.error) {
@@ -197,7 +207,11 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
 
     const [storeRes, resultsRes, snapsRes, tcgIdsRes] = await Promise.all([
       player.home_store_id
-        ? admin.from("stores").select("id, name, city, state").eq("id", player.home_store_id).maybeSingle()
+        ? admin
+            .from("stores")
+            .select("id, name, city, state")
+            .eq("id", player.home_store_id)
+            .maybeSingle()
         : Promise.resolve({ data: null, error: null } as const),
       admin
         .from("tournament_results")
@@ -209,12 +223,18 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
         .eq("player_id", data.player_id)
         .eq("timeframe_type", "SEMESTRAL")
         .order("timeframe_value", { ascending: false }),
-      admin.from("player_tcg_ids").select("game_id, tcg_user_id, games(name)").eq("player_id", data.player_id),
+      admin
+        .from("player_tcg_ids")
+        .select("game_id, tcg_user_id, games(name)")
+        .eq("player_id", data.player_id),
     ]);
 
     const tIds = Array.from(new Set((resultsRes.data ?? []).map((r) => r.tournament_id)));
     const { data: tournaments } = tIds.length
-      ? await admin.from("tournaments").select("id, tournament_date, game_id, store_id, status, league_id, games(name)").in("id", tIds)
+      ? await admin
+          .from("tournaments")
+          .select("id, tournament_date, game_id, store_id, status, league_id, games(name)")
+          .in("id", tIds)
       : { data: [] as any[] };
 
     // Mismo estado que ven manager y organizer, por TCG.
@@ -239,7 +259,10 @@ export const getPlayerDetail = createServerFn({ method: "POST" })
         game_id: gameId as string,
         game_name: ((visits[0] as any).games?.name ?? "—") as string,
         tournaments: visits.length,
-        last_visit: visits.map((t: any) => t.tournament_date as string).sort().at(-1) as string,
+        last_visit: visits
+          .map((t: any) => t.tournament_date as string)
+          .sort()
+          .at(-1) as string,
         status: statusAcrossStores(
           visits.map(toVisit),
           (held ?? []).filter((t: any) => t.game_id === gameId).map(toVisit),
@@ -345,7 +368,11 @@ export const updatePlayerDetail = createServerFn({ method: "POST" })
       if (error) failDb(error);
     }
 
-    const { data: target } = await admin.from("players").select("geek_tag").eq("id", data.player_id).maybeSingle();
+    const { data: target } = await admin
+      .from("players")
+      .select("geek_tag")
+      .eq("id", data.player_id)
+      .maybeSingle();
 
     await logAction(
       admin,
@@ -363,7 +390,11 @@ export const updatePlayerDetail = createServerFn({ method: "POST" })
 export const setPlayerRole = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
   .inputValidator(
-    (d: { player_id: string; role: "player" | "organizer" | "tcg_manager" | "admin"; home_store_id?: string | null }) =>
+    (d: {
+      player_id: string;
+      role: "player" | "organizer" | "tcg_manager" | "admin";
+      home_store_id?: string | null;
+    }) =>
       z
         .object({
           player_id: z.string().uuid(),
@@ -389,10 +420,18 @@ export const setPlayerRole = createServerFn({ method: "POST" })
       await admin.from("manager_games").delete().eq("player_id", data.player_id);
     }
 
-    await logAction(admin, player, "ROLE_CHANGED", "player", data.player_id, targetPlayer?.geek_tag ?? data.player_id, {
-      old_role: targetPlayer?.role,
-      new_role: data.role,
-    });
+    await logAction(
+      admin,
+      player,
+      "ROLE_CHANGED",
+      "player",
+      data.player_id,
+      targetPlayer?.geek_tag ?? data.player_id,
+      {
+        old_role: targetPlayer?.role,
+        new_role: data.role,
+      },
+    );
     return { ok: true };
   });
 
@@ -432,7 +471,14 @@ export const deletePlayerAccount = createServerFn({ method: "POST" })
     }
     const { error } = await admin.from("players").delete().eq("id", data.player_id);
     if (error) failDb(error);
-    await logAction(admin, actor, "ACCOUNT_DELETED", "player", data.player_id, (target as any).geek_tag);
+    await logAction(
+      admin,
+      actor,
+      "ACCOUNT_DELETED",
+      "player",
+      data.player_id,
+      (target as any).geek_tag,
+    );
     return { success: true };
   });
 
@@ -455,7 +501,9 @@ export const listStaffMembers = createServerFn({ method: "POST" })
     if (error) failDb(error);
 
     const storeIds = Array.from(
-      new Set((data ?? []).filter((p: any) => p.home_store_id).map((p: any) => p.home_store_id as string)),
+      new Set(
+        (data ?? []).filter((p: any) => p.home_store_id).map((p: any) => p.home_store_id as string),
+      ),
     );
     const storesRes = storeIds.length
       ? await admin.from("stores").select("id, name, city").in("id", storeIds)
@@ -536,11 +584,19 @@ export const upsertStaffMember = createServerFn({ method: "POST" })
         await admin.from("manager_games").delete().eq("player_id", existingByEmail.id);
       }
 
-      await logAction(admin, actor, "ROLE_CHANGED", "player", existingByEmail.id, existingByEmail.geek_tag, {
-        old_role: existingByEmail.role,
-        new_role: data.role,
-        source: "staff_upsert",
-      });
+      await logAction(
+        admin,
+        actor,
+        "ROLE_CHANGED",
+        "player",
+        existingByEmail.id,
+        existingByEmail.geek_tag,
+        {
+          old_role: existingByEmail.role,
+          new_role: data.role,
+          source: "staff_upsert",
+        },
+      );
 
       return { player_id: existingByEmail.id as string, was_existing: true };
     }
@@ -630,7 +686,10 @@ export const deactivateStaffMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player: actor } = context;
     if (data.action === "deactivate") {
-      const { error } = await admin.from("players").update({ is_active: false }).eq("id", data.player_id);
+      const { error } = await admin
+        .from("players")
+        .update({ is_active: false })
+        .eq("id", data.player_id);
       if (error) failDb(error);
       await logAction(admin, actor, "ROLE_CHANGED", "player", data.player_id, data.player_id, {
         action: "deactivated",

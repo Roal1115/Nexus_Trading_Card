@@ -37,9 +37,11 @@ import { Route as AdminPlayersRouteImport } from './routes/admin.players'
 import { Route as AdminPlayoffsRouteImport } from './routes/admin.playoffs'
 import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminSeasonsRouteImport } from './routes/admin.seasons'
+import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminStoresRouteImport } from './routes/admin.stores'
 import { Route as AdminTournamentsPanelRouteImport } from './routes/admin.tournaments-panel'
 import { Route as AdminUploadRouteImport } from './routes/admin.upload'
+import { Route as AdminZonasRouteImport } from './routes/admin.zonas'
 import { Route as DocsFeaturesRouteImport } from './routes/docs.features'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer.index'
 import { Route as OrganizerAnalyticsRouteImport } from './routes/organizer.analytics'
@@ -68,7 +70,9 @@ import { Route as TcgManagerPlayoffsRouteImport } from './routes/tcg-manager.pla
 import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
 import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
+import { Route as TcgManagerZonasRouteImport } from './routes/tcg-manager.zonas'
 import { Route as TournamentsIdRouteImport } from './routes/tournaments.$id'
+import { Route as AdminStoresAltasRouteImport } from './routes/admin.stores_.altas'
 import { Route as AdminTournamentsIndexRouteImport } from './routes/admin.tournaments.index'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as ApiCronPublishApprovedRouteImport } from './routes/api.cron.publish-approved'
@@ -81,6 +85,7 @@ import { Route as SessionsTournamentTournamentIdRouteImport } from './routes/ses
 import { Route as StoresSlugIndexRouteImport } from './routes/stores.$slug.index'
 import { Route as StoresSlugTournamentsRouteImport } from './routes/stores.$slug.tournaments'
 import { Route as TcgManagerPlayersPlayerIdRouteImport } from './routes/tcg-manager.players_.$playerId'
+import { Route as TcgManagerStoresAltasRouteImport } from './routes/tcg-manager.stores_.altas'
 import { Route as TcgManagerTournamentsIndexRouteImport } from './routes/tcg-manager.tournaments.index'
 import { Route as TcgManagerTournamentsIdRouteImport } from './routes/tcg-manager.tournaments.$id'
 import { Route as PlayersPlayerTagSeasonSeasonIdRouteImport } from './routes/players.$playerTag_.season.$seasonId'
@@ -225,6 +230,11 @@ const AdminSeasonsRoute = AdminSeasonsRouteImport.update({
   path: '/seasons',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminStaffRoute = AdminStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminStoresRoute = AdminStoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -238,6 +248,11 @@ const AdminTournamentsPanelRoute = AdminTournamentsPanelRouteImport.update({
 const AdminUploadRoute = AdminUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminZonasRoute = AdminZonasRouteImport.update({
+  id: '/zonas',
+  path: '/zonas',
   getParentRoute: () => AdminRoute,
 } as any)
 const DocsFeaturesRoute = DocsFeaturesRouteImport.update({
@@ -381,10 +396,20 @@ const TcgManagerUploadRoute = TcgManagerUploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => TcgManagerRoute,
 } as any)
+const TcgManagerZonasRoute = TcgManagerZonasRouteImport.update({
+  id: '/zonas',
+  path: '/zonas',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
 const TournamentsIdRoute = TournamentsIdRouteImport.update({
   id: '/tournaments/$id',
   path: '/tournaments/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminStoresAltasRoute = AdminStoresAltasRouteImport.update({
+  id: '/stores_/altas',
+  path: '/stores/altas',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminTournamentsIndexRoute = AdminTournamentsIndexRouteImport.update({
   id: '/tournaments/',
@@ -452,6 +477,11 @@ const TcgManagerPlayersPlayerIdRoute =
     path: '/players/$playerId',
     getParentRoute: () => TcgManagerRoute,
   } as any)
+const TcgManagerStoresAltasRoute = TcgManagerStoresAltasRouteImport.update({
+  id: '/stores_/altas',
+  path: '/stores/altas',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
 const TcgManagerTournamentsIndexRoute =
   TcgManagerTournamentsIndexRouteImport.update({
     id: '/tournaments/',
@@ -498,9 +528,11 @@ export interface FileRoutesByFullPath {
   '/admin/playoffs': typeof AdminPlayoffsRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/admin/zonas': typeof AdminZonasRoute
   '/docs/features': typeof DocsFeaturesRoute
   '/organizer/analytics': typeof OrganizerAnalyticsRoute
   '/organizer/appeals': typeof OrganizerAppealsRoute
@@ -525,12 +557,14 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
+  '/tcg-manager/zonas': typeof TcgManagerZonasRoute
   '/tournaments/$id': typeof TournamentsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/sessions/': typeof SessionsIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
+  '/admin/stores/altas': typeof AdminStoresAltasRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
@@ -540,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/stores/$slug/tournaments': typeof StoresSlugTournamentsRoute
   '/tcg-manager/players/$playerId': typeof TcgManagerPlayersPlayerIdRoute
+  '/tcg-manager/stores/altas': typeof TcgManagerStoresAltasRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/admin/tournaments/': typeof AdminTournamentsIndexRoute
   '/organizer/tournaments/': typeof OrganizerTournamentsIndexRoute
@@ -570,9 +605,11 @@ export interface FileRoutesByTo {
   '/admin/playoffs': typeof AdminPlayoffsRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/admin/zonas': typeof AdminZonasRoute
   '/docs/features': typeof DocsFeaturesRoute
   '/organizer/analytics': typeof OrganizerAnalyticsRoute
   '/organizer/appeals': typeof OrganizerAppealsRoute
@@ -596,12 +633,14 @@ export interface FileRoutesByTo {
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
+  '/tcg-manager/zonas': typeof TcgManagerZonasRoute
   '/tournaments/$id': typeof TournamentsIdRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/sessions': typeof SessionsIndexRoute
   '/stores': typeof StoresIndexRoute
   '/tcg-manager': typeof TcgManagerIndexRoute
+  '/admin/stores/altas': typeof AdminStoresAltasRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
@@ -611,6 +650,7 @@ export interface FileRoutesByTo {
   '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/stores/$slug/tournaments': typeof StoresSlugTournamentsRoute
   '/tcg-manager/players/$playerId': typeof TcgManagerPlayersPlayerIdRoute
+  '/tcg-manager/stores/altas': typeof TcgManagerStoresAltasRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/admin/tournaments': typeof AdminTournamentsIndexRoute
   '/organizer/tournaments': typeof OrganizerTournamentsIndexRoute
@@ -647,9 +687,11 @@ export interface FileRoutesById {
   '/admin/playoffs': typeof AdminPlayoffsRoute
   '/admin/publish': typeof AdminPublishRoute
   '/admin/seasons': typeof AdminSeasonsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/admin/stores': typeof AdminStoresRoute
   '/admin/tournaments-panel': typeof AdminTournamentsPanelRoute
   '/admin/upload': typeof AdminUploadRoute
+  '/admin/zonas': typeof AdminZonasRoute
   '/docs/features': typeof DocsFeaturesRoute
   '/organizer/analytics': typeof OrganizerAnalyticsRoute
   '/organizer/appeals': typeof OrganizerAppealsRoute
@@ -674,12 +716,14 @@ export interface FileRoutesById {
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
+  '/tcg-manager/zonas': typeof TcgManagerZonasRoute
   '/tournaments/$id': typeof TournamentsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/sessions/': typeof SessionsIndexRoute
   '/stores/': typeof StoresIndexRoute
   '/tcg-manager/': typeof TcgManagerIndexRoute
+  '/admin/stores_/altas': typeof AdminStoresAltasRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/api/cron/publish-approved': typeof ApiCronPublishApprovedRoute
   '/organizer/leagues_/$leagueId': typeof OrganizerLeaguesLeagueIdRoute
@@ -689,6 +733,7 @@ export interface FileRoutesById {
   '/sessions/tournament/$tournamentId': typeof SessionsTournamentTournamentIdRoute
   '/stores/$slug/tournaments': typeof StoresSlugTournamentsRoute
   '/tcg-manager/players_/$playerId': typeof TcgManagerPlayersPlayerIdRoute
+  '/tcg-manager/stores_/altas': typeof TcgManagerStoresAltasRoute
   '/tcg-manager/tournaments/$id': typeof TcgManagerTournamentsIdRoute
   '/admin/tournaments/': typeof AdminTournamentsIndexRoute
   '/organizer/tournaments/': typeof OrganizerTournamentsIndexRoute
@@ -726,9 +771,11 @@ export interface FileRouteTypes {
     | '/admin/playoffs'
     | '/admin/publish'
     | '/admin/seasons'
+    | '/admin/staff'
     | '/admin/stores'
     | '/admin/tournaments-panel'
     | '/admin/upload'
+    | '/admin/zonas'
     | '/docs/features'
     | '/organizer/analytics'
     | '/organizer/appeals'
@@ -753,12 +800,14 @@ export interface FileRouteTypes {
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
+    | '/tcg-manager/zonas'
     | '/tournaments/$id'
     | '/admin/'
     | '/organizer/'
     | '/sessions/'
     | '/stores/'
     | '/tcg-manager/'
+    | '/admin/stores/altas'
     | '/admin/tournaments/$id'
     | '/api/cron/publish-approved'
     | '/organizer/leagues/$leagueId'
@@ -768,6 +817,7 @@ export interface FileRouteTypes {
     | '/sessions/tournament/$tournamentId'
     | '/stores/$slug/tournaments'
     | '/tcg-manager/players/$playerId'
+    | '/tcg-manager/stores/altas'
     | '/tcg-manager/tournaments/$id'
     | '/admin/tournaments/'
     | '/organizer/tournaments/'
@@ -798,9 +848,11 @@ export interface FileRouteTypes {
     | '/admin/playoffs'
     | '/admin/publish'
     | '/admin/seasons'
+    | '/admin/staff'
     | '/admin/stores'
     | '/admin/tournaments-panel'
     | '/admin/upload'
+    | '/admin/zonas'
     | '/docs/features'
     | '/organizer/analytics'
     | '/organizer/appeals'
@@ -824,12 +876,14 @@ export interface FileRouteTypes {
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
+    | '/tcg-manager/zonas'
     | '/tournaments/$id'
     | '/admin'
     | '/organizer'
     | '/sessions'
     | '/stores'
     | '/tcg-manager'
+    | '/admin/stores/altas'
     | '/admin/tournaments/$id'
     | '/api/cron/publish-approved'
     | '/organizer/leagues/$leagueId'
@@ -839,6 +893,7 @@ export interface FileRouteTypes {
     | '/sessions/tournament/$tournamentId'
     | '/stores/$slug/tournaments'
     | '/tcg-manager/players/$playerId'
+    | '/tcg-manager/stores/altas'
     | '/tcg-manager/tournaments/$id'
     | '/admin/tournaments'
     | '/organizer/tournaments'
@@ -874,9 +929,11 @@ export interface FileRouteTypes {
     | '/admin/playoffs'
     | '/admin/publish'
     | '/admin/seasons'
+    | '/admin/staff'
     | '/admin/stores'
     | '/admin/tournaments-panel'
     | '/admin/upload'
+    | '/admin/zonas'
     | '/docs/features'
     | '/organizer/analytics'
     | '/organizer/appeals'
@@ -901,12 +958,14 @@ export interface FileRouteTypes {
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
+    | '/tcg-manager/zonas'
     | '/tournaments/$id'
     | '/admin/'
     | '/organizer/'
     | '/sessions/'
     | '/stores/'
     | '/tcg-manager/'
+    | '/admin/stores_/altas'
     | '/admin/tournaments/$id'
     | '/api/cron/publish-approved'
     | '/organizer/leagues_/$leagueId'
@@ -916,6 +975,7 @@ export interface FileRouteTypes {
     | '/sessions/tournament/$tournamentId'
     | '/stores/$slug/tournaments'
     | '/tcg-manager/players_/$playerId'
+    | '/tcg-manager/stores_/altas'
     | '/tcg-manager/tournaments/$id'
     | '/admin/tournaments/'
     | '/organizer/tournaments/'
@@ -1149,6 +1209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSeasonsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/staff': {
+      id: '/admin/staff'
+      path: '/staff'
+      fullPath: '/admin/staff'
+      preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/stores': {
       id: '/admin/stores'
       path: '/stores'
@@ -1168,6 +1235,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/admin/upload'
       preLoaderRoute: typeof AdminUploadRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/zonas': {
+      id: '/admin/zonas'
+      path: '/zonas'
+      fullPath: '/admin/zonas'
+      preLoaderRoute: typeof AdminZonasRouteImport
       parentRoute: typeof AdminRoute
     }
     '/docs/features': {
@@ -1366,12 +1440,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TcgManagerUploadRouteImport
       parentRoute: typeof TcgManagerRoute
     }
+    '/tcg-manager/zonas': {
+      id: '/tcg-manager/zonas'
+      path: '/zonas'
+      fullPath: '/tcg-manager/zonas'
+      preLoaderRoute: typeof TcgManagerZonasRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
     '/tournaments/$id': {
       id: '/tournaments/$id'
       path: '/tournaments/$id'
       fullPath: '/tournaments/$id'
       preLoaderRoute: typeof TournamentsIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/stores_/altas': {
+      id: '/admin/stores_/altas'
+      path: '/stores/altas'
+      fullPath: '/admin/stores/altas'
+      preLoaderRoute: typeof AdminStoresAltasRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/tournaments/': {
       id: '/admin/tournaments/'
@@ -1457,6 +1545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TcgManagerPlayersPlayerIdRouteImport
       parentRoute: typeof TcgManagerRoute
     }
+    '/tcg-manager/stores_/altas': {
+      id: '/tcg-manager/stores_/altas'
+      path: '/stores/altas'
+      fullPath: '/tcg-manager/stores/altas'
+      preLoaderRoute: typeof TcgManagerStoresAltasRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
     '/tcg-manager/tournaments/': {
       id: '/tcg-manager/tournaments/'
       path: '/tournaments'
@@ -1492,10 +1587,13 @@ interface AdminRouteChildren {
   AdminPlayoffsRoute: typeof AdminPlayoffsRoute
   AdminPublishRoute: typeof AdminPublishRoute
   AdminSeasonsRoute: typeof AdminSeasonsRoute
+  AdminStaffRoute: typeof AdminStaffRoute
   AdminStoresRoute: typeof AdminStoresRoute
   AdminTournamentsPanelRoute: typeof AdminTournamentsPanelRoute
   AdminUploadRoute: typeof AdminUploadRoute
+  AdminZonasRoute: typeof AdminZonasRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminStoresAltasRoute: typeof AdminStoresAltasRoute
   AdminTournamentsIdRoute: typeof AdminTournamentsIdRoute
   AdminTournamentsIndexRoute: typeof AdminTournamentsIndexRoute
 }
@@ -1511,10 +1609,13 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPlayoffsRoute: AdminPlayoffsRoute,
   AdminPublishRoute: AdminPublishRoute,
   AdminSeasonsRoute: AdminSeasonsRoute,
+  AdminStaffRoute: AdminStaffRoute,
   AdminStoresRoute: AdminStoresRoute,
   AdminTournamentsPanelRoute: AdminTournamentsPanelRoute,
   AdminUploadRoute: AdminUploadRoute,
+  AdminZonasRoute: AdminZonasRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminStoresAltasRoute: AdminStoresAltasRoute,
   AdminTournamentsIdRoute: AdminTournamentsIdRoute,
   AdminTournamentsIndexRoute: AdminTournamentsIndexRoute,
 }
@@ -1612,8 +1713,10 @@ interface TcgManagerRouteChildren {
   TcgManagerStoresRoute: typeof TcgManagerStoresRoute
   TcgManagerTournamentsPanelRoute: typeof TcgManagerTournamentsPanelRoute
   TcgManagerUploadRoute: typeof TcgManagerUploadRoute
+  TcgManagerZonasRoute: typeof TcgManagerZonasRoute
   TcgManagerIndexRoute: typeof TcgManagerIndexRoute
   TcgManagerPlayersPlayerIdRoute: typeof TcgManagerPlayersPlayerIdRoute
+  TcgManagerStoresAltasRoute: typeof TcgManagerStoresAltasRoute
   TcgManagerTournamentsIdRoute: typeof TcgManagerTournamentsIdRoute
   TcgManagerTournamentsIndexRoute: typeof TcgManagerTournamentsIndexRoute
 }
@@ -1630,8 +1733,10 @@ const TcgManagerRouteChildren: TcgManagerRouteChildren = {
   TcgManagerStoresRoute: TcgManagerStoresRoute,
   TcgManagerTournamentsPanelRoute: TcgManagerTournamentsPanelRoute,
   TcgManagerUploadRoute: TcgManagerUploadRoute,
+  TcgManagerZonasRoute: TcgManagerZonasRoute,
   TcgManagerIndexRoute: TcgManagerIndexRoute,
   TcgManagerPlayersPlayerIdRoute: TcgManagerPlayersPlayerIdRoute,
+  TcgManagerStoresAltasRoute: TcgManagerStoresAltasRoute,
   TcgManagerTournamentsIdRoute: TcgManagerTournamentsIdRoute,
   TcgManagerTournamentsIndexRoute: TcgManagerTournamentsIndexRoute,
 }

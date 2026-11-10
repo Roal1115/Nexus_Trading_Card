@@ -61,15 +61,29 @@ export const activateSeason = createServerFn({ method: "POST" })
   .inputValidator((d: { season_id: string }) => z.object({ season_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
-    const { error: de } = await admin.from("seasons").update({ is_active: false }).neq("id", data.season_id);
+    const { error: de } = await admin
+      .from("seasons")
+      .update({ is_active: false })
+      .neq("id", data.season_id);
     if (de) failDb(de);
     const { error } = await admin
       .from("seasons")
       .update({ is_active: true, status: "ACTIVE" })
       .eq("id", data.season_id);
     if (error) failDb(error);
-    const { data: season } = await admin.from("seasons").select("name").eq("id", data.season_id).maybeSingle();
-    await logAction(admin, player, "SEASON_ACTIVATED", "season", data.season_id, season?.name ?? data.season_id);
+    const { data: season } = await admin
+      .from("seasons")
+      .select("name")
+      .eq("id", data.season_id)
+      .maybeSingle();
+    await logAction(
+      admin,
+      player,
+      "SEASON_ACTIVATED",
+      "season",
+      data.season_id,
+      season?.name ?? data.season_id,
+    );
     return { ok: true };
   });
 
@@ -83,8 +97,19 @@ export const closeSeason = createServerFn({ method: "POST" })
       .update({ is_active: false, status: "CLOSED" })
       .eq("id", data.season_id);
     if (error) failDb(error);
-    const { data: season } = await admin.from("seasons").select("name").eq("id", data.season_id).maybeSingle();
-    await logAction(admin, player, "SEASON_CLOSED", "season", data.season_id, season?.name ?? data.season_id);
+    const { data: season } = await admin
+      .from("seasons")
+      .select("name")
+      .eq("id", data.season_id)
+      .maybeSingle();
+    await logAction(
+      admin,
+      player,
+      "SEASON_CLOSED",
+      "season",
+      data.season_id,
+      season?.name ?? data.season_id,
+    );
     return { ok: true };
   });
 
@@ -120,7 +145,10 @@ export const updateSeason = createServerFn({ method: "POST" })
       throw new Error("La fecha de fin debe ser posterior a la de inicio.");
     }
     if (data.status === "ACTIVE") {
-      const { error: de } = await admin.from("seasons").update({ is_active: false }).neq("id", data.season_id);
+      const { error: de } = await admin
+        .from("seasons")
+        .update({ is_active: false })
+        .neq("id", data.season_id);
       if (de) failDb(de);
     }
     const { error } = await admin
@@ -184,7 +212,9 @@ export const listAuditLog = createServerFn({ method: "POST" })
     if (data.search) {
       const s = data.search.replace(/[%,]/g, "");
       const pat = `%${s}%`;
-      q = q.or(`actor_tag.ilike.${pat},target_label.ilike.${pat},action.ilike.${pat},target_type.ilike.${pat}`);
+      q = q.or(
+        `actor_tag.ilike.${pat},target_label.ilike.${pat},action.ilike.${pat},target_type.ilike.${pat}`,
+      );
     }
 
     const { data: logs, count, error } = await q;
@@ -214,7 +244,9 @@ export type AuditLogRow = {
 // ---------- Badge counts ----------
 export const getAdminBadgeCounts = createServerFn({ method: "POST" })
   .middleware([requireNexusAdmin])
-  .inputValidator((d: { activity_last_seen?: string }) => z.object({ activity_last_seen: z.string().optional() }).parse(d))
+  .inputValidator((d: { activity_last_seen?: string }) =>
+    z.object({ activity_last_seen: z.string().optional() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { admin } = context;
     const nowIso = new Date().toISOString();
@@ -241,18 +273,20 @@ export const getAdminBadgeCounts = createServerFn({ method: "POST" })
       activityQ = activityQ.gt("created_at", data.activity_last_seen);
     }
 
-    const [pending, readyToPublish, approvedActive, activityCount] = await Promise.all([
-      pendingP,
-      readyP,
-      approvedActiveP,
-      activityQ,
-    ]);
+    const storeRequestsP = admin
+      .from("store_signup_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+
+    const [pending, readyToPublish, approvedActive, activityCount, storeRequests] =
+      await Promise.all([pendingP, readyP, approvedActiveP, activityQ, storeRequestsP]);
 
     return {
       pending: pending.count ?? 0,
       readyToPublish: readyToPublish.count ?? 0,
       approvedActive: approvedActive.count ?? 0,
       activity: activityCount.count ?? 0,
+      storeRequests: storeRequests.count ?? 0,
     };
   });
 

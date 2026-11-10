@@ -17,6 +17,11 @@ import {
 } from "lucide-react";
 import { getManagerCalendar } from "@/lib/nexus-manager.functions";
 import { CANCELLED_TILE_CLASS, ZONE_COLORS } from "@/lib/game-colors";
+import {
+  StatusBadge,
+  TournamentContacts,
+  TournamentDetailsTable,
+} from "@/components/calendar/tournament-details";
 import { NationalScheduleEditSection } from "@/components/calendar/national-schedule-edit-section";
 import { CancelOccurrenceSection, FichaSection } from "@/components/calendar/occurrence-panel";
 import { SlotRsvpList } from "@/components/calendar/slot-rsvp";
@@ -82,6 +87,13 @@ function AdminCalendarPage() {
   const [storeFilter, setStoreFilter] = useState<string>("all");
   const [gameFilter, setGameFilter] = useState<string>("all");
   const [selectedEntry, setSelectedEntry] = useState<CalEntry | null>(null);
+  // El detalle es un modal propio: Escape lo cierra, como los diálogos de shadcn.
+  useEffect(() => {
+    if (!selectedEntry) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSelectedEntry(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedEntry]);
 
   const reload = () => {
     setLoading(true);
@@ -422,123 +434,7 @@ function AdminCalendarPage() {
         </div>
       </div>
 
-      {/* Detail table */}
-      <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/10">
-          <h2 className="text-sm font-semibold text-white">Detalle de torneos</h2>
-        </div>
-
-        <div className="overflow-x-auto hidden sm:block">
-          <table className="w-full text-sm">
-            <thead className="bg-black/40 text-xs uppercase text-gray-400">
-              <tr>
-                <th scope="col" className="text-left px-4 py-2">
-                  Tienda
-                </th>
-                <th scope="col" className="text-left px-4 py-2">
-                  Zona
-                </th>
-                <th scope="col" className="text-left px-4 py-2">
-                  Día / Hora
-                </th>
-                <th scope="col" className="text-left px-4 py-2">
-                  Estado
-                </th>
-                <th scope="col" className="text-left px-4 py-2">
-                  Contacto
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEntries.map((e) => {
-                const zoneColor = ZONE_COLORS[e.zone] ?? ZONE_COLORS["Zona Extendida"];
-                const waLink = e.phone ? `https://wa.me/${e.phone.replace(/\D/g, "")}` : null;
-                return (
-                  <tr key={e.id} className="border-t border-white/5">
-                    <td className="px-4 py-3">
-                      <div className="text-white font-medium">{e.store_name}</div>
-                      <div className="text-xs text-gray-400">{e.city}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${zoneColor.bg} ${zoneColor.text} border ${zoneColor.border}`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${zoneColor.dot}`} />
-                        {e.zone.replace("Zona ", "")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-300">
-                      {DAY_NAMES[e.day_of_week]} · {e.start_time.slice(0, 5)}
-                      <div className="text-xs text-gray-500">{e.date}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={e.report_status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        {e.organizer_tag && (
-                          <span className="text-xs text-gray-300">{e.organizer_tag}</span>
-                        )}
-                        {waLink && (
-                          <a
-                            href={waLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300"
-                          >
-                            <MessageCircle size={12} />
-                            WhatsApp
-                          </a>
-                        )}
-                        {e.phone && <span className="text-xs text-gray-500">{e.phone}</span>}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile cards */}
-        <div className="sm:hidden divide-y divide-white/5">
-          {filteredEntries.map((e) => {
-            const zoneColor = ZONE_COLORS[e.zone] ?? ZONE_COLORS["Zona Extendida"];
-            const waLink = e.phone ? `https://wa.me/${e.phone.replace(/\D/g, "")}` : null;
-            return (
-              <div key={e.id} className="p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-white">{e.store_name}</div>
-                  <StatusBadge status={e.report_status} />
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${zoneColor.bg} ${zoneColor.text}`}
-                  >
-                    {e.zone.replace("Zona ", "")}
-                  </span>
-                  <span>·</span>
-                  <span>
-                    {DAY_NAMES[e.day_of_week]} {e.start_time.slice(0, 5)}
-                  </span>
-                  <span>·</span>
-                  <span>{e.city}</span>
-                </div>
-                {waLink && (
-                  <a
-                    href={waLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-green-400"
-                  >
-                    <MessageCircle size={12} /> WhatsApp · {e.phone}
-                  </a>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <TournamentDetailsTable entries={filteredEntries} />
 
       {/* Modal */}
       {selectedEntry && (
@@ -548,6 +444,9 @@ function AdminCalendarPage() {
         >
           <div
             className="bg-[#0e0e10] border-white/10 w-full h-dvh overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-5 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-lg sm:rounded-2xl sm:border sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedEntry.store_name}
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-start justify-between">
@@ -645,33 +544,7 @@ function AdminCalendarPage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-              <div className="text-[10px] uppercase text-gray-500">Organizador</div>
-              {selectedEntry.organizer_tag ? (
-                <div className="space-y-2 mt-1">
-                  <div className="flex items-center gap-2 text-sm text-white">
-                    <Store size={14} className="text-gray-400" />
-                    {selectedEntry.organizer_tag}
-                  </div>
-                  {selectedEntry.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Phone size={14} className="text-gray-400" />
-                      <span>{selectedEntry.phone}</span>
-                      <a
-                        href={`https://wa.me/${selectedEntry.phone.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 border border-green-400/20 rounded px-2 py-1 transition"
-                      >
-                        <MessageCircle size={12} /> WhatsApp
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500 mt-1">Sin organizador asignado</div>
-              )}
-            </div>
+            <TournamentContacts entry={selectedEntry} />
           </div>
         </div>
       )}
@@ -726,29 +599,5 @@ function CalendarEntry({
         </div>
       )}
     </button>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    submitted: {
-      label: "Enviado",
-      className: "bg-green-500/20 text-green-400",
-    },
-    overdue: { label: "Overdue", className: "bg-red-500/20 text-red-400" },
-    cancelled: { label: "Cancelado", className: "bg-red-500/20 text-red-300" },
-    pending: {
-      label: "Pendiente",
-      className: "bg-yellow-500/20 text-yellow-400",
-    },
-    upcoming: { label: "Próximo", className: "bg-gray-500/20 text-gray-400" },
-  };
-  const s = map[status] ?? map.upcoming;
-  return (
-    <span
-      className={`inline-block text-[10px] uppercase font-semibold px-2 py-0.5 rounded ${s.className}`}
-    >
-      {s.label}
-    </span>
   );
 }
