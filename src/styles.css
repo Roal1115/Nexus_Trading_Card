@@ -272,6 +272,12 @@
   .text-danger {
     color: #ff5f6d;
   }
+  .bg-success {
+    background-color: #4ef0a2;
+  }
+  .bg-danger {
+    background-color: #ff5f6d;
+  }
   .text-secondary-label {
     color: #aab6d1;
   }

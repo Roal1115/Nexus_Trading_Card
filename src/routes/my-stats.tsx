@@ -7,7 +7,6 @@ import {
   ShieldQuestion,
   AlertTriangle,
   BarChart3,
-  HelpCircle,
   Search,
   ChevronRight,
   X,
@@ -17,7 +16,7 @@ import { getMyStats } from "@/lib/nexus-player.functions";
 import { myStatsGamesQuery, myStatsSourceQuery } from "@/lib/my-stats-queries";
 import { myDashboardQuery } from "@/lib/dashboard-queries";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
-import { InlineError } from "@/components/stores/store-ui";
+import { ChipGroup, FOCUS_RING, InlineError, SECTION } from "@/components/stores/store-ui";
 import { shortLeaderName, setBadge } from "@/lib/leader-display";
 import { LeaderArtPicker } from "@/components/leaders/LeaderArtPicker";
 import type { DeckIdentifier } from "@/components/tournament-tracker/round-ui";
@@ -48,7 +47,8 @@ type StatsSource = "official" | "casual" | "pending" | "all";
 type TimeRange = "30" | "90" | "all";
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
-const dateCutoff = (days: number) => new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+const dateCutoff = (days: number) =>
+  new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
 
 // Las respuestas vacías de casual y pendientes no traen la lista.
 const noLeaderOf = (s: { no_leader_rounds?: StatsData["no_leader_rounds"] } | null) =>
@@ -124,32 +124,32 @@ export function filterStatsByDate(stats: StatsData, days: number): StatsData {
   return {
     ...stats,
     total_rounds_in_meta: 0,
-    total_tournaments_won: (stats.total_tournament_win_dates ?? []).filter(
-      (date) => date >= cutoff,
-    ).length,
+    total_tournaments_won: (stats.total_tournament_win_dates ?? []).filter((date) => date >= cutoff)
+      .length,
     leaders,
     no_leader_rounds: noLeaderOf(stats).filter((r) => r.date && r.date >= cutoff),
   };
 }
 
 const STAT_TOOLTIPS: Record<string, string> = {
-  "WR Confirmado":
+  "Win rate": "Porcentaje de rondas ganadas. Todas las rondas de este leader están confirmadas.",
+  "Win rate confirmado":
     "Calculado solo con rondas confirmadas por ambos jugadores. Es el número más confiable.",
-  "WR Total":
+  "Win rate total":
     "Incluye todas las rondas, confirmadas y pendientes. Puede variar cuando se confirmen datos.",
-  "Play Rate":
-    "Porcentaje de rondas del meta total que jugaste con este leader. Indica qué tan frecuentemente lo usas vs el resto de jugadores.",
-  "Total Games": "Total de rondas registradas con este leader (excluye byes).",
-  "Torneos Ganados":
+  "Uso del leader": "Porcentaje de tus partidas que jugaste con este leader.",
+  Partidas: "Total de rondas registradas con este leader (excluye byes).",
+  "Torneos ganados":
     "Torneos oficiales donde terminaste en 1er lugar jugando principalmente con este leader.",
-  "1st Winrate":
-    "Win Rate cuando tú juegas primero (tu turno 1). En One Piece, jugar primero o segundo impacta significativamente la estrategia.",
-  "2nd Winrate": "Win Rate cuando juegas segundo (oponente tiene turno 1).",
-  "WR ganando dado": "Tu win rate en las partidas donde ganaste la tirada de dado inicial.",
-  "WR perdiendo dado": "Tu win rate en las partidas donde perdiste la tirada de dado inicial.",
+  "Win rate jugando primero":
+    "Tu win rate cuando juegas primero (tienes el turno 1). En One Piece, jugar primero o segundo impacta significativamente la estrategia.",
+  "Win rate jugando segundo": "Tu win rate cuando juegas segundo (tu oponente tiene el turno 1).",
+  "Win rate ganando dado": "Tu win rate en las partidas donde ganaste la tirada de dado inicial.",
+  "Win rate perdiendo dado":
+    "Tu win rate en las partidas donde perdiste la tirada de dado inicial.",
   "Mejor puesto":
     "Tu mejor posición final en un torneo, considerando todos tus torneos oficiales de este TCG.",
-  "Top 8 rate": "Porcentaje de torneos donde terminaste en el top 8.",
+  "Torneos en Top 8": "Porcentaje de torneos donde terminaste en el top 8.",
 };
 
 // Agregados a nivel jugador (no por leader): racha, dado, turno — derivados del round_history
@@ -224,46 +224,78 @@ export function computeTournamentSummary(events: DashboardEvent[], gameId: strin
   };
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  const [show, setShow] = useState(false);
-  const tooltip = STAT_TOOLTIPS[label];
+const SOURCE_COPY: Record<StatsSource, { label: string; note: string }> = {
+  official: {
+    label: "Oficial",
+    note: "Solo torneos publicados. Cuentan para tu ranking.",
+  },
+  casual: { label: "Casual", note: "Partidas casuales y de práctica." },
+  pending: {
+    label: "Pendientes",
+    note: "Partidas en espera de que el organizador publique el torneo. Pasarán a Oficial automáticamente.",
+  },
+  all: { label: "Todo", note: "Todas tus partidas combinadas (incluye pendientes)." },
+};
 
+// Stats que Casual no muestra (puesto, torneos y meta solo existen en torneos oficiales).
+const OFFICIAL_ONLY_STATS = new Set([
+  "Torneos ganados",
+  "Win rate total",
+  "Uso del leader",
+  "Mejor puesto",
+  "Torneos en Top 8",
+]);
+
+/** Un solo "Cómo leer" en lugar de un tooltip por cifra: funciona con toque y teclado. */
+function StatsGuide({ source }: { source: StatsSource }) {
+  const entries = Object.entries(STAT_TOOLTIPS).filter(
+    ([term]) => source !== "casual" || !OFFICIAL_ONLY_STATS.has(term),
+  );
   return (
-    <div className="relative flex flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <div className="flex items-center gap-1">
-        <p className="text-[10px] uppercase tracking-widest text-gray-500">{label}</p>
-        {tooltip && (
-          <button
-            type="button"
-            className="flex-shrink-0 p-1 -m-1 text-gray-600 hover:text-gray-300 transition"
-            aria-label={`Qué significa ${label}`}
-            onMouseEnter={() => setShow(true)}
-            onMouseLeave={() => setShow(false)}
-            onBlur={() => setShow(false)}
-            onClick={() => setShow((s) => !s)}
-          >
-            <HelpCircle size={12} />
-          </button>
-        )}
-      </div>
-      <p className="font-mono text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="text-[10px] text-gray-600">{sub}</p>}
+    <details className="group mb-4">
+      <summary
+        className={`inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-md text-sm font-medium text-foreground-secondary transition hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+      >
+        Cómo leer estas stats
+        <ChevronRight size={16} aria-hidden="true" className="transition group-open:rotate-90" />
+      </summary>
+      <dl className="mt-2 grid gap-x-6 gap-y-3 @2xl:grid-cols-2">
+        {entries.map(([term, definition]) => (
+          <div key={term}>
+            <dt className="text-sm font-semibold text-foreground">{term}</dt>
+            <dd className="text-sm text-foreground-secondary">{definition}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
+}
 
-      {/* Tooltip */}
-      {show && tooltip && (
-        <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute bottom-full left-0 z-50 mb-2 w-56 max-w-[calc(100vw-3rem)] rounded-xl border border-primary/30 bg-[#0f1117] p-3 text-xs text-gray-300 leading-relaxed shadow-2xl">
-          {tooltip}
-          <div className="absolute -bottom-1.5 left-4 h-3 w-3 rotate-45 border-b border-r border-primary/30 bg-[#0f1117]" />
-        </div>
-      )}
+/** Fila de dato (Stat Row): label de 12px sobre la cifra en mono, sin tile ni borde. */
+function Stat({
+  label,
+  value,
+  sub,
+  valueClass = "text-foreground",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <dt className="text-xs text-foreground-subtle">{label}</dt>
+      <dd className={`font-mono-stat text-xl font-bold ${valueClass}`}>{value}</dd>
+      {sub && <dd className="text-xs text-foreground-subtle">{sub}</dd>}
     </div>
   );
 }
 
 function UncertainBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-      <AlertTriangle size={10} />
+    <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-1.5 py-0.5 text-xs font-medium text-warning">
+      <AlertTriangle size={12} />
       Datos inciertos
     </span>
   );
@@ -272,21 +304,24 @@ function UncertainBadge() {
 // ponytail: <5 partidas = muestra baja, se atenúa el color para no vender un 100% de 1 partida como dato sólido
 const LOW_SAMPLE = 5;
 
-function wrColorClass(rate: number, lowSample = false): string {
-  if (lowSample) return "text-gray-400";
-  return rate >= 55 ? "text-emerald-400" : rate >= 45 ? "text-white" : "text-red-400";
+// `muted` (Casual): no cuenta para el ranking, así que no se colorea como victoria o derrota.
+function wrColorClass(rate: number, lowSample = false, muted = false): string {
+  if (lowSample) return "text-foreground-subtle";
+  if (muted) return "text-foreground-secondary";
+  return rate >= 55 ? "text-success" : rate >= 45 ? "text-foreground" : "text-danger";
 }
 
-function WinRateBar({ rate, dim }: { rate: number; dim?: boolean }) {
-  const color = dim
-    ? "bg-gray-500"
-    : rate >= 55
-      ? "bg-emerald-500"
-      : rate >= 45
-        ? "bg-primary"
-        : "bg-red-500";
+function WinRateBar({ rate, dim, muted }: { rate: number; dim?: boolean; muted?: boolean }) {
+  const color =
+    dim || muted
+      ? "bg-foreground-subtle"
+      : rate >= 55
+        ? "bg-success"
+        : rate >= 45
+          ? "bg-foreground-secondary"
+          : "bg-danger";
   return (
-    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
+    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-border">
       <div
         className={`h-full rounded-full ${color} transition-all duration-500`}
         style={{ width: `${Math.min(rate, 100)}%` }}
@@ -334,7 +369,7 @@ function LeaderLabel({
     <span className={`inline-flex min-w-0 items-center gap-1.5 ${className}`}>
       <span className="truncate">{shortLeaderName(name)}</span>
       {badge && (
-        <span className="flex-shrink-0 rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
+        <span className="flex-shrink-0 rounded border border-border px-1 py-0.5 font-mono text-xs uppercase text-foreground-secondary">
           {badge}
         </span>
       )}
@@ -357,11 +392,11 @@ function LeaderCard({
   const image = imageUrl === undefined ? stat.leader_image : imageUrl;
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
-        selected
-          ? "border-primary bg-primary/10 ring-1 ring-primary/40"
-          : "border-white/10 bg-white/[0.02] hover:border-white/20"
+      aria-pressed={selected}
+      className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${FOCUS_RING} ${
+        selected ? "border-primary/40 bg-primary/15" : "border-border bg-card hover:bg-white/5"
       }`}
     >
       {image ? (
@@ -370,11 +405,11 @@ function LeaderCard({
           alt={stat.leader_name}
           loading="lazy"
           decoding="async"
-          className="h-12 w-8 flex-shrink-0 rounded-md border border-white/10 object-cover"
+          className="h-12 w-8 flex-shrink-0 rounded-md border border-border object-cover"
         />
       ) : (
-        <div className="flex h-12 w-8 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-          <ShieldQuestion size={14} className="text-gray-600" />
+        <div className="flex h-12 w-8 flex-shrink-0 items-center justify-center rounded-md border border-border bg-muted">
+          <ShieldQuestion size={14} className="text-foreground-subtle" />
         </div>
       )}
       <div className="min-w-0 flex-1">
@@ -382,9 +417,9 @@ function LeaderCard({
           name={stat.leader_name}
           setCode={stat.leader_set_code}
           colors={stat.leader_colors}
-          className="text-sm font-semibold text-white"
+          className="text-sm font-semibold text-foreground"
         />
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-foreground-subtle">
           {stat.total_games} partidas · {stat.raw_win_rate}% WR
         </p>
         {stat.has_uncertain_data && (
@@ -407,50 +442,40 @@ function RoundHistoryList({
   statsSource: StatsSource;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="divide-y divide-border">
       {rounds.map((r, i) => {
         const prev = rounds[i - 1];
         const leaderChanged = i > 0 && r.my_leader_id !== prev.my_leader_id;
         return (
           <div key={i}>
             {leaderChanged && r.my_leader_name && (
-              <div className="my-3 flex items-center gap-2">
-                <span className="h-px flex-1 bg-white/10" />
-                <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                  Con {r.my_leader_name}
-                </span>
-                <span className="h-px flex-1 bg-white/10" />
-              </div>
+              <p className="pb-1 pt-4 text-xs font-semibold text-foreground-secondary">
+                Con {r.my_leader_name}
+              </p>
             )}
-            <div
-              className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                r.won_match
-                  ? "bg-emerald-500/10 border border-emerald-500/20"
-                  : "bg-red-500/10 border border-red-500/20"
-              }`}
-            >
+            <div className="flex items-center justify-between py-2">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span
-                    className={`text-xs font-bold ${r.won_match ? "text-emerald-400" : "text-red-400"}`}
+                    className={`text-sm font-bold ${r.won_match ? "text-success" : "text-danger"}`}
                   >
                     {r.won_match ? "Victoria" : "Derrota"}
                   </span>
-                  <span className="text-xs text-gray-400">vs {r.opponent_tag}</span>
+                  <span className="text-sm text-foreground-secondary">vs {r.opponent_tag}</span>
                   {r.is_pending ? (
-                    <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
+                    <span className="rounded border border-warning/30 px-1 text-xs text-warning">
                       En espera del torneo
                     </span>
                   ) : (
                     r.status !== "confirmed" &&
                     statsSource === "official" && (
-                      <span className="text-[9px] text-amber-400 border border-amber-400/30 rounded px-1">
+                      <span className="rounded border border-warning/30 px-1 text-xs text-warning">
                         En proceso de vinculación
                       </span>
                     )
                   )}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-600 flex-wrap">
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground-subtle flex-wrap">
                   <span>{r.store_name}</span>
                   {r.tournament_date && (
                     <>
@@ -479,7 +504,7 @@ function RoundHistoryList({
                   <span>· R{r.round_number}</span>
                 </div>
                 {r.notes && (
-                  <p className="mt-1 text-[10px] italic text-gray-500 truncate max-w-xs">
+                  <p className="mt-1 text-xs italic text-foreground-subtle truncate max-w-xs">
                     "{r.notes}"
                   </p>
                 )}
@@ -554,7 +579,7 @@ function VsLeaderDrawer({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[70] bg-black/60"
         onClick={onClose}
       />
       <motion.aside
@@ -565,80 +590,75 @@ function VsLeaderDrawer({
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
-        className="fixed right-0 top-0 bottom-0 z-[71] flex w-full max-w-lg flex-col overflow-y-auto border-l border-white/10 bg-[#0B1220]/95 backdrop-blur-xl"
+        className="fixed right-0 top-0 bottom-0 z-[71] flex w-full max-w-lg flex-col overflow-y-auto border-l border-border bg-popover shadow-2xl"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 bg-[#0B1220]/95 p-4 backdrop-blur-xl">
+        <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-popover p-4">
           {opp.opponent_leader_image ? (
             <img
               src={opp.opponent_leader_image}
               alt={opp.opponent_leader_name}
-              className="h-14 w-10 flex-shrink-0 rounded-md border border-white/10 object-cover"
+              className="h-14 w-10 flex-shrink-0 rounded-md border border-border object-cover"
             />
           ) : (
-            <div className="flex h-14 w-10 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-              <ShieldQuestion size={16} className="text-gray-600" />
+            <div className="flex h-14 w-10 flex-shrink-0 items-center justify-center rounded-md border border-border bg-muted">
+              <ShieldQuestion size={16} className="text-foreground-subtle" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="truncate text-lg font-bold text-white">vs</h2>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <span>vs</span>
               <LeaderLabel
                 name={opp.opponent_leader_name}
                 setCode={opp.opponent_leader_set_code}
                 colors={opp.opponent_leader_colors}
-                className="text-lg font-bold text-white"
               />
-            </div>
-            <p className="text-xs text-gray-500">
+            </h2>
+            <p className="text-xs text-foreground-subtle">
               {total} partidas · {entries.length} de tus leaders
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white transition"
+            className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md border border-border text-foreground-secondary transition hover:bg-white/5 hover:text-foreground ${FOCUS_RING}`}
           >
-            <X size={14} />
+            <X size={16} />
           </button>
         </div>
 
         <div className="space-y-5 p-4">
           {/* Global vs este leader */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-gray-500">Overall</p>
-              <p className={`mt-1 font-mono text-lg font-bold ${wrColorClass(wr)}`}>{wr}%</p>
-              <p className="text-[10px] text-gray-600">
-                {wins}W — {total - wins}L
-              </p>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-gray-500">1st</p>
-              <p className="mt-1 font-mono text-lg font-bold text-white">
-                {firstTotal ? `${round1((firstWins / firstTotal) * 100)}%` : "—"}
-              </p>
-              <p className="text-[10px] text-gray-600">{firstTotal} partidas</p>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-gray-500">2nd</p>
-              <p className="mt-1 font-mono text-lg font-bold text-white">
-                {secondTotal ? `${round1((secondWins / secondTotal) * 100)}%` : "—"}
-              </p>
-              <p className="text-[10px] text-gray-600">{secondTotal} partidas</p>
-            </div>
-          </div>
+          <dl className="grid grid-cols-3 gap-x-5">
+            <Stat
+              label="Total"
+              value={`${wr}%`}
+              valueClass={wrColorClass(wr, false, statsSource === "casual")}
+              sub={`${wins}W — ${total - wins}L`}
+            />
+            <Stat
+              label="Jugando primero"
+              value={firstTotal ? `${round1((firstWins / firstTotal) * 100)}%` : "—"}
+              sub={`${firstTotal} partidas`}
+            />
+            <Stat
+              label="Jugando segundo"
+              value={secondTotal ? `${round1((secondWins / secondTotal) * 100)}%` : "—"}
+              sub={`${secondTotal} partidas`}
+            />
+          </dl>
 
           {/* Con cuál de mis leaders me va mejor */}
           {entries.length > 1 && (
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-gray-500">
+              <h3 className="text-sm font-semibold text-foreground">
                 Tu win rate contra {shortLeaderName(opp.opponent_leader_name)}, por leader
-              </p>
-              <p className="mb-2 text-[10px] text-gray-600">
+              </h3>
+              <p className="mb-2 text-xs text-foreground-subtle">
                 Cómo te fue contra este oponente cada vez que jugaste con cada uno de tus leaders.
               </p>
-              <div className="space-y-1.5">
+              <div className="divide-y divide-border">
                 {[...entries]
                   .sort((a, b) => b.m.overall_win_rate - a.m.overall_win_rate)
                   .map((e) => {
@@ -647,10 +667,8 @@ function VsLeaderDrawer({
                     return (
                       <div
                         key={e.leader.leader_id}
-                        className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${
-                          isCurrent
-                            ? "border-primary/40 bg-primary/5"
-                            : "border-white/10 bg-white/[0.02]"
+                        className={`flex items-center gap-2.5 px-2 py-2 ${
+                          isCurrent ? "bg-primary/10" : ""
                         }`}
                       >
                         {e.leader.leader_image ? (
@@ -659,11 +677,11 @@ function VsLeaderDrawer({
                             alt={e.leader.leader_name}
                             loading="lazy"
                             decoding="async"
-                            className="h-8 w-6 flex-shrink-0 rounded border border-white/10 object-cover"
+                            className="h-8 w-6 flex-shrink-0 rounded border border-border object-cover"
                           />
                         ) : (
-                          <div className="flex h-8 w-6 flex-shrink-0 items-center justify-center rounded border border-white/10 bg-black/30">
-                            <ShieldQuestion size={11} className="text-gray-600" />
+                          <div className="flex h-8 w-6 flex-shrink-0 items-center justify-center rounded border border-border bg-muted">
+                            <ShieldQuestion size={12} className="text-foreground-subtle" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -672,23 +690,27 @@ function VsLeaderDrawer({
                               name={e.leader.leader_name}
                               setCode={e.leader.leader_set_code}
                               colors={e.leader.leader_colors}
-                              className="text-sm font-semibold text-white"
+                              className="text-sm font-semibold text-foreground"
                             />
                             {isCurrent && (
-                              <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
+                              <span className="flex-shrink-0 rounded bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
                                 Viendo
                               </span>
                             )}
                           </div>
-                          <WinRateBar rate={e.m.overall_win_rate} dim={low} />
+                          <WinRateBar
+                            rate={e.m.overall_win_rate}
+                            dim={low}
+                            muted={statsSource === "casual"}
+                          />
                         </div>
                         <div className="ml-2 flex-shrink-0 text-right">
                           <p
-                            className={`font-mono text-sm font-bold ${wrColorClass(e.m.overall_win_rate, low)}`}
+                            className={`font-mono-stat text-sm font-bold ${wrColorClass(e.m.overall_win_rate, low, statsSource === "casual")}`}
                           >
                             {e.m.overall_win_rate}%
                           </p>
-                          <p className="text-[10px] text-gray-500">{e.m.total} partidas</p>
+                          <p className="text-xs text-foreground-subtle">{e.m.total} partidas</p>
                         </div>
                       </div>
                     );
@@ -700,9 +722,7 @@ function VsLeaderDrawer({
           {/* Historial cronológico completo */}
           {history.length > 0 && (
             <div>
-              <p className="mb-2 text-[10px] uppercase tracking-widest text-gray-500">
-                Historial de partidas
-              </p>
+              <h3 className="mb-1 text-sm font-semibold text-foreground">Historial de partidas</h3>
               <RoundHistoryList rounds={history} statsSource={statsSource} />
             </div>
           )}
@@ -842,9 +862,7 @@ function StatsPage() {
     setLeaderArtOverrides({});
     if (!player?.id || !selectedGameId) return;
     try {
-      const saved = window.localStorage.getItem(
-        `nexus:leader-art:${player.id}:${selectedGameId}`,
-      );
+      const saved = window.localStorage.getItem(`nexus:leader-art:${player.id}:${selectedGameId}`);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
@@ -892,10 +910,10 @@ function StatsPage() {
   if (!authLoading && !player) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <h2 className="text-2xl font-bold text-white">Debes iniciar sesión</h2>
+        <h2 className="text-2xl font-bold text-foreground">Debes iniciar sesión</h2>
         <Link
           to="/login"
-          className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
+          className={`mt-6 inline-flex min-h-11 items-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground ${FOCUS_RING}`}
         >
           Iniciar sesión
         </Link>
@@ -998,89 +1016,88 @@ function StatsPage() {
         <Link
           to="/dashboard"
           aria-label="Volver al inicio"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white transition"
+          className={`flex h-11 w-11 items-center justify-center rounded-md border border-border text-foreground-secondary transition hover:bg-white/5 hover:text-foreground sm:h-9 sm:w-9 ${FOCUS_RING}`}
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={16} />
         </Link>
-        <h1 className="text-2xl font-bold text-white">Mis Stats</h1>
+        <h1 className="text-2xl font-bold text-foreground">Mis Stats</h1>
 
         {!!displayStats?.total_tournaments_won && (
-          <span className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-            🏆 Torneos Ganados: {displayStats.total_tournaments_won}
+          <span className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-foreground-secondary">
+            Torneos ganados: {displayStats.total_tournaments_won}
           </span>
         )}
 
         {/* TCG: contexto, no filtro — oculto si solo hay uno */}
         {games.length > 1 && (
-          <div className="ml-auto flex gap-1.5 overflow-x-auto">
-            {games.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setSelectedGameId(g.id)}
-                className={`flex-shrink-0 rounded-lg border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition ${
-                  selectedGameId === g.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-white/10 bg-white/5 text-gray-400 hover:text-white"
-                }`}
-              >
-                {g.name}
-              </button>
-            ))}
+          <div className="ml-auto max-w-full">
+            <ChipGroup
+              label="TCG"
+              options={games.map((g) => ({ key: g.id, label: g.name }))}
+              value={selectedGameId}
+              onChange={(key) => key && setSelectedGameId(key)}
+            />
           </div>
         )}
       </header>
 
-      {/* Filtros: fuente + rango temporal */}
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <div className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03] p-1">
-          {[
-            { key: "official" as const, label: "Oficial" },
-            { key: "casual" as const, label: "Casual" },
-            { key: "pending" as const, label: "Pendientes" },
-            { key: "all" as const, label: "Todo" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setStatsSource(tab.key)}
-              className={`flex-shrink-0 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition ${
-                statsSource === tab.key
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Filtros: fuente (nivel principal) + periodo; Pendientes y Todo quedan como vistas secundarias */}
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <ChipGroup
+          label="Fuente de las partidas"
+          options={[
+            { key: "official", label: SOURCE_COPY.official.label },
+            { key: "casual", label: SOURCE_COPY.casual.label },
+          ]}
+          value={statsSource}
+          onChange={(key) => key && setStatsSource(key as StatsSource)}
+        />
 
-        <div className="flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
-          {[
-            { key: "30" as const, label: "30d" },
-            { key: "90" as const, label: "90d" },
-            { key: "all" as const, label: "Todo el tiempo" },
-          ].map((r) => (
+        <ChipGroup
+          label="Periodo"
+          options={[
+            { key: "30", label: "30 días" },
+            { key: "90", label: "90 días" },
+            { key: "all", label: "Todo el tiempo" },
+          ]}
+          value={timeRange}
+          onChange={(key) => key && setTimeRange(key as TimeRange)}
+        />
+
+        <div role="group" aria-label="Otras vistas" className="flex gap-1">
+          {(["pending", "all"] as const).map((key) => (
             <button
-              key={r.key}
-              onClick={() => setTimeRange(r.key)}
-              className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                timeRange === r.key ? "bg-white/10 text-white" : "text-gray-500 hover:text-white"
+              key={key}
+              type="button"
+              aria-pressed={statsSource === key}
+              onClick={() => setStatsSource(key)}
+              className={`min-h-11 rounded-md px-3 text-sm font-medium transition sm:min-h-9 ${FOCUS_RING} ${
+                statsSource === key
+                  ? "bg-primary/15 text-primary"
+                  : "text-foreground-secondary hover:bg-white/5 hover:text-foreground"
               }`}
             >
-              {r.label}
+              {SOURCE_COPY[key].label}
             </button>
           ))}
         </div>
       </div>
 
-      {statsSource !== "official" && (
-        <p className="mb-4 text-[11px] text-gray-500">
-          {statsSource === "casual" &&
-            "Partidas casuales y de práctica. No afectan tu ranking competitivo."}
-          {statsSource === "pending" &&
-            "Partidas en espera de que el organizador publique el torneo. Pasarán a Oficial automáticamente."}
-          {statsSource === "all" && "Todas tus partidas combinadas (incluye pendientes)."}
-        </p>
-      )}
+      {/* Qué dataset se está viendo: siempre visible, también en Oficial */}
+      <p className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground-secondary">
+        <span>
+          <span className="font-semibold text-foreground">{SOURCE_COPY[statsSource].label}</span>
+          {" · "}
+          {SOURCE_COPY[statsSource].note}
+        </span>
+        {statsSource === "casual" && (
+          <span className="rounded-md border border-border px-2 py-0.5 text-xs font-semibold text-foreground-secondary">
+            No cuenta para el ranking
+          </span>
+        )}
+      </p>
+
+      <StatsGuide source={statsSource} />
 
       {loadingGames ? (
         <div className="mt-4 flex gap-2">
@@ -1089,15 +1106,15 @@ function StatsPage() {
           ))}
         </div>
       ) : games.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center">
-          <BarChart3 size={40} className="mx-auto mb-4 text-gray-600" />
-          <p className="text-sm font-semibold text-white">Sin datos registrados</p>
-          <p className="mt-2 text-xs text-gray-500">
+        <div className={`${SECTION} p-12 text-center`}>
+          <BarChart3 size={40} className="mx-auto mb-4 text-foreground-subtle" />
+          <p className="text-sm font-semibold text-foreground">Sin datos registrados</p>
+          <p className="mt-2 text-sm text-foreground-secondary">
             Registra tus rondas en Mis Partidas para ver tus stats aquí.
           </p>
           <Link
             to="/sessions"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110"
+            className={`mt-4 inline-flex min-h-11 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 sm:min-h-9 ${FOCUS_RING}`}
           >
             Ir a Mis Partidas
           </Link>
@@ -1131,25 +1148,33 @@ function StatsPage() {
             </div>
           ) : statsLoadFailed && !hasPartialStats ? null : !displayStats ||
             displayStats.leaders.length === 0 ? (
-            <div className="glass rounded-2xl p-12 text-center">
-              <p className="text-sm text-gray-500">
-                {noLeaderRounds.length > 0
-                  ? `Tienes ${noLeaderRounds.length} ${noLeaderRounds.length === 1 ? "ronda" : "rondas"} sin leader (${noLeaderWins}V · ${noLeaderRounds.length - noLeaderWins}D). Agrégalo en Mis Partidas para ver tus stats por leader.`
-                  : statsSource === "casual"
-                  ? "Sin partidas casuales registradas. Crea una partida casual para empezar."
-                  : statsSource === "pending"
-                    ? "No tienes partidas pendientes de vinculación a un torneo."
-                    : timeRange !== "all" && stats && stats.leaders.length > 0
-                      ? `Sin partidas en los últimos ${timeRange} días.`
-                      : statsSource === "all"
-                        ? "Sin partidas registradas."
-                        : "Sin rondas registradas para este TCG todavía."}
+            <div className={`${SECTION} p-12 text-center`}>
+              <p className="text-sm text-foreground-secondary">
+                {noLeaderRounds.length > 0 ? (
+                  `Tienes ${noLeaderRounds.length} ${noLeaderRounds.length === 1 ? "ronda" : "rondas"} sin leader (${noLeaderWins}V · ${noLeaderRounds.length - noLeaderWins}D). Agrégalo en Mis Partidas para ver tus stats por leader.`
+                ) : statsSource === "casual" ? (
+                  <>
+                    Sin partidas casuales registradas.{" "}
+                    <Link to="/sessions" className="text-primary hover:underline">
+                      Crea una partida casual
+                    </Link>{" "}
+                    para empezar.
+                  </>
+                ) : statsSource === "pending" ? (
+                  "No tienes partidas pendientes de vinculación a un torneo."
+                ) : timeRange !== "all" && stats && stats.leaders.length > 0 ? (
+                  `Sin partidas en los últimos ${timeRange} días.`
+                ) : statsSource === "all" ? (
+                  "Sin partidas registradas."
+                ) : (
+                  "Sin rondas oficiales registradas para este TCG todavía."
+                )}
               </p>
             </div>
           ) : (
             <>
               {noLeaderRounds.length > 0 && (
-                <p className="mb-3 rounded-lg border border-border bg-card/60 px-3 py-2 text-xs text-muted-foreground">
+                <p className="mb-3 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground-secondary">
                   {noLeaderRounds.length === 1
                     ? "1 ronda sin leader cuenta en tu récord, pero no aparece por leader."
                     : `${noLeaderRounds.length} rondas sin leader cuentan en tu récord, pero no aparecen por leader.`}{" "}
@@ -1163,76 +1188,69 @@ function StatsPage() {
 
               {/* Resumen global del dataset */}
               {overview && overview.games > 0 && (
-                <div className="glass mb-6 grid grid-cols-3 divide-x divide-white/5 rounded-2xl border border-white/10">
+                <dl className={`${SECTION} mb-6 grid grid-cols-3 divide-x divide-border !p-0`}>
                   <div className="px-4 py-3 text-center sm:py-4">
-                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Récord</p>
-                    <p className="mt-1 font-mono text-xl font-bold text-white sm:text-2xl">
-                      {overview.wins}W<span className="text-gray-600"> — </span>
+                    <dt className="text-xs text-foreground-subtle">Récord</dt>
+                    <dd className="mt-1 whitespace-nowrap font-mono-stat text-xl font-bold text-foreground sm:text-2xl">
+                      {overview.wins}W<span className="text-foreground-subtle"> — </span>
                       {overview.losses}L
-                    </p>
+                    </dd>
                   </div>
                   <div className="px-4 py-3 text-center sm:py-4">
-                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Win Rate</p>
-                    <p
-                      className={`mt-1 font-mono text-xl font-bold sm:text-2xl ${
-                        (overviewWr ?? 0) >= 55
-                          ? "text-emerald-400"
-                          : (overviewWr ?? 0) >= 45
-                            ? "text-white"
-                            : "text-red-400"
-                      }`}
+                    <dt className="text-xs text-foreground-subtle">Win rate</dt>
+                    <dd
+                      className={`mt-1 font-mono-stat text-xl font-bold sm:text-2xl ${wrColorClass(overviewWr ?? 0, false, statsSource === "casual")}`}
                     >
                       {overviewWr}%
-                    </p>
+                    </dd>
                   </div>
                   <div className="px-4 py-3 text-center sm:py-4">
-                    <p className="text-[10px] uppercase tracking-widest text-gray-500">Leaders</p>
-                    <p className="mt-1 font-mono text-xl font-bold text-white sm:text-2xl">
-                      {displayStats.leaders.length}
-                    </p>
+                    <dt className="text-xs text-foreground-subtle">Racha actual</dt>
+                    <dd
+                      className={`mt-1 font-mono-stat text-xl font-bold sm:text-2xl ${
+                        !playerAgg || statsSource === "casual"
+                          ? "text-foreground-secondary"
+                          : playerAgg.currentStreak.type === "W"
+                            ? "text-success"
+                            : playerAgg.currentStreak.type === "L"
+                              ? "text-danger"
+                              : "text-foreground"
+                      }`}
+                    >
+                      {playerAgg?.currentStreak.type
+                        ? `${playerAgg.currentStreak.count}${playerAgg.currentStreak.type}`
+                        : "—"}
+                    </dd>
                   </div>
-                </div>
+                </dl>
               )}
 
-              {/* Tú como jugador — agregados cross-leader, no por deck */}
+              {/* Más sobre tu juego — agregados cross-leader, colapsados: son contexto, no la tarea */}
               {(playerAgg || tournamentSummary) && (
-                <div className="glass mb-6 rounded-2xl border border-white/10 p-4 sm:p-5">
-                  <p className="mb-3 text-[10px] uppercase tracking-widest text-gray-500">
-                    Tú como jugador
-                  </p>
-                  <div
-                    className={`grid gap-3 ${
+                <details className={`group ${SECTION} mb-6`}>
+                  <summary
+                    className={`flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-md text-lg font-semibold text-foreground sm:min-h-9 ${FOCUS_RING}`}
+                  >
+                    Más sobre tu juego
+                    <ChevronRight
+                      size={16}
+                      aria-hidden="true"
+                      className="text-foreground-subtle transition group-open:rotate-90"
+                    />
+                  </summary>
+                  <dl
+                    className={`mt-3 grid gap-x-5 gap-y-4 ${
                       statsSource === "casual"
-                        ? "grid-cols-1 @md:grid-cols-3"
+                        ? "grid-cols-1 @md:grid-cols-2"
                         : "grid-cols-2 @md:grid-cols-4"
                     }`}
                   >
                     {playerAgg && (
-                      <div className="flex flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                        <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                          Racha actual
-                        </p>
-                        <p
-                          className={`mt-1 font-mono text-xl font-bold sm:text-2xl ${
-                            playerAgg.currentStreak.type === "W"
-                              ? "text-emerald-400"
-                              : playerAgg.currentStreak.type === "L"
-                                ? "text-red-400"
-                                : "text-white"
-                          }`}
-                        >
-                          {playerAgg.currentStreak.type
-                            ? `${playerAgg.currentStreak.count}${playerAgg.currentStreak.type}`
-                            : "—"}
-                        </p>
-                        <p className="text-[10px] text-gray-500">
-                          Mejor racha de victorias: {playerAgg.bestWinStreak}
-                        </p>
-                      </div>
+                      <Stat label="Mejor racha de victorias" value={`${playerAgg.bestWinStreak}`} />
                     )}
                     {playerAgg && (
-                      <StatCard
-                        label="WR ganando dado"
+                      <Stat
+                        label="Win rate ganando dado"
                         value={
                           playerAgg.dieRollWinRate != null ? `${playerAgg.dieRollWinRate}%` : "—"
                         }
@@ -1244,8 +1262,8 @@ function StatsPage() {
                       />
                     )}
                     {playerAgg && (
-                      <StatCard
-                        label="WR perdiendo dado"
+                      <Stat
+                        label="Win rate perdiendo dado"
                         value={
                           playerAgg.noDieRollWinRate != null
                             ? `${playerAgg.noDieRollWinRate}%`
@@ -1259,54 +1277,47 @@ function StatsPage() {
                       />
                     )}
                     {tournamentSummary && (
-                      <StatCard
+                      <Stat
                         label="Mejor puesto"
                         value={`#${tournamentSummary.best}`}
                         sub={`${tournamentSummary.played} torneos jugados`}
                       />
                     )}
                     {tournamentSummary && (
-                      <StatCard
-                        label="Top 8 rate"
+                      <Stat
+                        label="Torneos en Top 8"
                         value={`${tournamentSummary.topCutRate}%`}
                         sub={`Puesto promedio: #${tournamentSummary.avg}`}
                       />
                     )}
-                  </div>
-                </div>
+                  </dl>
+                </details>
               )}
 
               <div className="grid gap-6 @4xl:grid-cols-[240px_minmax(0,1fr)]">
                 {/* Leaders: select nativo en móvil, sidebar en desktop */}
                 <div className="min-w-0">
-                  <p className="mb-3 text-[10px] uppercase tracking-widest text-gray-500">
-                    Tus leaders
-                  </p>
-                  <select
-                    value={leaderIdx}
-                    onChange={(e) => setSelectedLeaderIdx(Number(e.target.value))}
-                    className="w-full rounded-xl border border-white/10 bg-[#0f1117] px-4 py-3 text-sm font-semibold text-white @4xl:hidden"
+                  <h2 className="mb-3 text-lg font-semibold text-foreground">
+                    Tus leaders{" "}
+                    <span className="font-mono-stat text-sm font-normal text-foreground-subtle">
+                      {displayStats.leaders.length}
+                    </span>
+                  </h2>
+                  {/* Una sola lista: tira horizontal con scroll en móvil, columna sticky en escritorio */}
+                  <div
+                    role="group"
+                    aria-label="Elegir leader"
+                    className="flex gap-2 overflow-x-auto pb-2 @4xl:sticky @4xl:top-24 @4xl:max-h-[calc(100vh-220px)] @4xl:flex-col @4xl:overflow-y-auto @4xl:overflow-x-hidden @4xl:pb-0 @4xl:pr-1"
                   >
-                    {displayStats.leaders.map((l, i) => {
-                      const badge = setBadge(l.leader_set_code);
-                      return (
-                        <option key={l.leader_id} value={i}>
-                          {shortLeaderName(l.leader_name)}
-                          {badge ? ` [${badge}]` : ""} · {l.total_games} partidas · {l.raw_win_rate}
-                          % WR
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <div className="hidden max-h-[calc(100vh-220px)] flex-col gap-2 overflow-y-auto pr-1 @4xl:sticky @4xl:top-24 @4xl:flex">
                     {displayStats.leaders.map((l, i) => (
-                      <LeaderCard
-                        key={l.leader_id}
-                        stat={l}
-                        selected={leaderIdx === i}
-                        imageUrl={leaderArtOverrides[l.leader_id]?.card_image}
-                        onClick={() => setSelectedLeaderIdx(i)}
-                      />
+                      <div key={l.leader_id} className="w-64 flex-none @4xl:w-full">
+                        <LeaderCard
+                          stat={l}
+                          selected={leaderIdx === i}
+                          imageUrl={leaderArtOverrides[l.leader_id]?.card_image}
+                          onClick={() => setSelectedLeaderIdx(i)}
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -1315,35 +1326,40 @@ function StatsPage() {
                 {selectedLeader && (
                   <div className="min-w-0 space-y-6">
                     {/* Hero del leader */}
-                    <div className="glass rounded-2xl p-6">
+                    <section className={`${SECTION} @2xl:p-6`}>
                       <div className="flex flex-col items-start gap-4 @lg:flex-row @lg:gap-6">
                         {selectedLeaderImage ? (
                           <img
                             src={selectedLeaderImage}
                             alt={selectedLeader.leader_name}
-                            className="h-32 w-auto flex-shrink-0 rounded-xl border border-white/10 object-cover shadow-2xl"
+                            className="h-32 w-auto flex-shrink-0 rounded-xl border border-border object-cover"
                           />
                         ) : (
-                          <div className="flex h-32 w-24 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/40">
+                          <div className="flex h-32 w-24 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-muted">
                             <div className="text-center">
-                              <ShieldQuestion size={24} className="mx-auto mb-1 text-gray-600" />
-                              <p className="text-[9px] text-gray-600">Imagen próximamente</p>
+                              <ShieldQuestion
+                                size={24}
+                                className="mx-auto mb-1 text-foreground-subtle"
+                              />
+                              <p className="text-xs text-foreground-subtle">Imagen próximamente</p>
                             </div>
                           </div>
                         )}
 
                         <div className="w-full min-w-0 flex-1">
                           <div className="flex items-start gap-2 flex-wrap">
-                            <LeaderLabel
-                              name={selectedLeader.leader_name}
-                              setCode={selectedLeader.leader_set_code}
-                              colors={selectedLeader.leader_colors}
-                              className="text-xl font-bold text-white"
-                            />
+                            <h2 className="text-xl font-bold text-foreground">
+                              <LeaderLabel
+                                name={selectedLeader.leader_name}
+                                setCode={selectedLeader.leader_set_code}
+                                colors={selectedLeader.leader_colors}
+                              />
+                            </h2>
                             {selectedLeader.has_uncertain_data && <UncertainBadge />}
                           </div>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {displayStats.game_name} · {selectedLeader.total_games} partidas
+                          <p className="mt-1 text-xs text-foreground-subtle">
+                            {displayStats.game_name} · {SOURCE_COPY[statsSource].label} ·{" "}
+                            {selectedLeader.total_games} partidas
                             {timeRange !== "all" ? ` · últimos ${timeRange} días` : ""}
                           </p>
                           {selectedLeader.leader_card_set_id && (
@@ -1362,62 +1378,73 @@ function StatsPage() {
                           {/* Dato estrella: el WR de este leader, grande */}
                           <div className="mt-3 flex items-baseline gap-3">
                             <p
-                              className={`font-mono text-4xl font-bold ${wrColorClass(selectedLeader.raw_win_rate)}`}
+                              className={`font-mono-stat text-4xl font-bold ${wrColorClass(selectedLeader.raw_win_rate, false, statsSource === "casual")}`}
                             >
                               {selectedLeader.raw_win_rate}%
                             </p>
-                            <p className="font-mono text-sm text-gray-400">
-                              {selectedLeader.wins}W<span className="text-gray-600"> — </span>
+                            <p className="whitespace-nowrap font-mono-stat text-sm text-foreground-secondary">
+                              {selectedLeader.wins}W
+                              <span className="text-foreground-subtle"> — </span>
                               {selectedLeader.losses}L
                             </p>
                           </div>
 
                           {selectedLeader.has_uncertain_data && (
-                            <p className="mt-2 text-[11px] text-amber-400/80">
-                              ⚠ Algunas rondas fueron reportadas por tu oponente y aún no están
+                            <p className="mt-2 text-xs text-warning">
+                              Algunas rondas fueron reportadas por tu oponente y aún no están
                               confirmadas. Los porcentajes pueden variar.
                             </p>
                           )}
                         </div>
                       </div>
 
-                      {/* Stats grid */}
-                      <div
-                        className={`mt-5 grid grid-cols-2 gap-3 ${
+                      {/* Stat Row del leader */}
+                      <dl
+                        className={`mt-5 grid grid-cols-2 gap-x-5 gap-y-4 border-t border-border pt-4 ${
                           statsSource === "casual" ? "@md:grid-cols-4" : "@md:grid-cols-3"
                         }`}
                       >
-                        <StatCard label="Total Games" value={`${selectedLeader.total_games}`} />
+                        <Stat label="Partidas" value={`${selectedLeader.total_games}`} />
                         {statsSource !== "casual" && (
-                          <StatCard
-                            label="Torneos Ganados"
+                          <Stat
+                            label="Torneos ganados"
                             value={`${selectedLeader.tournaments_won}`}
-                            sub={
-                              selectedLeader.tournaments_won > 0 ? "🏆 con este leader" : undefined
-                            }
+                            sub={selectedLeader.tournaments_won > 0 ? "Con este leader" : undefined}
                           />
                         )}
-                        <StatCard
-                          label="WR Confirmado"
-                          value={`${selectedLeader.wtd_win_rate}%`}
-                          sub="Solo rondas confirmadas"
-                        />
-                        {statsSource !== "casual" && (
-                          <StatCard
-                            label="WR Total"
+                        {/* Si Confirmado y Total coinciden y todo está confirmado, es un solo número */}
+                        {selectedLeader.wtd_win_rate === selectedLeader.raw_win_rate &&
+                        !selectedLeader.has_uncertain_data ? (
+                          <Stat
+                            label="Win rate"
                             value={`${selectedLeader.raw_win_rate}%`}
-                            sub="Todas las rondas"
+                            sub="Todas las rondas, confirmadas"
+                          />
+                        ) : (
+                          <>
+                            <Stat
+                              label="Win rate confirmado"
+                              value={`${selectedLeader.wtd_win_rate}%`}
+                              sub="Solo rondas confirmadas"
+                            />
+                            {statsSource !== "casual" && (
+                              <Stat
+                                label="Win rate total"
+                                value={`${selectedLeader.raw_win_rate}%`}
+                                sub="Todas las rondas"
+                              />
+                            )}
+                          </>
+                        )}
+                        {statsSource === "official" && overview && overview.games > 0 && (
+                          <Stat
+                            label="Uso del leader"
+                            value={`${round1((selectedLeader.total_games / overview.games) * 100)}%`}
+                            sub={`${selectedLeader.total_games} de ${overview.games} partidas`}
                           />
                         )}
-                        {statsSource === "official" && timeRange === "all" && (
-                          <StatCard
-                            label="Play Rate"
-                            value={`${selectedLeader.play_rate}%`}
-                            sub="Del total de rondas en el meta"
-                          />
-                        )}
-                        <StatCard
-                          label="1st Winrate"
+                        <Stat
+                          label="Win rate jugando primero"
                           value={
                             selectedLeader.first_win_rate != null
                               ? `${selectedLeader.first_win_rate}%`
@@ -1429,8 +1456,8 @@ function StatsPage() {
                               : "Sin datos"
                           }
                         />
-                        <StatCard
-                          label="2nd Winrate"
+                        <Stat
+                          label="Win rate jugando segundo"
                           value={
                             selectedLeader.second_win_rate != null
                               ? `${selectedLeader.second_win_rate}%`
@@ -1442,91 +1469,73 @@ function StatsPage() {
                               : "Sin datos"
                           }
                         />
-                      </div>
-                    </div>
+                      </dl>
+                    </section>
 
                     {/* Matchup Breakdown */}
-                    <div className="glass rounded-2xl p-4 sm:p-6">
+                    <section className={SECTION}>
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-                          <span className="text-primary">⚔</span> Matchups
-                        </h3>
+                        <h2 className="text-lg font-semibold text-foreground">Matchups</h2>
                         {selectedLeader.matchups.length > 1 && (
-                          <div className="inline-flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
-                            {(
-                              [
-                                { key: "games", label: "Más jugados" },
-                                { key: "best", label: "Mejores" },
-                                { key: "worst", label: "Peores" },
-                              ] as const
-                            ).map((s) => (
-                              <button
-                                key={s.key}
-                                onClick={() => setMatchupSort(s.key)}
-                                className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
-                                  matchupSort === s.key
-                                    ? "bg-primary/20 text-primary"
-                                    : "text-gray-500 hover:text-white"
-                                }`}
-                              >
-                                {s.label}
-                              </button>
-                            ))}
-                          </div>
+                          <ChipGroup
+                            label="Ordenar matchups"
+                            options={[
+                              { key: "games", label: "Más jugados" },
+                              { key: "best", label: "Mejores" },
+                              { key: "worst", label: "Peores" },
+                            ]}
+                            value={matchupSort}
+                            onChange={(key) => key && setMatchupSort(key as typeof matchupSort)}
+                          />
                         )}
                       </div>
 
                       {matchupBuckets && selectedLeader.matchups.length > 0 && (
-                        <div className="mb-4 grid grid-cols-3 gap-2">
-                          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-center">
-                            <p className="font-mono text-lg font-bold text-emerald-400">
-                              {matchupBuckets.favored}
-                            </p>
-                            <p className="text-[10px] uppercase tracking-wider text-gray-500">
-                              Favorable
-                            </p>
-                          </div>
-                          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-center">
-                            <p className="font-mono text-lg font-bold text-white">
-                              {matchupBuckets.even}
-                            </p>
-                            <p className="text-[10px] uppercase tracking-wider text-gray-500">
-                              Parejo
-                            </p>
-                          </div>
-                          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-center">
-                            <p className="font-mono text-lg font-bold text-red-400">
-                              {matchupBuckets.unfavored}
-                            </p>
-                            <p className="text-[10px] uppercase tracking-wider text-gray-500">
-                              Desfavorable
-                            </p>
-                          </div>
-                        </div>
+                        <dl className="mb-4 grid grid-cols-3 gap-x-5">
+                          <Stat
+                            label="Favorable"
+                            value={`${matchupBuckets.favored}`}
+                            valueClass={
+                              statsSource === "casual"
+                                ? "text-foreground-secondary"
+                                : "text-success"
+                            }
+                          />
+                          <Stat label="Parejo" value={`${matchupBuckets.even}`} />
+                          <Stat
+                            label="Desfavorable"
+                            value={`${matchupBuckets.unfavored}`}
+                            valueClass={
+                              statsSource === "casual" ? "text-foreground-secondary" : "text-danger"
+                            }
+                          />
+                        </dl>
                       )}
 
                       {selectedLeader.matchups.length > 3 && (
                         <div className="relative mb-3">
                           <Search
-                            size={14}
-                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"
+                            size={16}
+                            aria-hidden="true"
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
                           />
                           <input
                             type="search"
                             value={matchupSearch}
                             onChange={(e) => setMatchupSearch(e.target.value)}
+                            aria-label="Buscar leader oponente"
                             placeholder="Buscar leader oponente…"
-                            className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white placeholder:text-gray-600 focus:border-primary/50 focus:outline-none"
+                            className={`min-h-11 w-full rounded-md border border-border bg-transparent py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-foreground-subtle sm:min-h-9 ${FOCUS_RING}`}
                           />
                         </div>
                       )}
 
                       {selectedLeader.matchups.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-gray-500">
+                        <p className="py-8 text-center text-sm text-foreground-secondary">
                           Aún no tienes matchups registrados con este leader.
                         </p>
                       ) : sortedMatchups.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-gray-500">
+                        <p className="py-8 text-center text-sm text-foreground-secondary">
                           Sin matchups que coincidan con "{matchupSearch}".
                         </p>
                       ) : (
@@ -1539,77 +1548,83 @@ function StatsPage() {
                             const lowOverall = m.total < LOW_SAMPLE;
                             const lowFirst = m.first_total < LOW_SAMPLE;
                             const lowSecond = m.second_total < LOW_SAMPLE;
-                            const bucketBorder =
-                              m.overall_win_rate >= 55
-                                ? "border-t-emerald-400"
-                                : m.overall_win_rate >= 45
-                                  ? "border-t-white/30"
-                                  : "border-t-red-400";
+                            const muted = statsSource === "casual";
                             return (
                               <button
+                                type="button"
                                 key={m.opponent_leader_id}
                                 onClick={() => setVsLeaderId(m.opponent_leader_id)}
-                                className={`rounded-b-lg rounded-t-sm border-t-2 ${bucketBorder} bg-white/[0.02] p-2 text-left transition hover:bg-white/5`}
+                                className={`rounded-lg p-2 text-left transition hover:bg-white/5 ${FOCUS_RING}`}
                               >
                                 {m.opponent_leader_image ? (
                                   <img
                                     src={m.opponent_leader_image}
                                     alt={m.opponent_leader_name}
-                                    className="mx-auto h-24 w-auto rounded-md border border-white/10 object-cover"
+                                    className="mx-auto h-24 w-auto rounded-md border border-border object-cover"
                                   />
                                 ) : (
-                                  <div className="mx-auto flex h-24 w-16 items-center justify-center rounded-md border border-white/10 bg-black/30">
-                                    <ShieldQuestion size={18} className="text-gray-600" />
+                                  <div className="mx-auto flex h-24 w-16 items-center justify-center rounded-md border border-border bg-muted">
+                                    <ShieldQuestion size={18} className="text-foreground-subtle" />
                                   </div>
                                 )}
                                 <LeaderLabel
                                   name={m.opponent_leader_name}
                                   setCode={m.opponent_leader_set_code}
-                                  className="mt-1.5 justify-center text-center text-xs font-semibold text-white"
+                                  className="mt-1.5 justify-center text-center text-xs font-semibold text-foreground"
                                 />
 
-                                <div className="mt-2 space-y-1 border-t border-white/5 pt-1.5">
+                                <div className="mt-2 space-y-1 border-t border-border pt-1.5">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-gray-500">WR</span>
-                                    <span className="font-mono text-xs">
+                                    <span className="text-xs text-foreground-subtle">WR</span>
+                                    <span className="font-mono-stat text-xs">
                                       <span
-                                        className={`font-bold ${wrColorClass(m.overall_win_rate, lowOverall)}`}
+                                        className={`font-bold ${wrColorClass(m.overall_win_rate, lowOverall, muted)}`}
                                       >
                                         {m.overall_win_rate}%
                                       </span>{" "}
-                                      <span className="text-[10px] text-gray-600">{m.total}p</span>
+                                      <span className="text-foreground-subtle">{m.total}p</span>
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-gray-500">1st</span>
-                                    <span className="font-mono text-xs">
+                                    <span
+                                      className="text-xs text-foreground-subtle"
+                                      title="Jugando primero"
+                                    >
+                                      1º
+                                    </span>
+                                    <span className="font-mono-stat text-xs">
                                       <span
                                         className={`font-bold ${
                                           m.first_win_rate != null
-                                            ? wrColorClass(m.first_win_rate, lowFirst)
-                                            : "text-gray-600"
+                                            ? wrColorClass(m.first_win_rate, lowFirst, muted)
+                                            : "text-foreground-subtle"
                                         }`}
                                       >
                                         {m.first_win_rate != null ? `${m.first_win_rate}%` : "—"}
                                       </span>{" "}
-                                      <span className="text-[10px] text-gray-600">
+                                      <span className="text-foreground-subtle">
                                         {m.first_total}p
                                       </span>
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-gray-500">2nd</span>
-                                    <span className="font-mono text-xs">
+                                    <span
+                                      className="text-xs text-foreground-subtle"
+                                      title="Jugando segundo"
+                                    >
+                                      2º
+                                    </span>
+                                    <span className="font-mono-stat text-xs">
                                       <span
                                         className={`font-bold ${
                                           m.second_win_rate != null
-                                            ? wrColorClass(m.second_win_rate, lowSecond)
-                                            : "text-gray-600"
+                                            ? wrColorClass(m.second_win_rate, lowSecond, muted)
+                                            : "text-foreground-subtle"
                                         }`}
                                       >
                                         {m.second_win_rate != null ? `${m.second_win_rate}%` : "—"}
                                       </span>{" "}
-                                      <span className="text-[10px] text-gray-600">
+                                      <span className="text-foreground-subtle">
                                         {m.second_total}p
                                       </span>
                                     </span>
@@ -1620,7 +1635,7 @@ function StatsPage() {
                           })}
                         </div>
                       )}
-                    </div>
+                    </section>
                   </div>
                 )}
               </div>
