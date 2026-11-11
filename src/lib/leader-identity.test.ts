@@ -22,6 +22,12 @@ describe("identidad estadística de líderes", () => {
     expect(Array.from(matchups.values())).toEqual([2]);
   });
 
+  it("elige el mismo representante sin depender del orden de las fuentes", () => {
+    const direct = createLeaderIdentityResolver(arts);
+    const reversed = createLeaderIdentityResolver([...arts].reverse());
+    expect(direct.resolveId("arte-b")).toBe(reversed.resolveId("arte-a"));
+  });
+
   it("respeta el canonical compartido cuando existe", () => {
     const rows = arts.map((art) => ({ ...art, canonical_leader_id: "canonico" }));
     const { resolveId } = createLeaderIdentityResolver(rows);
