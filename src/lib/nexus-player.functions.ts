@@ -1071,9 +1071,24 @@ export const getMyStats = createServerFn({ method: "POST" })
       : { data: [] as any[] };
 
     // 8. Mapa final de leaders
+    const relatedCardSetIds = Array.from(
+      new Set(
+        (rawLeaders ?? [])
+          .map((l: any) => l.card_set_id)
+          .filter((id: unknown): id is string => typeof id === "string" && !!id),
+      ),
+    );
+    const { data: relatedLeaders } = relatedCardSetIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
+          .in("card_set_id", relatedCardSetIds)
+      : { data: [] as any[] };
+
     const { leaderMap, resolveId } = createLeaderIdentityResolver([
       ...(rawLeaders ?? []),
       ...(canonicalLeaders ?? []),
+      ...(relatedLeaders ?? []),
     ]);
 
     // 8b. Torneos ganados (rank=1) por leader canónico — el campeón pudo variar
@@ -1491,9 +1506,24 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
+    const relatedCardSetIds = Array.from(
+      new Set(
+        (rawLeaders ?? [])
+          .map((l: any) => l.card_set_id)
+          .filter((id: unknown): id is string => typeof id === "string" && !!id),
+      ),
+    );
+    const { data: relatedLeaders } = relatedCardSetIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
+          .in("card_set_id", relatedCardSetIds)
+      : { data: [] as any[] };
+
     const { leaderMap, resolveId } = createLeaderIdentityResolver([
       ...(rawLeaders ?? []),
       ...(canonicalLeaders ?? []),
+      ...(relatedLeaders ?? []),
     ]);
 
     // 5. Agregación por leader canónico — MISMA lógica que getMyStats
@@ -1772,9 +1802,24 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
+    const relatedCardSetIds = Array.from(
+      new Set(
+        (rawLeaders ?? [])
+          .map((l: any) => l.card_set_id)
+          .filter((id: unknown): id is string => typeof id === "string" && !!id),
+      ),
+    );
+    const { data: relatedLeaders } = relatedCardSetIds.length
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
+          .in("card_set_id", relatedCardSetIds)
+      : { data: [] as any[] };
+
     const { leaderMap, resolveId } = createLeaderIdentityResolver([
       ...(rawLeaders ?? []),
       ...(canonicalLeaders ?? []),
+      ...(relatedLeaders ?? []),
     ]);
 
     const leaderAggs = new Map<string, any>();
