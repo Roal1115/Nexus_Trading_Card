@@ -791,6 +791,34 @@ function mergeStats(official: StatsData, casual: any): StatsData {
   };
 }
 
+type SingleStatsSource = Exclude<StatsSource, "all">;
+type StatsQueryState = { data?: StatsData; isLoading: boolean; isError: boolean };
+
+/** Un error no es un vacío: en Todo combina las fuentes que sí respondieron. */
+export function getStatsSourceState(
+  statsSource: StatsSource,
+  queries: Record<SingleStatsSource, StatsQueryState>,
+) {
+  const sources: SingleStatsSource[] =
+    statsSource === "all" ? ["official", "casual", "pending"] : [statsSource];
+  const failedSources = sources.filter((source) => queries[source].isError);
+  const loadingStats = sources.some((source) => queries[source].isLoading);
+  let stats: StatsData | null = null;
+
+  if (!loadingStats) {
+    if (statsSource !== "all") {
+      stats = queries[statsSource].data ?? null;
+    } else {
+      const available = sources
+        .map((source) => queries[source].data)
+        .filter((data): data is StatsData => Boolean(data));
+      stats = available.length > 0 ? available.reduce(mergeStats) : null;
+    }
+  }
+
+  return { stats, failedSources, loadingStats };
+}
+
 function StatsPage() {
   const { player, loading: authLoading } = useNexusRole();
 
@@ -832,25 +860,8 @@ function StatsPage() {
   });
   const dashboardQ = useQuery({ ...myDashboardQuery(), enabled: !!player });
 
-  const stats: StatsData | null =
-    statsSource === "official"
-      ? (officialQ.data ?? null)
-      : statsSource === "casual"
-        ? (casualQ.data ?? null)
-        : statsSource === "pending"
-          ? (pendingQ.data ?? null)
-          : officialQ.data && casualQ.data && pendingQ.data
-            ? mergeStats(mergeStats(officialQ.data, casualQ.data), pendingQ.data)
-            : null;
-
-  const loadingStats =
-    statsSource === "all"
-      ? officialQ.isLoading || casualQ.isLoading || pendingQ.isLoading
-      : statsSource === "official"
-        ? officialQ.isLoading
-        : statsSource === "casual"
-          ? casualQ.isLoading
-          : pendingQ.isLoading;
+  const sourceQueries = { official: officialQ, casual: casualQ, pending: pendingQ };
+  const { stats, failedSources, loadingStats } = getStatsSourceState(statsSource, sourceQueries);
 
   if (!authLoading && !player) {
     return (
@@ -868,6 +879,14 @@ function StatsPage() {
 
   const displayStats =
     stats && timeRange !== "all" ? filterStatsByDate(stats, Number(timeRange)) : stats;
+  const statsLoadFailed = failedSources.length > 0 && !loadingStats;
+  const hasPartialStats = !!displayStats && displayStats.leaders.length > 0;
+  const failedSourceLabels = failedSources
+    .map((source) => ({ official: "Oficial", casual: "Casual", pending: "Pendientes" })[source])
+    .join(", ");
+  const retryFailedSources = () => {
+    failedSources.forEach((source) => void sourceQueries[source].refetch());
+  };
   // clamp: al filtrar por fecha la lista puede encogerse
   const leaderIdx =
     displayStats && selectedLeaderIdx < displayStats.leaders.length ? selectedLeaderIdx : 0;
@@ -1042,6 +1061,19 @@ function StatsPage() {
         </div>
       ) : (
         <div className="mt-4">
+          {statsLoadFailed && (
+            <div
+              className={`rounded-xl border border-destructive/30 bg-destructive/10 p-4 ${
+                hasPartialStats ? "mb-4" : ""
+              }`}
+            >
+              <InlineError onRetry={retryFailedSources}>
+                {hasPartialStats
+                  ? `No pudimos cargar ${failedSourceLabels}. Ves resultados parciales.`
+                  : `No pudimos cargar tus estadísticas: ${failedSourceLabels}.`}
+              </InlineError>
+            </div>
+          )}
           {loadingStats ? (
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               <div className="space-y-3">
@@ -1054,7 +1086,8 @@ function StatsPage() {
                 <SkeletonBlock className="h-64 rounded-2xl" />
               </div>
             </div>
-          ) : !displayStats || displayStats.leaders.length === 0 ? (
+          ) : statsLoadFailed && !hasPartialStats ? null : !displayStats ||
+            displayStats.leaders.length === 0 ? (
             <div className="glass rounded-2xl p-12 text-center">
               <p className="text-sm text-gray-500">
                 {noLeaderRounds.length > 0

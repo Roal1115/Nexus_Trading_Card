@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computeTournamentSummary, filterStatsByDate } from "./my-stats";
+import {
+  computeTournamentSummary,
+  filterStatsByDate,
+  getStatsSourceState,
+} from "./my-stats";
 
 const DAY = 86400000;
 const iso = (daysAgo: number) => new Date(Date.now() - daysAgo * DAY).toISOString().slice(0, 10);
@@ -39,6 +43,59 @@ const stats = () => ({
     },
   ],
   no_leader_rounds: [],
+});
+
+const query = (data?: any, overrides = {}) => ({
+  data,
+  isLoading: false,
+  isError: false,
+  ...overrides,
+});
+
+describe("errores por fuente en Mis Stats", () => {
+  it("distingue un error de Oficial de un historial vacío", () => {
+    const state = getStatsSourceState("official", {
+      official: query(undefined, { isError: true }),
+      casual: query(),
+      pending: query(),
+    });
+
+    expect(state.stats).toBeNull();
+    expect(state.failedSources).toEqual(["official"]);
+  });
+
+  it("conserva Oficial y Pendientes cuando Casual falla en Todo", () => {
+    const state = getStatsSourceState("all", {
+      official: query(stats()),
+      casual: query(undefined, { isError: true }),
+      pending: query({ ...stats(), leaders: [] }),
+    });
+
+    expect(state.failedSources).toEqual(["casual"]);
+    expect(state.stats?.leaders).toHaveLength(1);
+  });
+
+  it("espera a que las demás fuentes terminen antes de mostrar parciales", () => {
+    const state = getStatsSourceState("all", {
+      official: query(stats()),
+      casual: query(undefined, { isLoading: true }),
+      pending: query({ ...stats(), leaders: [] }),
+    });
+
+    expect(state.loadingStats).toBe(true);
+    expect(state.stats).toBeNull();
+  });
+
+  it("reporta las tres fuentes cuando todas fallan", () => {
+    const state = getStatsSourceState("all", {
+      official: query(undefined, { isError: true }),
+      casual: query(undefined, { isError: true }),
+      pending: query(undefined, { isError: true }),
+    });
+
+    expect(state.failedSources).toEqual(["official", "casual", "pending"]);
+    expect(state.stats).toBeNull();
+  });
 });
 
 describe("periodo de Mis Stats", () => {
