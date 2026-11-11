@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser, optionalNexusUser } from "./nexus-auth.middleware";
 import { entryOf, monthRows, seasonRows, tableOf } from "./nexus-rankings.server";
+import { createLeaderIdentityResolver } from "./leader-identity";
 
 export const getMyDashboard = createServerFn({ method: "POST" })
   .middleware([requireNexusUser])
@@ -1044,7 +1045,7 @@ export const getMyStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -1065,16 +1066,15 @@ export const getMyStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
     // 8. Mapa final de leaders
-    const leaderMap = new Map(
-      [...(rawLeaders ?? []), ...(canonicalLeaders ?? [])].map((l: any) => [l.id, l]),
-    );
-
-    const resolveId = (id: string): string => variantToCanonical.get(id) ?? id;
+    const { leaderMap, resolveId } = createLeaderIdentityResolver([
+      ...(rawLeaders ?? []),
+      ...(canonicalLeaders ?? []),
+    ]);
 
     // 8b. Torneos ganados (rank=1) por leader canónico — el campeón pudo variar
     // de arte ronda a ronda, así que se toma el leader más usado en ese torneo.
@@ -1246,6 +1246,7 @@ export const getMyStats = createServerFn({ method: "POST" })
           leader_image: leader?.card_image ?? null,
           leader_colors: (leader?.colors as string[] | null) ?? null,
           leader_set_code: (leader?.set_code as string | null) ?? null,
+          leader_card_set_id: (leader?.card_set_id as string | null) ?? null,
           total_games: total,
           wins,
           losses: total - wins,
@@ -1469,7 +1470,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -1486,14 +1487,14 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
-    const leaderMap = new Map(
-      [...(rawLeaders ?? []), ...(canonicalLeaders ?? [])].map((l: any) => [l.id, l]),
-    );
-    const resolveId = (id: string): string => variantToCanonical.get(id) ?? id;
+    const { leaderMap, resolveId } = createLeaderIdentityResolver([
+      ...(rawLeaders ?? []),
+      ...(canonicalLeaders ?? []),
+    ]);
 
     // 5. Agregación por leader canónico — MISMA lógica que getMyStats
     //    pero con round_history usando session_date + store fallback
@@ -1631,6 +1632,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
           leader_image: leader?.card_image ?? null,
           leader_colors: (leader?.colors as string[] | null) ?? null,
           leader_set_code: (leader?.set_code as string | null) ?? null,
+          leader_card_set_id: (leader?.card_set_id as string | null) ?? null,
           total_games: agg.total_games,
           wins: agg.wins,
           losses: agg.total_games - agg.wins,
@@ -1749,7 +1751,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
     const { data: rawLeaders } = rawLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
           .in("id", rawLeaderIds)
       : { data: [] as any[] };
 
@@ -1766,14 +1768,14 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
     const { data: canonicalLeaders } = missingCanonicalIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, card_set_id, canonical_leader_id, colors, set_code")
+          .select("id, base_name, card_image, card_set_id, card_image_id, canonical_leader_id, colors, set_code")
           .in("id", missingCanonicalIds)
       : { data: [] as any[] };
 
-    const leaderMap = new Map(
-      [...(rawLeaders ?? []), ...(canonicalLeaders ?? [])].map((l: any) => [l.id, l]),
-    );
-    const resolveId = (id: string): string => variantToCanonical.get(id) ?? id;
+    const { leaderMap, resolveId } = createLeaderIdentityResolver([
+      ...(rawLeaders ?? []),
+      ...(canonicalLeaders ?? []),
+    ]);
 
     const leaderAggs = new Map<string, any>();
 
@@ -1895,6 +1897,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
           leader_image: leader?.card_image ?? null,
           leader_colors: (leader?.colors as string[] | null) ?? null,
           leader_set_code: (leader?.set_code as string | null) ?? null,
+          leader_card_set_id: (leader?.card_set_id as string | null) ?? null,
           total_games: agg.total_games,
           wins: agg.wins,
           losses: agg.total_games - agg.wins,
