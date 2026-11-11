@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SkeletonLine } from "@/components/ui/skeleton-loader";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 import {
   listSponsors,
   createSponsor,
@@ -14,7 +14,7 @@ import {
   resetSponsorViews,
   deleteSponsor,
   getSponsorMetrics,
-} from "@/lib/geekarena-ads.functions";
+} from "@/lib/nexus-ads.functions";
 
 export const Route = createFileRoute("/admin/ads")({
   head: () => ({ meta: [{ title: "Sponsors & Ads — Panel Admin" }] }),
@@ -210,11 +210,21 @@ function AdminAdsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Rank</th>
-                      <th className="px-3 py-2 text-left">Nombre</th>
-                      <th className="px-3 py-2 text-right">Límite</th>
-                      <th className="px-3 py-2 text-left">Estado</th>
-                      <th className="px-3 py-2 text-right">Acciones</th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Rank
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Nombre
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Límite
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -253,11 +263,21 @@ function AdminAdsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Rank</th>
-                      <th className="px-3 py-2 text-left">Nombre</th>
-                      <th className="px-3 py-2 text-right">Límite</th>
-                      <th className="px-3 py-2 text-left">Estado</th>
-                      <th className="px-3 py-2 text-right">Acciones</th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Rank
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Nombre
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Límite
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -379,12 +399,24 @@ function AdminAdsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-black/40 text-xs uppercase tracking-wider text-gray-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Sponsor</th>
-                      <th className="px-3 py-2 text-right">Vistas este mes</th>
-                      <th className="px-3 py-2 text-right">Límite</th>
-                      <th className="px-3 py-2 text-left">Consumido</th>
-                      <th className="px-3 py-2 text-left">Ciclos</th>
-                      <th className="px-3 py-2 text-left">Estado</th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Sponsor
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Vistas este mes
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-right">
+                        Límite
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Consumido
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Ciclos
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left">
+                        Estado
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -506,15 +538,15 @@ function AdminAdsPage() {
               throw new Error(`El archivo excede el tamaño máximo permitido (${spec.maxLabel})`);
             }
             const path = `sponsors/${imagesSponsor.id}/${type}.webp`;
-            const { error } = await geekarena.storage
+            const { error } = await nexus.storage
               .from("sponsor-assets")
               .upload(path, file, { upsert: true, contentType: "image/webp" });
             if (error) throw new Error(error.message);
-            const { data } = geekarena.storage.from("sponsor-assets").getPublicUrl(path);
+            const { data } = nexus.storage.from("sponsor-assets").getPublicUrl(path);
             const url = `${data.publicUrl}?v=${Date.now()}`;
             const updateField =
               type === "logo"
-                ? { logo_url: url }
+                ? { carousel_url: url }
                 : type === "vertical"
                   ? { vertical_url: url }
                   : { horizontal_url: url };
@@ -562,12 +594,13 @@ function AdminAdsPage() {
 
             {/* Text confirmation */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs text-gray-400">
+              <label htmlFor="delete-confirm-input" className="text-xs text-gray-400">
                 Para confirmar, escribe{" "}
                 <span className="font-mono font-bold text-red-400">ELIMINAR</span> en el campo de
                 abajo:
               </label>
               <input
+                id="delete-confirm-input"
                 type="text"
                 value={deleteInput}
                 onChange={(e) => setDeleteInput(e.target.value)}
@@ -800,7 +833,7 @@ function ImagesModal({
           const spec = IMAGE_SPECS[type];
           const currentUrl =
             type === "logo"
-              ? sponsor.logo_url
+              ? sponsor.carousel_url
               : type === "vertical"
                 ? sponsor.vertical_url
                 : sponsor.horizontal_url;

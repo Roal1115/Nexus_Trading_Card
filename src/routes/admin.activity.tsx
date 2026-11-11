@@ -2,31 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Filter, Search } from "lucide-react";
-import { listAuditLog, type AuditLogRow } from "@/lib/geekarena-admin.functions";
+import { listAuditLog, type AuditLogRow } from "@/lib/nexus-admin.functions";
 import { useActivityLastSeen } from "@/hooks/use-badge-counts";
+import { BlockSelect } from "@/components/ui/block-select";
+import { ACTION_LABELS } from "@/components/admin/audit-actions";
 
 export const Route = createFileRoute("/admin/activity")({
-  head: () => ({ meta: [{ title: "Activity Center — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Activity Center — Nexus" }] }),
   component: ActivityPage,
 });
-
-type ActionInfo = { label: string; icon: string; color: string };
-
-const ACTION_LABELS: Record<string, ActionInfo> = {
-  TOURNAMENT_APPROVED: { label: "Torneo aprobado", icon: "✅", color: "text-green-400" },
-  TOURNAMENT_REJECTED: { label: "Torneo rechazado", icon: "❌", color: "text-red-400" },
-  TOURNAMENT_PUBLISHED: { label: "Torneo publicado", icon: "🚀", color: "text-primary" },
-  APPROVAL_UNDONE: { label: "Aprobación deshecha", icon: "↩️", color: "text-yellow-400" },
-  ROLE_CHANGED: { label: "Rol modificado", icon: "👤", color: "text-blue-400" },
-  ORGANIZER_ASSIGNED: { label: "Organizador asignado", icon: "🏪", color: "text-teal-400" },
-  STORE_CREATED: { label: "Tienda creada", icon: "🏪", color: "text-teal-400" },
-  STORE_UPDATED: { label: "Tienda editada", icon: "✏️", color: "text-gray-400" },
-  SEASON_CREATED: { label: "Temporada creada", icon: "📅", color: "text-purple-400" },
-  SEASON_ACTIVATED: { label: "Temporada activada", icon: "▶️", color: "text-green-400" },
-  SEASON_CLOSED: { label: "Temporada cerrada", icon: "🔒", color: "text-gray-400" },
-  SPONSOR_DELETED: { label: "Sponsor eliminado", icon: "🗑️", color: "text-red-400" },
-  PLAYER_DETAIL_UPDATED: { label: "Perfil de jugador editado", icon: "✏️", color: "text-blue-400" },
-};
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
@@ -140,39 +124,36 @@ function ActivityPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          <select
-            value={filters.action}
-            onChange={(e) => load({ action: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todas las acciones</option>
-            {Object.entries(ACTION_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v.icon} {v.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.actor_role}
-            onChange={(e) => load({ actor_role: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los roles</option>
-            <option value="admin">Admin</option>
-            <option value="tcg_manager">TCG Manager</option>
-            <option value="organizer">Organizador</option>
-          </select>
-          <select
-            value={filters.target_type}
-            onChange={(e) => load({ target_type: e.target.value, page: 1 })}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-          >
-            <option value="">Todos los tipos</option>
-            <option value="tournament">Torneo</option>
-            <option value="player">Jugador</option>
-            <option value="store">Tienda</option>
-            <option value="season">Temporada</option>
-          </select>
+          <BlockSelect
+            value={filters.action || null}
+            onChange={(v) => load({ action: v ?? "", page: 1 })}
+            placeholder="Todas las acciones"
+            options={Object.entries(ACTION_LABELS).map(([k, v]) => ({
+              value: k,
+              label: `${v.icon} ${v.label}`,
+            }))}
+          />
+          <BlockSelect
+            value={filters.actor_role || null}
+            onChange={(v) => load({ actor_role: v ?? "", page: 1 })}
+            placeholder="Todos los roles"
+            options={[
+              { value: "admin", label: "Admin" },
+              { value: "tcg_manager", label: "TCG Manager" },
+              { value: "organizer", label: "Organizador" },
+            ]}
+          />
+          <BlockSelect
+            value={filters.target_type || null}
+            onChange={(v) => load({ target_type: v ?? "", page: 1 })}
+            placeholder="Todos los tipos"
+            options={[
+              { value: "tournament", label: "Torneo" },
+              { value: "player", label: "Jugador" },
+              { value: "store", label: "Tienda" },
+              { value: "season", label: "Temporada" },
+            ]}
+          />
           <div className="flex gap-2">
             <input
               type="date"
@@ -219,11 +200,21 @@ function ActivityPage() {
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-xs uppercase tracking-wider text-gray-400">
               <tr>
-                <th className="text-left px-4 py-2 font-medium">Fecha</th>
-                <th className="text-left px-4 py-2 font-medium">Actor</th>
-                <th className="text-left px-4 py-2 font-medium">Rol</th>
-                <th className="text-left px-4 py-2 font-medium">Acción</th>
-                <th className="text-left px-4 py-2 font-medium">Detalle</th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Fecha
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Actor
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Rol
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Acción
+                </th>
+                <th scope="col" className="text-left px-4 py-2 font-medium">
+                  Detalle
+                </th>
               </tr>
             </thead>
             <tbody>

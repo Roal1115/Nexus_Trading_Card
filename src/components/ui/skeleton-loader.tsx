@@ -1,5 +1,6 @@
+// Pulso en vez de barrido: con barrido, cada barra se mueve a distinta velocidad según su ancho.
 function shimmer() {
-  return "relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/[0.06] before:to-transparent";
+  return "animate-pulse";
 }
 
 export function SkeletonLine({
@@ -100,7 +101,12 @@ export function TcgRankCardSkeleton() {
 }
 
 // Skeleton para fila de torneos del dashboard
-export function TournamentRowSkeleton() {
+export function TournamentRowSkeleton({
+  actionClassName = "w-6 h-6",
+}: {
+  /** Tamaño de la acción final: debe igualar al de la fila real para que nada salte al cargar. */
+  actionClassName?: string;
+} = {}) {
   return (
     <tr className="border-b border-white/5">
       <td className="px-4 py-3">
@@ -128,7 +134,7 @@ export function TournamentRowSkeleton() {
         </div>
       </td>
       <td className="px-4 py-3">
-        <SkeletonBlock className="w-6 h-6 rounded-md" />
+        <SkeletonBlock className={`${actionClassName} rounded-md`} />
       </td>
     </tr>
   );
@@ -151,5 +157,40 @@ export function SettingsSectionSkeleton() {
       </div>
       <SkeletonLine width="w-32" height="h-8" className="rounded-lg" />
     </div>
+  );
+}
+
+/** Carga de "Mis Partidas": la usa el detalle del torneo y luego el propio panel, sin cambio visible. */
+export function PerformanceTrackerSkeleton() {
+  return (
+    <>
+      <div className="mb-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <SkeletonLine width="w-32" height="h-4" />
+        <SkeletonLine width="w-20" height="h-3" />
+        <div className="mt-3 flex items-center gap-3">
+          <SkeletonBlock className="h-14 w-10 flex-shrink-0 rounded-md" />
+          <div className="space-y-2">
+            <SkeletonLine width="w-16" height="h-2" />
+            <SkeletonLine width="w-24" height="h-4" />
+          </div>
+        </div>
+        <div className="mt-3 space-y-1 text-center">
+          <SkeletonLine width="w-16" height="h-2" className="mx-auto" />
+          <SkeletonLine width="w-24" height="h-8" className="mx-auto" />
+        </div>
+      </div>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="mb-2 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5"
+        >
+          <div className="flex items-center gap-3">
+            <SkeletonBlock className="h-6 w-6 rounded-md" />
+            <SkeletonLine width="w-28" height="h-3" />
+          </div>
+          <SkeletonLine width="w-14" height="h-5" className="rounded-md" />
+        </div>
+      ))}
+    </>
   );
 }

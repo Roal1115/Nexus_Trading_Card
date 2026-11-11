@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LIST_PAGE_SIZE } from "@/hooks/use-pagination";
+import { SearchInput } from "@/components/ui/search-input";
+import { TablePager } from "@/components/ui/table-pager";
+import { openRowProps } from "@/components/ui/detail-dialog";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -18,8 +22,12 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { TournamentRowSkeleton, SettingsSectionSkeleton, SkeletonBlock } from "@/components/ui/skeleton-loader";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import {
+  TournamentRowSkeleton,
+  SettingsSectionSkeleton,
+  SkeletonBlock,
+} from "@/components/ui/skeleton-loader";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   listPlayers,
   setPlayerRole,
@@ -29,8 +37,10 @@ import {
   updatePlayerDetail,
   getManagerAssignedGames,
   deletePlayerAccount,
-} from "@/lib/geekarena-admin.functions";
-import { assignManagerGames } from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-admin.functions";
+import { assignManagerGames } from "@/lib/nexus-manager.functions";
+import { formatDate } from "@/components/panel/dashboard-format";
+import { PLAYER_STATUS_COLORS, PLAYER_STATUS_LABELS } from "@/lib/player-status";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,12 +66,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/admin/players")({
   component: AdminPlayersPage,
@@ -82,10 +87,10 @@ type P = {
 };
 type Store = { id: string; name: string; city: string | null };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = LIST_PAGE_SIZE;
 
 function AdminPlayersPage() {
-  const { player } = useGeekarenaRole();
+  const { player } = useNexusRole();
   const email = player?.email ?? null;
 
   const fetchPlayers = useServerFn(listPlayers);
@@ -93,7 +98,6 @@ function AdminPlayersPage() {
   const setRole = useServerFn(setPlayerRole);
   const setActive = useServerFn(setPlayerActive);
   const deleteAccountFn = useServerFn(deletePlayerAccount);
-
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -130,6 +134,8 @@ function AdminPlayersPage() {
   const [detailData, setDetailData] = useState<DetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  // Abierto desde la fila: ficha de consulta, sin botón de editar.
+  const [detailReadOnly, setDetailReadOnly] = useState(false);
   const [editFields, setEditFields] = useState<EditFields>({
     display_name: "",
     gender: "",
@@ -193,8 +199,9 @@ function AdminPlayersPage() {
     }
   };
 
-  const openDetail = async (playerId: string) => {
+  const openDetail = async (playerId: string, readOnly = false) => {
     setDetailModal(playerId);
+    setDetailReadOnly(readOnly);
     setDetailLoading(true);
     setEditMode(false);
     setDetailData(null);
@@ -256,7 +263,6 @@ function AdminPlayersPage() {
     }
   };
 
-
   // debounce search
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -291,7 +297,8 @@ function AdminPlayersPage() {
     let cancelled = false;
     setLoading(true);
     fetchPlayers({
-      data: { search: search || undefined,
+      data: {
+        search: search || undefined,
         role: effectiveRole,
         active: activeFilter,
         store_id: storeFilter !== "all" ? storeFilter : undefined,
@@ -318,7 +325,8 @@ function AdminPlayersPage() {
     setPage((p) => p);
     if (email) {
       fetchPlayers({
-        data: { search: search || undefined,
+        data: {
+          search: search || undefined,
           role: effectiveRole,
           active: activeFilter,
           store_id: storeFilter !== "all" ? storeFilter : undefined,
@@ -357,7 +365,7 @@ function AdminPlayersPage() {
   const rangeEnd = Math.min(page * PAGE_SIZE, total);
 
   const storeName = (id: string | null) =>
-    id ? stores.find((s) => s.id === id)?.name ?? "—" : "—";
+    id ? (stores.find((s) => s.id === id)?.name ?? "—") : "—";
 
   // actions
   const confirmRoleChange = async () => {
@@ -382,7 +390,8 @@ function AdminPlayersPage() {
     setActing(true);
     try {
       await setRole({
-        data: { player_id: storeModal.p.id,
+        data: {
+          player_id: storeModal.p.id,
           role: storeModal.p.role,
           home_store_id: storeModal.next || null,
         },
@@ -418,34 +427,22 @@ function AdminPlayersPage() {
     <TooltipProvider>
       <div className="space-y-6">
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Comunidad
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Comunidad</p>
           <h1 className="mt-2 text-3xl font-bold text-white">Gestión de Usuarios</h1>
           <p className="mt-1 text-sm text-gray-400">
             Administra roles, tiendas y estado de cuenta a escala.
           </p>
         </header>
 
-
         {/* Search + filters */}
-        <div className="glass space-y-3 rounded-2xl p-4">
-          <div className="flex items-center gap-2">
-            <Search size={16} className="ml-2 text-gray-500" />
-            <Input
-              placeholder="Buscar por geek tag (o escribe @ para buscar por email)"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="border-0 bg-transparent focus-visible:ring-0"
-            />
-            {searchInput && (
-              <Button variant="ghost" size="sm" onClick={() => setSearchInput("")}>
-                <X size={14} />
-              </Button>
-            )}
-          </div>
-
+        <div className="glass rounded-2xl p-3">
           <div className="flex flex-wrap items-center gap-2">
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Buscar por Nexus Tag, o @ para buscar por correo"
+              className="basis-full"
+            />
             <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as any)}>
               <SelectTrigger className="h-9 w-40">
                 <SelectValue placeholder="Rol" />
@@ -478,7 +475,8 @@ function AdminPlayersPage() {
                 <SelectItem value="all">Todas las tiendas</SelectItem>
                 {stores.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
-                    {s.name}{s.city ? ` — ${s.city}` : ""}
+                    {s.name}
+                    {s.city ? ` — ${s.city}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -490,7 +488,7 @@ function AdminPlayersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="recent">Más recientes</SelectItem>
-                <SelectItem value="geek_tag">Geek Tag (A-Z)</SelectItem>
+                <SelectItem value="geek_tag">Nexus Tag (A-Z)</SelectItem>
                 <SelectItem value="points">Puntos totales</SelectItem>
               </SelectContent>
             </Select>
@@ -506,17 +504,6 @@ function AdminPlayersPage() {
               </>
             )}
           </div>
-        </div>
-
-        {/* Counter */}
-        <div className="flex items-center justify-between text-xs text-gray-400">
-          <span>
-            Mostrando {rangeStart.toLocaleString("es-MX")}–{rangeEnd.toLocaleString("es-MX")} de{" "}
-            {total.toLocaleString("es-MX")} jugadores
-          </span>
-          <span>
-            Página {page} de {totalPages}
-          </span>
         </div>
 
         {/* Table */}
@@ -539,24 +526,40 @@ function AdminPlayersPage() {
               <table className="w-full text-sm">
                 <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                   <tr>
-                    <th className="px-4 py-3">Geek Tag</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Rol</th>
-                    <th className="px-4 py-3">Tienda</th>
-                    <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3">Registro</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
+                    <th scope="col" className="px-4 py-3">
+                      Nexus Tag
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Email
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Rol
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Tienda
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Estado
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Registro
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {players.map((p) => (
-                    <tr key={p.id} className="border-t border-white/5">
+                    <tr
+                      key={p.id}
+                      {...openRowProps(() => openDetail(p.id, true))}
+                      className="cursor-pointer border-t border-white/5 transition hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-none"
+                    >
                       <td className="px-4 py-3 text-white">
                         {p.geek_tag}
                         {p.display_name ? (
-                          <span className="block text-xs text-gray-500">
-                            {p.display_name}
-                          </span>
+                          <span className="block text-xs text-gray-500">{p.display_name}</span>
                         ) : null}
                         {p.role === "tcg_manager" &&
                         p.manager_games &&
@@ -595,9 +598,7 @@ function AdminPlayersPage() {
                       </td>
                       <td className="px-4 py-3">
                         {p.is_active ? (
-                          <Badge className="bg-emerald-500/15 text-emerald-300">
-                            Activo
-                          </Badge>
+                          <Badge className="bg-emerald-500/15 text-emerald-300">Activo</Badge>
                         ) : (
                           <Badge className="bg-red-500/15 text-red-300">Inactivo</Badge>
                         )}
@@ -605,22 +606,21 @@ function AdminPlayersPage() {
                       <td className="px-4 py-3 text-gray-400">
                         {new Date(p.created_at).toLocaleDateString("es-MX")}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <RowActions
                           p={p}
                           onViewDetail={() => openDetail(p.id)}
                           onChangeRole={(next) => setRoleModal({ p, next })}
-                          onAssignStore={() =>
-                            setStoreModal({ p, next: p.home_store_id ?? "" })
-                          }
+                          onAssignStore={() => setStoreModal({ p, next: p.home_store_id ?? "" })}
                           onToggleActive={() => {
                             if (p.is_active) setActiveModal(p);
-                            else void setActive({
-                              data: { player_id: p.id, is_active: true },
-                            }).then(() => {
-                              toast.success("Cuenta activada");
-                              refresh();
-                            });
+                            else
+                              void setActive({
+                                data: { player_id: p.id, is_active: true },
+                              }).then(() => {
+                                toast.success("Cuenta activada");
+                                refresh();
+                              });
                           }}
                           onAssignGames={() => openTcgModal(p.id, p.geek_tag)}
                           onDeleteAccount={() => {
@@ -637,31 +637,24 @@ function AdminPlayersPage() {
           )}
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            <ChevronLeft size={14} /> Anterior
-          </Button>
-          <span className="text-sm text-gray-400">
-            {page} / {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= totalPages || loading}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            Siguiente <ChevronRight size={14} />
-          </Button>
-        </div>
+        <TablePager
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          total={total}
+          pageSize={PAGE_SIZE}
+        />
 
         {/* Role change modal */}
-        <Dialog open={!!roleModal} onOpenChange={(o) => { if (!o) { setRoleModal(null); setAdminConfirmEmail(""); } }}>
+        <Dialog
+          open={!!roleModal}
+          onOpenChange={(o) => {
+            if (!o) {
+              setRoleModal(null);
+              setAdminConfirmEmail("");
+            }
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -675,8 +668,8 @@ function AdminPlayersPage() {
                     {roleModal.next === "admin" ? (
                       <>
                         Estás por darle <strong className="text-red-300">acceso total</strong> a{" "}
-                        <strong className="text-white">{roleModal.p.geek_tag}</strong>.
-                        Para confirmar, escribe su correo exacto.
+                        <strong className="text-white">{roleModal.p.geek_tag}</strong>. Para
+                        confirmar, escribe su correo exacto.
                       </>
                     ) : (
                       <>
@@ -692,9 +685,7 @@ function AdminPlayersPage() {
             {roleModal && roleModal.next !== "admin" && (
               <Select
                 value={roleModal.next}
-                onValueChange={(v) =>
-                  setRoleModal({ ...roleModal, next: v as Role })
-                }
+                onValueChange={(v) => setRoleModal({ ...roleModal, next: v as Role })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -731,8 +722,7 @@ function AdminPlayersPage() {
                   acting ||
                   (roleModal?.next === "admin" &&
                     (!roleModal.p.email ||
-                      adminConfirmEmail.trim().toLowerCase() !==
-                        roleModal.p.email.toLowerCase()))
+                      adminConfirmEmail.trim().toLowerCase() !== roleModal.p.email.toLowerCase()))
                 }
               >
                 {acting ? <Loader2 className="animate-spin" size={14} /> : "Confirmar"}
@@ -740,7 +730,6 @@ function AdminPlayersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
 
         {/* Store modal */}
         <Dialog open={!!storeModal} onOpenChange={(o) => !o && setStoreModal(null)}>
@@ -770,7 +759,8 @@ function AdminPlayersPage() {
                   <SelectItem value="__none">Sin tienda</SelectItem>
                   {stores.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name}{s.city ? ` — ${s.city}` : ""}
+                      {s.name}
+                      {s.city ? ` — ${s.city}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -796,8 +786,8 @@ function AdminPlayersPage() {
                 {activeModal && (
                   <>
                     ¿Desactivar la cuenta de{" "}
-                    <strong className="text-white">{activeModal.geek_tag}</strong>? El
-                    jugador no podrá iniciar sesión.
+                    <strong className="text-white">{activeModal.geek_tag}</strong>? El jugador no
+                    podrá iniciar sesión.
                   </>
                 )}
               </DialogDescription>
@@ -806,11 +796,7 @@ function AdminPlayersPage() {
               <Button variant="ghost" onClick={() => setActiveModal(null)}>
                 Cancelar
               </Button>
-              <Button
-                variant="destructive"
-                onClick={confirmToggleActive}
-                disabled={acting}
-              >
+              <Button variant="destructive" onClick={confirmToggleActive} disabled={acting}>
                 {acting ? <Loader2 className="animate-spin" size={14} /> : "Desactivar"}
               </Button>
             </DialogFooter>
@@ -835,20 +821,19 @@ function AdminPlayersPage() {
               <DialogDescription>
                 {deleteModal && (
                   <>
-                    Esta acción es <strong>permanente</strong>. Se eliminará la
-                    cuenta de{" "}
-                    <strong className="text-white">{deleteModal.geek_tag}</strong>,
-                    sus credenciales y su perfil. Los torneos y resultados
-                    asociados pueden verse afectados.
+                    Esta acción es <strong>permanente</strong>. Se eliminará la cuenta de{" "}
+                    <strong className="text-white">{deleteModal.geek_tag}</strong>, sus credenciales
+                    y su perfil. Los torneos y resultados asociados pueden verse afectados.
                   </>
                 )}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
-              <label className="text-xs text-gray-400">
-                Escribe el Player Tag exacto para confirmar
+              <label htmlFor="delete-confirm-tag" className="text-xs text-gray-400">
+                Escribe el Nexus Tag exacto para confirmar
               </label>
               <Input
+                id="delete-confirm-tag"
                 value={deleteConfirmTag}
                 onChange={(e) => setDeleteConfirmTag(e.target.value)}
                 placeholder={deleteModal?.geek_tag ?? ""}
@@ -868,9 +853,7 @@ function AdminPlayersPage() {
               <Button
                 variant="destructive"
                 disabled={
-                  acting ||
-                  !deleteModal ||
-                  deleteConfirmTag.trim() !== deleteModal.geek_tag
+                  acting || !deleteModal || deleteConfirmTag.trim() !== deleteModal.geek_tag
                 }
                 onClick={async () => {
                   if (!deleteModal) return;
@@ -917,12 +900,8 @@ function AdminPlayersPage() {
                   </DialogTitle>
                 </div>
                 <div className="flex items-center gap-2">
-                  {detailData && !editMode && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={enterEditMode}
-                    >
+                  {detailData && !editMode && !detailReadOnly && (
+                    <Button variant="outline" size="sm" onClick={enterEditMode}>
                       <Pencil size={14} className="mr-1.5" />
                       Editar
                     </Button>
@@ -937,11 +916,7 @@ function AdminPlayersPage() {
                       >
                         Cancelar
                       </Button>
-                      <Button
-                        size="sm"
-                        onClick={saveDetail}
-                        disabled={savingDetail}
-                      >
+                      <Button size="sm" onClick={saveDetail} disabled={savingDetail}>
                         {savingDetail ? (
                           <Loader2 size={14} className="animate-spin" />
                         ) : (
@@ -967,32 +942,18 @@ function AdminPlayersPage() {
                     Información de cuenta
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <DetailField
-                      label="Geek Tag"
-                      value={detailData.player.geek_tag}
-                    />
-                    <DetailField
-                      label="Email"
-                      value={detailData.player.email ?? "—"}
-                    />
+                    <DetailField label="Nexus Tag" value={detailData.player.geek_tag} />
+                    <DetailField label="Email" value={detailData.player.email ?? "—"} />
                     <DetailField
                       label="Nombre para mostrar"
                       value={detailData.player.display_name ?? "—"}
                       editable={editMode}
                       editType="text"
                       editValue={editFields.display_name}
-                      onEdit={(v) =>
-                        setEditFields((p) => ({ ...p, display_name: v }))
-                      }
+                      onEdit={(v) => setEditFields((p) => ({ ...p, display_name: v }))}
                     />
-                    <DetailField
-                      label="Rol"
-                      value={(detailData.player as any).role ?? "—"}
-                    />
-                    <DetailField
-                      label="Tienda"
-                      value={detailData.store?.name ?? "Sin tienda"}
-                    />
+                    <DetailField label="Rol" value={(detailData.player as any).role ?? "—"} />
+                    <DetailField label="Tienda" value={detailData.store?.name ?? "Sin tienda"} />
                     <DetailField
                       label="Visibilidad del perfil"
                       value={
@@ -1003,9 +964,7 @@ function AdminPlayersPage() {
                       editable={editMode}
                       editType="toggle"
                       editValue={editFields.is_profile_public}
-                      onEdit={(v) =>
-                        setEditFields((p) => ({ ...p, is_profile_public: v }))
-                      }
+                      onEdit={(v) => setEditFields((p) => ({ ...p, is_profile_public: v }))}
                     />
                   </div>
                 </section>
@@ -1031,9 +990,7 @@ function AdminPlayersPage() {
                         { value: "mujer", label: "Mujer" },
                         { value: "otro", label: "Otro" },
                       ]}
-                      onEdit={(v) =>
-                        setEditFields((p) => ({ ...p, gender: v }))
-                      }
+                      onEdit={(v) => setEditFields((p) => ({ ...p, gender: v }))}
                     />
                     <DetailField
                       label="Fecha de nacimiento"
@@ -1041,9 +998,7 @@ function AdminPlayersPage() {
                       editable={editMode}
                       editType="date"
                       editValue={editFields.birth_date}
-                      onEdit={(v) =>
-                        setEditFields((p) => ({ ...p, birth_date: v }))
-                      }
+                      onEdit={(v) => setEditFields((p) => ({ ...p, birth_date: v }))}
                     />
                   </div>
                 </section>
@@ -1062,9 +1017,7 @@ function AdminPlayersPage() {
                     <div className="space-y-2">
                       {(editMode
                         ? editFields.tcg_ids.map((t) => {
-                            const orig = detailData.tcg_ids.find(
-                              (x) => x.game_id === t.game_id,
-                            );
+                            const orig = detailData.tcg_ids.find((x) => x.game_id === t.game_id);
                             return {
                               game_id: t.game_id,
                               tcg_user_id: t.tcg_user_id,
@@ -1110,19 +1063,35 @@ function AdminPlayersPage() {
                     Estadísticas
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <StatBox
-                      label="Torneos jugados"
-                      value={detailData.tournaments_played}
-                    />
-                    <StatBox
-                      label="Torneos ganados"
-                      value={detailData.tournaments_won}
-                    />
+                    <StatBox label="Torneos jugados" value={detailData.tournaments_played} />
+                    <StatBox label="Torneos ganados" value={detailData.tournaments_won} />
                     <StatBox
                       label="Puntos totales"
                       value={Number(detailData.total_points).toFixed(2)}
                     />
                   </div>
+                  {detailData.activity.map((a) => (
+                    <div
+                      key={a.game_id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-white">{a.game_name}</p>
+                        <p className="text-xs text-gray-400">
+                          {a.tournaments} torneos · Última visita {formatDate(a.last_visit)}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        style={{
+                          borderColor: PLAYER_STATUS_COLORS[a.status],
+                          color: PLAYER_STATUS_COLORS[a.status],
+                        }}
+                      >
+                        {PLAYER_STATUS_LABELS[a.status]}
+                      </Badge>
+                    </div>
+                  ))}
                 </section>
               </div>
             ) : null}
@@ -1144,9 +1113,7 @@ function AdminPlayersPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
                     TCG Manager
                   </p>
-                  <h2 className="mt-1 text-xl font-bold text-white">
-                    Asignar TCGs
-                  </h2>
+                  <h2 className="mt-1 text-xl font-bold text-white">Asignar TCGs</h2>
                   <p className="text-sm text-gray-400">@{tcgModal.geek_tag}</p>
                 </div>
                 <button
@@ -1166,9 +1133,8 @@ function AdminPlayersPage() {
               ) : (
                 <div className="space-y-2">
                   <p className="text-xs text-gray-500">
-                    Selecciona los juegos que este manager tiene bajo su
-                    responsabilidad. Puede gestionar múltiples TCGs
-                    simultáneamente.
+                    Selecciona los juegos que este manager tiene bajo su responsabilidad. Puede
+                    gestionar múltiples TCGs simultáneamente.
                   </p>
                   {allManagerGames.map((g) => {
                     const isSelected = selectedManagerGames.has(g.id);
@@ -1246,9 +1212,7 @@ function DetailField({
 }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-      <p className="text-[10px] uppercase tracking-widest text-gray-500">
-        {label}
-      </p>
+      <p className="text-[10px] uppercase tracking-widest text-gray-500">{label}</p>
       {editable && onEdit ? (
         editType === "select" ? (
           <select
@@ -1293,19 +1257,11 @@ function DetailField({
   );
 }
 
-function StatBox({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
+function StatBox({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center">
       <p className="text-xl font-semibold text-white">{value}</p>
-      <p className="mt-0.5 text-[10px] uppercase tracking-widest text-gray-500">
-        {label}
-      </p>
+      <p className="mt-0.5 text-[10px] uppercase tracking-widest text-gray-500">{label}</p>
     </div>
   );
 }
@@ -1332,7 +1288,7 @@ function RowActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" aria-label="Más acciones">
           <MoreHorizontal size={16} />
         </Button>
       </DropdownMenuTrigger>

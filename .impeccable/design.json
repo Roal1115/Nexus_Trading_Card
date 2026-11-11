@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T21:16:55+00:00",
+  "title": "Design System: Nexus",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Cian Circuito",
+        "canonical": "#32d9ff",
+        "tonalRamp": [
+          "#04303b",
+          "#06495a",
+          "#0a6a83",
+          "#0f8fb0",
+          "#1bb5dc",
+          "#32d9ff",
+          "#8be9ff",
+          "#d6f7ff"
+        ]
+      },
+      "accent-violet": {
+        "role": "secondary",
+        "displayName": "Violeta Nexus",
+        "canonical": "#9c5cff",
+        "tonalRamp": [
+          "#1f0b40",
+          "#33145f",
+          "#4b1f8a",
+          "#6630b8",
+          "#8247e6",
+          "#9c5cff",
+          "#c39dff",
+          "#ebdfff"
+        ]
+      },
+      "night-navy": {
+        "role": "neutral",
+        "displayName": "Navy Nocturno",
+        "canonical": "#08111f",
+        "tonalRamp": [
+          "#08111f",
+          "#111a2e",
+          "#17233d",
+          "#2a3a57",
+          "#72819d",
+          "#8a98b3",
+          "#aab6d1",
+          "#f5f7fa"
+        ]
+      },
+      "card-navy": {
+        "role": "neutral",
+        "displayName": "Navy Tarjeta",
+        "canonical": "#111a2e"
+      },
+      "raised-navy": {
+        "role": "neutral",
+        "displayName": "Navy Elevado",
+        "canonical": "#17233d"
+      },
+      "panel-border": {
+        "role": "neutral",
+        "displayName": "Borde de Panel",
+        "canonical": "#2a3a57"
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Texto Principal",
+        "canonical": "#f5f7fa"
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Texto Secundario",
+        "canonical": "#aab6d1"
+      },
+      "text-subtle": {
+        "role": "neutral",
+        "displayName": "Texto Tenue",
+        "canonical": "#8a98b3"
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Texto Apagado",
+        "canonical": "#72819d"
+      },
+      "success": {
+        "role": "status",
+        "displayName": "Verde Victoria",
+        "canonical": "#4ef0a2"
+      },
+      "warning": {
+        "role": "status",
+        "displayName": "Amarillo Aviso",
+        "canonical": "#ffd54a"
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Rojo Derrota",
+        "canonical": "#ff5f6d"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Nombre del jugador o título principal de una página pública."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Títulos de página."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Títulos de sección y de tarjeta."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto general de la UI."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Labels, badges y encabezados de tabla."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "Rangos, puntos, V/D y porcentajes, con números tabulares."
+      }
+    },
+    "shadows": [
+      {
+        "name": "floating",
+        "value": "0 25px 50px -12px rgba(0,0,0,0.25)",
+        "purpose": "Solo modales y popovers (shadow-2xl)."
+      },
+      {
+        "name": "base",
+        "value": "0 8px 30px rgba(0,0,0,0.45)",
+        "purpose": "--shadow; solo elementos flotantes."
+      }
+    ],
+    "motion": [
+      {
+        "name": "colors",
+        "value": "150ms cubic-bezier(0.4,0,0.2,1)",
+        "purpose": "transition-colors de Tailwind en botones y navegación."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "prefers-reduced-motion anula animaciones y transiciones."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de la pantalla; cian sólido.",
+      "html": "<button class=\"ds-btn-primary\">Ver ranking</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; gap:8px; height:36px; padding:8px 16px; border:none; border-radius:8px; background:#32d9ff; color:#08111f; font:500 14px Inter, system-ui, sans-serif; box-shadow:0 1px 3px rgba(0,0,0,.3); cursor:pointer; transition:background-color .15s; } .ds-btn-primary:hover { background:rgba(50,217,255,.9); } .ds-btn-primary:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Acción secundaria.",
+      "html": "<button class=\"ds-btn-outline\">Ver perfil</button>",
+      "css": ".ds-btn-outline { height:36px; padding:8px 16px; border:1px solid #17233d; border-radius:8px; background:#08111f; color:#f5f7fa; font:500 14px Inter, system-ui, sans-serif; cursor:pointer; transition:background-color .15s, color .15s; } .ds-btn-outline:hover { background:#9c5cff; color:#f5f7fa; } .ds-btn-outline:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de texto; mínimo 16px para evitar zoom en iOS.",
+      "html": "<input class=\"ds-input\" placeholder=\"Buscar jugador\" />",
+      "css": ".ds-input { height:36px; width:240px; padding:4px 12px; border:1px solid #17233d; border-radius:8px; background:transparent; color:#f5f7fa; font:400 16px Inter, system-ui, sans-serif; transition:border-color .15s; } .ds-input::placeholder { color:#72819d; } .ds-input:focus-visible { outline:none; box-shadow:0 0 0 1px #32d9ff; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Etiqueta compacta de estado.",
+      "html": "<span class=\"ds-badge\">Aprobado</span> <span class=\"ds-badge ds-badge-secondary\">Pendiente</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:8px; background:#32d9ff; color:#08111f; font:600 12px Inter, system-ui, sans-serif; } .ds-badge-secondary { background:#17233d; color:#aab6d1; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Superficie plana: card-navy sólido, borde 1px, sin sombra ni blur; filas internas con divisores.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Torneos recientes</h3><div class=\"ds-card-row\"><span>Taberna Mítico</span><span class=\"ds-num\">#2</span></div><div class=\"ds-card-row\"><span>Arena Estelar</span><span class=\"ds-num\">#28</span></div></div>",
+      "css": ".ds-card { width:300px; border-radius:12px; background:#111a2e; border:1px solid #2a3a57; color:#f5f7fa; } .ds-card-title { margin:0; padding:16px 20px; border-bottom:1px solid #2a3a57; font:600 18px 'Space Grotesk', system-ui, sans-serif; letter-spacing:-.02em; } .ds-card-row { display:flex; justify-content:space-between; padding:12px 20px; border-bottom:1px solid rgba(42,58,87,.6); font:400 14px Inter, system-ui, sans-serif; transition:background-color .15s; } .ds-card-row:last-child { border-bottom:none; } .ds-card-row:hover { background:rgba(255,255,255,.03); } .ds-num { font:600 14px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Navegación lateral; activo en cian al 15%.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-active\" href=\"#\">Inicio</a><a class=\"ds-nav-item\" href=\"#\">Ranking</a><a class=\"ds-nav-item\" href=\"#\">Calendario</a></nav>",
+      "css": ".ds-nav { display:flex; flex-direction:column; gap:4px; width:200px; padding:8px; background:#111a2e; border-radius:12px; } .ds-nav-item { padding:8px 12px; border-radius:8px; color:#d1d5dc; font:500 14px Inter, system-ui, sans-serif; text-decoration:none; transition:background-color .15s, color .15s; } .ds-nav-item:hover { background:rgba(255,255,255,.05); color:#fff; } .ds-nav-active { background:rgba(50,217,255,.15); color:#32d9ff; } .ds-nav-item:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Rank Display",
+      "kind": "custom",
+      "description": "Firma del sistema: rango de 60px en mono sin caja, con Stat Row debajo.",
+      "html": "<div class=\"ds-rank\"><span class=\"ds-rank-label\">Ranking de temporada</span><span class=\"ds-rank-num\">#62</span><span class=\"ds-rank-sub\">Temporada 2026</span><dl class=\"ds-stats\"><div><dt>Mensual</dt><dd>#33</dd></div><div><dt>Torneos</dt><dd>25</dd></div><div><dt>Puntos</dt><dd>185</dd></div></dl></div>",
+      "css": ".ds-rank { display:flex; flex-direction:column; gap:4px; color:#f5f7fa; } .ds-rank-label { font:400 14px Inter, system-ui, sans-serif; color:#aab6d1; } .ds-rank-num { font:700 60px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; line-height:1; } .ds-rank-sub { font:400 12px Inter, system-ui, sans-serif; color:#8a98b3; } .ds-stats { display:flex; gap:20px; margin:12px 0 0; } .ds-stats dt { font:400 12px Inter, system-ui, sans-serif; color:#8a98b3; } .ds-stats dd { margin:0; font:600 14px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Row Action",
+      "kind": "button",
+      "description": "Acción repetida por fila: outline neutro, nunca cian.",
+      "html": "<button class=\"ds-row-action\" aria-label=\"Mis partidas de este torneo\">Partidas</button>",
+      "css": ".ds-row-action { min-height:32px; padding:6px 10px; border:1px solid #2a3a57; border-radius:6px; background:transparent; color:#aab6d1; font:600 12px Inter, system-ui, sans-serif; cursor:pointer; transition:background-color .15s, color .15s; } .ds-row-action:hover { background:rgba(255,255,255,.05); color:#f5f7fa; } .ds-row-action:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Count Badge",
+      "kind": "chip",
+      "description": "Conteo de no leídos/pendientes: cian con texto navy, 12px mono. Nunca rojo ni blanco sobre cian.",
+      "html": "<span class=\"ds-count\">6</span>",
+      "css": ".ds-count { display:inline-flex; align-items:center; justify-content:center; height:20px; min-width:20px; padding:0 6px; border-radius:9999px; background:#32d9ff; color:#08111f; font:700 12px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Round Strip",
+      "kind": "custom",
+      "description": "Tu último torneo: rondas como celdas separadas por líneas, V/D en verde/rojo y líder rival.",
+      "html": "<ol class=\"ds-rounds\"><li><span class=\"ds-r\">R1</span><span class=\"ds-l\">D</span><span class=\"ds-name\">Zoro &amp; Sanji<small>vs XimenaPrime78</small></span></li><li><span class=\"ds-r\">R2</span><span class=\"ds-w\">V</span><span class=\"ds-name\">Monkey.D.Luffy<small>vs MateoDuelista32</small></span></li><li><span class=\"ds-r\">R3</span><span class=\"ds-w\">V</span><span class=\"ds-name\">Monkey.D.Luffy<small>vs KuroRojo10</small></span></li></ol>",
+      "css": ".ds-rounds { display:flex; margin:0; padding:0; list-style:none; width:480px; background:#111a2e; border:1px solid #2a3a57; border-radius:12px; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; } .ds-rounds li { flex:1; display:flex; flex-direction:column; gap:6px; padding:12px 16px; } .ds-rounds li + li { border-left:1px solid #2a3a57; } .ds-r { font:400 12px 'JetBrains Mono', monospace; color:#8a98b3; } .ds-w, .ds-l { font:700 18px 'JetBrains Mono', monospace; } .ds-w { color:#4ef0a2; } .ds-l { color:#ff5f6d; } .ds-name { font-weight:500; } .ds-name small { display:block; font-size:12px; color:#8a98b3; font-weight:400; }"
+    },
+    {
+      "name": "Ranking Band",
+      "kind": "custom",
+      "description": "Franja de apertura del ranking público: podio de tres con carta de leader, acción según quién llega y Stat Row de cifras del circuito, en una sola superficie plana.",
+      "html": "<section class=\"ds-band\"><ol class=\"ds-band-podium\"><li><span class=\"ds-band-art\"></span><div><span class=\"ds-band-rank ds-band-gold\">1</span><p class=\"ds-band-tag\">MateoDuelista12</p><p class=\"ds-band-pts\">37 pts</p></div></li><li><span class=\"ds-band-art\"></span><div><span class=\"ds-band-rank ds-band-silver\">2</span><p class=\"ds-band-tag\">XimenaPrime198</p><p class=\"ds-band-pts\">29 pts</p></div></li><li><span class=\"ds-band-art\"></span><div><span class=\"ds-band-rank ds-band-bronze\">3</span><p class=\"ds-band-tag\">SombraGG184</p><p class=\"ds-band-pts\">27 pts</p></div></li></ol><div class=\"ds-band-foot\"><div class=\"ds-band-action\"><p>Sigue tu lugar, tus partidas y tus stats.</p><button class=\"ds-band-cta\">Crear cuenta</button></div><dl class=\"ds-band-stats\"><div><dt>Jugadores</dt><dd>135</dd></div><div><dt>Tiendas</dt><dd>52</dd></div><div><dt>Torneos del mes</dt><dd>11</dd></div></dl></div></section>",
+      "css": ".ds-band { width:640px; background:#111a2e; border:1px solid #2a3a57; border-radius:12px; overflow:hidden; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; } .ds-band-podium { display:grid; grid-template-columns:repeat(3,1fr); margin:0; padding:0; list-style:none; } .ds-band-podium li { display:flex; align-items:center; gap:16px; padding:20px; } .ds-band-podium li + li { border-left:1px solid #2a3a57; } .ds-band-art { flex:none; width:80px; height:112px; border:1px solid #2a3a57; border-radius:6px; background:#17233d; } .ds-band-rank { display:block; font:700 48px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; line-height:1; } .ds-band-gold { color:#facc15; } .ds-band-silver { color:#e2e8f0; } .ds-band-bronze { color:#d97706; } .ds-band-tag { margin:8px 0 0; font:600 16px Inter, system-ui, sans-serif; } .ds-band-pts { margin:2px 0 0; font:400 14px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; color:#aab6d1; } .ds-band-foot { display:flex; align-items:center; justify-content:space-between; gap:32px; padding:20px; border-top:1px solid #2a3a57; } .ds-band-action p { margin:0 0 12px; color:#aab6d1; } .ds-band-cta { height:36px; padding:8px 16px; border:none; border-radius:8px; background:#32d9ff; color:#08111f; font:500 14px Inter, system-ui, sans-serif; cursor:pointer; transition:background-color .15s; } .ds-band-cta:hover { background:rgba(50,217,255,.9); } .ds-band-cta:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; } .ds-band-stats { display:flex; gap:32px; margin:0; } .ds-band-stats dt { font:400 12px Inter, system-ui, sans-serif; color:#8a98b3; } .ds-band-stats dd { margin:0; font:600 18px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Search and Filter",
+      "kind": "custom",
+      "description": "Búsqueda con filtro de zona, conteo y restablecer para listas largas (ranking, directorio de tiendas). El estado vive en la URL.",
+      "html": "<section class=\"ds-sf\"><div class=\"ds-sf-row\"><input class=\"ds-sf-input\" type=\"search\" placeholder=\"Buscar por nombre, ciudad o zona…\" aria-label=\"Buscar tienda\"><button class=\"ds-sf-reset\">Restablecer filtros</button></div><div class=\"ds-sf-group\" role=\"group\" aria-label=\"Filtrar por zona\"><button class=\"ds-sf-chip ds-on\" aria-pressed=\"true\">Todas</button><button class=\"ds-sf-chip\" aria-pressed=\"false\">Zona Centro</button><button class=\"ds-sf-chip\" aria-pressed=\"false\">Zona Monterrey</button></div><div class=\"ds-sf-group\" role=\"group\" aria-label=\"Filtrar por región\"><button class=\"ds-sf-chip ds-on\" aria-pressed=\"true\">Toda la zona</button><button class=\"ds-sf-chip\" aria-pressed=\"false\">Sur</button></div><p class=\"ds-sf-count\">6 de 52 tiendas</p></section>",
+      "css": ".ds-sf { display:flex; flex-direction:column; gap:12px; width:520px; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; } .ds-sf-row { display:flex; align-items:center; gap:8px; } .ds-sf-input { flex:1; height:36px; padding:0 12px; border:1px solid #2a3a57; border-radius:8px; background:transparent; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; } .ds-sf-input::placeholder { color:#8a98b3; } .ds-sf-input:focus-visible { outline:none; border-color:#32d9ff; box-shadow:0 0 0 1px #32d9ff; } .ds-sf-reset { background:none; border:none; color:#aab6d1; font:500 14px Inter, system-ui, sans-serif; cursor:pointer; } .ds-sf-reset:hover { color:#f5f7fa; } .ds-sf-group { display:flex; gap:8px; } .ds-sf-chip { height:36px; padding:0 12px; border:1px solid #2a3a57; border-radius:8px; background:transparent; color:#aab6d1; font:500 14px Inter, system-ui, sans-serif; cursor:pointer; } .ds-sf-chip:hover { background:rgba(255,255,255,.05); color:#f5f7fa; } .ds-sf-chip.ds-on { border-color:rgba(50,217,255,.4); background:rgba(50,217,255,.15); color:#32d9ff; } .ds-sf-chip:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; } .ds-sf-count { margin:0; font:400 14px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; color:#8a98b3; }"
+    },
+    {
+      "name": "Store Card",
+      "kind": "card",
+      "description": "Tienda en dos líneas: nombre con la estrella de favorita, ciudad, y horario con 'Cómo llegar' como acción outline neutra. El enlace al detalle se estira sobre toda la tarjeta.",
+      "html": "<div class=\"ds-store\"><div class=\"ds-store-top\"><div><h3 class=\"ds-store-name\">Dojo Nakama</h3><p class=\"ds-store-city\">San Pedro Garza García · Este</p></div><button class=\"ds-store-star\" aria-pressed=\"true\" aria-label=\"Quitar Dojo Nakama de favoritas\">★</button></div><div class=\"ds-store-bottom\"><p class=\"ds-store-hours\">Mar-Dom 13:00-22:00</p><a class=\"ds-store-map\" href=\"#\">Cómo llegar</a></div></div>",
+      "css": ".ds-store { display:flex; flex-direction:column; gap:4px; width:300px; padding:16px; border:1px solid #2a3a57; border-radius:12px; background:#111a2e; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; } .ds-store:hover { background:#161f35; } .ds-store-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; } .ds-store-name { margin:0; font:600 16px 'Space Grotesk', system-ui, sans-serif; } .ds-store-city { margin:0; color:#aab6d1; } .ds-store-star { width:36px; height:36px; margin:-6px -6px 0 0; border:none; border-radius:8px; background:transparent; color:#ffd54a; font-size:18px; cursor:pointer; } .ds-store-star:hover { background:rgba(255,255,255,.05); } .ds-store-bottom { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:4px; } .ds-store-hours { margin:0; font-size:12px; color:#8a98b3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .ds-store-map { flex:none; display:inline-flex; align-items:center; height:36px; padding:0 12px; border:1px solid #2a3a57; border-radius:8px; color:#aab6d1; font:500 14px Inter, system-ui, sans-serif; text-decoration:none; } .ds-store-map:hover { background:rgba(255,255,255,.05); color:#f5f7fa; } .ds-store-map:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Profile Hero",
+      "kind": "custom",
+      "description": "Perfil público del jugador: identidad a la izquierda, lugar de temporada con la carta del leader a la derecha, y una Stat Row como pie. En un contenedor angosto se apila.",
+      "html": "<section class=\"ds-ph\"><div class=\"ds-ph-main\"><div class=\"ds-ph-id\"><span class=\"ds-ph-avatar\">M</span><div><h1 class=\"ds-ph-tag\">MateoDuelista12</h1><p class=\"ds-ph-meta\">Coyoacán · Miembro desde octubre de 2026</p></div></div><div class=\"ds-ph-rank\"><span class=\"ds-ph-art\"></span><div><p class=\"ds-ph-label\">Ranking de temporada · One Piece Card Game</p><p class=\"ds-ph-num\">#79</p><p class=\"ds-ph-sub\">168 pts · 18 torneos · 3 ganados</p></div></div></div><dl class=\"ds-ph-stats\"><div><dt>Torneos ganados</dt><dd>3</dd></div><div><dt>Win rate</dt><dd>49%</dd></div><div><dt>Leader principal</dt><dd>Sabo</dd></div></dl></section>",
+      "css": ".ds-ph { width:760px; border:1px solid #2a3a57; border-radius:16px; background:#111a2e; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; overflow:hidden; } .ds-ph-main { display:flex; align-items:center; justify-content:space-between; gap:40px; padding:32px; } .ds-ph-id { display:flex; align-items:center; gap:20px; } .ds-ph-avatar { display:flex; align-items:center; justify-content:center; width:80px; height:80px; border-radius:9999px; background:#17233d; font:700 30px 'Space Grotesk', system-ui, sans-serif; } .ds-ph-tag { margin:0; font:700 40px/1.1 'Space Grotesk', system-ui, sans-serif; letter-spacing:-0.02em; } .ds-ph-meta { margin:8px 0 0; color:#aab6d1; } .ds-ph-rank { display:flex; align-items:center; gap:24px; } .ds-ph-art { flex:none; width:80px; height:112px; border:1px solid #2a3a57; border-radius:6px; background:#17233d; } .ds-ph-label { margin:0; color:#aab6d1; } .ds-ph-num { margin:4px 0 0; font:700 72px/1 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; } .ds-ph-sub { margin:8px 0 0; font:400 14px 'JetBrains Mono', ui-monospace, monospace; color:#aab6d1; } .ds-ph-stats { display:flex; gap:32px; margin:0; padding:16px 32px; border-top:1px solid #2a3a57; } .ds-ph-stats dt { font-size:12px; color:#8a98b3; } .ds-ph-stats dd { margin:0; font:600 18px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Standings Table",
+      "kind": "custom",
+      "description": "Posiciones de un torneo o de una liga: <table> con caption y th scope, cifras en mono tabular, top 3 en bold y la fila del jugador con sesión resaltada. En un contenedor angosto OMW % pasa a la segunda línea.",
+      "html": "<section class=\"ds-st\"><h2>Posiciones</h2><table><caption class=\"sr\">Posiciones del torneo</caption><thead><tr><th scope=\"col\">#</th><th scope=\"col\">Jugador</th><th scope=\"col\">V/D/E</th><th scope=\"col\">OMW %</th><th scope=\"col\">Pts</th></tr></thead><tbody><tr><td class=\"top\">1</td><td>MateoDuelista12<small>Monkey.D.Luffy</small></td><td>2/1/0</td><td>47.7 %</td><td class=\"pts\">13.00</td></tr><tr class=\"me\"><td class=\"top\">2</td><td>NeoDuelista82<small>Monkey.D.Luffy</small></td><td>3/0/0</td><td>55.4 %</td><td class=\"pts\">7.00</td></tr><tr><td>4</td><td>EmilioNorte57<small>Luffy &amp; Ace</small></td><td>1/2/0</td><td>36.2 %</td><td class=\"pts\">5.00</td></tr></tbody></table></section>",
+      "css": ".ds-st { width:560px; padding:24px; border:1px solid #2a3a57; border-radius:12px; background:#111a2e; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; } .ds-st h2 { margin:0 0 12px; font:700 18px 'Space Grotesk', system-ui, sans-serif; } .ds-st .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); } .ds-st table { width:100%; border-collapse:collapse; } .ds-st th { padding:8px 8px; border-bottom:1px solid #2a3a57; color:#8a98b3; font:500 12px Inter, sans-serif; text-align:right; } .ds-st th:nth-child(-n+2) { text-align:left; } .ds-st td { height:44px; padding:0 8px; border-bottom:1px solid #2a3a57; text-align:right; font-family:'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; color:#aab6d1; } .ds-st td:nth-child(2) { text-align:left; font:500 14px Inter, sans-serif; color:#f5f7fa; } .ds-st td:first-child { text-align:left; width:40px; color:#8a98b3; } .ds-st td.top { font-weight:700; color:#f5f7fa; } .ds-st td.pts { font-weight:600; color:#f5f7fa; } .ds-st small { display:block; color:#8a98b3; font:400 12px Inter, sans-serif; } .ds-st tr.me { background:rgba(50,217,255,.1); } .ds-st tr:last-child td { border-bottom:none; }"
+    },
+    {
+      "name": "Store Detail",
+      "kind": "custom",
+      "description": "Ficha pública de una tienda: hero plano con 'Próximo torneo', pestañas de 44px y secciones planas separadas por líneas. Cada consulta conserva su error con 'Reintentar'.",
+      "html": "<div class=\"ds-sd\"><header class=\"ds-sd-hero\"><h1>Bastión del Mazo</h1><p>Zona Centro · Sur</p><p class=\"ds-sd-games\">One Piece Card Game</p><div class=\"ds-sd-next\"><h2>Próximo torneo</h2><p class=\"ds-sd-date\">Martes, 10 de noviembre · 19:00 hrs</p><p>Costo por confirmar</p></div></header><nav class=\"ds-sd-tabs\" aria-label=\"Secciones de la tienda\"><a aria-current=\"page\" href=\"#\">Perfil</a><a href=\"#\">Torneos y Liga</a></nav><section class=\"ds-sd-sec\"><h2>Próximas fechas</h2><ul><li><span>Jueves, 12 de noviembre · 20:00 hrs</span><span>One Piece Card Game</span></li><li><span>Sábado, 14 de noviembre · 20:30 hrs</span><span>One Piece Card Game</span></li></ul></section></div>",
+      "css": ".ds-sd { width:560px; display:flex; flex-direction:column; gap:16px; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; } .ds-sd-hero, .ds-sd-sec { padding:24px; border:1px solid #2a3a57; border-radius:12px; background:#111a2e; } .ds-sd-hero h1 { margin:0 0 4px; font:700 30px/1.15 'Space Grotesk', system-ui, sans-serif; } .ds-sd-hero p { margin:0; color:#aab6d1; } .ds-sd-games { color:#8a98b3 !important; } .ds-sd-next { margin-top:16px; padding-top:16px; border-top:1px solid #2a3a57; } .ds-sd-next h2 { margin:0 0 4px; font:500 14px Inter, sans-serif; color:#aab6d1; } .ds-sd-date { font:700 20px 'Space Grotesk', system-ui, sans-serif; color:#f5f7fa !important; } .ds-sd-tabs { display:flex; gap:4px; border-bottom:1px solid #2a3a57; } .ds-sd-tabs a { display:flex; align-items:center; min-height:44px; padding:0 16px; margin-bottom:-1px; border-bottom:2px solid transparent; color:#aab6d1; font-weight:500; text-decoration:none; } .ds-sd-tabs a[aria-current] { border-color:#32d9ff; color:#f5f7fa; } .ds-sd-sec h2 { margin:0 0 8px; font:700 18px 'Space Grotesk', system-ui, sans-serif; } .ds-sd-sec ul { margin:0; padding:0; list-style:none; } .ds-sd-sec li { display:flex; justify-content:space-between; gap:16px; min-height:44px; align-items:center; border-top:1px solid #2a3a57; } .ds-sd-sec li:first-child { border-top:none; } .ds-sd-sec li span:first-child { font-weight:600; } .ds-sd-sec li span:last-child { color:#aab6d1; }"
+    },
+    {
+      "name": "Identity Row",
+      "kind": "custom",
+      "description": "Pie del sidebar: iniciales, geek tag y rango de temporada; link al perfil.",
+      "html": "<a class=\"ds-id\" href=\"#\"><span class=\"ds-av\">JU</span><span><b>JugadorDemo</b><small>#62 · Temporada 2026</small></span></a>",
+      "css": ".ds-id { display:flex; align-items:center; gap:10px; width:220px; padding:6px 8px; border-radius:8px; color:#f5f7fa; text-decoration:none; font:400 14px Inter, system-ui, sans-serif; transition:background-color .15s; } .ds-id:hover { background:rgba(255,255,255,.05); } .ds-id:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; } .ds-av { display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:9999px; background:#17233d; font-weight:700; font-size:12px; } .ds-id b { display:block; font-weight:500; } .ds-id small { display:block; font-size:12px; color:#8a98b3; }"
+    },
+    {
+      "name": "Confirm Dialog",
+      "kind": "custom",
+      "description": "Confirmación de acciones destructivas (cerrar sesión).",
+      "html": "<div class=\"ds-confirm\"><h3>¿Cerrar sesión?</h3><p>Tendrás que volver a iniciar sesión para ver tu ranking y registrar partidas.</p><div><button class=\"ds-c-cancel\">Cancelar</button><button class=\"ds-c-ok\">Cerrar sesión</button></div></div>",
+      "css": ".ds-confirm { width:360px; padding:24px; border-radius:12px; background:#111a2e; border:1px solid #2a3a57; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; box-shadow:0 25px 50px -12px rgba(0,0,0,.25); } .ds-confirm h3 { margin:0 0 8px; font:600 18px 'Space Grotesk', system-ui, sans-serif; } .ds-confirm p { margin:0 0 20px; color:#aab6d1; } .ds-confirm div { display:flex; justify-content:flex-end; gap:8px; } .ds-confirm button { height:36px; padding:0 16px; border-radius:8px; font:500 14px Inter, sans-serif; cursor:pointer; } .ds-c-cancel { background:#08111f; color:#f5f7fa; border:1px solid #17233d; } .ds-c-ok { background:#32d9ff; color:#08111f; border:none; } .ds-confirm button:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Tabla Oficial",
+    "overview": "Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.\n\nEl sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (163 líneas con `.glass` en 54 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`) y el resultado de un torneo (`/tournaments/$id`) son las referencias de cómo debe verse.\n\nLa densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.",
+    "keyCharacteristics": [
+      "Tema oscuro único, fondo `night-navy`; el halo radial del shell es lo único atmosférico que queda.",
+      "Un acento cian que se usa con escasez: acción principal, estado activo y \"tu\" fila o rango.",
+      "Números siempre en mono tabular (`font-mono-stat`); el rango es la cifra más grande de la pantalla.",
+      "Superficies planas: `card-navy` sólido con borde de 1px, un solo nivel, sin tarjetas dentro de tarjetas.",
+      "Datos secundarios como filas de texto (label de 12px + cifra), no como tiles con ícono.",
+      "Español de México en toda la UI."
+    ],
+    "rules": [
+      {
+        "name": "The Scarce Cyan Rule",
+        "body": "El cian marca solo tres cosas: la acción principal de la pantalla, dónde estás (navegación activa, foco) y lo tuyo (tu rango, tu fila). Si en una pantalla hay más de unos pocos elementos cian, el acento ya dejó de señalar.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Theme Rule",
+        "body": "No hay tema claro ni toggle `.dark`. Todo color se define para el fondo `night-navy`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Numbers Rule",
+        "body": "Toda cifra competitiva (rango, puntos, V/D, %, OMW) va en `font-mono-stat` con números tabulares, para que las columnas se alineen.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Kicker Rule",
+        "body": "No hay etiquetas en mayúsculas espaciadas encima de un título (\"TU NEXUS TAG\", \"DETALLE DEL TORNEO\"). El título se sostiene solo. Las mayúsculas quedan reservadas para los encabezados de tabla.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Content Rule",
+        "body": "Nada que esté en el flujo de la página lleva `backdrop-filter`, gradiente, glow o sombra. Si algo necesita destacarse, se hace con tamaño, peso o el acento cian, no con efectos.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Surface Rule",
+        "body": "Una superficie nunca contiene otra superficie con fondo y borde propios. Dentro de una tarjeta se separa con líneas (`divide-border`) y espacio.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do reservar el cian (#32d9ff) para la acción principal, el estado activo y lo que es del jugador (The Scarce Cyan Rule).",
+      "Do poner toda cifra competitiva en `font-mono-stat` con números tabulares.",
+      "Do usar las superficies del sistema (`night-navy` → `card-navy` → `raised-navy`) y el borde `panel-border` antes de inventar otras.",
+      "Do mantener las esquinas en la escala: 8px para controles, 12px para tarjetas y 16px para superficies grandes.",
+      "Do usar inputs con texto de al menos 16px.",
+      "Do usar superficies planas: `card-navy` sólido con borde de 1px, y separar dentro con líneas.",
+      "Do mostrar los datos secundarios como fila de texto (Stat Row), no como tiles.",
+      "Do tomar `/dashboard`, el ranking público, el perfil público, el directorio y la ficha de tienda y el resultado de torneo como referencia al migrar otra pantalla.",
+      "Do reutilizar `SECTION`, `BTN_OUTLINE`, `FOCUS_RING`, `ChipGroup` e `InlineError` de `src/components/stores/store-ui.tsx` antes de escribir otra versión.",
+      "Do marcar con `<table>`, `caption` y `th scope` toda lista de datos con columnas, y mover las columnas secundarias a una segunda línea en un contenedor angosto en vez de ocultarlas.",
+      "Do conservar el error de cada consulta y ofrecer \"Reintentar\"; \"sin datos\" solo para respuestas exitosas vacías.",
+      "Do dar a \"Volver\" un destino fijo cuando la página se comparte por enlace.",
+      "Do pedir confirmación (`AlertDialog`) antes de cerrar sesión o de cualquier acción destructiva.",
+      "Do usar container queries (`@container` + `@3xl:`) para lo que depende del ancho del contenido, porque el sidebar y los rieles lo reducen.",
+      "Do hacer clicable una fila o tarjeta completa con un enlace estirado, y dejar los demás controles encima con `relative z-10`.",
+      "Do dar a las listas largas búsqueda, filtro, conteo y \"Restablecer filtros\", con el estado en la URL.",
+      "Do mostrar fechas cortas en `es-MX` (\"5 nov\", con año solo si no es el actual) y puntos sin ceros sobrantes (\"+12\", no \"+12.00\")."
+    ],
+    "donts": [
+      "Don't usar `.glass`, `backdrop-filter`, gradientes, glows ni destellos en el contenido.",
+      "Don't meter una tarjeta dentro de otra tarjeta.",
+      "Don't poner etiquetas en mayúsculas espaciadas encima de un título (The No Kicker Rule).",
+      "Don't poner íconos decorativos junto a labels de datos (coronas, espadas, dianas).",
+      "Don't pintar de cian acciones que se repiten por fila.",
+      "Don't introducir un tema claro ni colores pensados para fondos claros.",
+      "Don't usar el naranja `rgba(232,106,34)`: es un resto de una paleta anterior.",
+      "Don't meter un `<button>` dentro de un `<a>` (ni al revés): es anidamiento interactivo inválido.",
+      "Don't usar los breakpoints de la ventana (`sm`/`lg`) para decidir una composición que depende del ancho del contenido.",
+      "Don't repetir en cada tarjeta un dato que es igual para toda la lista (por ejemplo el único juego del circuito).",
+      "Don't mostrar un CTA de registro de tienda en ninguna superficie pública: las tiendas entran solo por invitación.",
+      "Don't usar `design-system/nexus/MASTER.md` (morado, Russo One, Chakra Petch) como referencia; no refleja el código.",
+      "Don't convertir un fallo de red en \"no existe\" o \"sin datos\": un `catch` que devuelve `[]` esconde el error.",
+      "Don't resaltar al campeón con degradado, borde de color o emoji; se destaca con tamaño y peso.",
+      "Don't usar `text-[10px]` ni el naranja de una paleta anterior en botones.",
+      "Don't bajar labels a menos de 12px ni usar `text-muted` (#72819d) para texto pequeño sobre las tarjetas."
+    ]
+  }
+}

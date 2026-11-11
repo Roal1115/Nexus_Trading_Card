@@ -1,0 +1,46 @@
+Board,Item,Subitem,Priority,Status,Notes
+Jugador,Historial del jugador (pagina dedicada),Crear ruta /history,Media,Por hacer,Ya existe el dato en RoundHistoryList/RoundsAccordionReadOnly
+Jugador,Historial del jugador (pagina dedicada),Extraer logica a componente reutilizable,Media,Por hacer,
+Jugador,Historial del jugador (pagina dedicada),Filtros por TCG fecha y tienda,Media,Por hacer,
+Jugador,Historial del jugador (pagina dedicada),Paginacion o infinite scroll,Media,Por hacer,
+Jugador,Historial del jugador (pagina dedicada),Link desde dashboard y perfil,Media,Por hacer,
+Jugador,Encuesta de Sponsors (beneficios),Definir modelo de negocio del beneficio,Alta,Bloqueado - definir con negocio,Que se obtiene: descuento producto acceso
+Jugador,Encuesta de Sponsors (beneficios),Disenar tablas Supabase sponsor_surveys survey_responses player_rewards,Alta,Por hacer,
+Jugador,Encuesta de Sponsors (beneficios),UI formulario de encuesta,Alta,Por hacer,
+Jugador,Encuesta de Sponsors (beneficios),Logica completar encuesta desbloquea beneficio,Alta,Por hacer,
+Jugador,Encuesta de Sponsors (beneficios),Panel admin crear editar encuestas y ver respuestas,Alta,Por hacer,
+Jugador,Encuesta de Sponsors (beneficios),Notificacion al jugador de encuesta disponible,Media,Por hacer,
+Jugador,Tiendas mas asistidas (stat jugador),Query agrupar asistencias por store_id,Alta,Por hacer,Dato ya existe en attendance
+Jugador,Tiendas mas asistidas (stat jugador),Seccion Tus tiendas en my-stats o dashboard,Alta,Por hacer,
+Jugador,Tiendas mas asistidas (stat jugador),Mostrar top 3-5 tiendas con conteo,Alta,Por hacer,
+Organizador de Tienda,Jugadores nuevos (nomenclatura),Revisar definicion de nuevo vs recurrente,Baja,Por hacer,Logica ya existe en manager analytics
+Organizador de Tienda,Jugadores nuevos (nomenclatura),Portar logica new_players returning_players a getStoreAnalytics,Baja,Por hacer,
+Organizador de Tienda,Jugadores nuevos (nomenclatura),Renombrar categoria en UI de organizer dashboard,Baja,Por hacer,
+Organizador de Tienda,Puntos por jugador en tienda,Definir formula de puntos,Alta,Bloqueado - definir con negocio,Torneo ganado top8 participacion etc
+Organizador de Tienda,Puntos por jugador en tienda,Tabla o columna para almacenar puntos por jugador y tienda,Alta,Por hacer,
+Organizador de Tienda,Puntos por jugador en tienda,Query de agregacion y ranking interno de tienda,Alta,Por hacer,
+Organizador de Tienda,Puntos por jugador en tienda,UI tabla de puntos en dashboard de organizador,Alta,Por hacer,
+Organizador de Tienda,Maximo de jugadores en torneo (liga),Query MAX count players agrupado por torneo en rango de liga,Alta,Por hacer,Calculo directo sobre datos existentes
+Organizador de Tienda,Maximo de jugadores en torneo (liga),Agregar stat card en organizer dashboard,Alta,Por hacer,
+Organizador de Tienda,Jugadores promedio por torneo,Query AVG count players por torneo en rango,Alta,Por hacer,Combinable con el item anterior
+Organizador de Tienda,Jugadores promedio por torneo,Agregar stat card junto al maximo,Alta,Por hacer,
+Organizador de Tienda,Mapa de ubicacion embebido,Decidir proveedor Google Maps Embed API vs Mapbox,Media,Por hacer,
+Organizador de Tienda,Mapa de ubicacion embebido,Agregar campo lat lng a tabla stores,Media,Por hacer,O parsear de google_maps_url
+Organizador de Tienda,Mapa de ubicacion embebido,Componente StoreMapEmbed en stores.slug y organizer dashboard,Media,Por hacer,
+Organizador de Tienda,Achievements de jugadores,Definir catalogo de achievements,Alta,Bloqueado - definir con negocio,Ej Top8 x5 Gano torneo 10 torneos jugados
+Organizador de Tienda,Achievements de jugadores,Tabla achievements catalogo y player_achievements otorgados,Alta,Por hacer,
+Organizador de Tienda,Achievements de jugadores,Job o trigger que calcule y otorgue achievements tras cada torneo,Alta,Por hacer,
+Organizador de Tienda,Achievements de jugadores,UI lista de achievements en perfil del jugador,Alta,Por hacer,
+Organizador de Tienda,Achievements de jugadores,UI lista de achievements de jugadores en organizer dashboard,Alta,Por hacer,
+Organizador de Tienda,Achievements de la tienda,Definir catalogo de achievements de tienda,Alta,Bloqueado - definir con negocio,Ej 100 torneos 50 jugadores unicos
+Organizador de Tienda,Achievements de la tienda,Tabla store_achievements,Alta,Por hacer,
+Organizador de Tienda,Achievements de la tienda,Job que calcule achievements de tienda,Alta,Por hacer,
+Organizador de Tienda,Achievements de la tienda,UI seccion en organizer dashboard,Alta,Por hacer,
+Organizador de Tienda,Administrador de la tienda (explicito),Definir si admin es distinto del organizer actual home_store_id,Media,Bloqueado - definir con negocio,
+Organizador de Tienda,Administrador de la tienda (explicito),Agregar campo admin_player_id en tabla stores si aplica,Media,Por hacer,
+Organizador de Tienda,Administrador de la tienda (explicito),UI mostrar quien es el admin en dashboard de tienda,Media,Por hacer,
+Organizador de Tienda,Managers de la tienda,Disenar tabla store_managers store_id player_id rol,Media,Bloqueado - definir con negocio,Depende de definicion admin vs manager
+Organizador de Tienda,Managers de la tienda,Definir permisos de manager vs admin,Media,Por hacer,
+Organizador de Tienda,Managers de la tienda,UI admin agregar quitar managers,Media,Por hacer,
+Organizador de Tienda,Managers de la tienda,UI mostrar lista de managers en dashboard de tienda,Media,Por hacer,
+Organizador de Tienda,Managers de la tienda,Ajustar RLS de Supabase para permisos de managers,Media,Por hacer,

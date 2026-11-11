@@ -1,1 +1,5 @@
-project_id = "tbanxcysqureaafohusj"
+project_id = "tbtyxtigbsljyrwyelqr"
+
+[functions.sync-deck-identifiers]
+# Gateada por x-sync-secret dentro del handler, no por el JWT de Supabase.
+verify_jwt = false

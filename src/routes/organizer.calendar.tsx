@@ -1,3 +1,4 @@
+import { toLocalDateStr } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,15 +9,35 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getOrganizerCalendar } from "@/lib/geekarena-organizer.functions";
+import { toast } from "sonner";
+import {
+  getOrganizerCalendar,
+  upsertLeagueScheduleOverride,
+  deleteLeagueScheduleOverride,
+} from "@/lib/nexus-organizer.functions";
+import { BlockSelect } from "@/components/ui/block-select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CANCELLED_TILE_CLASS } from "@/lib/game-colors";
+import { CancelOccurrenceSection, FichaSection } from "@/components/calendar/occurrence-panel";
+import { SlotRsvpList } from "@/components/calendar/slot-rsvp";
 
 export const Route = createFileRoute("/organizer/calendar")({
-  head: () => ({ meta: [{ title: "Calendario — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Calendario — Nexus" }] }),
   component: OrganizerCalendarPage,
 });
 
 const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const HOURS = [17, 18, 19, 20, 21, 22, 23];
+const HOURS = [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
 type CalEntry = {
   id: string;
@@ -31,7 +52,15 @@ type CalEntry = {
   start_time: string;
   is_today: boolean;
   is_future: boolean;
-  report_status: "submitted" | "overdue" | "pending" | "upcoming";
+  report_status: "submitted" | "overdue" | "pending" | "upcoming" | "cancelled";
+  cancellation_reason: string | null;
+  has_ended: boolean;
+  is_ongoing: boolean;
+  league_id: string | null;
+  league_name: string | null;
+  league_schedule_id: string | null;
+  override_label: string | null;
+  is_override: boolean;
 };
 
 type CalData = {
@@ -48,25 +77,83 @@ type CalData = {
 
 function OrganizerCalendarPage() {
   const fetchCalendar = useServerFn(getOrganizerCalendar);
+  const upsertOverrideFn = useServerFn(upsertLeagueScheduleOverride);
+  const deleteOverrideFn = useServerFn(deleteLeagueScheduleOverride);
   const [calData, setCalData] = useState<CalData | null>(null);
   const [weekStart, setWeekStart] = useState<string>("");
   const [gameFilter, setGameFilter] = useState<string>("all");
 
-  useEffect(() => {
+  const [editingEntry, setEditingEntry] = useState<CalEntry | null>(null);
+  const [rsvpEntry, setRsvpEntry] = useState<CalEntry | null>(null);
+  const [editForm, setEditForm] = useState({ label: "", start_time: "" });
+  const [savingOverride, setSavingOverride] = useState(false);
+
+  const reload = () => {
     fetchCalendar({ data: { ...(weekStart ? { week_start: weekStart } : {}) } } as any)
       .then((d: any) => {
         setCalData(d);
         if (!weekStart) setWeekStart(d.week_start);
       })
       .catch(() => void 0);
+  };
+
+  useEffect(() => {
+    reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
+
+  function openEdit(entry: CalEntry) {
+    setEditingEntry(entry);
+    setEditForm({ label: entry.override_label ?? "", start_time: entry.start_time });
+  }
+
+  async function handleSaveOverride() {
+    if (!editingEntry?.league_schedule_id) return;
+    setSavingOverride(true);
+    try {
+      await upsertOverrideFn({
+        data: {
+          league_schedule_id: editingEntry.league_schedule_id,
+          occurrence_date: editingEntry.date,
+          start_time: editForm.start_time || null,
+          label: editForm.label.trim() || null,
+        },
+      });
+      toast.success("Ocurrencia actualizada.");
+      setEditingEntry(null);
+      reload();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingOverride(false);
+    }
+  }
+
+  async function handleResetOverride() {
+    if (!editingEntry?.league_schedule_id) return;
+    setSavingOverride(true);
+    try {
+      await deleteOverrideFn({
+        data: {
+          league_schedule_id: editingEntry.league_schedule_id,
+          occurrence_date: editingEntry.date,
+        },
+      });
+      toast.success("Restablecido al horario normal.");
+      setEditingEntry(null);
+      reload();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingOverride(false);
+    }
+  }
 
   const navigateWeek = (dir: -1 | 1) => {
     if (!weekStart) return;
     const d = new Date(weekStart + "T00:00:00");
     d.setDate(d.getDate() + dir * 7);
-    setWeekStart(d.toISOString().split("T")[0]);
+    setWeekStart(toLocalDateStr(d));
   };
 
   const weekDates = useMemo(() => {
@@ -81,19 +168,14 @@ function OrganizerCalendarPage() {
 
   const filteredEntries = useMemo<CalEntry[]>(() => {
     if (!calData?.entries) return [];
-    return calData.entries.filter(
-      (e) => gameFilter === "all" || e.game_id === gameFilter,
-    );
+    return calData.entries.filter((e) => gameFilter === "all" || e.game_id === gameFilter);
   }, [calData, gameFilter]);
 
   const uniqueGames = useMemo(
     () =>
       Array.from(
         new Map(
-          (calData?.entries ?? []).map((e) => [
-            e.game_id,
-            { id: e.game_id, name: e.game_name },
-          ]),
+          (calData?.entries ?? []).map((e) => [e.game_id, { id: e.game_id, name: e.game_name }]),
         ).values(),
       ),
     [calData],
@@ -118,14 +200,11 @@ function OrganizerCalendarPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-xs uppercase tracking-wider text-primary">
-          Organizador
-        </div>
-        <h1 className="text-2xl font-bold text-white mt-1">
-          Calendario de mi tienda
-        </h1>
+        <div className="text-xs uppercase tracking-wider text-primary">Organizador</div>
+        <h1 className="text-2xl font-bold text-white mt-1">Calendario de mi tienda</h1>
         <p className="text-sm text-gray-400 mt-1">
-          Vista de solo lectura de los torneos programados en tu tienda.
+          Vista de los torneos programados en tu tienda. Los eventos de ligas internas (en ámbar) se
+          pueden editar por fecha.
         </p>
       </div>
 
@@ -171,10 +250,14 @@ function OrganizerCalendarPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2">
-          <button onClick={() => navigateWeek(-1)} className="text-gray-400 hover:text-white">
+          <button
+            aria-label="Semana anterior"
+            onClick={() => navigateWeek(-1)}
+            className="text-gray-400 hover:text-white"
+          >
             <ChevronLeft size={18} />
           </button>
-          <div className="text-sm text-white min-w-[180px] text-center">
+          <div className="text-sm text-white text-center sm:min-w-[180px]">
             {weekDates[0]?.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} —{" "}
             {weekDates[6]?.toLocaleDateString("es-MX", {
               day: "numeric",
@@ -182,27 +265,27 @@ function OrganizerCalendarPage() {
               year: "numeric",
             })}
           </div>
-          <button onClick={() => navigateWeek(1)} className="text-gray-400 hover:text-white">
+          <button
+            aria-label="Semana siguiente"
+            onClick={() => navigateWeek(1)}
+            className="text-gray-400 hover:text-white"
+          >
             <ChevronRight size={18} />
           </button>
         </div>
-        <select
-          value={gameFilter}
-          onChange={(e) => setGameFilter(e.target.value)}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
-        >
-          <option value="all">Todos los TCGs</option>
-          {uniqueGames.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-44">
+          <BlockSelect
+            value={gameFilter === "all" ? null : gameFilter}
+            onChange={(v) => setGameFilter(v ?? "all")}
+            placeholder="Todos los TCGs"
+            options={uniqueGames.map((g) => ({ value: g.id, label: g.name }))}
+          />
+        </div>
       </div>
 
       <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
         <div className="overflow-x-auto">
-          <div style={{ minWidth: "760px", width: "100%" }}>
+          <div style={{ minWidth: "600px", width: "100%" }}>
             <div
               style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
               className="border-b border-white/10"
@@ -222,9 +305,7 @@ function OrganizerCalendarPage() {
                       {DAY_NAMES[d.getDay()]}
                     </div>
                     <div
-                      className={`text-sm font-semibold ${
-                        isToday ? "text-primary" : "text-white"
-                      }`}
+                      className={`text-sm font-semibold ${isToday ? "text-primary" : "text-white"}`}
                     >
                       {d.getDate()}
                     </div>
@@ -250,19 +331,43 @@ function OrganizerCalendarPage() {
                       className="min-h-[60px] p-1 border-l border-white/10"
                       style={{ minWidth: 0, overflow: "hidden" }}
                     >
-                      {cellEntries.map((e) => (
-                        <div
-                          key={e.id}
-                          className="w-full text-left rounded px-1.5 py-1 mb-0.5 bg-primary/10 border border-primary/30"
-                        >
-                          <div className="text-[10px] text-primary truncate">
-                            {e.game_name}
-                          </div>
-                          <div className="text-[9px] text-gray-400 truncate">
-                            {e.start_time}
-                          </div>
-                        </div>
-                      ))}
+                      {cellEntries.map((e) => {
+                        const isEditableLeague = Boolean(e.league_schedule_id);
+                        return (
+                          <button
+                            type="button"
+                            key={e.id}
+                            onClick={() => (isEditableLeague ? openEdit(e) : setRsvpEntry(e))}
+                            className={`w-full text-left rounded px-1.5 py-1 mb-0.5 border cursor-pointer transition hover:brightness-125 ${
+                              e.cancellation_reason
+                                ? CANCELLED_TILE_CLASS
+                                : e.league_id
+                                  ? "bg-amber-500/10 border-amber-500/30"
+                                  : "bg-primary/10 border-primary/30"
+                            }`}
+                          >
+                            {e.cancellation_reason && (
+                              <div className="text-[9px] font-bold uppercase text-red-300">
+                                Cancelado
+                              </div>
+                            )}
+                            <div
+                              className={`text-[10px] truncate ${e.cancellation_reason ? "text-red-200 line-through" : e.league_id ? "text-amber-300" : "text-primary"}`}
+                            >
+                              {e.override_label || e.game_name}
+                            </div>
+                            <div className="text-[9px] text-gray-400 truncate">
+                              {e.start_time}
+                              {e.is_override && " · editado"}
+                            </div>
+                            {e.league_name && (
+                              <div className="text-[9px] text-amber-400/80 truncate">
+                                {e.league_name}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -271,6 +376,107 @@ function OrganizerCalendarPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={rsvpEntry !== null} onOpenChange={(o) => !o && setRsvpEntry(null)}>
+        <DialogContent className="z-[90] max-h-dvh overflow-y-auto sm:max-h-[calc(100dvh-2rem)]">
+          <DialogHeader>
+            <DialogTitle>
+              {rsvpEntry?.override_label || rsvpEntry?.game_name} · {rsvpEntry?.date} ·{" "}
+              {rsvpEntry?.start_time}
+            </DialogTitle>
+          </DialogHeader>
+          {rsvpEntry && (
+            <div className="space-y-4">
+              <CancelOccurrenceSection
+                entry={rsvpEntry}
+                onSaved={() => {
+                  reload();
+                  setRsvpEntry(null);
+                }}
+              />
+              <FichaSection entry={rsvpEntry} />
+              <SlotRsvpList slot={rsvpEntry} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Editar una sola ocurrencia de un horario de liga interna */}
+      <Dialog open={editingEntry !== null} onOpenChange={(o) => !o && setEditingEntry(null)}>
+        <DialogContent className="z-[90] max-h-dvh overflow-y-auto sm:max-h-[calc(100dvh-2rem)]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingEntry?.league_name} —{" "}
+              {editingEntry && DAY_NAMES[new Date(editingEntry.date + "T12:00:00").getDay()]}{" "}
+              {editingEntry?.date}
+            </DialogTitle>
+          </DialogHeader>
+          {editingEntry && (
+            <div className="space-y-4">
+              <CancelOccurrenceSection
+                entry={editingEntry}
+                onSaved={() => {
+                  reload();
+                  setEditingEntry(null);
+                }}
+              />
+              <FichaSection entry={editingEntry} />
+              <p className="text-xs text-gray-400">
+                Este cambio aplica solo a esta fecha. El horario recurrente (
+                {editingEntry.game_name}, todos los {DAY_NAMES[editingEntry.day_of_week]}) no se
+                modifica.
+              </p>
+              <div className="space-y-2">
+                <Label>Nombre especial (opcional)</Label>
+                <Input
+                  value={editForm.label}
+                  placeholder={editingEntry.game_name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, label: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Hora</Label>
+                <Input
+                  type="time"
+                  value={editForm.start_time}
+                  onChange={(e) => setEditForm((f) => ({ ...f, start_time: e.target.value }))}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+            {editingEntry?.is_override ? (
+              <button
+                onClick={handleResetOverride}
+                disabled={savingOverride}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-300 hover:text-red-200"
+              >
+                <Trash2 size={12} />
+                Restablecer al horario normal
+              </button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setEditingEntry(null)}
+                disabled={savingOverride}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveOverride} disabled={savingOverride} className="gap-2">
+                {savingOverride ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <Pencil size={16} />
+                )}
+                Guardar
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

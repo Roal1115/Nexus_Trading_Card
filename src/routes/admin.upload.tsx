@@ -1,16 +1,16 @@
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import { TournamentUploadForm } from "@/components/upload/TournamentUploadForm";
 import { SettingsSectionSkeleton } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/admin/upload")({
-  head: () => ({ meta: [{ title: "Subir Torneo — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Subir Torneo — Nexus" }] }),
   component: AdminUploadPage,
 });
 
 function AdminUploadPage() {
-  const { role, loading } = useGeekarenaRole();
+  const { role, loading } = useNexusRole();
   const navigate = useNavigate();
 
   useEffect(() => {

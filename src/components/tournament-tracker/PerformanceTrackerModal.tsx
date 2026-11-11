@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, X, Plus, Trophy, ChevronDown, Trash2, ShieldQuestion } from "lucide-react";
+import { X, Plus, Trophy, ChevronDown, Trash2, ShieldQuestion } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PerformanceTrackerSkeleton } from "@/components/ui/skeleton-loader";
 
 import { toast } from "sonner";
 import {
@@ -9,19 +10,19 @@ import {
   getTournamentRoundsForPlayer,
   saveRoundResult,
   clearTournamentRounds,
+  updateMyTournamentLeader,
   deleteRoundResult,
-} from "@/lib/geekarena-tournament-tracker.functions";
-
-type DeckIdentifier = {
-  id: string;
-  card_name: string;
-  base_name: string;
-  colors: string[] | null;
-  card_image: string | null;
-  card_image_id: string | null;
-  set_code: string | null;
-  card_set_id: string | null;
-};
+} from "@/lib/nexus-tournament-tracker.functions";
+import {
+  cleanLeaderName,
+  LeaderSearchSelect,
+  RoundCardFrame,
+  RoundFieldLabel,
+  RoundNotesField,
+  RoundOutcomeFields,
+  RoundSaveButton,
+  type DeckIdentifier,
+} from "./round-ui";
 
 type RoundRow = {
   id?: string;
@@ -39,34 +40,6 @@ type RoundRow = {
   status?: string;
 };
 
-const COLOR_HEX: Record<string, string> = {
-  Red: "#ef4444",
-  Blue: "#3b82f6",
-  Green: "#22c55e",
-  Purple: "#a855f7",
-  Black: "#374151",
-  Yellow: "#eab308",
-};
-
-function cleanDisplayName(name: string): string {
-  return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
-}
-
-function ColorDots({ colors }: { colors: string[] | null }) {
-  if (!colors || colors.length === 0) return null;
-  return (
-    <span className="ml-2 inline-flex items-center gap-0.5">
-      {colors.map((c) => (
-        <span
-          key={c}
-          className="h-2 w-2 rounded-full border border-white/20"
-          style={{ backgroundColor: COLOR_HEX[c] ?? "#666" }}
-        />
-      ))}
-    </span>
-  );
-}
-
 function LeaderSelect({
   gameId,
   value,
@@ -79,23 +52,7 @@ function LeaderSelect({
   placeholder: string;
 }) {
   const fetchDeckIdentifiers = useServerFn(getDeckIdentifiers);
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<DeckIdentifier[]>([]);
   const [artVariants, setArtVariants] = useState<DeckIdentifier[]>([]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handle = setTimeout(() => {
-      fetchDeckIdentifiers({
-        data: { game_id: gameId, search: search || undefined, basic_only: true },
-      })
-        .then((rows) => setOptions(rows as DeckIdentifier[]))
-        .catch(() => setOptions([]));
-    }, 200);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, search, gameId]);
 
   useEffect(() => {
     if (!value) {
@@ -111,68 +68,13 @@ function LeaderSelect({
   }, [value?.card_set_id]);
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-      >
-        <span className="flex items-center truncate">
-          {value ? (
-            <>
-              {cleanDisplayName(value.base_name)}
-              <ColorDots colors={value.colors} />
-            </>
-          ) : (
-            <span className="text-gray-500">{placeholder}</span>
-          )}
-        </span>
-        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
-      </button>
-
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
-          <div className="relative p-2">
-            <Search
-              size={13}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-            />
-            <input
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader…"
-              className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
-            />
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {options.length === 0 ? (
-              <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
-            ) : (
-              options.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
-                >
-                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                    {opt.card_set_id}
-                  </span>
-                  <span className="flex-1 truncate text-white">
-                    {cleanDisplayName(opt.base_name)}
-                  </span>
-                  <ColorDots colors={opt.colors} />
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+    <div>
+      <LeaderSearchSelect
+        gameId={gameId}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+      />
 
       {value?.card_image && (
         <div className="mt-3 flex items-start gap-3">
@@ -183,7 +85,7 @@ function LeaderSelect({
           />
           {artVariants.length > 1 && (
             <div>
-              <p className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">
+              <p className="mb-1 text-xs uppercase tracking-widest text-foreground-subtle">
                 Cambiar arte
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -214,99 +116,6 @@ function LeaderSelect({
   );
 }
 
-function OpponentLeaderSelect({
-  gameId,
-  value,
-  onChange,
-}: {
-  gameId: string;
-  value: DeckIdentifier | null;
-  onChange: (d: DeckIdentifier | null) => void;
-}) {
-  const fetchDeckIdentifiers = useServerFn(getDeckIdentifiers);
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<DeckIdentifier[]>([]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handle = setTimeout(() => {
-      fetchDeckIdentifiers({
-        data: { game_id: gameId, search: search || undefined, basic_only: true },
-      })
-        .then((rows) => setOptions(rows as DeckIdentifier[]))
-        .catch(() => setOptions([]));
-    }, 200);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, search, gameId]);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-      >
-        <span className="flex items-center truncate">
-          {value ? (
-            <>
-              {cleanDisplayName(value.base_name)}
-              <ColorDots colors={value.colors} />
-            </>
-          ) : (
-            <span className="text-gray-500">Selecciona leader…</span>
-          )}
-        </span>
-        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
-          <div className="relative p-2">
-            <Search
-              size={13}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-            />
-            <input
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader…"
-              className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
-            />
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {options.length === 0 ? (
-              <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
-            ) : (
-              options.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
-                >
-                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                    {opt.card_set_id}
-                  </span>
-                  <span className="flex-1 truncate text-white">
-                    {cleanDisplayName(opt.base_name)}
-                  </span>
-                  <ColorDots colors={opt.colors} />
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function SimpleSelect({
   value,
   onChange,
@@ -326,12 +135,16 @@ function SimpleSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
       >
         <span className="truncate">
-          {selected ? selected.label : <span className="text-gray-500">{placeholder}</span>}
+          {selected ? (
+            selected.label
+          ) : (
+            <span className="text-foreground-subtle">{placeholder}</span>
+          )}
         </span>
-        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
+        <ChevronDown size={14} className="text-foreground-subtle flex-shrink-0" />
       </button>
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
@@ -344,7 +157,7 @@ function SimpleSelect({
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className="flex w-full items-center px-3 py-2.5 text-left text-sm text-white bg-transparent hover:bg-white/10 transition"
+                className="flex w-full items-center px-3 py-2.5 text-left text-sm text-foreground bg-transparent hover:bg-white/10 transition"
               >
                 {opt.label}
               </button>
@@ -375,318 +188,76 @@ function RoundCard({
   saving: boolean;
   deleting: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-
-  const resultColor = round.won_match === true
-    ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
-    : round.won_match === false
-    ? "bg-red-500/10 border-l-2 border-l-red-500"
-    : "bg-white/[0.02]";
-
   return (
-    <div
-      className={`rounded-xl border overflow-hidden transition-colors duration-150 ${
-        deleteConfirm ? "border-red-500/40" : "border-white/10"
-      } ${resultColor}`}
+    <RoundCardFrame
+      round={round}
+      opponentLabel={
+        round.is_bye
+          ? "Bye"
+          : (opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—")
+      }
+      onDelete={onDelete}
+      deleting={deleting}
     >
-      {/* Collapsed row */}
-      <div
-        onClick={() => !deleteConfirm && setOpen((o) => !o)}
-        className={`relative grid grid-cols-[40px_1fr_52px_52px_52px_36px] items-center gap-2 px-3 py-3 cursor-pointer transition-colors duration-150 ${
-          open ? "bg-white/[0.04]" : "hover:bg-white/[0.04] active:bg-white/[0.07]"
-        }`}
-      >
-        {/* Round number */}
-        <span
-          className={`font-mono text-sm font-bold ${
-            round.won_match === true
-              ? "text-emerald-400"
-              : round.won_match === false
-              ? "text-red-400"
-              : "text-gray-400"
-          }`}
-        >
-          R{round.round_number}
-        </span>
-
-        {/* Opponent */}
-        <div className="flex items-center gap-2 min-w-0 text-left">
-          {round.opponent_leader?.card_image ? (
-            <img
-              src={round.opponent_leader.card_image}
-              alt={round.opponent_leader.base_name}
-              className="h-9 w-6 flex-shrink-0 rounded-md border border-white/10 object-cover"
+      {(close) => (
+        <>
+          <label className="flex items-center gap-2 text-xs text-foreground-secondary">
+            <input
+              type="checkbox"
+              checked={round.is_bye}
+              onChange={(e) =>
+                onChange({
+                  is_bye: e.target.checked,
+                  opponent_player_id: null,
+                  opponent_leader_id: null,
+                  won_die_roll: null,
+                  turn_order: null,
+                  won_match: e.target.checked ? true : null,
+                })
+              }
             />
-          ) : (
-            <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-              <span className="text-[8px] text-gray-600">?</span>
-            </div>
-          )}
-          <span className="truncate text-xs text-gray-300">
-            {round.is_bye
-              ? "Bye"
-              : opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—"}
-          </span>
-        </div>
+            Bye (ronda libre, sin oponente)
+          </label>
 
-        {/* Dice */}
-        <span className="text-center text-[11px] text-gray-400">
-          {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Opp"}
-        </span>
-
-        {/* Order */}
-        <span className="text-center text-[11px] text-gray-400">
-          {round.turn_order === "first" ? "1st" : round.turn_order === "second" ? "2nd" : "—"}
-        </span>
-
-        {/* Result */}
-        <span
-          className={`text-center text-xs font-bold ${
-            round.won_match === true
-              ? "text-emerald-400"
-              : round.won_match === false
-              ? "text-red-400"
-              : "text-gray-500"
-          }`}
-        >
-          {round.is_bye ? "Bye" : round.won_match === true ? "W" : round.won_match === false ? "L" : "—"}
-        </span>
-
-        {/* Delete button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteConfirm(true);
-          }}
-          className="relative z-10 flex items-center justify-center rounded-md p-1.5 text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
-        >
-          <Trash2 size={13} />
-        </button>
-
-        {/* Delete confirmation — full-row overlay */}
-        <AnimatePresence>
-          {deleteConfirm && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`absolute inset-0 z-40 flex items-center justify-between gap-3 rounded-t-xl bg-red-950/95 px-4 backdrop-blur-sm ${
-                open ? "" : "rounded-b-xl"
-              }`}
-            >
-              <span className="text-xs font-medium text-red-100">
-                ¿Eliminar Ronda {round.round_number}?
-              </span>
-              <div className="flex flex-shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onDelete}
-                  disabled={deleting}
-                  className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
-                >
-                  {deleting ? "…" : "Eliminar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirm(false)}
-                  className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/10"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Expanded form */}
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-white/10 px-4 pb-5 pt-4 space-y-5">
-              <label className="flex items-center gap-2 text-xs text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={round.is_bye}
-                  onChange={(e) =>
-                    onChange({
-                      is_bye: e.target.checked,
-                      opponent_player_id: null,
-                      opponent_leader_id: null,
-                      won_die_roll: null,
-                      turn_order: null,
-                      won_match: e.target.checked ? true : null,
-                    })
-                  }
-                />
-                Bye (ronda libre, sin oponente)
-              </label>
-
-              {!round.is_bye && (
-                <>
-                  {/* Oponente */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Contra quién jugaste
-                    </label>
-                    <SimpleSelect
-                      value={round.opponent_player_id ?? ""}
-                      onChange={(v) => onChange({ opponent_player_id: v || null })}
-                      placeholder="Selecciona oponente…"
-                      options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
-                    />
-                  </div>
-
-                  {/* Leader del oponente */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Leader del oponente
-                    </label>
-                    <OpponentLeaderSelect
-                      gameId={gameId}
-                      value={round.opponent_leader ?? null}
-                      onChange={(d) => {
-                        onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
-                      }}
-                    />
-                  </div>
-
-                  {/* Dado — 2 toggle buttons */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Dado
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_die_roll: true })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_die_roll === true
-                            ? "bg-emerald-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-emerald-500/40 hover:text-emerald-400"
-                        }`}
-                      >
-                        Gané
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_die_roll: false })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_die_roll === false
-                            ? "bg-red-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-red-500/40 hover:text-red-400"
-                        }`}
-                      >
-                        Perdí
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Turno — 2 toggle buttons */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Turno
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onChange({ turn_order: "first" })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.turn_order === "first"
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-primary/40 hover:text-primary"
-                        }`}
-                      >
-                        Primero
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onChange({ turn_order: "second" })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.turn_order === "second"
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-primary/40 hover:text-primary"
-                        }`}
-                      >
-                        Segundo
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Resultado — 2 toggle buttons */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                      Resultado
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_match: true })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_match === true
-                            ? "bg-emerald-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-emerald-500/40 hover:text-emerald-400"
-                        }`}
-                      >
-                        Victoria
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onChange({ won_match: false })}
-                        className={`rounded-xl py-3 text-sm font-semibold transition ${
-                          round.won_match === false
-                            ? "bg-red-500 text-white"
-                            : "border border-white/10 bg-white/5 text-gray-400 hover:border-red-500/40 hover:text-red-400"
-                        }`}
-                      >
-                        Derrota
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Notas */}
+          {!round.is_bye && (
+            <>
               <div>
-                <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
-                  Notas (opcional)
-                </label>
-                <textarea
-                  value={round.notes ?? ""}
-                  onChange={(e) => onChange({ notes: e.target.value || null })}
-                  rows={2}
-                  placeholder="Estrategia, observaciones…"
-                  className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-primary"
+                <RoundFieldLabel>Contra quién jugaste</RoundFieldLabel>
+                <SimpleSelect
+                  value={round.opponent_player_id ?? ""}
+                  onChange={(v) => onChange({ opponent_player_id: v || null })}
+                  placeholder="Selecciona oponente…"
+                  options={opponents.map((o) => ({ value: o.id, label: o.geek_tag }))}
                 />
               </div>
 
-              {/* Save button — full width */}
-              <button
-                type="button"
-                onClick={async () => {
-                  await onSave();
-                  setOpen(false);
-                }}
-                disabled={saving}
-                className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50 transition hover:brightness-110"
-              >
-                {saving ? "Guardando…" : "Guardar Ronda"}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+              <div>
+                <RoundFieldLabel>Leader del oponente</RoundFieldLabel>
+                <LeaderSearchSelect
+                  gameId={gameId}
+                  value={round.opponent_leader ?? null}
+                  onChange={(d) => {
+                    onChange({ opponent_leader_id: d?.id ?? null, opponent_leader: d });
+                  }}
+                  placeholder="Selecciona leader…"
+                />
+              </div>
+
+              <RoundOutcomeFields round={round} onChange={onChange} />
+            </>
+          )}
+
+          <RoundNotesField value={round.notes} onChange={(notes) => onChange({ notes })} />
+          <RoundSaveButton
+            saving={saving}
+            onClick={async () => {
+              await onSave();
+              close();
+            }}
+          />
+        </>
+      )}
+    </RoundCardFrame>
   );
 }
 
@@ -704,6 +275,7 @@ export function PerformanceTrackerModal({
   const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
   const saveRound = useServerFn(saveRoundResult);
   const clearRounds = useServerFn(clearTournamentRounds);
+  const saveLeader = useServerFn(updateMyTournamentLeader);
   const deleteRound = useServerFn(deleteRoundResult);
 
   const [loading, setLoading] = useState(true);
@@ -711,6 +283,8 @@ export function PerformanceTrackerModal({
   const [opponents, setOpponents] = useState<Array<{ id: string; geek_tag: string }>>([]);
   const [rounds, setRounds] = useState<RoundRow[]>([]);
   const [myLeader, setMyLeader] = useState<DeckIdentifier | null>(null);
+  const [savedLeaderId, setSavedLeaderId] = useState<string | null>(null);
+  const [savingLeader, setSavingLeader] = useState(false);
   const [savingRound, setSavingRound] = useState<number | null>(null);
   const [deletingRound, setDeletingRound] = useState<number | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -738,6 +312,7 @@ export function PerformanceTrackerModal({
         setMaxRounds(res.max_rounds);
         setOpponents(res.opponents);
         setMyLeader(res.my_tournament_leader ?? null);
+        setSavedLeaderId(res.my_tournament_leader?.id ?? null);
         setRounds(
           res.rounds.map((r: any) => ({
             id: r.id,
@@ -828,10 +403,32 @@ export function PerformanceTrackerModal({
         },
       });
       toast.success(`Ronda ${round.round_number} guardada`);
-    } catch {
-      toast.error("Error al guardar la ronda");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al guardar la ronda");
     } finally {
       setSavingRound(null);
+    }
+  };
+
+  const savedOwnRounds = rounds.filter((r) => r.id && !r.is_auto_populated && !r.is_bye);
+  const leaderChanged = Boolean(myLeader) && myLeader?.id !== savedLeaderId;
+
+  const handleSaveLeader = async () => {
+    if (!myLeader) return;
+    setSavingLeader(true);
+    try {
+      await saveLeader({ data: { tournament_id: tournamentId, leader_id: myLeader.id } });
+      setSavedLeaderId(myLeader.id);
+      setRounds((prev) =>
+        prev.map((r) =>
+          r.is_auto_populated || r.is_bye ? r : { ...r, player_leader_id: myLeader.id },
+        ),
+      );
+      toast.success("Leader actualizado");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo guardar el leader");
+    } finally {
+      setSavingLeader(false);
     }
   };
 
@@ -859,8 +456,8 @@ export function PerformanceTrackerModal({
         <div className="flex items-start gap-3">
           <Trophy className="text-primary mt-1" size={22} />
           <div>
-            <h2 className="text-xl font-extrabold text-white">Performance Tracker</h2>
-            <p className="mt-1 text-xs text-gray-400">
+            <h2 className="text-xl font-extrabold text-foreground">Mis Partidas</h2>
+            <p className="mt-1 text-xs text-foreground-secondary">
               Registra el detalle de cada ronda: contra quién jugaste, qué leader usaste, y el
               resultado.
             </p>
@@ -871,7 +468,7 @@ export function PerformanceTrackerModal({
             type="button"
             onClick={() => setConfirmingClear(true)}
             title="Eliminar todo el historial de este torneo"
-            className="rounded-md p-1.5 text-gray-400 hover:bg-red-500/15 hover:text-red-400 transition"
+            className="rounded-md p-1.5 text-foreground-secondary hover:bg-red-500/15 hover:text-red-400 transition"
           >
             <Trash2 size={18} />
           </button>
@@ -880,7 +477,7 @@ export function PerformanceTrackerModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+            className="rounded-md p-1.5 text-foreground-secondary hover:bg-white/10 hover:text-foreground"
           >
             <X size={18} />
           </button>
@@ -888,7 +485,7 @@ export function PerformanceTrackerModal({
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-gray-400">Cargando…</p>
+        <PerformanceTrackerSkeleton />
       ) : (
         <div className="space-y-4">
           {/* Hero header — leader image + record, same format as /sessions/$sessionId */}
@@ -903,30 +500,30 @@ export function PerformanceTrackerModal({
                   />
                 ) : (
                   <div className="flex h-24 w-16 items-center justify-center rounded-xl border border-white/10 bg-black/40">
-                    <ShieldQuestion size={20} className="text-gray-600" />
+                    <ShieldQuestion size={20} className="text-foreground-subtle" />
                   </div>
                 )}
                 {(wins > 0 || losses > 0) && (
                   <div className="absolute bottom-1 left-0 right-0 flex justify-center">
-                    <span className="rounded-full bg-black/80 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                    <span className="rounded-full bg-black/80 px-2 py-0.5 font-mono text-xs font-bold text-foreground">
                       <span className="text-emerald-400">{wins}V</span>
-                      <span className="text-gray-500"> · </span>
+                      <span className="text-foreground-subtle"> · </span>
                       <span className="text-red-400">{losses}D</span>
                     </span>
                   </div>
                 )}
               </div>
               <div className="min-w-0 flex-1 pb-1">
-                <p className="text-lg font-bold text-white truncate">
-                  {myLeader ? cleanDisplayName(myLeader.base_name) : "Sin leader"}
+                <p className="text-lg font-bold text-foreground truncate">
+                  {myLeader ? cleanLeaderName(myLeader.base_name) : "Sin leader"}
                 </p>
-                <p className="text-xs text-gray-500">Tu leader en este torneo</p>
+                <p className="text-xs text-foreground-subtle">Tu leader en este torneo</p>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+            <label className="mb-1.5 block text-xs uppercase tracking-widest text-foreground-subtle">
               Cambiar tu leader
             </label>
             <LeaderSelect
@@ -935,22 +532,40 @@ export function PerformanceTrackerModal({
               onChange={setMyLeader}
               placeholder="Selecciona tu leader…"
             />
+            {leaderChanged &&
+              (savedOwnRounds.length > 0 ? (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-amber-400">
+                    Sin guardar. Se aplicará a {savedOwnRounds.length}{" "}
+                    {savedOwnRounds.length === 1 ? "ronda capturada" : "rondas capturadas"}.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleSaveLeader}
+                    disabled={savingLeader}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                  >
+                    {savingLeader ? "Guardando…" : "Guardar leader"}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-foreground-secondary">
+                  Se guardará con tu primera ronda.
+                </p>
+              ))}
           </div>
 
           {/* Table header */}
           {rounds.length > 0 && (
-            <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
-              <span className="text-[10px] uppercase tracking-widest text-gray-600">Round</span>
-              <span className="text-[10px] uppercase tracking-widest text-gray-600">Rival</span>
-              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
-                Dado
+            <div className="grid grid-cols-[28px_1fr_40px_40px_28px_28px] gap-2 px-3 pb-1 text-xs uppercase text-foreground-subtle sm:grid-cols-[40px_1fr_52px_52px_52px_36px] sm:tracking-widest">
+              <span>
+                <span className="sm:hidden">#</span>
+                <span className="hidden sm:inline">Round</span>
               </span>
-              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
-                Turno
-              </span>
-              <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
-                Res
-              </span>
+              <span>Rival</span>
+              <span className="text-center">Dado</span>
+              <span className="text-center">Turno</span>
+              <span className="text-center">Res</span>
             </div>
           )}
 
@@ -962,14 +577,14 @@ export function PerformanceTrackerModal({
                   className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4"
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-sm font-bold text-foreground">
                       Ronda {round.round_number}{" "}
-                      <span className="ml-1 text-[10px] font-normal uppercase tracking-wider text-amber-400">
+                      <span className="ml-1 text-xs font-normal uppercase tracking-wider text-amber-400">
                         Reportada por tu oponente
                       </span>
                     </p>
                   </div>
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-foreground-secondary">
                     Este resultado fue registrado por tu rival en esta ronda. Por ahora no se puede
                     editar desde aquí.
                   </p>
@@ -999,7 +614,7 @@ export function PerformanceTrackerModal({
                   key={n}
                   type="button"
                   onClick={() => addRound(n)}
-                  className="flex items-center gap-1.5 rounded-md border border-dashed border-white/20 px-4 py-2 text-sm font-medium text-gray-300 hover:border-primary hover:text-primary transition"
+                  className="flex items-center gap-1.5 rounded-md border border-dashed border-white/20 px-4 py-2 text-sm font-medium text-foreground-secondary hover:border-primary hover:text-primary transition"
                 >
                   <Plus size={14} /> Ronda {n}
                 </button>
@@ -1016,10 +631,10 @@ export function PerformanceTrackerModal({
       {confirmingClear && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0f1117] p-6 text-center shadow-2xl">
-            <p className="text-base font-bold text-white">
+            <p className="text-base font-bold text-foreground">
               ¿Eliminar todo el historial de este torneo?
             </p>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-foreground-secondary">
               Se borrarán todas las rondas que registraste para este torneo. Esta acción no se puede
               deshacer.
             </p>
@@ -1028,7 +643,7 @@ export function PerformanceTrackerModal({
                 type="button"
                 onClick={handleClearAll}
                 disabled={clearing}
-                className="rounded-md bg-red-500 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-50"
+                className="rounded-md bg-red-500 px-4 py-2 text-xs font-bold uppercase tracking-widest text-foreground disabled:opacity-50"
               >
                 {clearing ? "Eliminando…" : "Sí, eliminar todo"}
               </button>
@@ -1036,7 +651,7 @@ export function PerformanceTrackerModal({
                 type="button"
                 onClick={() => setConfirmingClear(false)}
                 disabled={clearing}
-                className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white"
+                className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground"
               >
                 Cancelar
               </button>
@@ -1065,7 +680,7 @@ export function PerformanceTrackerModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:items-center sm:p-4"
           onClick={onClose}
         >
           <motion.div
@@ -1075,7 +690,7 @@ export function PerformanceTrackerModal({
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
-            className="glass relative w-full max-w-3xl max-h-[90vh] min-h-[500px] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-6 sm:p-8"
+            className="glass relative max-h-[calc(90dvh-4rem)] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-white/10 bg-black/85 p-5 sm:max-h-[90vh] sm:min-h-[500px] sm:rounded-2xl sm:p-8"
           >
             {content}
           </motion.div>

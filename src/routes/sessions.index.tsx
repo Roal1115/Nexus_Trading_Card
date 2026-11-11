@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -17,32 +18,41 @@ import {
   X,
   Search,
   Loader2,
+  Images,
 } from "lucide-react";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
+import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getStandaloneSessions,
   deleteStandaloneSession,
   createStandaloneSession,
   searchStores,
   getMyTrackedTournaments,
-} from "@/lib/geekarena-standalone.functions";
-import { getMyStatsGames } from "@/lib/geekarena-player.functions";
-import { getDeckIdentifiers } from "@/lib/geekarena-tournament-tracker.functions";
+} from "@/lib/nexus-standalone.functions";
+import { getMySessionGames } from "@/lib/nexus-player.functions";
+import { cancelSlotRsvp, getMySlotsToLog } from "@/lib/nexus-rsvp.functions";
+import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
+import { cleanLeaderName } from "@/components/tournament-tracker/round-ui";
+import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { sessionsPageQuery } from "@/lib/sessions-queries";
 
 type DeckIdentifier = {
   id: string;
   base_name: string;
+  colors: string[] | null;
   card_image: string | null;
   card_set_id: string | null;
 };
 
-function cleanName(name: string): string {
-  return name.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim();
-}
-
 export const Route = createFileRoute("/sessions/")({
-  head: () => ({ meta: [{ title: "Mis Sesiones — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Mis Partidas — Nexus" }] }),
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(sessionsPageQuery());
+    } catch {
+      return undefined;
+    }
+  },
   component: SessionsPage,
 });
 
@@ -50,6 +60,7 @@ type SessionsResult = Awaited<ReturnType<typeof getStandaloneSessions>>;
 type SessionRow = SessionsResult["sessions"][number];
 type TrackedTournamentsResult = Awaited<ReturnType<typeof getMyTrackedTournaments>>;
 type TrackedTournament = TrackedTournamentsResult["tournaments"][number];
+type SlotToLog = Awaited<ReturnType<typeof getMySlotsToLog>>["slots"][number];
 
 function formatTournamentDate(date: string): string {
   try {
@@ -138,13 +149,15 @@ function SessionCard({
   return (
     <div
       onClick={goToDetail}
-      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
+      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 sm:px-5 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
     >
       <div className="flex-shrink-0">
         {session.leader?.card_image ? (
           <img
             src={session.leader.card_image}
             alt={session.leader.base_name}
+            loading="lazy"
+            decoding="async"
             className="h-10 w-7 rounded-md border border-white/10 object-cover"
           />
         ) : session.session_type === "competitive" ? (
@@ -163,8 +176,8 @@ function SessionCard({
                 session.win_rate === 100
                   ? "text-yellow-400"
                   : session.win_rate >= 50
-                  ? "text-emerald-400"
-                  : "text-red-400"
+                    ? "text-emerald-400"
+                    : "text-red-400"
               }`}
             >
               {session.win_rate}% WR
@@ -177,7 +190,9 @@ function SessionCard({
           {session.leader && (
             <>
               <span className="text-gray-700">·</span>
-              <span className="truncate text-gray-400">{cleanName(session.leader.base_name)}</span>
+              <span className="truncate text-gray-400">
+                {cleanLeaderName(session.leader.base_name)}
+              </span>
             </>
           )}
         </div>
@@ -198,7 +213,7 @@ function SessionCard({
               setConfirming(true);
             }}
             className="rounded-md p-1.5 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition"
-            aria-label="Eliminar sesión"
+            aria-label="Eliminar partida"
           >
             <Trash2 size={14} />
           </button>
@@ -246,97 +261,172 @@ function SessionCard({
 }
 
 function TrackedTournamentCard({ tournament }: { tournament: TrackedTournament }) {
+  const total = tournament.wins + tournament.losses;
+  const wr = total > 0 ? Math.round((tournament.wins / total) * 100) : null;
+  const tint = getRecordTint(wr, tournament.wins);
   return (
     <Link
       to="/sessions/tournament/$tournamentId"
       params={{ tournamentId: tournament.id }}
-      className="glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-white/10 p-4 transition hover:border-primary/40 hover:bg-white/[0.04]"
+      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 sm:px-5 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
     >
-      <Trophy size={16} className="text-primary flex-shrink-0" />
+      <div className="flex h-10 w-7 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-primary/10">
+        <Trophy size={14} className="text-primary" />
+      </div>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-white">{tournament.store_name}</div>
-        <div className="mt-0.5 text-xs text-gray-500">
-          {tournament.game_name} · {formatTournamentDate(tournament.tournament_date)}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-400">
+            <CheckCircle2 size={12} />
+            Oficial
+          </span>
+          {wr !== null && (
+            <span
+              className={`text-[10px] font-bold ${
+                wr === 100 ? "text-yellow-400" : wr >= 50 ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {wr}% WR
+            </span>
+          )}
+          <span className="truncate text-sm font-semibold text-white">{tournament.store_name}</span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+          <span>{tournament.game_name}</span>
+          <span className="text-gray-700">·</span>
+          <span>
+            {tournament.total_rounds} rondas · {tournament.wins}W {tournament.losses}L
+          </span>
         </div>
       </div>
 
-      <div className="hidden sm:block text-xs text-gray-400 flex-shrink-0">
-        {tournament.total_rounds} rondas · {tournament.wins}W {tournament.losses}L
+      <div className="hidden sm:block flex-shrink-0 text-right">
+        <div className="text-xs text-gray-300">
+          {formatTournamentDate(tournament.tournament_date)}
+        </div>
+        <div className="mt-0.5 text-[11px] text-gray-500">Registro oficial</div>
       </div>
 
-      <ChevronRight size={14} className="text-gray-500 flex-shrink-0" />
+      <ChevronRight
+        size={16}
+        className="flex-shrink-0 text-gray-600 transition group-hover:text-primary"
+      />
     </Link>
   );
 }
 
+// ============================================================
+// Section — bloque agrupador con header (ícono + título + contador)
+// ============================================================
+function Section({
+  icon,
+  title,
+  count,
+  tone = "default",
+  subtitle,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  tone?: "default" | "amber";
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  if (count === 0) return null;
+  return (
+    <section className="mt-8 first:mt-6">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={
+            tone === "amber"
+              ? "inline-flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400"
+              : "inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-gray-300"
+          }
+        >
+          {icon}
+        </span>
+        <h2
+          className={
+            tone === "amber"
+              ? "text-sm font-bold uppercase tracking-wider text-amber-300"
+              : "text-sm font-bold uppercase tracking-wider text-white"
+          }
+        >
+          {title}
+        </h2>
+        <span
+          className={
+            tone === "amber"
+              ? "rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"
+              : "rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold text-gray-300"
+          }
+        >
+          {count}
+        </span>
+      </div>
+      {subtitle && <p className="mt-1 pl-[38px] text-xs text-gray-500">{subtitle}</p>}
+      <div className="mt-3 space-y-3">{children}</div>
+    </section>
+  );
+}
+
 function SessionsPage() {
-  const { player, loading: roleLoading } = useGeekarenaRole();
-  const fetchSessions = useServerFn(getStandaloneSessions);
+  const { player, loading: roleLoading } = useNexusRole();
   const removeSession = useServerFn(deleteStandaloneSession);
-  const fetchTracked = useServerFn(getMyTrackedTournaments);
-
-  const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [trackedTournaments, setTrackedTournaments] = useState<TrackedTournament[]>([]);
-  const [loadingTournaments, setLoadingTournaments] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const loaderData = Route.useLoaderData();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const [prefill, setPrefill] = useState<SlotToLog | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const fetchSlotsToLog = useServerFn(getMySlotsToLog);
+  const cancelSlot = useServerFn(cancelSlotRsvp);
 
+  const { data, isLoading } = useQuery({
+    ...sessionsPageQuery(),
+    enabled: !!player,
+    initialData: loaderData,
+  });
+  const sessions = data?.sessions ?? [];
+  const allTracked = data?.tournaments ?? [];
 
-  useEffect(() => {
-    if (roleLoading) return;
-    if (!player) {
-      setLoading(false);
-      setLoadingTournaments(false);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchSessions();
-        if (!cancelled) setSessions(res.sessions);
-      } catch (e: any) {
-        if (!cancelled) toast.error(e?.message ?? "Error al cargar sesiones");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    fetchTracked()
-      .then((res) => {
-        if (!cancelled) setTrackedTournaments(res.tournaments);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoadingTournaments(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [player, roleLoading, fetchSessions, fetchTracked]);
+  const slotsKey = ["slots-to-log", player?.id];
+  const { data: slotsData } = useQuery({
+    queryKey: slotsKey,
+    queryFn: () => fetchSlotsToLog(),
+    enabled: !!player,
+  });
+  const slotsToLog = slotsData?.slots ?? [];
+  const skipSlot = useMutation({
+    mutationFn: ({ store_id, game_id, date }: SlotToLog) =>
+      cancelSlot({ data: { store_id, game_id, date } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: slotsKey }),
+    onError: (e: Error) => toast.error(e.message || "No se pudo quitar"),
+  });
+  const loading = roleLoading || (!!player && isLoading && !data);
+  const loadingTournaments = loading;
 
-  const handleDelete = async (id: string) => {
-    setDeletingId(id);
-    try {
-      await removeSession({ data: { session_id: id } });
-      setSessions((prev) => prev.filter((s) => s.id !== id));
-      toast.success("Sesión eliminada");
-    } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo eliminar la sesión");
-    } finally {
-      setDeletingId(null);
-    }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => removeSession({ data: { session_id: id } }),
+    onMutate: (id) => setDeletingId(id),
+    onSuccess: (_res, id) => {
+      queryClient.setQueryData(sessionsPageQuery().queryKey, (prev: typeof data) =>
+        prev ? { ...prev, sessions: prev.sessions.filter((s) => s.id !== id) } : prev,
+      );
+      toast.success("Partida eliminada");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo eliminar la partida"),
+    onSettled: () => setDeletingId(null),
+  });
+  const handleDelete = (id: string) => deleteMutation.mutate(id);
 
   if (!roleLoading && !player) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="glass rounded-2xl border border-white/10 p-8 text-center">
           <h1 className="text-xl font-bold text-white">Debes iniciar sesión</h1>
-          <p className="mt-2 text-sm text-gray-400">
-            Inicia sesión para ver y crear tus sesiones.
-          </p>
+          <p className="mt-2 text-sm text-gray-400">Inicia sesión para ver y crear tus partidas.</p>
           <Link
             to="/login"
             className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
@@ -348,7 +438,15 @@ function SessionsPage() {
     );
   }
 
-  const unlinkedCount = sessions.filter((s) => s.status === "unlinked").length;
+  const pendingSessions = sessions.filter((s) => s.status === "unlinked");
+  const matchedSessions = sessions.filter((s) => s.status === "matched");
+  const casualSessions = sessions.filter((s) => s.status === "casual");
+  // Una partida vinculada también aparece como torneo con rondas: mostrarla una sola vez.
+  const linkedIds = new Set(matchedSessions.map((s) => s.tournament_id));
+  const trackedTournaments = allTracked.filter((t) => !linkedIds.has(t.id));
+  const officialCount = matchedSessions.length + trackedTournaments.length;
+  const isEmpty =
+    !loading && !loadingTournaments && sessions.length === 0 && allTracked.length === 0;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 pb-28 sm:px-6 sm:pb-8">
@@ -357,9 +455,9 @@ function SessionsPage() {
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-gray-500">
             <Layers size={14} />
-            Performance
+            Mi carrera
           </div>
-          <h1 className="mt-1 text-2xl font-bold text-white">Mis Sesiones</h1>
+          <h1 className="mt-1 text-2xl font-bold text-white">Mis Partidas</h1>
         </div>
 
         {/* Create button (desktop) */}
@@ -368,81 +466,129 @@ function SessionsPage() {
           className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
         >
           <Plus size={14} />
-          Nueva Sesión
+          Nueva Partida
         </button>
       </div>
 
-      {/* Amber banner */}
-      {unlinkedCount > 0 && !loading && (
-        <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
-          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-          <span>
-            Tienes {unlinkedCount}{" "}
-            {unlinkedCount === 1
-              ? "sesión pendiente de vinculación"
-              : "sesiones pendientes de vinculación"}
-            .
-          </span>
-        </div>
-      )}
+      <Section
+        icon={<Trophy size={14} />}
+        title="Registra tu partida"
+        count={slotsToLog.length}
+        subtitle="Marcaste que te interesaba ir a estos torneos. Los datos ya vienen llenos."
+      >
+        {slotsToLog.map((slot) => (
+          <div
+            key={`${slot.store_id}_${slot.date}`}
+            className="glass flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 p-3"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{slot.store_name}</p>
+              <p className="text-xs text-gray-400">
+                {formatSessionDate(slot.date)}
+                {slot.time ? ` · ${slot.time} hrs` : ""}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => skipSlot.mutate(slot)}
+                disabled={skipSlot.isPending}
+                className="rounded-lg px-3 py-2 text-xs font-medium text-gray-400 transition hover:text-white disabled:opacity-60"
+              >
+                No fui
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPrefill(slot);
+                  setShowCreateSheet(true);
+                }}
+                className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110"
+              >
+                Registrar
+              </button>
+            </div>
+          </div>
+        ))}
+      </Section>
 
       {/* Content */}
-      <div className="mt-6 space-y-3">
-        {loading ? (
-          <>
-            <SkeletonBlock className="h-20 w-full" />
-            <SkeletonBlock className="h-20 w-full" />
-            <SkeletonBlock className="h-20 w-full" />
-          </>
-        ) : sessions.length === 0 ? (
-          <div className="glass flex flex-col items-center justify-center rounded-2xl border border-white/10 px-6 py-14 text-center">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Layers size={22} />
-            </div>
-            <h2 className="mt-4 text-lg font-semibold text-white">Sin sesiones registradas</h2>
-            <p className="mt-1 max-w-sm text-sm text-gray-400">
-              Crea tu primera sesión para empezar a registrar tus partidas.
-            </p>
-            <button
-              onClick={() => setShowCreateSheet(true)}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-            >
-              <Plus size={14} />
-              Nueva Sesión
-            </button>
-          </div>
-        ) : (
-          sessions.map((s) => (
-            <SessionCard
-              key={s.id}
-              session={s}
-              onDelete={handleDelete}
-              isDeleting={deletingId === s.id}
-            />
-          ))
-        )}
-      </div>
-
-      {/* Torneos con Performance Tracker */}
-      {loadingTournaments ? (
-        <div className="mt-8 space-y-3">
-          <SkeletonBlock className="h-5 w-64" />
-          <SkeletonBlock className="h-16 w-full" />
-          <SkeletonBlock className="h-16 w-full" />
+      {loading || loadingTournaments ? (
+        <div className="mt-6 space-y-3">
+          <SkeletonBlock className="h-6 w-56" />
+          <SkeletonBlock className="h-20 w-full" />
+          <SkeletonBlock className="h-20 w-full" />
+          <SkeletonBlock className="h-6 w-40" />
+          <SkeletonBlock className="h-20 w-full" />
         </div>
-      ) : trackedTournaments.length > 0 ? (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-white">Torneos con Performance Tracker</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
-            Torneos oficiales donde registraste rondas directamente
+      ) : isEmpty ? (
+        <div className="glass mt-6 flex flex-col items-center justify-center rounded-2xl border border-white/10 px-6 py-14 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Layers size={22} />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-white">Sin partidas registradas</h2>
+          <p className="mt-1 max-w-sm text-sm text-gray-400">
+            Crea tu primera partida para empezar a registrar tus rondas.
           </p>
-          <div className="mt-3 space-y-3">
+        </div>
+      ) : (
+        <>
+          {/* 1. Pendientes de vincular */}
+          <Section
+            icon={<AlertTriangle size={14} />}
+            title="Pendientes de vincular"
+            count={pendingSessions.length}
+            tone="amber"
+            subtitle="Se vinculan solas al publicarse el torneo. Si ya se publicó, abre la partida y vincúlala a mano."
+          >
+            {pendingSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                onDelete={handleDelete}
+                isDeleting={deletingId === s.id}
+              />
+            ))}
+          </Section>
+
+          {/* 2. Torneos oficiales: sesiones matched + performance tracker, una sola lista */}
+          <Section
+            icon={<Trophy size={14} />}
+            title="Torneos Oficiales"
+            count={officialCount}
+            subtitle="Vinculadas a un torneo oficial."
+          >
+            {matchedSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                onDelete={handleDelete}
+                isDeleting={deletingId === s.id}
+              />
+            ))}
             {trackedTournaments.map((t) => (
               <TrackedTournamentCard key={t.id} tournament={t} />
             ))}
-          </div>
-        </div>
-      ) : null}
+          </Section>
+
+          {/* 3. Casual */}
+          <Section
+            icon={<Swords size={14} />}
+            title="Casual"
+            count={casualSessions.length}
+            subtitle="Prácticas y partidas fuera de torneo — no afectan tu ranking."
+          >
+            {casualSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                onDelete={handleDelete}
+                isDeleting={deletingId === s.id}
+              />
+            ))}
+          </Section>
+        </>
+      )}
 
       {/* Create button (mobile sticky) */}
       <div className="fixed bottom-20 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">
@@ -451,19 +597,117 @@ function SessionsPage() {
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
         >
           <Plus size={16} />
-          Nueva Sesión
+          Nueva Partida
         </button>
       </div>
 
       <CreateSessionSheet
         open={showCreateSheet}
-        onClose={() => setShowCreateSheet(false)}
+        prefill={prefill}
+        onClose={() => {
+          setShowCreateSheet(false);
+          setPrefill(null);
+        }}
         onCreated={(id) => {
           setShowCreateSheet(false);
+          setPrefill(null);
+          queryClient.invalidateQueries({ queryKey: slotsKey });
           navigate({ to: "/sessions/$sessionId", params: { sessionId: id } });
         }}
       />
     </main>
+  );
+}
+
+// ============================================================
+// LeaderArtSwitcher — pick a different art/printing for the same card_set_id
+// ============================================================
+function LeaderArtSwitcher({
+  gameId,
+  value,
+  onChange,
+}: {
+  gameId: string;
+  value: DeckIdentifier;
+  onChange: (d: DeckIdentifier) => void;
+}) {
+  const fetchLeaders = useServerFn(getDeckIdentifiers);
+  const [open, setOpen] = useState(false);
+  const [variants, setVariants] = useState<DeckIdentifier[]>([]);
+
+  useEffect(() => {
+    if (!open || !value.card_set_id) return;
+    fetchLeaders({ data: { game_id: gameId, card_set_id: value.card_set_id } })
+      .then((rows) => setVariants(rows as DeckIdentifier[]))
+      .catch(() => setVariants([]));
+  }, [open, value.card_set_id, gameId, fetchLeaders]);
+
+  return (
+    <div className="mt-2">
+      <div className="relative inline-block">
+        <img
+          src={value.card_image ?? undefined}
+          alt={value.base_name}
+          className="h-20 max-w-full rounded-md border border-white/10 object-contain"
+        />
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          title="Cambiar arte"
+          className="absolute bottom-1 right-1 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-white backdrop-blur-sm transition hover:bg-black/90"
+        >
+          <Images size={11} />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+              {variants.length === 0 ? (
+                <p className="text-[10px] text-gray-500">Buscando artes…</p>
+              ) : (
+                variants.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(v);
+                      setOpen(false);
+                    }}
+                    className={`flex-shrink-0 overflow-hidden rounded-md border transition ${
+                      v.id === value.id
+                        ? "border-primary ring-1 ring-primary"
+                        : "border-white/10 hover:border-white/30"
+                    }`}
+                  >
+                    {v.card_image ? (
+                      <img
+                        src={v.card_image}
+                        alt={v.base_name}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-16 w-11 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-11 items-center justify-center bg-black/30 text-[8px] text-gray-600">
+                        ?
+                      </div>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -506,7 +750,7 @@ function LeaderSelect({
       >
         <span className="truncate">
           {value ? (
-            cleanName(value.base_name)
+            cleanLeaderName(value.base_name)
           ) : (
             <span className="text-gray-500">Selecciona tu leader…</span>
           )}
@@ -515,7 +759,7 @@ function LeaderSelect({
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+        <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
           <div className="relative p-2">
             <Search
               size={13}
@@ -525,7 +769,7 @@ function LeaderSelect({
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar leader…"
+              placeholder="Buscar leader o ID (ej. OP10-010)…"
               className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
             />
           </div>
@@ -547,7 +791,8 @@ function LeaderSelect({
                   <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
-                  <span className="flex-1 truncate">{cleanName(opt.base_name)}</span>
+                  <span className="flex-1 truncate">{cleanLeaderName(opt.base_name)}</span>
+                  <ColorDots colors={opt.colors} />
                 </button>
               ))
             )}
@@ -555,14 +800,8 @@ function LeaderSelect({
         </div>
       )}
 
-      {value?.card_image && (
-        <div className="mt-2">
-          <img
-            src={value.card_image}
-            alt={value.base_name}
-            className="h-20 max-w-full rounded-md border border-white/10 object-contain"
-          />
-        </div>
+      {value?.card_image && gameId && (
+        <LeaderArtSwitcher gameId={gameId} value={value} onChange={onChange} />
       )}
       {!value && (
         <div className="mt-2 flex h-20 w-14 items-center justify-center rounded-md border border-white/10 bg-black/30">
@@ -581,14 +820,16 @@ type StoreRow = { id: string; name: string; city: string | null; zone: string | 
 
 function CreateSessionSheet({
   open,
+  prefill,
   onClose,
   onCreated,
 }: {
   open: boolean;
+  prefill: SlotToLog | null;
   onClose: () => void;
   onCreated: (sessionId: string) => void;
 }) {
-  const fetchGames = useServerFn(getMyStatsGames);
+  const fetchGames = useServerFn(getMySessionGames);
   const searchStoresFn = useServerFn(searchStores);
   const createSession = useServerFn(createStandaloneSession);
 
@@ -631,6 +872,25 @@ function CreateSessionSheet({
       return () => clearTimeout(t);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !prefill) return;
+    const weekday = new Date(`${prefill.date}T12:00:00`).toLocaleDateString("es-MX", {
+      weekday: "long",
+    });
+    setSessionType("competitive");
+    setStep(2);
+    setName(`Torneo del ${weekday} — ${prefill.store_name}`.slice(0, 100));
+    setGameId(prefill.game_id);
+    setDate(prefill.date);
+    setTime(prefill.time);
+    setSelectedStore({
+      id: prefill.store_id,
+      name: prefill.store_name,
+      city: prefill.store_city,
+      zone: prefill.store_zone,
+    });
+  }, [open, prefill]);
 
   // Load games when opening
   useEffect(() => {
@@ -712,10 +972,10 @@ function CreateSessionSheet({
         if (date) payload.session_date = date;
       }
       const res = await createSession({ data: payload });
-      toast.success("Sesión creada");
+      toast.success("Partida creada");
       onCreated((res.session as { id: string }).id);
     } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo crear la sesión");
+      toast.error(e?.message ?? "No se pudo crear la partida");
     } finally {
       setSubmitting(false);
     }
@@ -747,7 +1007,7 @@ function CreateSessionSheet({
             >
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
                 <h2 className="text-base font-bold text-white">
-                  {step === 1 ? "Nueva Sesión" : "Detalles de la sesión"}
+                  {step === 1 ? "Nueva Partida" : "Detalles de la partida"}
                 </h2>
                 <button
                   onClick={onClose}
@@ -758,10 +1018,7 @@ function CreateSessionSheet({
                 </button>
               </div>
 
-              <div
-                className="overflow-y-auto px-5 py-5"
-                style={{ maxHeight: "calc(85vh - 60px)" }}
-              >
+              <div className="overflow-y-auto px-5 py-5" style={{ maxHeight: "calc(85vh - 60px)" }}>
                 {step === 1 && (
                   <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:grid-cols-2">
                     <button
@@ -834,9 +1091,7 @@ function CreateSessionSheet({
                       {gamesLoading ? (
                         <div className="mt-1.5 text-xs text-gray-500">Cargando…</div>
                       ) : games.length === 0 ? (
-                        <div className="mt-1.5 text-xs text-gray-500">
-                          Aún no juegas ningún TCG registrado. Participa en un torneo primero.
-                        </div>
+                        <div className="mt-1.5 text-xs text-gray-500">No hay TCGs disponibles.</div>
                       ) : (
                         <div className="mt-1.5 flex flex-wrap gap-2">
                           {games.map((g) => {
@@ -875,9 +1130,7 @@ function CreateSessionSheet({
                     {/* Fecha */}
                     <div>
                       <label className="text-[11px] uppercase tracking-wider text-gray-500">
-                        {sessionType === "competitive"
-                          ? "Fecha del torneo *"
-                          : "Fecha (opcional)"}
+                        {sessionType === "competitive" ? "Fecha del torneo *" : "Fecha (opcional)"}
                       </label>
                       <input
                         type="date"
@@ -954,7 +1207,7 @@ function CreateSessionSheet({
                                 )}
                               </div>
                               {storeDropdownOpen && storeResults.length > 0 && (
-                                <div className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-black/95 shadow-xl">
+                                <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-10 mt-1 w-full max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-black/95 shadow-xl">
                                   {storeResults.map((s) => (
                                     <button
                                       key={s.id}
@@ -967,9 +1220,7 @@ function CreateSessionSheet({
                                     >
                                       <span className="font-medium">{s.name}</span>
                                       {s.city && (
-                                        <span className="text-[11px] text-gray-500">
-                                          {s.city}
-                                        </span>
+                                        <span className="text-[11px] text-gray-500">{s.city}</span>
                                       )}
                                     </button>
                                   ))}
@@ -997,7 +1248,7 @@ function CreateSessionSheet({
                           Creando…
                         </>
                       ) : (
-                        "Crear Sesión"
+                        "Crear Partida"
                       )}
                     </button>
                   </div>
@@ -1010,4 +1261,3 @@ function CreateSessionSheet({
     </AnimatePresence>
   );
 }
-

@@ -1,0 +1,41 @@
+-- Índices para las 37 FKs sin cobertura (advisor unindexed_foreign_keys)
+create index if not exists idx_ad_metrics_current_sponsor on public.ad_metrics (current_sponsor_id);
+create index if not exists idx_admin_audit_log_actor on public.admin_audit_log (actor_id);
+create index if not exists idx_deck_identifiers_canonical_leader on public.deck_identifiers (canonical_leader_id);
+create index if not exists idx_deck_identifiers_created_by on public.deck_identifiers (created_by);
+create index if not exists idx_deck_identifiers_sync_log_game on public.deck_identifiers_sync_log (game_id);
+create index if not exists idx_leaderboard_snapshots_season on public.leaderboard_snapshots (season_id);
+create index if not exists idx_leaderboard_snapshots_store on public.leaderboard_snapshots (store_id);
+create index if not exists idx_player_favorite_stores_store on public.player_favorite_stores (store_id);
+create index if not exists idx_players_auth_user on public.players (auth_user_id);
+create index if not exists idx_push_subscriptions_user on public.push_subscriptions (user_id);
+create index if not exists idx_round_appeals_appellant_player on public.round_appeals (appellant_player_id);
+create index if not exists idx_round_appeals_original_opponent_leader on public.round_appeals (original_opponent_leader_id);
+create index if not exists idx_round_appeals_original_player_leader on public.round_appeals (original_player_leader_id);
+create index if not exists idx_round_appeals_proposed_opponent_leader on public.round_appeals (proposed_opponent_leader_id);
+create index if not exists idx_round_appeals_proposed_player_leader on public.round_appeals (proposed_player_leader_id);
+create index if not exists idx_round_appeals_resolved_by on public.round_appeals (resolved_by);
+create index if not exists idx_round_appeals_tournament on public.round_appeals (tournament_id);
+create index if not exists idx_session_link_events_actor_player on public.session_link_events (actor_player_id);
+create index if not exists idx_session_link_events_tournament on public.session_link_events (tournament_id);
+create index if not exists idx_standalone_round_results_opponent_leader on public.standalone_round_results (opponent_leader_id);
+create index if not exists idx_standalone_round_results_opponent_player on public.standalone_round_results (opponent_player_id);
+create index if not exists idx_standalone_round_results_player on public.standalone_round_results (player_id);
+create index if not exists idx_standalone_round_results_player_leader on public.standalone_round_results (player_leader_id);
+create index if not exists idx_standalone_round_results_reporter_player on public.standalone_round_results (reporter_player_id);
+create index if not exists idx_standalone_sessions_game on public.standalone_sessions (game_id);
+create index if not exists idx_standalone_sessions_player_leader on public.standalone_sessions (player_leader_id);
+create index if not exists idx_standalone_sessions_store on public.standalone_sessions (store_id);
+create index if not exists idx_standalone_sessions_tournament on public.standalone_sessions (tournament_id);
+create index if not exists idx_store_schedules_game on public.store_schedules (game_id);
+create index if not exists idx_tournament_round_results_opponent_leader on public.tournament_round_results (opponent_leader_id);
+create index if not exists idx_tournament_round_results_opponent_player on public.tournament_round_results (opponent_player_id);
+create index if not exists idx_tournament_round_results_player on public.tournament_round_results (player_id);
+create index if not exists idx_tournament_round_results_player_leader on public.tournament_round_results (player_leader_id);
+create index if not exists idx_tournament_round_results_reporter_player on public.tournament_round_results (reporter_player_id);
+create index if not exists idx_tournaments_approved_by on public.tournaments (approved_by);
+create index if not exists idx_tournaments_season on public.tournaments (season_id);
+create index if not exists idx_tournaments_unpublished_by on public.tournaments (unpublished_by);
+
+-- Índice duplicado: players_email_key (constraint) ya cubre email
+drop index if exists public.players_email_unique;

@@ -1,33 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  CalendarDays,
-  Instagram,
-  Globe,
-  Twitch,
-  Twitter,
-  MapPin,
-  Phone,
-  Clock,
-  Map as MapIcon,
-} from "lucide-react";
+import { CalendarDays, Map as MapIcon, MoreHorizontal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { StoreCardSkeleton } from "@/components/ui/skeleton-loader";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { SearchInput } from "@/components/ui/search-input";
+import { TablePager } from "@/components/ui/table-pager";
+import { openRowProps } from "@/components/ui/detail-dialog";
+import { StoreDetailDialog } from "@/components/stores/StoreDetailDialog";
+import { usePagination } from "@/hooks/use-pagination";
 import {
   getManagerResponsibleStores,
   getStoreSchedulesForManager,
   upsertStoreScheduleManager,
   deleteStoreScheduleManager,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 import { StoreSchedulesDialog } from "@/components/admin/StoreSchedulesDialog";
-import { StoreEditModal } from "@/components/stores/StoreEditModal";
+import { StoreEditDialog } from "@/components/stores/StoreEditDialog";
+import { updateStoreData } from "@/lib/nexus-manager.functions";
+import { safeHref } from "@/lib/utils";
 
 export const Route = createFileRoute("/tcg-manager/stores")({
-  head: () => ({ meta: [{ title: "Tiendas — TCG Manager" }] }),
+  head: () => ({ meta: [{ title: "Tiendas a mi cargo — TCG Manager" }] }),
   component: ManagerStoresPage,
 });
 
@@ -48,16 +51,61 @@ type Store = {
   twitter?: string | null;
   twitch?: string | null;
   zone?: string | null;
+  subzone?: string | null;
   available_game_ids: string[];
 };
 
 type Game = { id: string; name: string };
+
+const zoneLabel = (s: Store) => (s.zone ? `${s.zone}${s.subzone ? ` · ${s.subzone}` : ""}` : "—");
+
+function StoreActions({
+  store,
+  onEdit,
+  onSchedules,
+}: {
+  store: Store;
+  onEdit: () => void;
+  onSchedules: () => void;
+}) {
+  const mapsUrl = safeHref(store.google_maps_url);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-9 w-9"
+          aria-label={`Opciones de ${store.name}`}
+        >
+          <MoreHorizontal size={16} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={onEdit}>
+          <Pencil size={14} /> Editar datos
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onSchedules}>
+          <CalendarDays size={14} /> Torneos
+        </DropdownMenuItem>
+        {mapsUrl && (
+          <DropdownMenuItem asChild>
+            <a href={mapsUrl} target="_blank" rel="noreferrer">
+              <MapIcon size={14} /> Ver mapa
+            </a>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function ManagerStoresPage() {
   const fetchStores = useServerFn(getManagerResponsibleStores);
   const fetchSchedulesFn = useServerFn(getStoreSchedulesForManager);
   const upsertScheduleFn = useServerFn(upsertStoreScheduleManager);
   const deleteScheduleFn = useServerFn(deleteStoreScheduleManager);
+  const saveStore = useServerFn(updateStoreData);
 
   const [stores, setStores] = useState<Store[]>([]);
   const [games, setGames] = useState<Game[]>([]);
@@ -66,6 +114,7 @@ function ManagerStoresPage() {
   const [search, setSearch] = useState("");
   const [schedStore, setSchedStore] = useState<Store | null>(null);
   const [editStore, setEditStore] = useState<Store | null>(null);
+  const [viewStore, setViewStore] = useState<Store | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchRaw.trim().toLowerCase()), 300);
@@ -90,184 +139,169 @@ function ManagerStoresPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filtered = useMemo(() => {
-    return stores.filter((s) => {
-      if (!search) return true;
-      const hay = `${s.name} ${s.city ?? ""} ${s.state ?? ""}`.toLowerCase();
-      return hay.includes(search);
-    });
-  }, [stores, search]);
+  const filtered = useMemo(
+    () =>
+      stores.filter(
+        (s) =>
+          !search || `${s.name} ${s.city ?? ""} ${s.state ?? ""}`.toLowerCase().includes(search),
+      ),
+    [stores, search],
+  );
+  const pager = usePagination(filtered);
 
-  if (loading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <StoreCardSkeleton key={i} />
-        ))}
-      </div>
-    );
-  }
+  const gameChips = (s: Store) => (
+    <div className="flex flex-wrap gap-1">
+      {s.available_game_ids.map((gid) => (
+        <span
+          key={gid}
+          className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary"
+        >
+          {games.find((g) => g.id === gid)?.name ?? "—"}
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Red
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Tiendas a tu cargo</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Gestiona la información y los horarios de torneos de las tiendas que ofrecen tus TCGs.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Red"
+        title="Tiendas a mi cargo"
+        description="Tiendas donde se juegan los TCGs que moderas. Cada tienda la administra su organizador; aquí mantienes al día sus datos de contacto y los horarios de tus TCGs."
+      />
 
-      <div className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
-        <div className="relative min-w-[220px] flex-1">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-          />
-          <Input
-            value={searchRaw}
-            onChange={(e) => setSearchRaw(e.target.value)}
-            placeholder="Buscar por nombre, ciudad o estado..."
-            className="pl-9"
-          />
-        </div>
-      </div>
+      <section className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
+        <SearchInput
+          value={searchRaw}
+          onChange={setSearchRaw}
+          placeholder="Buscar tienda, ciudad o estado"
+        />
+      </section>
 
-      {filtered.length === 0 ? (
-        <div className="glass rounded-2xl p-8 text-sm text-gray-400">
-          No hay tiendas que coincidan.
-        </div>
-      ) : (
+      {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {filtered.map((s) => (
-            <div key={s.id} className="glass rounded-2xl p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-white font-bold text-lg">{s.name}</h3>
-                  <p className="text-xs text-gray-400">
-                    {s.city ?? "—"}
-                    {s.state ? ` · ${s.state}` : ""}
-                    {s.zone ? ` · ${s.zone}` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <button
-                    onClick={() => setEditStore(s)}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Editar
-                  </button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSchedStore(s)}
-                  >
-                    <CalendarDays size={13} className="mr-1.5" />
-                    Torneos
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-1.5">
-                {s.available_game_ids.map((gid) => {
-                  const g = games.find((x) => x.id === gid);
-                  return (
-                    <span
-                      key={gid}
-                      className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-semibold text-primary"
-                    >
-                      {g?.name ?? "—"}
-                    </span>
-                  );
-                })}
-              </div>
-
-              <div className="space-y-1.5 text-xs text-gray-300">
-                <div className="flex items-start gap-2">
-                  <MapPin size={12} className="mt-0.5 text-gray-500 shrink-0" />
-                  <span>{s.address || "—"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone size={12} className="text-gray-500 shrink-0" />
-                  <span>{s.phone || "—"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock size={12} className="text-gray-500 shrink-0" />
-                  <span>{s.opening_hours || "—"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapIcon size={12} className="text-gray-500 shrink-0" />
-                  {s.google_maps_url ? (
-                    <a
-                      href={s.google_maps_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Ver mapa
-                    </a>
-                  ) : (
-                    <span>—</span>
-                  )}
-                </div>
-              </div>
-
-              {(s.instagram || s.website || s.twitter || s.twitch) && (
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
-                  {s.instagram && (
-                    <a
-                      href={`https://instagram.com/${s.instagram.replace("@", "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
-                    >
-                      <Instagram size={12} /> Instagram
-                    </a>
-                  )}
-                  {s.website && (
-                    <a
-                      href={s.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
-                    >
-                      <Globe size={12} /> Web
-                    </a>
-                  )}
-                  {s.twitter && (
-                    <a
-                      href={`https://x.com/${s.twitter.replace("@", "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
-                    >
-                      <Twitter size={12} /> X
-                    </a>
-                  )}
-                  {s.twitch && (
-                    <a
-                      href={`https://twitch.tv/${s.twitch}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary"
-                    >
-                      <Twitch size={12} /> Twitch
-                    </a>
-                  )}
-                </div>
-              )}
-
-              {s.description && (
-                <p className="text-xs text-gray-400 leading-relaxed pt-2 border-t border-white/5">
-                  {s.description}
-                </p>
-              )}
-            </div>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StoreCardSkeleton key={i} />
           ))}
         </div>
+      ) : (
+        <>
+          <section className="glass overflow-hidden rounded-2xl">
+            {filtered.length === 0 ? (
+              <EmptyState
+                title={search ? "No hay tiendas que coincidan" : "Aún no tienes tiendas a tu cargo"}
+                description={
+                  search
+                    ? "Prueba con otro nombre o ciudad."
+                    : "Aparecerán aquí cuando una tienda juegue alguno de tus TCGs."
+                }
+              />
+            ) : (
+              <>
+                {/* Escritorio */}
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full text-sm">
+                    <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
+                      <tr>
+                        <th scope="col" className="px-4 py-3">
+                          Tienda
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Ciudad
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Zona
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Tus TCGs
+                        </th>
+                        <th scope="col" className="px-4 py-3">
+                          Teléfono
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right">
+                          Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pager.pageItems.map((s) => (
+                        <tr
+                          key={s.id}
+                          {...openRowProps(() => setViewStore(s))}
+                          className="cursor-pointer border-t border-white/5 transition hover:bg-white/5"
+                        >
+                          <td className="px-4 py-3">
+                            <div className="font-bold text-white">{s.name}</div>
+                            {s.address && <div className="text-xs text-gray-500">{s.address}</div>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-300">
+                            {[s.city, s.state].filter(Boolean).join(", ") || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-300">{zoneLabel(s)}</td>
+                          <td className="px-4 py-3">{gameChips(s)}</td>
+                          <td className="px-4 py-3 text-gray-300">{s.phone || "—"}</td>
+                          <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                            <StoreActions
+                              store={s}
+                              onEdit={() => setEditStore(s)}
+                              onSchedules={() => setSchedStore(s)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Celular */}
+                <div className="space-y-3 p-3 md:hidden">
+                  {pager.pageItems.map((s) => (
+                    <div
+                      key={s.id}
+                      {...openRowProps(() => setViewStore(s))}
+                      className="cursor-pointer rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-bold text-white">{s.name}</div>
+                          <div className="text-xs text-gray-400">
+                            {[s.city, s.state].filter(Boolean).join(", ") || "—"} · {zoneLabel(s)}
+                          </div>
+                          {s.phone && <div className="text-xs text-gray-400">{s.phone}</div>}
+                        </div>
+                        <span onClick={(e) => e.stopPropagation()}>
+                          <StoreActions
+                            store={s}
+                            onEdit={() => setEditStore(s)}
+                            onSchedules={() => setSchedStore(s)}
+                          />
+                        </span>
+                      </div>
+                      <div className="mt-2">{gameChips(s)}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+
+          <TablePager
+            page={pager.page}
+            totalPages={pager.totalPages}
+            onPageChange={pager.setPage}
+            total={pager.total}
+            pageSize={pager.pageSize}
+          />
+        </>
       )}
+
+      <StoreDetailDialog
+        store={viewStore}
+        onClose={() => setViewStore(null)}
+        extra={
+          viewStore ? [{ label: "Tus TCGs aquí", value: gameChips(viewStore), wide: true }] : []
+        }
+      />
 
       <StoreSchedulesDialog
         store={schedStore ? { id: schedStore.id, name: schedStore.name } : null}
@@ -279,13 +313,20 @@ function ManagerStoresPage() {
         }}
       />
 
-      {editStore && (
-        <StoreEditModal
-          store={editStore}
-          onClose={() => setEditStore(null)}
-          onSaved={() => void refresh()}
-        />
-      )}
+      <StoreEditDialog
+        store={editStore}
+        onClose={() => setEditStore(null)}
+        onSubmit={async (payload) => {
+          try {
+            await saveStore({ data: payload });
+            toast.success("Tienda actualizada correctamente");
+            setEditStore(null);
+            await refresh();
+          } catch (e) {
+            toast.error(String((e as Error).message ?? e));
+          }
+        }}
+      />
     </div>
   );
 }

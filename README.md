@@ -1,4 +1,4 @@
-# Geek Arena
+# Nexus
 
 A Cloudflare Worker–hosted React application for managing a Mexican national TCG circuit. The app supports players, organizers, TCG managers, and admins for One Piece, Magic: The Gathering, and Pokémon TCG rankings and tournament workflows.
 
@@ -11,9 +11,9 @@ This repository contains a full-stack app built with TanStack Start and deployed
 - `src/` — application source code
 - `src/routes/` — TanStack Router pages and panel layouts (public, `/organizer`, `/tcg-manager`, `/admin`, `/sessions`)
 - `src/components/` — reusable UI, layout, and feature components (ads, tournament-tracker, upload, stores)
-- `src/context/` — `GeekarenaAuthProvider`, the app-wide auth/role context
+- `src/context/` — `NexusAuthProvider`, the app-wide auth/role context
 - `src/lib/` — server functions (one file per domain), query cache, error handling
-- `src/integrations/geekarena/` — the only Supabase client in the app (the legacy, unused Lovable Cloud scaffold that used to live in `src/integrations/supabase/` was removed)
+- `src/integrations/nexus/` — the only Supabase client in the app (the legacy, unused Lovable Cloud scaffold that used to live in `src/integrations/supabase/` was removed)
 - `supabase/` — project config, edge functions, and the initial migration (⚠️ the live schema has drifted well beyond this migration — see `PROJECT_CONTEXT.md`)
 - `wrangler.jsonc` — Cloudflare Workers deployment config
 - `vite.config.ts` — Vite + TanStack + Tailwind + Cloudflare plugin config
@@ -73,10 +73,10 @@ src/
 │   ├── upload/               # tournament result upload form
 │   └── ui/                   # shadcn Radix UI primitives
 ├── context/
-│   └── geekarena-auth.context.tsx  # app-wide auth/role provider
+│   └── nexus-auth.context.tsx  # app-wide auth/role provider
 ├── hooks/                    # custom hooks
 ├── integrations/
-│   └── geekarena/            # the only Supabase client
+│   └── nexus/            # the only Supabase client
 ├── lib/                      # one *.functions.ts per domain, query-cache.ts, error handling
 ├── routes/                   # public + /organizer + /tcg-manager + /admin + /sessions routes
 ├── router.tsx                # router setup
@@ -85,73 +85,134 @@ src/
 └── styles.css                # global styles
 ```
 
-## Installation
+## Correr el proyecto en local
 
-### Clone the repository
+Guía para dejar el proyecto funcionando en una laptop nueva (o en la de siempre) desde cero.
+
+### 1. Requisitos
+
+- **Git** y acceso al repositorio en GitHub.
+- **Node.js 22** (probado con 22.14.0; Vite 7 pide 20.19+ o 22.12+) y **npm** (probado con 10.9). Bun es opcional: el repo trae `bun.lock` y `bunfig.toml`, pero el flujo documentado aquí usa npm.
+- **Windows:** instala [Git for Windows](https://gitforwindows.org/) y corre los comandos desde **Git Bash**. `npm run dev:sandbox` ejecuta un script de `bash`.
+- Internet en la primera sesión: la herramienta de diseño `impeccable` descarga su binario la primera vez que corre.
+
+### 2. Clonar
+
+El repositorio se movió; el nombre anterior (`remix-of-geek-tag-circuit-supabase`) redirige, pero usa el nuevo:
 
 ```bash
-git clone https://github.com/<your-org>/remix-of-geek-tag-circuit-supabase.git
-cd remix-of-geek-tag-circuit-supabase
+git clone https://github.com/Roal1115/Nexus_Trading_Card.git
+cd Nexus_Trading_Card
+git checkout experiemental
 ```
 
-### Prerequisites
+`experiemental` (así, con esa errata) es la rama que Lovable sincroniza; es la rama de trabajo.
 
-- Node.js 18+ or Bun
-- `bun`, `npm`, or `pnpm`
-
-### Install dependencies
+### 3. Instalar dependencias
 
 ```bash
-bun install
-# or
 npm install
-# or
-pnpm install
 ```
 
-## Development
+### 4. Variables de entorno
+
+Hay tres archivos. Solo `.env` viene con el clon; **`.env.local` y `.env.test` no están en git** (traen llaves) y hay que llevarlos a mano.
+
+| Archivo | ¿En git? | Para qué sirve | Variables |
+| --- | --- | --- | --- |
+| `.env` | Sí | Valores heredados del scaffold de Lovable Cloud. Viene con el clon, no hay que tocarlo. | `SUPABASE_*`, `VITE_SUPABASE_*` |
+| `.env.local` | No | Proyecto de Supabase que usa la app en desarrollo (hoy, el sandbox). | `NEXUS_URL`, `NEXUS_SERVICE_ROLE_KEY`, `VITE_NEXUS_URL`, `VITE_NEXUS_PUBLISHABLE_KEY`, `VITE_ONE_PIECE_GAME_ID` |
+| `.env.test` | No | Sandbox: lo lee `npm run dev:sandbox` y los scripts de prueba. Incluye las cuentas demo. | `NEXUS_URL`, `NEXUS_SERVICE_ROLE_KEY`, `NEXUS_ANON_KEY`, `STORE_INVITE_TOKEN_KEY`, `SANDBOX_ADMIN_EMAIL`, `SANDBOX_ADMIN_PASSWORD`, `SANDBOX_DEMO_PLAYER_HISTORY`, `SANDBOX_DEMO_ORGANIZER`, `SANDBOX_DEMO_MANAGER`, `SANDBOX_DEMO_NEW_PLAYER`, `SANDBOX_DEMO_PASSWORD` |
+
+Cómo conseguirlos en la laptop nueva:
+
+- **Copiarlos desde la laptop anterior** (USB cifrado, gestor de contraseñas o transferencia directa). **Nunca por git, correo o chat**: `NEXUS_SERVICE_ROLE_KEY` salta todas las reglas de seguridad de la base de datos.
+- O **regenerar las llaves** en el panel de Supabase del proyecto sandbox (`ssbifqcvuhcfijbdtjjh`): *Project Settings → API* (URL, publishable/anon y service role). Los correos y la contraseña de las cuentas demo se piden a quien administra el sandbox.
+
+### 4.1 Base de datos
+
+La app habla con Supabase (auth + Postgres). El esquema vive en `supabase/migrations/`; cualquier cambio de esquema debe llevar su migración nueva ahí. **El sandbox es un proyecto separado de producción**: en desarrollo y en pruebas se usa siempre el sandbox.
+
+### 5. Levantar el servidor
+
+Opción recomendada, contra el **sandbox** (carga `.env.test` y se niega a arrancar si `NEXUS_URL` no es el sandbox):
 
 ```bash
-bun run dev
-# or
+npm run dev:sandbox
+```
+
+Abre http://localhost:8081 (puerto fijo; si está ocupado el script falla en vez de cambiar de puerto).
+
+Opción alternativa, con lo que haya en `.env`/`.env.local`:
+
+```bash
 npm run dev
 ```
 
-Then visit the Vite dev server URL displayed in the terminal.
+Abre la URL que imprime Vite (por defecto http://localhost:8080).
 
-## Build
+### 6. Iniciar sesión con las cuentas demo
 
-```bash
-bun run build
-# or
-npm run build
-```
+Los correos y la contraseña están en `.env.test` (variables `SANDBOX_*`). Hay un administrador, un organizador, un manager y varios jugadores demo, así que puedes probar cada rol desde `/login`.
 
-Preview locally:
+### 7. Verificar que todo está bien
 
 ```bash
-bun run preview
-# or
-npm run preview
+npx tsc --noEmit            # tipos (debe salir sin errores)
+npm run build               # build de producción
 ```
 
-## Deployment
-
-Deploy to Cloudflare Workers:
+Los scripts de `scripts/` se corren con `tsx` (se descarga solo con `npx`):
 
 ```bash
-bun run build
-wrangler deploy
+npx tsx scripts/round-rules.check.mts    # reglas puras, sin base de datos
+npx tsx scripts/lifecycle-test.mts       # ciclo de publicación, contra el sandbox
 ```
 
-## Available scripts
+Revisa la cabecera de cada script antes de correrlo: algunos leen `.env.test` y escriben en el sandbox. **Nunca los apuntes a producción.**
 
-- `bun run dev` — start development server
-- `bun run build` — production build
-- `bun run build:dev` — build in development mode
-- `bun run preview` — preview production build
-- `bun run lint` — run ESLint
-- `bun run format` — format with Prettier
+> `npm run lint` hoy reporta decenas de miles de problemas, casi todos de formato por los saltos de línea de Windows (`CR`) y por las carpetas de skills; no lo uses como criterio de "todo bien" hasta limpiarlo.
+
+### 8. Problemas comunes
+
+- **`NEXUS_URL en .env.test no es el sandbox. No se inició.`** — el `.env.test` está mal copiado o apunta a otro proyecto. Debe apuntar al sandbox (`ssbifqcvuhcfijbdtjjh`).
+- **`bash: command not found` o falla `dev:sandbox` en Windows** — abre una terminal de Git Bash, no CMD ni PowerShell.
+- **Puerto 8081 ocupado** — hay otro servidor corriendo; ciérralo. No levantes dos servidores Vite a la vez: comparten `node_modules/.vite/deps` y el segundo borra la caché del primero, lo que provoca errores 404 al cargar módulos (por ejemplo en `/calendar`). Si pasa, reinicia el servidor.
+- **Pantalla de login o datos vacíos** — falta `.env.local`, o sus llaves no corresponden al proyecto sandbox.
+- **Avisos `LF will be replaced by CRLF`** en Windows — son normales y no afectan.
+
+### 9. Trabajar con git y Lovable
+
+Lovable también hace commits en `experiemental`, así que trae sus cambios antes de subir los tuyos y no fuerces el push:
+
+```bash
+git pull origin experiemental
+git push origin HEAD:experiemental
+```
+
+### 10. Herramientas de diseño y asistentes (ya incluidas en el repo)
+
+- Contexto de producto y diseño: `PRODUCT.md`, `DESIGN.md` y `.impeccable/` (sidecar y snapshots de critique).
+- Skill `impeccable` en `.claude/skills/`, `.agents/skills/` y `.github/skills/`, con sus agentes en `.claude/agents/` y `.github/agents/` y los hooks en `.codex/hooks.json` y `.github/hooks/`. Su binario no está en git: se descarga solo la primera vez que corre.
+
+### 11. Build, despliegue y scripts
+
+```bash
+npm run build      # build de producción (genera .output/)
+npm run preview    # sirve ese build localmente
+```
+
+El despliegue lo hace Lovable al sincronizar `experiemental`. También se puede desplegar a Cloudflare Workers con `npx wrangler deploy` después de `npm run build` (configuración en `wrangler.jsonc`).
+
+| Script | Qué hace |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo (puerto 8080 por defecto). |
+| `npm run dev:sandbox` | Servidor contra el sandbox en el puerto 8081 (requiere `.env.test` y Git Bash en Windows). |
+| `npm run build` | Build de producción. |
+| `npm run build:dev` | Build en modo desarrollo. |
+| `npm run preview` | Sirve el build localmente. |
+| `npm run lint` | ESLint (ver la nota de la sección 7). |
+| `npm run format` | Prettier sobre todo el repo (`--write`): úsalo con cuidado, reescribe muchos archivos. |
 
 ## Dependencies
 
@@ -184,8 +245,8 @@ Key runtime dependencies include:
 3. Run:
 
 ```bash
-bun run lint
-bun run format
+npm run lint
+npm run format
 ```
 
 4. Open a pull request.

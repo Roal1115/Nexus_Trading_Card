@@ -1,0 +1,194 @@
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { Session } from "@supabase/supabase-js";
+import { nexus } from "@/integrations/nexus/client";
+
+export type AppRole = "player" | "organizer" | "tcg_manager" | "admin";
+
+type PlayerRow = {
+  id: string;
+  geek_tag: string;
+  email: string | null;
+  role: AppRole;
+  home_store_id: string | null;
+  preferred_game_id: string | null;
+  preferred_zone: string | null;
+  preferences_prompted_at: string | null;
+  is_profile_public: boolean | null;
+};
+
+type AuthContextValue = {
+  session: Session | null;
+  player: PlayerRow | null;
+  role: AppRole | null;
+  loading: boolean;
+  // true en cuanto sabemos si existe sesión (no espera el fetch de la fila
+  // player, que es la parte lenta/de red). Permite al shell (sidebar/header/
+  // bottom nav) decidir su forma final sin esperar ese round-trip.
+  authResolved: boolean;
+  // Mejor estimación de "hay usuario logueado" disponible en el primer
+  // render del cliente: antes de que authResolved sea true usa una lectura
+  // síncrona de localStorage; después usa el estado de sesión real.
+  probablyAuthed: boolean;
+  // Patch local optimista tras un write (ej. preferencias, privacidad) sin
+  // esperar a un refetch — evita que el contexto quede desincronizado del
+  // dato que el propio componente que escribió ya sabe que cambió.
+  updatePlayer: (patch: Partial<PlayerRow>) => void;
+};
+
+const AuthContext = createContext<AuthContextValue>({
+  session: null,
+  player: null,
+  role: null,
+  loading: true,
+  authResolved: false,
+  probablyAuthed: false,
+  updatePlayer: () => {},
+});
+
+// Supabase persiste la sesión en localStorage bajo storageKey "nexus.auth"
+// (ver integrations/nexus/client.ts). Leerla directo evita esperar el
+// round-trip de getSession()/fetch del perfil solo para saber "hay sesión".
+function readStoredSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return !!window.localStorage.getItem("nexus.auth");
+  } catch {
+    return false;
+  }
+}
+
+// useLayoutEffect no corre en SSR (evita el warning de React) y en cliente
+// se ejecuta antes del paint: la lectura de localStorage puede actualizar
+// el estado sin que el usuario vea el frame "sin sesión" intermedio.
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [player, setPlayer] = useState<PlayerRow | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [authResolved, setAuthResolved] = useState(false);
+  // Arranca en false para que el primer render del cliente coincida con el
+  // HTML del servidor (que no conoce localStorage) y no dispare un
+  // hydration mismatch; se corrige en el layout effect de abajo, antes del
+  // primer paint del cliente.
+  const [storedGuess, setStoredGuess] = useState(false);
+  const hasInitializedRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useIsomorphicLayoutEffect(() => {
+    setStoredGuess(readStoredSession());
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    const loadPlayer = async (s: Session | null) => {
+      if (mountedRef.current) {
+        // Si llega una sesión nueva (login) y aún no tenemos el player de ese
+        // usuario, marcar loading para que nadie redirija con role=null.
+        if (s?.user?.email) {
+          setPlayer((prev) => {
+            if (!prev || prev.email !== s.user.email) setLoading(true);
+            return prev;
+          });
+        }
+        setSession(s);
+        setAuthResolved(true);
+      }
+
+      if (!s?.user?.email) {
+        if (mountedRef.current) {
+          setPlayer(null);
+          setLoading(false);
+          hasInitializedRef.current = true;
+        }
+        return;
+      }
+
+      const { data } = await nexus
+        .from("players")
+        .select(
+          "id, geek_tag, email, role, home_store_id, preferred_game_id, preferred_zone, preferences_prompted_at, is_profile_public",
+        )
+        .eq("email", s.user.email)
+        .maybeSingle();
+
+      if (!mountedRef.current) return;
+
+      setPlayer((prev) => {
+        if (prev?.id === data?.id && prev?.role === data?.role) return prev;
+        return (data as PlayerRow | null) ?? null;
+      });
+      setLoading(false);
+      hasInitializedRef.current = true;
+    };
+
+    nexus.auth.getSession().then(({ data }) => {
+      if (!mountedRef.current) return;
+      loadPlayer(data.session);
+    });
+
+    const { data: sub } = nexus.auth.onAuthStateChange((event, s) => {
+      if (!mountedRef.current) return;
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+        loadPlayer(s);
+      }
+    });
+
+    return () => {
+      mountedRef.current = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const probablyAuthed = authResolved ? !!session : storedGuess;
+
+  const updatePlayer = (patch: Partial<PlayerRow>) => {
+    setPlayer((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      player,
+      role: player?.role ?? null,
+      loading,
+      authResolved,
+      probablyAuthed,
+      updatePlayer,
+    }),
+    [session, player, loading, authResolved, probablyAuthed],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useNexusRole() {
+  return useContext(AuthContext);
+}
+
+/**
+ * Reciprocidad de privacidad: un jugador con perfil privado no ve el deck (leader) de los
+ * demás; lo propio siempre se ve. Es una regla de interfaz, no un control de seguridad:
+ * quien no inicia sesión sigue viendo lo público. Vive en el cliente a propósito: las
+ * páginas con loader arman su primer HTML en el servidor sin sesión y ahí no se sabe quién mira.
+ */
+export function useHidesOthersDecks(): boolean {
+  const { player } = useContext(AuthContext);
+  return player?.is_profile_public === false;
+}
+
+export function homeRouteForRole(role: AppRole | null): string {
+  if (role === "admin") return "/admin";
+  if (role === "tcg_manager") return "/tcg-manager";
+  if (role === "organizer") return "/organizer";
+  return "/dashboard";
+}

@@ -14,15 +14,20 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useGeekarenaRole } from "@/hooks/use-geekarena-role";
-import { geekarena } from "@/integrations/geekarena/client";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { mondayOfWeek, toLocalDateStr } from "@/lib/utils";
+import { randomId } from "@/lib/random-id";
+import { nexus } from "@/integrations/nexus/client";
 import {
   getOrganizerOverview,
   listActiveStores,
   lookupPlayerTags,
   uploadTournamentResults,
-} from "@/lib/geekarena-organizer.functions";
-import { getManagerResponsibleStores } from "@/lib/geekarena-manager.functions";
+  getActiveLeaguesForStore,
+} from "@/lib/nexus-organizer.functions";
+
+const NATIONAL_LEAGUE_VALUE = "__national__";
+import { getManagerResponsibleStores } from "@/lib/nexus-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,11 +39,11 @@ import { Check, ChevronsUpDown } from "lucide-react";
 type Game = { id: string; slug: string; name: string };
 type Store = { id: string; name: string; city: string | null };
 
-type Platform = "bandai" | "limitless" | "unknown";
+type Platform = "bandai" | "limitless" | "magic" | "unknown";
 type ColumnMap = {
   platform: Platform;
   rank?: string;
-  geekTag?: string;
+  nexusTag?: string;
   matchPoints?: string;
   omw?: string;
   record?: string;
@@ -50,7 +55,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   "one-piece": {
     platform: "bandai",
     rank: "Ranking",
-    geekTag: "User Name",
+    nexusTag: "User Name",
     matchPoints: "Win Points",
     omw: "OMW %",
     membershipId: "Membership Number",
@@ -58,7 +63,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   "dragon-ball": {
     platform: "bandai",
     rank: "Ranking",
-    geekTag: "User Name",
+    nexusTag: "User Name",
     matchPoints: "Win Points",
     omw: "OMW %",
     membershipId: "Membership Number",
@@ -66,7 +71,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   gundam: {
     platform: "bandai",
     rank: "Ranking",
-    geekTag: "User Name",
+    nexusTag: "User Name",
     matchPoints: "Win Points",
     omw: "OMW %",
     membershipId: "Membership Number",
@@ -74,7 +79,7 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
   riftbound: {
     platform: "limitless",
     rank: "Rank",
-    geekTag: "Display Name",
+    nexusTag: "Display Name",
     matchPoints: "Match Points",
     omw: "Opponent Match Win %",
     record: "Record (W-L-D)",
@@ -82,8 +87,45 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
     membershipId: "User ID",
   },
   pokemon: { platform: "unknown" },
-  "magic-the-gathering": { platform: "unknown" },
+  "magic-the-gathering": {
+    platform: "magic",
+    rank: "Puesto",
+    nexusTag: "Nombre",
+    matchPoints: "Puntos",
+    omw: "%VPO",
+    record: "V/D/E",
+  },
 };
+
+// "Copy Paste Magic" exporta V/D/E (Victorias/Derrotas/Empates) como texto "2/1/0".
+// Excel lo interpreta como una fecha mes/día/año y lo corrompe (ej. "2/1/0" -> 01/02/2000).
+// Esta función revierte esa corrupción reconstruyendo el triplete original.
+function parseVDE(raw: string): { wins: number | null; losses: number | null; draws: number | null } {
+  const val = raw.trim();
+  if (!val) return { wins: null, losses: null, draws: null };
+
+  // Celda XLSX: Date real (ya normalizada a "YYYY-MM-DD" en readFileToRows)
+  let m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const [, y, mo, d] = m;
+    return { wins: Number(mo), losses: Number(d), draws: Number(y) % 100 };
+  }
+
+  // Celda CSV: mismo valor ya corrompido y guardado como texto localizado DD/MM/YYYY
+  m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const [, d, mo, y] = m;
+    return { wins: Number(mo), losses: Number(d), draws: Number(y) % 100 };
+  }
+
+  // Valor sano: el triplete "V/D/E" tal cual lo exportó la herramienta
+  const parts = val.split("/").map((p) => Number(p.trim()));
+  if (parts.length === 3 && parts.every((n) => isFinite(n))) {
+    return { wins: parts[0], losses: parts[1], draws: parts[2] };
+  }
+
+  return { wins: null, losses: null, draws: null };
+}
 
 function normalizarPuntos(rows: ParsedRow[]): ParsedRow[] {
   // El máximo es el match_points del jugador en rank 1
@@ -152,7 +194,7 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
   const idx = (key: string | undefined) => (key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1);
 
   const iRank = idx(map.rank);
-  const iTag = idx(map.geekTag);
+  const iTag = idx(map.nexusTag);
   const iPts = idx(map.matchPoints);
   const iOmw = idx(map.omw);
   const iRec = idx(map.record);
@@ -173,6 +215,11 @@ function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
       wins = isFinite(parts[0]) ? parts[0] : null;
       losses = isFinite(parts[1]) ? parts[1] : null;
       draws = isFinite(parts[2]) ? parts[2] : 0;
+    } else if (map.platform === "magic" && iRec !== -1) {
+      const vde = parseVDE(cols[iRec] || "");
+      wins = vde.wins;
+      losses = vde.losses;
+      draws = vde.draws;
     } else if (map.platform === "bandai") {
       draws = 0;
     }
@@ -220,7 +267,21 @@ async function readFileToRows(file: File): Promise<string[][]> {
     const sheets = await readXlsxFile(file);
     const data = sheets[0]?.data ?? [];
     // data is (string | number | boolean | Date | null)[][]
-    const rows: string[][] = data.map((row) => row.map((cell) => (cell == null ? "" : String(cell))));
+    const rows: string[][] = data.map((row) =>
+      row.map((cell) => {
+        if (cell == null) return "";
+        if (cell instanceof Date) {
+          // read-excel-file construye estas fechas en UTC+0 (00:00) — hay que leer
+          // los componentes en UTC, si no, en timezones negativos (ej. México)
+          // el día se recorre uno hacia atrás.
+          const y = cell.getUTCFullYear();
+          const mo = String(cell.getUTCMonth() + 1).padStart(2, "0");
+          const d = String(cell.getUTCDate()).padStart(2, "0");
+          return `${y}-${mo}-${d}`;
+        }
+        return String(cell);
+      }),
+    );
     if (rows.length === 0) {
       throw new Error("El archivo no contiene filas con datos.");
     }
@@ -247,15 +308,16 @@ async function uploadFileToStorage(file: File, tournamentId: string): Promise<st
   try {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "csv";
     const path = `tournaments/${tournamentId}.${ext}`;
-    const { error } = await geekarena.storage
+    const { error } = await nexus.storage
       .from("tournament-files")
-      .upload(path, file, { upsert: true, contentType: file.type || undefined });
+      // Sin upsert: necesitaría permiso de lectura, y el id del torneo siempre es nuevo.
+      .upload(path, file, { contentType: file.type || undefined });
     if (error) {
       console.error("Storage upload error:", error.message);
       return null;
     }
-    const { data } = await geekarena.storage.from("tournament-files").createSignedUrl(path, 60 * 60 * 24 * 365);
-    return data?.signedUrl ?? null;
+    // Solo la ruta: el enlace se firma al abrirlo, con permisos (ver getTournamentFileUrl).
+    return path;
   } catch (e) {
     console.error("Storage error:", e);
     return null;
@@ -264,13 +326,7 @@ async function uploadFileToStorage(file: File, tournamentId: string): Promise<st
 
 function getWeekDateRange(): { min: string; max: string } {
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Dom, 1=Lun ... 6=Sab
-  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - daysSinceMonday);
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { min: fmt(monday), max: fmt(today) };
+  return { min: toLocalDateStr(mondayOfWeek(today)), max: toLocalDateStr(today) };
 }
 
 export function TournamentUploadForm({
@@ -283,7 +339,7 @@ export function TournamentUploadForm({
   gamesOverride?: Game[];
 } = {}) {
   const navigate = useNavigate();
-  const { player, loading: roleLoading } = useGeekarenaRole();
+  const { player, loading: roleLoading } = useNexusRole();
   const isAdmin = player?.role === "admin";
   const isManager = player?.role === "tcg_manager";
 
@@ -292,6 +348,7 @@ export function TournamentUploadForm({
   const fetchManagerStores = useServerFn(getManagerResponsibleStores);
   const submitUpload = useServerFn(uploadTournamentResults);
   const lookupTags = useServerFn(lookupPlayerTags);
+  const fetchActiveLeagues = useServerFn(getActiveLeaguesForStore);
 
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
@@ -313,11 +370,14 @@ export function TournamentUploadForm({
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [activeLeagues, setActiveLeagues] = useState<{ id: string; name: string }[]>([]);
+  const [leagueChoice, setLeagueChoice] = useState<string>(NATIONAL_LEAGUE_VALUE);
+
   useEffect(() => {
     if (!player) return;
     (async () => {
       try {
-        const { data: sess } = await geekarena.auth.getSession();
+        const { data: sess } = await nexus.auth.getSession();
         if (!sess.session) return;
         const ov = await fetchOverview();
         setGames(gamesOverride !== undefined ? gamesOverride : (ov.games as Game[]));
@@ -361,6 +421,25 @@ export function TournamentUploadForm({
     stores.find((s) => s.id === storeId) ??
     managerStores.find((s) => s.id === storeId) ??
     (homeStore?.id === storeId ? homeStore : null);
+
+  useEffect(() => {
+    setLeagueChoice(NATIONAL_LEAGUE_VALUE);
+    // Sin gameId todavía no sabemos qué ligas mostrar — una liga es de UN
+    // TCG, así que el dropdown solo tiene sentido una vez elegido el juego.
+    if (!storeId || !gameId || isManager) {
+      setActiveLeagues([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res: any = await fetchActiveLeagues({ data: { store_id: storeId, game_id: gameId } });
+        setActiveLeagues(res.leagues ?? []);
+      } catch {
+        setActiveLeagues([]);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, gameId, isManager]);
 
   const qualifying = useMemo(() => {
     if (!date) return null;
@@ -448,7 +527,7 @@ export function TournamentUploadForm({
         points_earned: r.points_earned,
       }));
 
-      const tournamentId = crypto.randomUUID();
+      const tournamentId = randomId();
       const csvUrl = selectedFile ? await uploadFileToStorage(selectedFile, tournamentId) : null;
 
       const result = await submitUpload({
@@ -459,6 +538,7 @@ export function TournamentUploadForm({
           rows: cleanRows,
           tournament_id: tournamentId,
           csv_url: csvUrl,
+          league_id: isManager || leagueChoice === NATIONAL_LEAGUE_VALUE ? null : leagueChoice,
         },
       });
       if (result && (result as { ok?: boolean }).ok === false) {
@@ -466,6 +546,9 @@ export function TournamentUploadForm({
         return;
       }
       toast.success("Torneo enviado correctamente. Un administrador lo revisará pronto.");
+      if ((result as { was_cancelled?: boolean }).was_cancelled) {
+        toast.warning("Esta fecha estaba marcada como cancelada. Avisa a quien revise el torneo.");
+      }
       navigate({ to: successTo });
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
@@ -595,6 +678,28 @@ export function TournamentUploadForm({
             </div>
           )}
 
+          {!isManager && (
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">Liga a la que pertenece este torneo *</Label>
+              <Select value={leagueChoice} onValueChange={setLeagueChoice}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NATIONAL_LEAGUE_VALUE}>Liga Semestral (Circuito Nacional)</SelectItem>
+                  {activeLeagues.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Puedes subir varios torneos del mismo TCG el mismo día si pertenecen a ligas distintas.
+              </p>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => navigate({ to: cancelTo })}>
               Cancelar
@@ -670,7 +775,12 @@ export function TournamentUploadForm({
                 </div>
                 <p className="text-sm font-semibold text-white">Arrastra tu archivo aquí, o haz clic para buscar</p>
                 <p className="mt-1 text-xs text-gray-500">
-                  Formato detectado: {colMap?.platform === "bandai" ? "Bandai TCG+" : "Limitless"}
+                  Formato detectado:{" "}
+                  {colMap?.platform === "bandai"
+                    ? "Bandai TCG+"
+                    : colMap?.platform === "magic"
+                      ? "Copy Paste Magic"
+                      : "Limitless"}
                 </p>
               </label>
             ) : (
@@ -716,11 +826,11 @@ export function TournamentUploadForm({
                       <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
                         <tr>
                           <th className="w-10 px-3 py-2 text-left">#</th>
-                          <th className="px-3 py-2 text-left">Geek Tag</th>
+                          <th className="px-3 py-2 text-left">Nexus Tag</th>
                           <th className="px-3 py-2 text-left">Membership ID</th>
                           <th className="px-3 py-2 text-right">Match Pts</th>
                           <th className="px-3 py-2 text-right">OMW%</th>
-                          <th className="px-3 py-2 text-right">Pts Arena</th>
+                          <th className="px-3 py-2 text-right">Puntos</th>
                           <th className="px-3 py-2 text-left">Estado</th>
                         </tr>
                       </thead>
@@ -777,7 +887,7 @@ export function TournamentUploadForm({
                   </div>
                 )}
                 <p className="border-t border-white/5 px-4 py-2 text-[11px] text-gray-400">
-                  Los Puntos Arena se calculan como: (tus puntos / puntos del 1er lugar) × 100
+                  Los Puntos se calculan como: (tus puntos / puntos del 1er lugar) × 100
                 </p>
                 {totalErrors > 0 && (
                   <p className="border-t border-white/5 px-4 py-2 text-xs text-red-300">

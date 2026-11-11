@@ -1,126 +1,219 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Loader2, MapPin, Navigation, Clock, Instagram, Globe, Twitter, Twitch, ArrowLeft, Phone } from "lucide-react";
-import { getStoreProfile } from "@/lib/geekarena-public.functions";
+import { ArrowLeft, Store as StoreIcon, Trophy } from "lucide-react";
+import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
+import { logStorePageView } from "@/lib/nexus-public.functions";
+import { AdVertical } from "@/components/ads/AdVertical";
+import { AdHorizontal } from "@/components/ads/AdHorizontal";
+import { storeProfileQuery } from "@/lib/stores-queries";
+import { StoreHero } from "@/components/stores/store-hero";
+import { BTN_OUTLINE, FOCUS_RING, InlineError, SECTION } from "@/components/stores/store-ui";
+import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/stores/$slug")({
-  head: () => ({ meta: [{ title: "Tienda — Geek Arena" }] }),
-  component: StoreProfilePage,
+  head: ({ loaderData }) => {
+    const name = (loaderData as { store?: { name?: string } } | undefined)?.store?.name;
+    return { meta: [{ title: name ? `${name} — Nexus` : "Tienda — Nexus" }] };
+  },
+  loader: async ({ context, params }) => {
+    try {
+      return await context.queryClient.ensureQueryData(storeProfileQuery(params.slug));
+    } catch {
+      return undefined;
+    }
+  },
+  component: StoreLayout,
 });
 
-function StoreProfilePage() {
+// Refleja la estructura real de la página (hero, ubicación/actividad,
+// calendario, historial) en vez de un spinner genérico — evita el salto de
+// layout entre "cargando" y "cargado" que un spinner centrado no previene.
+function StoreProfileSkeleton() {
+  return (
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
+      <aside className="hidden xl:block" />
+      <main aria-busy="true" className="@container min-w-0 max-w-4xl space-y-6 py-10">
+        <SkeletonLine width="w-40" height="h-4" />
+
+        <div className={`${SECTION} space-y-4`}>
+          <SkeletonLine width="w-2/3" height="h-8" />
+          <SkeletonLine width="w-1/3" height="h-4" />
+          <div className="flex gap-2 pt-2">
+            <SkeletonBlock className="h-11 w-32 rounded-md" />
+            <SkeletonBlock className="h-11 w-11 rounded-md" />
+          </div>
+          <SkeletonBlock className="h-16 w-full rounded-lg" />
+        </div>
+
+        <div className="grid gap-4 @2xl:grid-cols-2">
+          <div className={`${SECTION} space-y-3`}>
+            <SkeletonLine width="w-40" height="h-4" />
+            <SkeletonLine width="w-full" height="h-3" />
+            <SkeletonLine width="w-3/4" height="h-3" />
+          </div>
+          <div className={`${SECTION} space-y-3`}>
+            <SkeletonLine width="w-32" height="h-4" />
+            <SkeletonBlock className="h-11 w-full rounded-lg" />
+            <SkeletonBlock className="h-11 w-full rounded-lg" />
+          </div>
+        </div>
+      </main>
+      <aside className="hidden xl:block" />
+    </div>
+  );
+}
+
+const TABS = [
+  { to: "/stores/$slug", label: "Perfil", icon: <StoreIcon size={14} />, exact: true },
+  {
+    to: "/stores/$slug/tournaments",
+    label: "Torneos y Liga",
+    icon: <Trophy size={14} />,
+    exact: false,
+  },
+];
+
+function StoreLayout() {
   const { slug } = Route.useParams();
-  const fetchProfile = useServerFn(getStoreProfile);
-  const [loading, setLoading] = useState(true);
-  const [store, setStore] = useState<any>(null);
-  const [notFound, setNotFound] = useState(false);
+  const loaderData = Route.useLoaderData();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const {
+    data: profileData,
+    isLoading: loading,
+    error,
+    isError,
+    refetch,
+  } = useQuery({
+    ...storeProfileQuery(slug),
+    initialData: loaderData,
+    retry: false,
+  });
+  const store = profileData?.store ?? null;
+
+  const fetchActiveSponsor = useServerFn(getActiveSponsor);
+  const registerView = useServerFn(registerAdView);
+  const [sponsor, setSponsor] = useState<any>(null);
 
   useEffect(() => {
-    fetchProfile({ data: { slug } })
-      .then((res: any) => setStore(res.store))
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
+    registerView()
+      .then(setSponsor)
+      .catch(() => {
+        fetchActiveSponsor()
+          .then(setSponsor)
+          .catch(() => {});
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
+  }, []);
+
+  // Visita de "profile" al entrar a la tienda — las visitas a
+  // "calendario"/"liga_interna" se registran en la sub-ruta de torneos,
+  // que ahora es una página propia en vez de un anchor dentro del scroll.
+  const logView = useServerFn(logStorePageView);
+  useEffect(() => {
+    if (!store?.id) return;
+    logView({ data: { store_id: store.id, section: "profile" } }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store?.id]);
 
   if (loading) {
+    return <StoreProfileSkeleton />;
+  }
+
+  // Un fallo de red no es una tienda inexistente: se distingue para ofrecer "Reintentar".
+  // getStoreProfile lanza "Tienda no encontrada" cuando el slug no existe.
+  if (isError && !store && !/no encontrada/i.test(error?.message ?? "")) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
-      </div>
+      <main className="mx-auto max-w-3xl space-y-4 px-4 py-16 sm:px-6">
+        <h1 className="text-xl font-bold text-foreground">No pudimos cargar la tienda</h1>
+        <InlineError onRetry={() => refetch()}>
+          Revisa tu conexión e inténtalo de nuevo.
+        </InlineError>
+        <Link to="/stores" className={BTN_OUTLINE}>
+          Ver directorio de tiendas
+        </Link>
+      </main>
     );
   }
 
-  if (notFound || !store) {
+  if (!store) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-16 text-center sm:px-6">
-        <p className="text-sm text-gray-400">No encontramos esta tienda.</p>
-        <Link to="/stores" className="text-sm font-semibold text-primary hover:underline">
-          ← Volver al directorio
+      <main className="mx-auto max-w-3xl space-y-4 px-4 py-16 sm:px-6">
+        <h1 className="text-xl font-bold text-foreground">No encontramos esta tienda</h1>
+        <p className="text-sm text-foreground-secondary">
+          Puede que el enlace esté mal escrito o que la tienda ya no esté en el circuito.
+        </p>
+        <Link to="/stores" className={BTN_OUTLINE}>
+          Ver directorio de tiendas
         </Link>
-      </div>
+      </main>
     );
   }
+
+  // Sin patrocinador no se reserva el espacio de las columnas laterales.
+  const hasSideAds = Boolean(sponsor?.vertical_url);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
-      <Link to="/stores" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary">
-        <ArrowLeft size={12} /> Volver al directorio
-      </Link>
+    <div
+      className={`mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 ${
+        hasSideAds ? "xl:grid-cols-[160px_minmax(0,1fr)_160px]" : ""
+      }`}
+    >
+      {hasSideAds && (
+        <aside className="hidden xl:block">
+          <AdVertical sponsor={sponsor} />
+        </aside>
+      )}
 
-      <header className="glass space-y-4 rounded-2xl p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">{store.zone ?? "—"}</p>
-        <h1 className="text-3xl font-bold text-white">{store.name}</h1>
-        <p className="flex items-center gap-1.5 text-sm text-gray-400">
-          <MapPin size={14} /> {[store.address, store.city, store.state].filter(Boolean).join(", ") || "—"}
-        </p>
+      <main className="@container mx-auto w-full min-w-0 max-w-4xl space-y-6 py-10">
+        <Link
+          to="/stores"
+          className={`inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground-secondary transition hover:text-foreground ${FOCUS_RING}`}
+        >
+          <ArrowLeft size={14} aria-hidden="true" /> Volver al directorio
+        </Link>
 
-        {store.description && <p className="text-sm text-gray-300">{store.description}</p>}
+        {/* Ad horizontal mobile */}
+        <AdHorizontal sponsor={sponsor} />
 
-        {store.games.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {store.games.map((g: any) => (
-              <span
-                key={g.id}
-                className="rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary"
+        <StoreHero store={store} />
+
+        <nav aria-label="Secciones de la tienda" className="flex gap-1 border-b border-border">
+          {TABS.map((tab) => {
+            const to = tab.to.replace("$slug", slug);
+            const active = tab.exact
+              ? pathname === to
+              : pathname === to || pathname.startsWith(to + "/");
+            return (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                params={{ slug }}
+                activeOptions={{ exact: tab.exact }}
+                aria-current={active ? "page" : undefined}
+                className={`-mb-px flex min-h-11 items-center gap-1.5 border-b-2 px-4 text-sm font-medium transition ${FOCUS_RING} ${
+                  active
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-foreground-secondary hover:text-foreground"
+                }`}
               >
-                {g.name}
-              </span>
-            ))}
-          </div>
-        )}
+                <span aria-hidden="true">{tab.icon}</span>
+                {tab.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {store.opening_hours && (
-            <div className="rounded-md border border-white/10 bg-white/[0.02] p-3">
-              <p className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Clock size={12} /> {store.opening_hours}
-              </p>
-            </div>
-          )}
-          {store.phone && (
-            <div className="rounded-md border border-white/10 bg-white/[0.02] p-3">
-              <p className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Phone size={12} /> {store.phone}
-              </p>
-            </div>
-          )}
-        </div>
+        <Outlet />
+      </main>
 
-        <div className="flex flex-wrap items-center gap-3 pt-2">
-          {store.google_maps_url && (
-            <a
-              href={store.google_maps_url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground"
-            >
-              <Navigation size={12} /> Cómo llegar
-            </a>
-          )}
-          {store.instagram && (
-            <a href={`https://instagram.com/${store.instagram.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
-              <Instagram size={18} />
-            </a>
-          )}
-          {store.website && (
-            <a href={store.website} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
-              <Globe size={18} />
-            </a>
-          )}
-          {store.twitter && (
-            <a href={`https://x.com/${store.twitter.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
-              <Twitter size={18} />
-            </a>
-          )}
-          {store.twitch && (
-            <a href={`https://twitch.tv/${store.twitch.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-primary">
-              <Twitch size={18} />
-            </a>
-          )}
-        </div>
-      </header>
+      {hasSideAds && (
+        <aside className="hidden xl:block">
+          <AdVertical sponsor={sponsor} />
+        </aside>
+      )}
     </div>
   );
 }

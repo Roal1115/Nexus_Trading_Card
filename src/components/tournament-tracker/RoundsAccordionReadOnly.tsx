@@ -1,12 +1,17 @@
+import { PerformanceTrackerSkeleton } from "@/components/ui/skeleton-loader";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getTournamentRoundsForPlayer } from "@/lib/geekarena-tournament-tracker.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { tournamentRoundsQuery } from "@/lib/dashboard-queries";
 import { AppealForm } from "@/components/tournament-tracker/AppealForm";
+import { cleanLeaderName } from "@/components/tournament-tracker/round-ui";
 import { AnimatePresence } from "framer-motion";
-import { confirmRoundResult } from "@/lib/geekarena-tournament-tracker.functions";
+import { confirmRoundResult } from "@/lib/nexus-tournament-tracker.functions";
 // En lucide-react agrega:
 import {
   ChevronDown,
+  Pencil,
+  Plus,
   ShieldQuestion,
   Swords,
   TrendingDown,
@@ -37,8 +42,8 @@ function SummaryCard({
 
   return (
     <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-sm font-bold text-white">{summary.store_name ?? "—"}</p>
-      <p className="text-xs text-gray-500">{dateLabel}</p>
+      <p className="text-sm font-bold text-foreground">{summary.store_name ?? "—"}</p>
+      <p className="text-xs text-foreground-subtle">{dateLabel}</p>
 
       <div className="mt-3 flex items-center gap-3">
         {leader?.card_image ? (
@@ -49,18 +54,18 @@ function SummaryCard({
           />
         ) : (
           <div className="flex h-14 w-10 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-            <ShieldQuestion size={16} className="text-gray-600" />
+            <ShieldQuestion size={16} className="text-foreground-subtle" />
           </div>
         )}
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-gray-500">Leader</p>
-          <p className="text-sm font-semibold text-white">{leader?.base_name ?? "—"}</p>
+          <p className="text-xs uppercase tracking-widest text-foreground-subtle">Leader</p>
+          <p className="text-sm font-semibold text-foreground">{leader?.base_name ?? "—"}</p>
         </div>
       </div>
 
       <div className="mt-3 text-center">
-        <p className="text-[10px] uppercase tracking-widest text-gray-500">Récord</p>
-        <p className="mt-0.5 text-2xl font-bold text-white">
+        <p className="text-xs uppercase tracking-widest text-foreground-subtle">Récord</p>
+        <p className="mt-0.5 text-2xl font-bold text-foreground">
           {summary.wins}-{summary.losses}
           {summary.win_rate !== null && (
             <span className="ml-2 text-base font-semibold text-emerald-400">
@@ -71,14 +76,16 @@ function SummaryCard({
       </div>
 
       {summary.toughest_opponent_tag && (
-        <div className="mt-3 flex items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-xs text-gray-300 whitespace-nowrap overflow-x-auto">
+        <div className="mt-3 flex items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-xs text-foreground-secondary whitespace-nowrap overflow-x-auto">
           <TrendingDown size={12} className="text-amber-400 flex-shrink-0" />
           <span className="flex-shrink-0">Rival más difícil:</span>
-          <span className="font-semibold text-white flex-shrink-0">
+          <span className="font-semibold text-foreground flex-shrink-0">
             {summary.toughest_opponent_tag}
           </span>
           {summary.toughest_opponent_rank && (
-            <span className="text-gray-500 flex-shrink-0">(#{summary.toughest_opponent_rank})</span>
+            <span className="text-foreground-subtle flex-shrink-0">
+              (#{summary.toughest_opponent_rank})
+            </span>
           )}
         </div>
       )}
@@ -169,39 +176,41 @@ function RoundAccordionItem({
         className="flex w-full items-center justify-between px-3 py-2.5 text-left"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-[11px] font-bold text-white">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-xs font-bold text-foreground">
             R{round.round_number}
           </span>
           <div className="min-w-0 flex-1">
-            <span className="text-sm text-gray-300">
+            <span className="text-sm text-foreground-secondary">
               {round.is_bye
                 ? "Bye"
-                : `vs ${round.opponent_leader?.base_name?.replace(/\s*-\s*[A-Z]{1,4}\d{1,3}-\d{1,3}\s*$/g, "").trim() ?? opponentTag}`}
+                : `vs ${round.opponent_leader ? cleanLeaderName(round.opponent_leader.base_name) : opponentTag}`}
             </span>
             {!open && !round.is_bye && (
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="w-full text-[10px] text-gray-500">
+                <span className="w-full text-xs text-foreground-subtle">
                   Oponente:{" "}
-                  <span className="text-gray-400">
+                  <span className="text-foreground-secondary">
                     {opponentTag !== "—" ? opponentTag : "Sin registrar"}
                   </span>
                 </span>
                 {round.won_die_roll !== null && (
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-xs text-foreground-subtle">
                     Dado:{" "}
-                    <span className="text-gray-400">{round.won_die_roll ? "Yo" : "Oponente"}</span>
+                    <span className="text-foreground-secondary">
+                      {round.won_die_roll ? "Yo" : "Oponente"}
+                    </span>
                   </span>
                 )}
                 {round.turn_order !== null && (
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-xs text-foreground-subtle">
                     Turno:{" "}
-                    <span className="text-gray-400">
+                    <span className="text-foreground-secondary">
                       {round.turn_order === "first" ? "Primero" : "Segundo"}
                     </span>
                   </span>
                 )}
                 {round.notes && (
-                  <span className="text-[10px] italic text-gray-600 truncate max-w-[160px]">
+                  <span className="text-xs italic text-foreground-subtle truncate max-w-[160px]">
                     "{round.notes}"
                   </span>
                 )}
@@ -211,13 +220,13 @@ function RoundAccordionItem({
         </div>
         <div className="flex shrink-0 items-center gap-2 ml-2">
           {underAppeal ? (
-            <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-400">
+            <span className="rounded bg-amber-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-amber-400">
               En revisión
             </span>
           ) : (
             round.won_match !== null && (
               <span
-                className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                className={`rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${
                   round.won_match
                     ? "bg-emerald-500/20 text-emerald-400"
                     : "bg-red-500/20 text-red-400"
@@ -229,7 +238,7 @@ function RoundAccordionItem({
           )}
           <ChevronDown
             size={14}
-            className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`text-foreground-secondary transition-transform ${open ? "rotate-180" : ""}`}
           />
         </div>
       </button>
@@ -250,7 +259,7 @@ function RoundAccordionItem({
 
       {/* Contenido expandido */}
       {open && (
-        <div className="border-t border-white/10 px-3 pb-3 pt-3">
+        <div className="animate-in fade-in-0 slide-in-from-top-1 duration-200 border-t border-white/10 px-3 pb-3 pt-3">
           {!round.is_bye ? (
             <div className="flex items-center justify-center gap-4">
               <div className="flex flex-col items-center gap-1.5">
@@ -262,14 +271,14 @@ function RoundAccordionItem({
                   />
                 ) : (
                   <div className="flex h-28 w-20 items-center justify-center rounded-md border border-white/10 bg-white/5">
-                    <ShieldQuestion size={20} className="text-gray-500" />
+                    <ShieldQuestion size={20} className="text-foreground-subtle" />
                   </div>
                 )}
-                <span className="max-w-[84px] truncate text-[11px] text-gray-400">
+                <span className="max-w-[84px] truncate text-xs text-foreground-secondary">
                   {round.player_leader?.base_name ?? "Sin leader"}
                 </span>
               </div>
-              <Swords size={18} className="text-gray-500" />
+              <Swords size={18} className="text-foreground-subtle" />
               <div className="flex flex-col items-center gap-1.5">
                 {round.opponent_leader?.card_image ? (
                   <img
@@ -279,28 +288,30 @@ function RoundAccordionItem({
                   />
                 ) : (
                   <div className="flex h-28 w-20 items-center justify-center rounded-md border border-white/10 bg-white/5">
-                    <ShieldQuestion size={20} className="text-gray-500" />
+                    <ShieldQuestion size={20} className="text-foreground-subtle" />
                   </div>
                 )}
-                <span className="max-w-[84px] truncate text-[11px] text-gray-400">
+                <span className="max-w-[84px] truncate text-xs text-foreground-secondary">
                   {round.opponent_leader?.base_name ?? "Sin leader"}
                 </span>
               </div>
             </div>
           ) : (
-            <p className="py-2 text-center text-sm text-gray-400">Bye — victoria automática</p>
+            <p className="py-2 text-center text-sm text-foreground-secondary">
+              Bye — victoria automática
+            </p>
           )}
           {!round.is_bye && (
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-foreground-secondary">
               <div className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5">
                 Dado:{" "}
-                <span className="text-white">
+                <span className="text-foreground">
                   {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Oponente"}
                 </span>
               </div>
               <div className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5">
                 Turno:{" "}
-                <span className="text-white">
+                <span className="text-foreground">
                   {round.turn_order === "first"
                     ? "Primero"
                     : round.turn_order === "second"
@@ -310,7 +321,9 @@ function RoundAccordionItem({
               </div>
             </div>
           )}
-          {round.notes && <p className="mt-2 text-xs text-gray-400 italic">{round.notes}</p>}
+          {round.notes && (
+            <p className="mt-2 text-xs text-foreground-secondary italic">{round.notes}</p>
+          )}
           {round.is_auto_populated && !underAppeal && !isConfirmed && (
             <div className="mt-3 flex flex-col gap-2">
               {/* Aceptar resultado */}
@@ -318,7 +331,7 @@ function RoundAccordionItem({
                 type="button"
                 onClick={handleConfirm}
                 disabled={confirming}
-                className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-400 transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white disabled:opacity-50"
+                className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-400 transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-500 hover:text-foreground disabled:opacity-50"
               >
                 <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
                 <CheckCircle2 size={13} className="flex-shrink-0" />
@@ -361,11 +374,17 @@ function RoundAccordionItem({
 export function RoundsAccordionReadOnly({
   tournamentId,
   gameId,
+  onAddTracker,
 }: {
   tournamentId: string;
   gameId: string;
+  // Cuando se pasa, habilita el flujo "editar tracker sin salir del modal
+  // de detalle" — antes la única forma de registrar rondas era cerrar este
+  // panel de solo-lectura y abrir el Performance Tracker como otro modal
+  // aparte, perdiendo el contexto del torneo que se estaba viendo.
+  onAddTracker?: () => void;
 }) {
-  const fetchRounds = useServerFn(getTournamentRoundsForPlayer);
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState<RoundWithLeaders[]>([]);
   const [opponentMap, setOpponentMap] = useState<Record<string, string>>({});
@@ -382,9 +401,11 @@ export function RoundsAccordionReadOnly({
     null,
   );
 
-  const reload = () => {
+  // Sin argumento aprovecha la consulta lanzada al abrir el modal; tras un cambio pide datos frescos.
+  const reload = (fresh = false) => {
     setLoading(true);
-    fetchRounds({ data: { tournament_id: tournamentId } })
+    queryClient
+      .fetchQuery({ ...tournamentRoundsQuery(tournamentId), staleTime: fresh ? 0 : 30_000 })
       .then((res: any) => {
         setRounds(res.rounds ?? []);
         setSummary(res.summary ?? null);
@@ -403,20 +424,45 @@ export function RoundsAccordionReadOnly({
   }, [tournamentId]);
 
   if (loading) {
-    return <p className="py-6 text-center text-sm text-gray-400">Cargando rondas…</p>;
+    return <PerformanceTrackerSkeleton />;
   }
 
   if (rounds.length === 0) {
     return (
-      <p className="py-6 text-center text-sm text-gray-400">
-        Aún no has registrado rondas para este torneo.
-      </p>
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <p className="text-sm text-foreground-secondary">
+          Aún no has registrado rondas para este torneo.
+        </p>
+        {onAddTracker && (
+          <button
+            type="button"
+            onClick={onAddTracker}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <Plus size={14} /> Agregar Tracker
+          </button>
+        )}
+      </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {summary && <SummaryCard summary={summary} leader={leader} />}
+      {summary && (
+        <div className="relative">
+          <SummaryCard summary={summary} leader={leader} />
+          {onAddTracker && (
+            <button
+              type="button"
+              onClick={onAddTracker}
+              title="Editar rondas de este torneo"
+              className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs font-semibold text-foreground-secondary transition hover:border-primary/40 hover:text-primary"
+            >
+              <Pencil size={11} /> Editar
+            </button>
+          )}
+        </div>
+      )}
       <div className="space-y-2">
         {rounds.map((r) => (
           <RoundAccordionItem
@@ -424,8 +470,8 @@ export function RoundsAccordionReadOnly({
             round={r}
             opponentTag={r.opponent_player_id ? (opponentMap[r.opponent_player_id] ?? "—") : "—"}
             gameId={gameId}
-            onAppealSubmitted={reload}
-            onConfirmed={reload} // ← agrega esto
+            onAppealSubmitted={() => reload(true)}
+            onConfirmed={() => reload(true)} // ← agrega esto
           />
         ))}
       </div>

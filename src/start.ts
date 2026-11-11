@@ -1,6 +1,6 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 import { renderErrorPage } from "./lib/error-page";
-import { attachGeekarenaAuth } from "./lib/geekarena-auth.attacher";
+import { attachNexusAuth } from "./lib/nexus-auth.attacher";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 
@@ -29,5 +29,5 @@ const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
 
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware],
-  functionMiddleware: [attachSupabaseAuth, attachGeekarenaAuth],
+  functionMiddleware: [attachSupabaseAuth, attachNexusAuth],
 }));

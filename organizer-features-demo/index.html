@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Panel del Organizador — Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #060a10;
+      }
+      body {
+        font-family: "Inter", "Segoe UI", sans-serif;
+        color: #fff;
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #060a10;
+      }
+      .bg-glow {
+        position: absolute;
+        inset: 0;
+      }
+      .feature-wrap {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 26px;
+        padding: 0 160px;
+      }
+      .eyebrow {
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 22px;
+        backdrop-filter: blur(6px);
+      }
+      .icon-badge {
+        width: 96px;
+        height: 96px;
+        border-radius: 24px;
+        display: grid;
+        place-items: center;
+        font-size: 46px;
+      }
+      .ftitle {
+        font-size: 92px;
+        font-weight: 800;
+        line-height: 1.05;
+      }
+      .fsub {
+        font-size: 30px;
+        color: #9aa4b2;
+        max-width: 1100px;
+        line-height: 1.4;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 34px;
+      }
+      .sidebar-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 22px;
+        border-radius: 12px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #9aa4b2;
+      }
+      .sidebar-row.active {
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        border-left: 4px solid var(--accent, #32d9ff);
+      }
+      .badge-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-9tzr" id="root" data-composition-id="main" data-start="0" data-duration="23.6" data-width="1920" data-height="1080">
+      <!-- ============ SCENE 0 — Título (0–2.8s) ============ -->
+      <section data-hf-id="hf-1uhd" id="scene0" class="clip" data-start="0" data-duration="2.8" data-track-index="1">
+        <div data-hf-id="hf-fgjc" class="bg-glow" style="background: radial-gradient(900px 560px at 50% 50%, rgba(50,217,255,0.14), transparent 65%)"></div>
+        <div data-hf-id="hf-r10n" class="feature-wrap" style="align-items: center; text-align: center">
+          <div data-hf-id="hf-2cgu" id="s0-eyebrow" class="eyebrow" style="color: #32d9ff">Trading Card Nexus</div>
+          <h1 data-hf-id="hf-qc24" id="s0-title" style="font-size: 110px; font-weight: 800">Panel del Organizador</h1>
+          <p data-hf-id="hf-6lcg" id="s0-sub" class="fsub" style="text-align: center; margin: 0 auto">
+            Todo lo que un organizador de tienda controla, en un solo lugar.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 1 — Analytics (2.8–5.4s) ============ -->
+      <section data-hf-id="hf-1qm2" id="scene1" class="clip" data-start="2.8" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-sspu" class="bg-glow" style="background: radial-gradient(760px 460px at 80% 20%, rgba(50,217,255,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-nacr" class="feature-wrap">
+          <div data-hf-id="hf-thy4" class="row">
+            <div data-hf-id="hf-36uo" class="icon-badge glass" style="color: #32d9ff">📊</div>
+            <div data-hf-id="hf-yeow">
+              <div data-hf-id="hf-ruh9" class="eyebrow" style="color: #32d9ff">Panel principal</div>
+              <h2 data-hf-id="hf-3h4w" class="ftitle" style="margin-top: 10px">Analytics</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-fyrx" class="fsub">Resumen en vivo de la tienda: torneos pendientes, jugadores activos y tendencias.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 2 — Mi Tienda (5.4–8s) ============ -->
+      <section data-hf-id="hf-nuh0" id="scene2" class="clip" data-start="5.4" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-jub3" class="bg-glow" style="background: radial-gradient(760px 460px at 20% 80%, rgba(74,222,128,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-oqvf" class="feature-wrap">
+          <div data-hf-id="hf-lt04" class="row">
+            <div data-hf-id="hf-ae55" class="icon-badge glass" style="color: #4ade80">🏬</div>
+            <div data-hf-id="hf-y7yw">
+              <div data-hf-id="hf-avui" class="eyebrow" style="color: #4ade80">Configuración</div>
+              <h2 data-hf-id="hf-prfd" class="ftitle" style="margin-top: 10px">Mi Tienda</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-pj2i" class="fsub">Horarios, TCGs disponibles, contacto y redes — el perfil público que ven los jugadores.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 3 — Mis Torneos (8–10.6s) ============ -->
+      <section data-hf-id="hf-9s0o" id="scene3" class="clip" data-start="8" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-xiqx" class="bg-glow" style="background: radial-gradient(760px 460px at 80% 20%, rgba(251,191,36,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-ocke" class="feature-wrap">
+          <div data-hf-id="hf-km31" class="row">
+            <div data-hf-id="hf-75u1" class="icon-badge glass" style="color: #fbbf24">🏆</div>
+            <div data-hf-id="hf-x11t">
+              <div data-hf-id="hf-aqtq" class="eyebrow" style="color: #fbbf24">Gestión</div>
+              <h2 data-hf-id="hf-jwa1" class="ftitle" style="margin-top: 10px">Mis Torneos</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-73fy" class="fsub">Estado de cada torneo subido — pendiente, aprobado o rechazado — con motivo si aplica.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 4 — Historial (10.6–13.2s) ============ -->
+      <section data-hf-id="hf-wsry" id="scene4" class="clip" data-start="10.6" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-go4l" class="bg-glow" style="background: radial-gradient(760px 460px at 20% 80%, rgba(96,165,250,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-ny9d" class="feature-wrap">
+          <div data-hf-id="hf-l0e2" class="row">
+            <div data-hf-id="hf-cn97" class="icon-badge glass" style="color: #60a5fa">📜</div>
+            <div data-hf-id="hf-xfcu">
+              <div data-hf-id="hf-5mp3" class="eyebrow" style="color: #60a5fa">Registro</div>
+              <h2 data-hf-id="hf-gi0e" class="ftitle" style="margin-top: 10px">Historial de Torneos</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-a3fu" class="fsub">Todos los torneos publicados de la tienda, con resultados y fecha de aprobación.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 5 — Calendario (13.2–15.8s) ============ -->
+      <section data-hf-id="hf-jf7a" id="scene5" class="clip" data-start="13.2" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-rjvt" class="bg-glow" style="background: radial-gradient(760px 460px at 80% 20%, rgba(232,121,249,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-njyc" class="feature-wrap">
+          <div data-hf-id="hf-mzx7" class="row">
+            <div data-hf-id="hf-ufcy" class="icon-badge glass" style="color: #e879f9">🗓️</div>
+            <div data-hf-id="hf-w8fr">
+              <div data-hf-id="hf-jp29" class="eyebrow" style="color: #e879f9">Planeación</div>
+              <h2 data-hf-id="hf-4q8u" class="ftitle" style="margin-top: 10px">Calendario</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-2b1f" class="fsub">Vista semanal de horarios recurrentes y torneos programados — nacionales e internos.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 6 — Subir Torneo (15.8–18.4s) ============ -->
+      <section data-hf-id="hf-ivht" id="scene6" class="clip" data-start="15.8" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-p1hu" class="bg-glow" style="background: radial-gradient(760px 460px at 20% 80%, rgba(50,217,255,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-n5nb" class="feature-wrap">
+          <div data-hf-id="hf-ne88" class="row">
+            <div data-hf-id="hf-p7n4" class="icon-badge glass" style="color: #32d9ff">⬆️</div>
+            <div data-hf-id="hf-wmqs">
+              <div data-hf-id="hf-kbpg" class="eyebrow" style="color: #32d9ff">Captura de resultados</div>
+              <h2 data-hf-id="hf-2456" class="ftitle" style="margin-top: 10px">Subir Torneo</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-0mlj" class="fsub">Carga jugadores y resultados vía CSV o manual, eligiendo a qué liga pertenece.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 7 — Ligas Internas (18.4–21s) ============ -->
+      <section data-hf-id="hf-s1un" id="scene7" class="clip" data-start="18.4" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-5i4i" class="bg-glow" style="background: radial-gradient(760px 460px at 80% 20%, rgba(217,70,239,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-mrca" class="feature-wrap">
+          <div data-hf-id="hf-m7b5" class="row">
+            <div data-hf-id="hf-91k0" class="icon-badge glass" style="color: #e879f9">🎖️</div>
+            <div data-hf-id="hf-vftp">
+              <div data-hf-id="hf-heer" class="eyebrow" style="color: #e879f9">Épica 4</div>
+              <h2 data-hf-id="hf-5z8k" class="ftitle" style="margin-top: 10px">Ligas Internas</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-hkeu" class="fsub">Ligas propias con fechas, horarios y premios — control total del organizador.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCENE 8 — Apelaciones + cierre (21–23.6s) ============ -->
+      <section data-hf-id="hf-lncm" id="scene8" class="clip" data-start="21" data-duration="2.6" data-track-index="1">
+        <div data-hf-id="hf-ritb" class="bg-glow" style="background: radial-gradient(760px 460px at 20% 80%, rgba(248,113,113,0.14), transparent 60%)"></div>
+        <div data-hf-id="hf-md19" class="feature-wrap">
+          <div data-hf-id="hf-mlm6" class="row">
+            <div data-hf-id="hf-0434" class="icon-badge glass" style="color: #f87171">⚖️</div>
+            <div data-hf-id="hf-vu4q">
+              <div data-hf-id="hf-5766" class="eyebrow" style="color: #f87171">Resolución</div>
+              <h2 data-hf-id="hf-8nmm" class="ftitle" style="margin-top: 10px">Apelaciones</h2>
+            </div>
+          </div>
+          <p data-hf-id="hf-0tp2" class="fsub">Disputas de jugadores sobre resultados, resueltas directo desde el panel.</p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene 0
+      tl.from("#s0-eyebrow", { opacity: 0, y: -16, duration: 0.4, ease: "power2.out" }, 0.15)
+        .from("#s0-title", { opacity: 0, y: 30, duration: 0.55, ease: "power3.out" }, 0.3)
+        .from("#s0-sub", { opacity: 0, y: 20, duration: 0.5, ease: "power2.out" }, 0.65);
+
+      // Feature scenes: same enter pattern for each — icon pops, title/desc slide up.
+      const features = [
+        { id: "scene1", start: 2.8 },
+        { id: "scene2", start: 5.4 },
+        { id: "scene3", start: 8 },
+        { id: "scene4", start: 10.6 },
+        { id: "scene5", start: 13.2 },
+        { id: "scene6", start: 15.8 },
+        { id: "scene7", start: 18.4 },
+        { id: "scene8", start: 21 },
+      ];
+
+      features.forEach((f) => {
+        const s = `#${f.id}`;
+        tl.from(`${s} .icon-badge`, { opacity: 0, scale: 0.6, duration: 0.4, ease: "back.out(2)" }, f.start + 0.15)
+          .from(`${s} .eyebrow`, { opacity: 0, x: -20, duration: 0.35, ease: "power2.out" }, f.start + 0.25)
+          .from(`${s} .ftitle`, { opacity: 0, x: -20, duration: 0.4, ease: "power2.out" }, f.start + 0.32)
+          .from(`${s} .fsub`, { opacity: 0, y: 16, duration: 0.4, ease: "power2.out" }, f.start + 0.55);
+      });
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

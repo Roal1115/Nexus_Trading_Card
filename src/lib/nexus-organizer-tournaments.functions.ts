@@ -1,0 +1,444 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireNexusOrganizer } from "./nexus-auth.middleware";
+import { getNexusAdmin, failDb, removeTournamentFile } from "./nexus-admin.server";
+import { tournamentFilePath, tournamentIdOfFile } from "./tournament-file";
+import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
+import { resolvePlayer, ONE_PIECE_SLUG } from "./player-identity.server";
+import type { TablesInsert } from "./database.types";
+import type { TournamentStatus } from "./nexus-admin-shared";
+import { logAction, tournamentAuditLabel } from "./nexus-admin-core";
+
+const csvPathSchema = z.string().refine((v) => tournamentFilePath(v) === v, "Archivo inválido");
+
+function computeQualifying(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  const month = d.getMonth() + 1; // 1..12
+  const year = d.getFullYear();
+  const semester = month <= 6 ? 1 : 2;
+  return { qualifying_month: month, qualifying_semester: semester, qualifying_year: year };
+}
+
+// ---------- Mi Tienda ----------
+
+export const getMyTournaments = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator(
+    (d: { status?: string; game_id?: string; date_from?: string; date_to?: string }) =>
+      z
+        .object({
+          status: z.string().optional(),
+          game_id: z.string().optional(),
+          date_from: z.string().optional(),
+          date_to: z.string().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (!player.home_store_id)
+      return { tournaments: [], store_name: null, stats: {} as Record<string, number> };
+
+    const { data: store } = await admin
+      .from("stores")
+      .select("name, city")
+      .eq("id", player.home_store_id)
+      .maybeSingle();
+
+    const baseCols =
+      "id, game_id, tournament_date, status, csv_url, approved_at, published_at, created_at";
+    const extraCols = ", rejection_reason, approved_by";
+
+    let rows: any[] | null = null;
+    let err: { message: string } | null = null;
+    {
+      let q = admin
+        .from("tournaments")
+        .select(baseCols + extraCols)
+        .eq("store_id", player.home_store_id as string)
+        .order("tournament_date", { ascending: false });
+      if (data.status) q = q.eq("status", data.status as TournamentStatus);
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+      if (data.date_from) q = q.gte("tournament_date", data.date_from);
+      if (data.date_to) q = q.lte("tournament_date", data.date_to);
+      const res = await q;
+      rows = res.data as any[] | null;
+      err = res.error;
+    }
+    if (err && /column .* does not exist/i.test(err.message)) {
+      let q = admin
+        .from("tournaments")
+        .select(baseCols)
+        .eq("store_id", player.home_store_id as string)
+        .order("tournament_date", { ascending: false });
+      if (data.status) q = q.eq("status", data.status as TournamentStatus);
+      if (data.game_id) q = q.eq("game_id", data.game_id);
+      if (data.date_from) q = q.gte("tournament_date", data.date_from);
+      if (data.date_to) q = q.lte("tournament_date", data.date_to);
+      const res = await q;
+      rows = res.data as any[] | null;
+      err = res.error;
+    }
+    if (err) failDb(err);
+
+    const tournamentIds = (rows ?? []).map((r) => r.id);
+    const gameIds = Array.from(new Set((rows ?? []).map((r) => r.game_id)));
+    const approverIds = Array.from(
+      new Set((rows ?? []).filter((r) => r.approved_by).map((r) => r.approved_by as string)),
+    );
+
+    const [gmsRes, approversRes, resultsRes] = await Promise.all([
+      gameIds.length
+        ? admin.from("games").select("id, name").in("id", gameIds)
+        : Promise.resolve({ data: [] as any[] }),
+      approverIds.length
+        ? admin.from("players").select("id, geek_tag").in("id", approverIds)
+        : Promise.resolve({ data: [] as any[] }),
+      tournamentIds.length
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id")
+            .in("tournament_id", tournamentIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const gamesMap = Object.fromEntries((gmsRes.data ?? []).map((g: any) => [g.id, g.name]));
+    const approversMap = Object.fromEntries(
+      (approversRes.data ?? []).map((p: any) => [p.id, p.geek_tag]),
+    );
+    const participantMap = (resultsRes.data ?? []).reduce((acc: Record<string, number>, r: any) => {
+      acc[r.tournament_id] = (acc[r.tournament_id] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const stats = (rows ?? []).reduce((acc: Record<string, number>, t: any) => {
+      const key = t.rejection_reason && t.status === "DRAFT" ? "REJECTED" : t.status;
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      store_name: store ? `${store.name} — ${store.city ?? ""}`.trim() : null,
+      stats,
+      tournaments: (rows ?? []).map((r: any) => ({
+        ...r,
+        game_name: gamesMap[r.game_id] ?? "—",
+        approved_by_tag: r.approved_by ? (approversMap[r.approved_by] ?? "—") : null,
+        participants: participantMap[r.id] ?? 0,
+      })),
+    };
+  });
+
+export const deleteDraftTournament = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator((d: { tournament_id: string }) =>
+    z.object({ tournament_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    const { data: t, error: te } = await admin
+      .from("tournaments")
+      .select("id, store_id, status, csv_url")
+      .eq("id", data.tournament_id)
+      .maybeSingle();
+    if (te) failDb(te);
+    if (!t) throw new Error("Torneo no encontrado");
+    if (t.store_id !== player.home_store_id && player.role !== "admin") {
+      throw new Error("Este torneo no pertenece a tu tienda");
+    }
+    if (t.status !== "DRAFT" && player.role !== "admin") {
+      throw new Error("Solo se pueden eliminar torneos en estado DRAFT");
+    }
+    const { error } = await admin.from("tournaments").delete().eq("id", data.tournament_id);
+    if (error) failDb(error);
+    await removeTournamentFile(admin, t.id, t.csv_url);
+    return { ok: true };
+  });
+
+// ---------- Subir Torneo (DRAFT vacío, legacy) ----------
+export const createTournament = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator((d: { game_id: string; tournament_date: string }) =>
+    z
+      .object({
+        game_id: z.string().uuid(),
+        tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (!player.home_store_id) {
+      throw new Error("Primero asigna una tienda en 'Mi Tienda'");
+    }
+    const q = computeQualifying(data.tournament_date);
+    const { data: created, error } = await admin
+      .from("tournaments")
+      .insert({
+        store_id: player.home_store_id,
+        game_id: data.game_id,
+        tournament_date: data.tournament_date,
+        ...q,
+        status: "DRAFT",
+        uploaded_by: player.id,
+      } as any)
+      .select("id")
+      .single();
+    if (error) failDb(error);
+    return { id: created.id };
+  });
+
+// ---------- Upload Tournament Results (CSV parsed client-side) ----------
+const ResultRowSchema = z.object({
+  rank: z.number().int().min(1),
+  geek_tag: z.string().min(1).max(120),
+  membership_id: z.string().max(120).nullable().optional(),
+  match_points: z.number().int().min(0).nullable(),
+  omw_percentage: z.number().min(0).max(100).nullable(),
+  wins: z.number().int().min(0).nullable(),
+  losses: z.number().int().min(0).nullable(),
+  draws: z.number().int().min(0).nullable(),
+  points_earned: z.number().min(0),
+});
+
+export const uploadTournamentResults = createServerFn({ method: "POST" })
+  .middleware([requireNexusOrganizer])
+  .inputValidator(
+    (d: {
+      store_id: string;
+      game_id: string;
+      tournament_date: string;
+      rows: Array<z.infer<typeof ResultRowSchema>>;
+      tournament_id?: string;
+      csv_url?: string | null;
+      league_id: string | null;
+    }) =>
+      z
+        .object({
+          store_id: z.string().uuid(),
+          game_id: z.string().uuid(),
+          tournament_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          rows: z.array(ResultRowSchema).min(1).max(2000),
+          tournament_id: z.string().uuid().optional(),
+          csv_url: csvPathSchema.nullable().optional(),
+          // null = Liga Semestral / Circuito Nacional (default), uuid = liga interna
+          league_id: z.string().uuid().nullable(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+    if (
+      player.role !== "admin" &&
+      player.role !== "tcg_manager" &&
+      player.home_store_id !== data.store_id
+    ) {
+      throw new Error("No puedes subir un torneo para esta tienda");
+    }
+    if (data.csv_url && tournamentIdOfFile(data.csv_url) !== data.tournament_id?.toLowerCase()) {
+      throw new Error("Archivo inválido");
+    }
+
+    // Validar que el manager tiene autoridad sobre este TCG
+    if (player.role === "tcg_manager") {
+      const { data: mg } = await admin
+        .from("manager_games")
+        .select("id")
+        .eq("player_id", player.id)
+        .eq("game_id", data.game_id)
+        .maybeSingle();
+      if (!mg) {
+        throw new Error("No tienes permisos para subir torneos de este TCG.");
+      }
+    }
+
+    // Restringir fecha a la semana actual (lunes → hoy). Admin puede saltar la validación.
+    if (player.role !== "admin") {
+      // "Hoy" en zona horaria de México, no UTC del servidor
+      const todayStr = todayInMexicoStr();
+      const today = new Date(todayStr + "T12:00:00");
+
+      const monday = mondayOfWeek(today);
+
+      const tDate = new Date(data.tournament_date + "T12:00:00");
+      if (tDate > today) {
+        throw new Error("No se pueden subir torneos con fecha futura.");
+      }
+      if (tDate < monday) {
+        throw new Error(
+          `Solo se pueden subir torneos de la semana actual (desde el ${monday.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}).`,
+        );
+      }
+    }
+
+    // Validar que la tienda ofrece este TCG
+    if (player.role !== "admin") {
+      const { data: scheduleCheck } = await admin
+        .from("store_schedules")
+        .select("id")
+        .eq("store_id", data.store_id)
+        .eq("game_id", data.game_id)
+        .limit(1)
+        .maybeSingle();
+      if (!scheduleCheck) {
+        throw new Error("Esta tienda no tiene este TCG configurado en su calendario de torneos.");
+      }
+    }
+
+    // Si se eligió una liga interna, debe existir, estar activa y ser de esta tienda.
+    if (data.league_id) {
+      const { data: league, error: lge } = await admin
+        .from("store_leagues")
+        .select("id")
+        .eq("id", data.league_id)
+        .eq("store_id", data.store_id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (lge) failDb(lge);
+      if (!league) throw new Error("La liga interna seleccionada ya no está disponible.");
+    }
+
+    // Duplicado se checa por liga: el mismo TCG/día puede tener un torneo
+    // semestral (league_id null) y, aparte, uno por cada liga interna.
+    let dupQuery = admin
+      .from("tournaments")
+      .select("id")
+      .eq("store_id", data.store_id)
+      .eq("game_id", data.game_id)
+      .eq("tournament_date", data.tournament_date);
+    dupQuery = data.league_id
+      ? dupQuery.eq("league_id", data.league_id)
+      : dupQuery.is("league_id", null);
+    const { data: existing, error: dupErr } = await dupQuery.maybeSingle();
+    if (dupErr) failDb(dupErr);
+    if (existing) {
+      return {
+        ok: false as const,
+        reason: "duplicate" as const,
+        message: "Ya existe un torneo registrado para esta tienda, juego, fecha y liga.",
+      };
+    }
+
+    const q = computeQualifying(data.tournament_date);
+    // Épica 4: los torneos de liga interna son control total del organizador
+    // — no pasan por la cola de aprobación del admin, se publican directo.
+    const now = new Date().toISOString();
+    const insertPayload: TablesInsert<"tournaments"> = {
+      store_id: data.store_id,
+      game_id: data.game_id,
+      tournament_date: data.tournament_date,
+      ...q,
+      status: data.league_id ? "PUBLISHED" : "DRAFT",
+      csv_url: data.csv_url ?? null,
+      league_id: data.league_id,
+      // Quién lo subió realmente (independiente de la tienda/organizador).
+      uploaded_by: player.id,
+      ...(data.league_id ? { approved_at: now, approved_by: player.id, published_at: now } : {}),
+    };
+    if (data.tournament_id) insertPayload.id = data.tournament_id;
+    const { data: tournament, error: te } = await admin
+      .from("tournaments")
+      .insert(insertPayload)
+      .select("id")
+      .single();
+    if (te) failDb(te);
+    const tournamentId = tournament.id;
+
+    if (data.league_id) {
+      const { error: lte } = await admin
+        .from("store_league_tournaments")
+        .upsert(
+          { league_id: data.league_id, tournament_id: tournamentId },
+          { onConflict: "league_id,tournament_id" },
+        );
+      if (lte) failDb(lte);
+    }
+
+    const cleanup = async (msg: string): Promise<never> => {
+      await admin.from("tournament_results").delete().eq("tournament_id", tournamentId);
+      await admin.from("tournaments").delete().eq("id", tournamentId);
+      await removeTournamentFile(admin, tournamentId, data.csv_url);
+      throw new Error(msg);
+    };
+
+    const baseRows: Array<TablesInsert<"tournament_results">> = [];
+    let createdPlayers = 0;
+
+    // One Piece: el Bandai ID es la identidad; una fila sin ID es invitado.
+    const { data: gameRow, error: ge } = await admin
+      .from("games")
+      .select("slug")
+      .eq("id", data.game_id)
+      .single();
+    if (ge) await cleanup(ge.message);
+    const isOnePiece = gameRow?.slug === ONE_PIECE_SLUG;
+    try {
+      for (const r of data.rows) {
+        const { id: playerId, isNew } = await resolvePlayer(
+          admin,
+          r.geek_tag.trim(),
+          r.membership_id ? r.membership_id.trim() || null : null,
+          data.game_id,
+          isOnePiece,
+        );
+        if (isNew) createdPlayers++;
+        baseRows.push({
+          tournament_id: tournamentId,
+          player_id: playerId,
+          rank: r.rank,
+          wins: r.wins ?? undefined,
+          losses: r.losses ?? undefined,
+          draws: r.draws ?? 0,
+          points_earned: r.points_earned,
+          match_points: r.match_points ?? undefined,
+          omw_percentage: r.omw_percentage ?? undefined,
+        });
+      }
+    } catch (e) {
+      await cleanup((e as Error).message);
+    }
+
+    let insertErr = (await admin.from("tournament_results").insert(baseRows)).error;
+    if (insertErr && /column .* does not exist/i.test(insertErr.message)) {
+      const stripped = baseRows.map(({ match_points: _m, omw_percentage: _o, ...rest }) => rest);
+      insertErr = (await admin.from("tournament_results").insert(stripped)).error;
+    }
+    if (insertErr) await cleanup(insertErr.message);
+
+    await logAction(
+      admin,
+      player,
+      "TOURNAMENT_UPLOADED",
+      "tournament",
+      tournamentId,
+      await tournamentAuditLabel(admin, tournamentId),
+      {
+        uploaded_by: player.id,
+        league_id: data.league_id,
+        published_directly: !!data.league_id,
+        results: baseRows.length,
+      },
+    );
+
+    // Un resultado real no se pierde aunque la fecha estuviera cancelada.
+    let cancelledQuery = (admin as any)
+      .from("schedule_cancellations")
+      .select("id")
+      .eq("store_id", data.store_id)
+      .eq("game_id", data.game_id)
+      .eq("occurrence_date", data.tournament_date);
+    cancelledQuery = data.league_id
+      ? cancelledQuery.eq("league_id", data.league_id)
+      : cancelledQuery.is("league_id", null);
+    const { data: cancelled } = await cancelledQuery.maybeSingle();
+
+    return {
+      ok: true as const,
+      id: tournamentId,
+      inserted: baseRows.length,
+      created_players: createdPlayers,
+      was_cancelled: Boolean(cancelled),
+    };
+  });
+
+// ---------- Stores list (organizer/admin) ----------

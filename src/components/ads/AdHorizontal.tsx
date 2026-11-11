@@ -1,12 +1,16 @@
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { registerSponsorView } from "@/lib/geekarena-ads.functions";
+import { registerSponsorView } from "@/lib/nexus-ads.functions";
 
 export function AdHorizontal({ sponsor }: { sponsor: any }) {
   const registerSponsorViewFn = useServerFn(registerSponsorView);
 
   useEffect(() => {
     if (!sponsor?.id) return;
+    // Una vista por sponsor por sesión de navegador (clave compartida con AdVertical)
+    const key = `ad_viewed_${sponsor.id}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
     registerSponsorViewFn({ data: { sponsor_id: sponsor.id } }).catch(() => {});
   }, [sponsor?.id]);
 
@@ -18,7 +22,7 @@ export function AdHorizontal({ sponsor }: { sponsor: any }) {
         alt={sponsor.name ?? "Patrocinador"}
         width={640}
         height={100}
-        className="w-full h-[100px] object-cover rounded-lg"
+        className="w-full h-auto aspect-[640/100] object-contain rounded-lg"
         loading="lazy"
       />
     </div>

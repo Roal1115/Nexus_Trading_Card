@@ -1,32 +1,45 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  Loader2,
-  AlertTriangle,
-  CheckCircle2,
-  Store as StoreIcon,
-  Gamepad2,
-  Calendar,
-  User,
-  Upload,
-  Users,
-  ChevronRight,
-  FileDown,
-  FileX,
-} from "lucide-react";
-import { FileLink } from "@/components/ui/FileLink";
+import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { SkeletonLine, SkeletonBlock, TournamentRowSkeleton } from "@/components/ui/skeleton-loader";
+import { errMsg, formatDate, formatDateTime } from "@/components/panel/dashboard-format";
+import {
+  TournamentDetailError,
+  TournamentDetailHeader,
+  TournamentDetailSkeleton,
+  TournamentResults,
+  TournamentSummary,
+} from "@/components/panel/tournament-detail";
 import {
   getTournamentDetail,
   approveTournamentForReview,
   rejectTournamentWithReason,
   undoApproveTournament,
-} from "@/lib/geekarena-admin.functions";
+  getLeaguesForTournamentEdit,
+  updateTournamentLeague,
+  publishTournaments,
+  recomputeTournamentRankings,
+  fetchActiveSeason,
+} from "@/lib/nexus-admin.functions";
+import {
+  INELIGIBLE_LABELS,
+  nextScheduledRun,
+  publicationEligibility,
+  scheduledPublicationDate,
+} from "@/lib/tournament-state";
+import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
+
+// La publicación automática del domingo solo se anuncia cuando está activa.
+const SCHEDULED_PUBLISHING_ACTIVE = import.meta.env.VITE_SCHEDULED_PUBLISHING === "true";
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  tcg_manager: "TCG Manager",
+  organizer: "Organizador",
+  player: "Jugador",
+};
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -37,51 +50,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Shield } from "lucide-react";
 
 export const Route = createFileRoute("/admin/tournaments/$id")({
   component: TournamentDetailPage,
 });
 
 type Detail = Awaited<ReturnType<typeof getTournamentDetail>>;
-
-const MESES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-];
-
-function formatDate(d: string) {
-  const dt = new Date(d + "T00:00:00");
-  return `${dt.getDate()} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`;
-}
-
-function formatDateTime(iso: string) {
-  const dt = new Date(iso);
-  return `${dt.getDate()} ${MESES[dt.getMonth()]} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-}
-
-function statusBadge(status: string) {
-  const map: Record<string, { label: string; cls: string }> = {
-    DRAFT: { label: "Borrador", cls: "bg-gray-500/20 text-gray-200 border-gray-400/30" },
-    APPROVED: { label: "Aprobado", cls: "bg-yellow-500/20 text-yellow-200 border-yellow-400/40" },
-    PUBLISHED: { label: "Publicado", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40" },
-  };
-  const v = map[status] ?? { label: status, cls: "bg-white/10 text-white border-white/20" };
-  return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${v.cls}`}>
-      {v.label}
-    </span>
-  );
-}
 
 function useCountdown(targetIso: string | null) {
   const [now, setNow] = useState(Date.now());
@@ -105,21 +87,53 @@ function TournamentDetailPage() {
   const approveFn = useServerFn(approveTournamentForReview);
   const rejectFn = useServerFn(rejectTournamentWithReason);
   const undoFn = useServerFn(undoApproveTournament);
+  const fetchLeagues = useServerFn(getLeaguesForTournamentEdit);
+  const updateLeagueFn = useServerFn(updateTournamentLeague);
 
   const [data, setData] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [acting, setActing] = useState(false);
+  const publishFn = useServerFn(publishTournaments);
+  const recomputeFn = useServerFn(recomputeTournamentRankings);
+  const fetchSeason = useServerFn(fetchActiveSeason);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideJustification, setOverrideJustification] = useState("");
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [activeSeason, setActiveSeason] = useState<{
+    name: string;
+    start_date: string;
+    end_date: string;
+  } | null>(null);
+  useEffect(() => {
+    fetchSeason()
+      .then((s) => setActiveSeason(s))
+      .catch(() => setActiveSeason(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [leagueOptions, setLeagueOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [leagueDraft, setLeagueDraft] = useState<string>("none");
+  const [savingLeague, setSavingLeague] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await fetchDetail({ data: { tournament_id: id } });
       setData(res);
+      setLeagueDraft(res.tournament.league_id ?? "none");
+      const lg = await fetchLeagues({
+        data: { store_id: res.store.id, game_id: res.game.id },
+      }).catch(() => ({ leagues: [] }));
+      setLeagueOptions(lg.leagues);
     } catch (e) {
-      toast.error(String((e as Error).message ?? e));
+      const message = errMsg(e);
+      setLoadError(message);
+      if (data) toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -130,38 +144,36 @@ function TournamentDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const onSaveLeague = async () => {
+    if (!data) return;
+    const nextLeagueId = leagueDraft === "none" ? null : leagueDraft;
+    if (nextLeagueId === (data.tournament.league_id ?? null)) return;
+    setSavingLeague(true);
+    try {
+      await updateLeagueFn({ data: { tournament_id: id, league_id: nextLeagueId } });
+      toast.success("Liga del torneo actualizada");
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setSavingLeague(false);
+    }
+  };
+
   const countdown = useCountdown(data?.tournament.undo_deadline ?? null);
 
-  const criticalCount = useMemo(() => (data?.alerts ?? []).filter((a) => a.level === "CRITICAL").length, [data]);
-  const newPlayersCount = useMemo(() => (data?.results ?? []).filter((r) => r.is_new_player).length, [data]);
+  const criticalCount = useMemo(
+    () => (data?.alerts ?? []).filter((a) => a.level === "CRITICAL").length,
+    [data],
+  );
 
-  if (loading || !data) {
+  if (loadError && !data) {
     return (
-      <div className="space-y-6 pb-32">
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="glass rounded-2xl p-4 space-y-2">
-              <SkeletonLine width="w-20" height="h-3" />
-              <SkeletonLine width="w-32" height="h-5" />
-            </div>
-          ))}
-        </section>
-        <div className="glass rounded-2xl p-5 space-y-3">
-          <SkeletonLine width="w-40" height="h-4" />
-          <SkeletonBlock className="h-10 w-full rounded-xl" />
-        </div>
-        <div className="glass overflow-hidden rounded-2xl">
-          <table className="w-full text-sm">
-            <tbody>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <TournamentRowSkeleton key={i} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <TournamentDetailError backTo="/admin/tournaments" message={loadError} onRetry={refresh} />
     );
   }
+
+  if (loading || !data) return <TournamentDetailSkeleton className="space-y-6 pb-32" />;
 
   const { tournament, store, game, uploaded_by, results, alerts } = data;
   const isDraft = tournament.status === "DRAFT";
@@ -170,6 +182,42 @@ function TournamentDetailPage() {
   const undoExpired = countdown?.expired ?? true;
 
   const canApprove = isDraft && (criticalCount === 0 || acknowledged);
+  const isRejected = isDraft && !!tournament.rejection_reason;
+
+  const stateRow = {
+    status: tournament.status ?? "",
+    rejection_reason: tournament.rejection_reason,
+    undo_deadline: tournament.undo_deadline,
+    tournament_date: tournament.tournament_date,
+  };
+  const seasonRange = activeSeason
+    ? { start_date: activeSeason.start_date, end_date: activeSeason.end_date }
+    : null;
+  const now = new Date();
+  const manualEligibility = publicationEligibility(stateRow, {
+    season: seasonRange,
+    resultCount: results.length,
+    at: now,
+    mode: "manual",
+  });
+  const autoDate = scheduledPublicationDate(stateRow, {
+    season: seasonRange,
+    resultCount: results.length,
+    now,
+  });
+  const blockers = publicationEligibility(stateRow, {
+    season: seasonRange,
+    resultCount: results.length,
+    at: nextScheduledRun(now),
+    mode: "scheduled",
+  }).reasons.filter((r) => r !== "correction_window" && r !== "future_date");
+  const scheduledLabel = !SCHEDULED_PUBLISHING_ACTIVE
+    ? "Pendiente de publicación (la publicación automática aún no está activa)"
+    : autoDate
+      ? `Se publicará automáticamente el domingo ${formatDate(
+          new Date(autoDate.getTime() - 6 * 3600 * 1000).toISOString().slice(0, 10),
+        )} a las 00:00`
+      : `No se publicará automáticamente: ${blockers.map((r) => INELIGIBLE_LABELS[r]).join(", ") || "revisa el torneo"}`;
 
   const onApprove = async () => {
     setActing(true);
@@ -197,6 +245,57 @@ function TournamentDetailPage() {
     }
   };
 
+  const onOverride = async () => {
+    setActing(true);
+    try {
+      await approveFn({
+        data: { tournament_id: id, override: true, justification: overrideJustification.trim() },
+      });
+      toast.success("Torneo aprobado. La anulación del rechazo quedó registrada.");
+      setOverrideOpen(false);
+      setOverrideJustification("");
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const onPublishNow = async () => {
+    setActing(true);
+    try {
+      const res = await publishFn({ data: { tournament_ids: [id] } });
+      if (res.recompute_failures.length || res.achievement_failures.length) {
+        toast.warning("Publicado, pero falló el recálculo del ranking. Usa «Recalcular ranking».");
+      } else {
+        toast.success("Torneo publicado y ranking actualizado");
+      }
+      setPublishOpen(false);
+      await refresh();
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const onRecompute = async () => {
+    setActing(true);
+    try {
+      const res = await recomputeFn({ data: { tournament_id: id } });
+      if (res.recompute_failures.length || res.achievement_failures.length) {
+        toast.error("El recálculo volvió a fallar. Revisa el Registro de actividad.");
+      } else {
+        toast.success("Ranking recalculado");
+      }
+    } catch (e) {
+      toast.error(String((e as Error).message ?? e));
+    } finally {
+      setActing(false);
+    }
+  };
+
   const onConfirmReject = async () => {
     if (rejectReason.trim().length < 20) {
       toast.error("El motivo debe tener al menos 20 caracteres");
@@ -216,67 +315,28 @@ function TournamentDetailPage() {
 
   return (
     <div className="space-y-6 pb-32">
-      {/* Header */}
-      <header className="space-y-3">
-        <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Link to="/admin/tournaments-panel" className="hover:text-primary">
-            Torneos
-          </Link>
-          <ChevronRight size={12} />
-          <span className="text-white">Detalle del Torneo</span>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/admin/tournaments-panel">
-              <ArrowLeft size={14} className="mr-1" /> Regresar
-            </Link>
-          </Button>
-          {statusBadge(tournament.status)}
-        </div>
-      </header>
+      <TournamentDetailHeader
+        backTo="/admin/tournaments"
+        game={game.name}
+        store={store.name}
+        date={tournament.tournament_date}
+        badge={
+          <TournamentStatusBadge
+            status={tournament.status}
+            rejectionReason={tournament.rejection_reason}
+          />
+        }
+      />
 
-      {/* Resumen */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard
-          icon={<StoreIcon size={16} />}
-          title="Tienda"
-          main={store.name}
-          sub={[store.city, store.state].filter(Boolean).join(", ") || "—"}
-        />
-        <SummaryCard icon={<Gamepad2 size={16} />} title="Juego" main={game.name} sub="" />
-        <SummaryCard
-          icon={<Calendar size={16} />}
-          title="Fecha"
-          main={formatDate(tournament.tournament_date)}
-          sub={`Semestre ${tournament.qualifying_semester} ${tournament.qualifying_year}`}
-        />
-        <SummaryCard
-          icon={<User size={16} />}
-          title="Subido por"
-          main={uploaded_by?.geek_tag ?? "—"}
-          sub={uploaded_by?.email ?? ""}
-        />
-        <SummaryCard
-          icon={<Upload size={16} />}
-          title="Fecha de carga"
-          main={tournament.created_at ? formatDateTime(tournament.created_at) : "—"}
-          sub=""
-        />
-        <SummaryCard
-          icon={<Users size={16} />}
-          title="Participantes"
-          main={`${results.length} jugadores`}
-          sub={newPlayersCount > 0 ? `${newPlayersCount} nuevos` : ""}
-        />
-        <div className="glass rounded-2xl p-4">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
-            <Upload size={16} /> Archivo de resultados
-          </div>
-          <div className="mt-2">
-            <FileLink url={(tournament as any).csv_url} label="Descargar archivo" size="md" />
-          </div>
-        </div>
-      </section>
+      <TournamentSummary
+        tournament={tournament}
+        store={store}
+        game={game}
+        results={results}
+        uploader={uploaded_by?.geek_tag ?? "No registrado"}
+        uploaderDetail={uploaded_by ? (ROLE_LABELS[uploaded_by.role] ?? uploaded_by.role) : ""}
+        csvUrl={(tournament as any).csv_url}
+      />
 
       {/* Alertas */}
       <section className="glass rounded-2xl p-5">
@@ -314,61 +374,70 @@ function TournamentDetailPage() {
         )}
         {isDraft && criticalCount > 0 ? (
           <label className="mt-4 flex items-start gap-2 rounded-xl bg-white/5 p-3 text-sm text-gray-200">
-            <Checkbox checked={acknowledged} onCheckedChange={(v) => setAcknowledged(!!v)} className="mt-0.5" />
+            <Checkbox
+              checked={acknowledged}
+              onCheckedChange={(v) => setAcknowledged(!!v)}
+              className="mt-0.5"
+            />
             <span>Revisé las alertas críticas y confirmo que este torneo es válido</span>
           </label>
         ) : null}
       </section>
 
-      {/* Resultados */}
-      <section className="glass overflow-hidden rounded-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-          <h2 className="text-sm font-semibold text-white">Resultados del torneo</h2>
-          <span className="text-xs text-gray-400">
-            Total: {results.length} participantes
-            {newPlayersCount > 0 ? ` · ${newPlayersCount} jugadores nuevos` : ""}
-          </span>
-        </div>
-        <div className="max-h-[480px] overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
-              <tr>
-                <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">Geek Tag</th>
-                <th className="px-4 py-3">Match Pts</th>
-                <th className="px-4 py-3">OMW%</th>
-                <th className="px-4 py-3">Pts Arena</th>
-                <th className="px-4 py-3">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((r) => (
-                <tr key={`${r.rank}-${r.geek_tag}`} className="border-t border-white/5">
-                  <td className="px-4 py-3 font-semibold text-white">{r.rank}</td>
-                  <td className="px-4 py-3 text-gray-200">{r.geek_tag}</td>
-                  <td className="px-4 py-3 text-gray-300">{r.match_points ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-300">
-                    {typeof r.omw_percentage === "number" ? `${r.omw_percentage.toFixed(1)}%` : "—"}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-primary">{r.points_earned}</td>
-                  <td className="px-4 py-3">
-                    {r.is_new_player ? (
-                      <Badge className="bg-orange-500/20 text-orange-200 border-orange-400/40">Nuevo</Badge>
-                    ) : (
-                      <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40">Registrado</Badge>
-                    )}
-                  </td>
-                </tr>
+      {/* Liga interna — editable en cualquier estado, incluyendo Publicado.
+          Cambiarla recalcula el leaderboard nacional si el torneo ya está
+          publicado (ver updateTournamentLeague). */}
+      <section className="glass rounded-2xl p-5">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+          <Shield size={16} className="text-primary" />
+          Liga interna
+        </h2>
+        <p className="mb-3 text-xs text-gray-400">
+          Circuito Nacional cuenta para el leaderboard global; una liga interna es propia de la
+          tienda.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={leagueDraft} onValueChange={setLeagueDraft}>
+            <SelectTrigger className="w-full sm:w-[280px]">
+              <SelectValue placeholder="Circuito Nacional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Circuito Nacional (sin liga)</SelectItem>
+              {leagueOptions.map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.name}
+                </SelectItem>
               ))}
-            </tbody>
-          </table>
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={onSaveLeague}
+            disabled={savingLeague || leagueDraft === (tournament.league_id ?? "none")}
+          >
+            {savingLeague ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+            Guardar liga
+          </Button>
+          <span className="text-xs text-gray-500">
+            Actual: {tournament.league_name ?? "Circuito Nacional"}
+          </span>
         </div>
       </section>
 
-      {/* Acciones — sticky en móvil */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-background/95 p-4 backdrop-blur sm:relative sm:inset-auto sm:border-0 sm:bg-transparent sm:p-0">
-        <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          {isDraft ? (
+      <TournamentResults results={results} />
+
+      {/* Acciones — en móvil queda por encima de la barra de navegación inferior */}
+      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-white/10 bg-background/95 p-4 backdrop-blur sm:relative sm:inset-auto sm:bottom-auto sm:z-auto sm:border-0 sm:bg-transparent sm:p-0">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          {isRejected ? (
+            <>
+              <span className="text-xs text-red-300">
+                Rechazado: {tournament.rejection_reason}
+              </span>
+              <Button onClick={() => setOverrideOpen(true)} disabled={acting}>
+                Aprobar de todos modos
+              </Button>
+            </>
+          ) : isDraft ? (
             <>
               <Button variant="ghost" onClick={() => setRejectOpen(true)} disabled={acting}>
                 Rechazar
@@ -380,40 +449,121 @@ function TournamentDetailPage() {
             </>
           ) : null}
 
-          {isApproved && !undoExpired ? (
+          {isApproved ? (
             <>
-              <span className="text-xs text-yellow-300">Ventana de corrección: {countdown?.text}</span>
-              <Button variant="ghost" onClick={onUndo} disabled={acting}>
-                Deshacer aprobación
+              {!undoExpired ? (
+                <span className="text-xs text-yellow-300">Ventana de corrección: {countdown?.text}</span>
+              ) : null}
+              <span className="text-xs text-gray-300">{scheduledLabel}</span>
+              {!undoExpired ? (
+                <Button variant="ghost" onClick={onUndo} disabled={acting}>
+                  Deshacer aprobación
+                </Button>
+              ) : null}
+              <Button
+                onClick={() => setPublishOpen(true)}
+                disabled={acting || !manualEligibility.eligible}
+                title={
+                  manualEligibility.eligible
+                    ? undefined
+                    : manualEligibility.reasons.map((r) => INELIGIBLE_LABELS[r]).join(", ")
+                }
+              >
+                Publicar ahora
               </Button>
-              <Button disabled>Aprobar torneo ✓</Button>
             </>
           ) : null}
 
-          {isApproved && undoExpired ? (
-            <span className="text-xs text-gray-400">
-              Este torneo está listo para publicarse el próximo domingo a las 8:00 PM
-            </span>
+          {isPublished ? (
+            <>
+              <span className="text-xs text-emerald-300">
+                Publicado el {tournament.published_at ? formatDateTime(tournament.published_at) : "—"}
+              </span>
+              <Button variant="ghost" onClick={onRecompute} disabled={acting}>
+                Recalcular ranking
+              </Button>
+            </>
           ) : null}
 
-          {isPublished ? (
-            <span className="text-xs text-emerald-300">
-              Publicado el {tournament.published_at ? formatDateTime(tournament.published_at) : "—"}
+          {tournament.status === "UNPUBLISHED" ? (
+            <span className="text-xs text-gray-400">
+              Despublicado{tournament.unpublish_reason ? `: ${tournament.unpublish_reason}` : ""}
             </span>
           ) : null}
         </div>
       </div>
+
+      {/* Aprobar de todos modos: autoridad final del admin sobre un rechazo */}
+      <Dialog open={overrideOpen} onOpenChange={setOverrideOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprobar de todos modos</DialogTitle>
+            <DialogDescription>
+              Este torneo fue rechazado: «{tournament.rejection_reason}». Aprobarlo anula el rechazo y
+              queda registrado en el historial con tu justificación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="override-justification" className="text-xs font-medium text-gray-300">
+              Justificación (mínimo 10 caracteres)
+            </label>
+            <Textarea
+              id="override-justification"
+              rows={4}
+              value={overrideJustification}
+              onChange={(e) => setOverrideJustification(e.target.value)}
+              placeholder="Por qué se aprueba a pesar del rechazo…"
+            />
+            <p className="text-xs text-gray-500">{overrideJustification.trim().length}/10</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOverrideOpen(false)} disabled={acting}>
+              Cancelar
+            </Button>
+            <Button onClick={onOverride} disabled={acting || overrideJustification.trim().length < 10}>
+              Aprobar de todos modos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmación de "Publicar ahora" */}
+      <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Publicar ahora</DialogTitle>
+            <DialogDescription>
+              El torneo contará para el ranking de la temporada {activeSeason?.name ?? "activa"} y se
+              recalculará el leaderboard. {!undoExpired ? "Ya no se podrá deshacer la aprobación." : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPublishOpen(false)} disabled={acting}>
+              Cancelar
+            </Button>
+            <Button onClick={onPublishNow} disabled={acting}>
+              {acting ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+              Publicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal rechazo */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rechazar torneo</DialogTitle>
-            <DialogDescription>El organizador será notificado con el motivo del rechazo.</DialogDescription>
+            <DialogDescription>
+              El organizador será notificado con el motivo del rechazo.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-300">Motivo del rechazo (mínimo 20 caracteres)</label>
+            <label htmlFor="reject-reason" className="text-xs font-medium text-gray-300">
+              Motivo del rechazo (mínimo 20 caracteres)
+            </label>
             <Textarea
+              id="reject-reason"
               rows={4}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
@@ -431,18 +581,6 @@ function TournamentDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function SummaryCard({ icon, title, main, sub }: { icon: React.ReactNode; title: string; main: string; sub: string }) {
-  return (
-    <div className="glass rounded-2xl p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
-        {icon} {title}
-      </div>
-      <div className="mt-2 text-lg font-semibold text-white">{main || "—"}</div>
-      {sub ? <div className="text-xs text-gray-400">{sub}</div> : null}
     </div>
   );
 }

@@ -6,7 +6,7 @@
 
 ## 1. Project Overview
 
-- **Name (display):** Geek Arena (`<title>`/`og:title`/`twitter:title` in `__root.tsx` now consistently read "Geek Arena" — the "National Geek" branding mismatch from the old snapshot was fixed 2026-07-03).
+- **Name (display):** Nexus (`<title>`/`og:title`/`twitter:title` in `__root.tsx` now consistently read "Nexus" — the "National Geek" branding mismatch from the old snapshot was fixed 2026-07-03).
 - **Purpose:** National ranking circuit for competitive TCG players (One Piece, Magic: The Gathering, Pokémon TCG) in Mexico. Store organizers upload tournament results, TCG managers moderate per-store submissions, admins run the whole circuit (seasons, publishing, ads, players). A separate "Sessions" feature lets players log round-by-round match history outside of official tournaments (casual play or auto-linked to a tournament).
 - **Tech stack (from `package.json`):**
   - React 19, TypeScript 5.8, Vite 7
@@ -37,7 +37,7 @@
 └── src/
     ├── server.ts, start.ts, router.tsx, routeTree.gen.ts (auto-gen), styles.css
     ├── context/
-    │   └── geekarena-auth.context.tsx (central auth provider, replaces the old useGeekarenaRole hook)
+    │   └── nexus-auth.context.tsx (central auth provider, replaces the old useNexusRole hook)
     ├── routes/                        (~45 files — see §3)
     ├── hooks/
     ├── components/
@@ -49,27 +49,27 @@
     │   ├── upload/            TournamentUploadForm.tsx
     │   └── ui/                shadcn primitives + custom (skeleton-loader, FileLink, NotificationBadge, PasswordStrength)
     ├── integrations/
-    │   ├── geekarena/client.ts        (REAL backend client — actively used, 11 imports)
+    │   ├── nexus/client.ts        (REAL backend client — actively used, 11 imports)
     │   └── (supabase/* scaffold removed 2026-07-03 — see §4)
     └── lib/
         ├── query-cache.ts                        (custom TTL Map cache — new)
-        ├── geekarena-admin.functions.ts           (tournament approval, seasons, admin history)
-        ├── geekarena-admin.server.ts
-        ├── geekarena-ads.functions.ts             (sponsors / ad system)
-        ├── geekarena-appeals.functions.ts         (round appeals)
-        ├── geekarena-auth.functions.ts             (signupPlayer)
-        ├── geekarena-auth-helpers.functions.ts    (profile/email/password/tcg-id updates)
-        ├── geekarena-auth.middleware.ts, geekarena-auth.attacher.ts
-        ├── geekarena-leaderboard.functions.ts
-        ├── geekarena-manager.functions.ts         (TCG manager approval flow)
-        ├── geekarena-organizer.functions.ts       (store organizer flow)
-        ├── geekarena-player.functions.ts          (dashboard, deck identifiers, profile)
-        ├── geekarena-public.functions.ts          (public store directory)
-        ├── geekarena-settings.functions.ts
-        ├── geekarena-setup.functions.ts           (seedTestAccounts, searchStores)
-        ├── geekarena-standalone.functions.ts      (Sessions feature — see §8.5)
-        ├── geekarena-tournament-detail.server.ts
-        └── geekarena-tournament-tracker.functions.ts
+        ├── nexus-admin.functions.ts           (tournament approval, seasons, admin history)
+        ├── nexus-admin.server.ts
+        ├── nexus-ads.functions.ts             (sponsors / ad system)
+        ├── nexus-appeals.functions.ts         (round appeals)
+        ├── nexus-auth.functions.ts             (signupPlayer)
+        ├── nexus-auth-helpers.functions.ts    (profile/email/password/tcg-id updates)
+        ├── nexus-auth.middleware.ts, nexus-auth.attacher.ts
+        ├── nexus-leaderboard.functions.ts
+        ├── nexus-manager.functions.ts         (TCG manager approval flow)
+        ├── nexus-organizer.functions.ts       (store organizer flow)
+        ├── nexus-player.functions.ts          (dashboard, deck identifiers, profile)
+        ├── nexus-public.functions.ts          (public store directory)
+        ├── nexus-settings.functions.ts
+        ├── nexus-setup.functions.ts           (seedTestAccounts, searchStores)
+        ├── nexus-standalone.functions.ts      (Sessions feature — see §8.5)
+        ├── nexus-tournament-detail.server.ts
+        └── nexus-tournament-tracker.functions.ts
 ```
 
 ---
@@ -94,8 +94,8 @@ TCG Manager is a **subset of Admin** scoped to tournament moderation + store net
 | `/dashboard` | Player home: geek tag, global/monthly rank, W-L, points, tournament history, "Mis Sesiones" link | `getMyDashboard`, `getTournamentDetail` |
 | `/players/$playerTag` | Public profile (SEO schema.org), gated by `is_profile_public` | `getPlayerProfile` |
 | `/stores`, `/stores/$slug` | Store directory + detail | `getPublicStoresList`, `getStoreProfile`, `getStoreWeeklySchedule` |
-| `/my-stats`, `/settings` | Player stats and account settings | `geekarena-settings.functions.ts` |
-| `/login`, `/signup`, `/check-inbox`, `/reset-password` | Auth flows | `geekarena-auth.functions.ts` |
+| `/my-stats`, `/settings` | Player stats and account settings | `nexus-settings.functions.ts` |
+| `/login`, `/signup`, `/check-inbox`, `/reset-password` | Auth flows | `nexus-auth.functions.ts` |
 | `/setup` | Test-account seeder | `seedTestAccounts` — ⚠️ still worth confirming this is auth-gated in production |
 
 ### Sessions feature (new, `/sessions`)
@@ -110,9 +110,9 @@ Standalone round-by-round match tracker, separate from official tournament resul
 
 ## 4. Authentication & Role System
 
-- **Auth provider:** `GeekarenaAuthProvider` (`src/context/geekarena-auth.context.tsx`), mounted once in `__root.tsx`. This **replaces** the old per-component `useGeekarenaRole` hook pattern from the previous snapshot — it's now a single context listening to `onAuthStateChange` and exposing `{ session, player, role, loading }` app-wide.
-- **Client:** `src/integrations/geekarena/client.ts`, pointed at `https://tbtyxtigbsljyrwyelqr.supabase.co` with a publishable key, `storageKey: "geekarena.auth"`.
-- **Lovable Cloud scaffold removed (2026-07-03):** `src/integrations/supabase/{client,client.server,auth-middleware,auth-attacher,types}.ts` was deleted. It was fully dead except `auth-attacher.ts`'s `attachSupabaseAuth`, which was wired into `src/start.ts`'s global `functionMiddleware` — on every server-function call it fetched a session from the (unused) Lovable client and attached a bearer header that nothing ever verified (`requireSupabaseAuth` in `auth-middleware.ts` was defined but never registered anywhere). That middleware entry was removed from `start.ts` along with the folder. All real traffic goes through `geekarena/client.ts`; no behavior change from this removal. If the Lovable platform re-generates this folder on a future sync, it can be deleted again the same way.
+- **Auth provider:** `NexusAuthProvider` (`src/context/nexus-auth.context.tsx`), mounted once in `__root.tsx`. This **replaces** the old per-component `useNexusRole` hook pattern from the previous snapshot — it's now a single context listening to `onAuthStateChange` and exposing `{ session, player, role, loading }` app-wide.
+- **Client:** `src/integrations/nexus/client.ts`, pointed at `https://tbtyxtigbsljyrwyelqr.supabase.co` with a publishable key, `storageKey: "nexus.auth"`.
+- **Lovable Cloud scaffold removed (2026-07-03):** `src/integrations/supabase/{client,client.server,auth-middleware,auth-attacher,types}.ts` was deleted. It was fully dead except `auth-attacher.ts`'s `attachSupabaseAuth`, which was wired into `src/start.ts`'s global `functionMiddleware` — on every server-function call it fetched a session from the (unused) Lovable client and attached a bearer header that nothing ever verified (`requireSupabaseAuth` in `auth-middleware.ts` was defined but never registered anywhere). That middleware entry was removed from `start.ts` along with the folder. All real traffic goes through `nexus/client.ts`; no behavior change from this removal. If the Lovable platform re-generates this folder on a future sync, it can be deleted again the same way.
 - **Redirect on login:** `admin → /admin`, `tcg_manager → /tcg-manager`, `organizer → /organizer`, else `/dashboard`, via `homeRouteForRole()`.
 
 ---
@@ -127,7 +127,7 @@ The application code now reads/writes **at least 15 additional tables that do no
 
 Plus columns missing from the migrated `players`/`tournaments` tables but used in code: `players.auth_user_id`, `players.display_name`, `players.role`, `players.is_profile_public`; `tournaments.rejection_reason`, `tournaments.approved_by`.
 
-**Implication:** `supabase/migrations/` cannot be used to stand up a working copy of the live database. All of this schema exists only in the live Supabase project (`tbanxcysqureaafohusj` per `supabase/config.toml`, or the hardcoded `tbtyxtigbsljyrwyelqr` project in `geekarena/client.ts` — confirm these are the same project before relying on either). If you need the real schema, pull it from the live DB (`supabase db pull`) rather than trusting this repo.
+**Implication:** `supabase/migrations/` cannot be used to stand up a working copy of the live database. All of this schema exists only in the live Supabase project (`tbanxcysqureaafohusj` per `supabase/config.toml`, or the hardcoded `tbtyxtigbsljyrwyelqr` project in `nexus/client.ts` — confirm these are the same project before relying on either). If you need the real schema, pull it from the live DB (`supabase db pull`) rather than trusting this repo.
 
 **Fixed since last snapshot:** the `rejectTournament` invalid-enum bug is gone — rejection now writes `status = 'DRAFT'` plus a `rejection_reason` text column instead of the non-existent `'REJECTED'` enum value.
 
@@ -142,13 +142,13 @@ Plus columns missing from the migrated `players`/`tournaments` tables but used i
 ## 7. Business Logic Highlights
 
 ### 7.1 Tournament lifecycle
-`DRAFT → APPROVED → PUBLISHED`, same as before, but moderation now forks by role: TCG managers approve/reject within their assigned games (`geekarena-manager.functions.ts`), admins can additionally unapprove/unpublish and force-recompute snapshots (`geekarena-admin.functions.ts`). Uploads now go through `TournamentUploadForm.tsx` + `read-excel-file`/`xlsx`, not a bare CSV URL — actual result rows are parsed and inserted (this closes the "CSV never parsed" gap from the old snapshot; verify still worth spot-checking given schema drift).
+`DRAFT → APPROVED → PUBLISHED`, same as before, but moderation now forks by role: TCG managers approve/reject within their assigned games (`nexus-manager.functions.ts`), admins can additionally unapprove/unpublish and force-recompute snapshots (`nexus-admin.functions.ts`). Uploads now go through `TournamentUploadForm.tsx` + `read-excel-file`/`xlsx`, not a bare CSV URL — actual result rows are parsed and inserted (this closes the "CSV never parsed" gap from the old snapshot; verify still worth spot-checking given schema drift).
 
 ### 7.2 Seasons
 `createSeason`, `activateSeason`, `deactivateSeason`, `listSeasons` — a `seasons` table (not in the migration) now scopes leaderboard periods; this concept didn't exist in the last snapshot.
 
 ### 7.3 Sponsors / Ads
-Full CRUD (`geekarena-ads.functions.ts`) plus view tracking (`registerAdView`, `ad_metrics` table) and carousel/vertical/horizontal placements. New since last snapshot.
+Full CRUD (`nexus-ads.functions.ts`) plus view tracking (`registerAdView`, `ad_metrics` table) and carousel/vertical/horizontal placements. New since last snapshot.
 
 ### 7.4 Appeals
 Players/organizers can dispute a round result (`createAppeal`, `getStoreAppeals`, `resolveAppeal`) — new since last snapshot, tied to `round_appeals` table.
@@ -169,7 +169,7 @@ Players/organizers can dispute a round result (`createAppeal`, `getStoreAppeals`
 
 ### Resolved 2026-07-03
 
-- ✅ **Branding mismatch** — root `<title>`/`og:title`/`twitter:title` in `__root.tsx` changed from "National Geek" to "Geek Arena"; `author` meta changed from "Geek Collector" to "Geek Arena".
+- ✅ **Branding mismatch** — root `<title>`/`og:title`/`twitter:title` in `__root.tsx` changed from "National Geek" to "Nexus"; `author` meta changed from "Geek Collector" to "Nexus".
 - ✅ **`.env` untracked from git** — was committed despite being gitignored; ran `git rm --cached .env` so it's no longer tracked going forward. Note: this does **not** scrub the credentials already present in git history — rotate the service role key / JWTs in the Supabase dashboard if this repo's history is or becomes shared.
 - ✅ **Lovable Cloud Supabase scaffold deleted** — `src/integrations/supabase/*` removed along with its one live wiring point in `src/start.ts` (see §4). Verified via `tsc --noEmit` and a full `vite build` that nothing else referenced it.
 - ✅ **Unused React Query provider removed** — `QueryClientProvider`/`QueryClient` construction removed from `router.tsx` and `__root.tsx` (root route no longer needs `createRootRouteWithContext`, uses plain `createRootRoute`). The app's only caching layer is now `query-cache.ts` (see §6).
@@ -180,6 +180,6 @@ Players/organizers can dispute a round result (`createAppeal`, `getStoreAppeals`
 
 From `.env` (names only — do not print values):
 
-`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID`, `GEEKARENA_SERVICE_ROLE_KEY` (required server-side for all admin/organizer/manager server functions via `getGeekarenaAdmin()`).
+`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID`, `NEXUS_SERVICE_ROLE_KEY` (required server-side for all admin/organizer/manager server functions via `getNexusAdmin()`).
 
-`supabase/config.toml` → `project_id = "tbanxcysqureaafohusj"`. Confirm this matches the hardcoded project reference in `src/integrations/geekarena/client.ts` (`tbtyxtigbsljyrwyelqr`) — if they differ, one of the two is stale.
+`supabase/config.toml` → `project_id = "tbanxcysqureaafohusj"`. Confirm this matches the hardcoded project reference in `src/integrations/nexus/client.ts` (`tbtyxtigbsljyrwyelqr`) — if they differ, one of the two is stale.

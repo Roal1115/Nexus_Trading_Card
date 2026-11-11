@@ -3,16 +3,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { geekarena, type Game } from "@/integrations/geekarena/client";
-import { signupPlayer } from "@/lib/geekarena-auth.functions";
+import { nexus, type Game } from "@/integrations/nexus/client";
+import { signupPlayer } from "@/lib/nexus-auth.functions";
 import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
+import { TAG_RE, TAG_RULE_MESSAGE } from "@/lib/nexus-tag";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Únete al Circuito — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Únete al Circuito — Nexus" }] }),
   component: SignupPage,
 });
-
-const TAG_RE = /^[A-Za-z0-9_]{3,30}$/;
 
 const MIN_FORM_MS = 8000;
 
@@ -94,15 +93,18 @@ function SignupPage() {
 
   useEffect(() => {
     let mounted = true;
-    geekarena
+    nexus
       .from("games")
       .select("*")
       .eq("is_active", true)
+      // Temporada 1: solo One Piece, ya seleccionado.
+      .eq("slug", "one-piece")
       .order("name")
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) toast.error("No se pudieron cargar los juegos");
         setGames((data ?? []) as Game[]);
+        setSelected(new Set((data ?? []).map((g) => g.id)));
         setGamesLoading(false);
       });
     return () => {
@@ -121,7 +123,7 @@ function SignupPage() {
     }
     setTagStatus("checking");
     const handle = setTimeout(async () => {
-      const { data, error } = await geekarena
+      const { data, error } = await nexus
         .from("players")
         .select("id, auth_user_id")
         .eq("geek_tag", tag)
@@ -164,7 +166,7 @@ function SignupPage() {
     if (email && !/^\S+@\S+\.\S+$/.test(email))
       e.email = "Ingresa un correo electrónico válido";
     if (tag && !TAG_RE.test(tag))
-      e.tag = "3 a 30 caracteres. Solo letras, números y guiones bajos";
+      e.tag = TAG_RULE_MESSAGE;
     if (password && !passwordIsValid(password))
       e.password =
         "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número";
@@ -236,7 +238,7 @@ function SignupPage() {
         },
       });
 
-      const { error: resendErr } = await geekarena.auth.resend({
+      const { error: resendErr } = await nexus.auth.resend({
         type: "signup",
         email: result.email,
         options: { emailRedirectTo: `${window.location.origin}/login` },
@@ -246,7 +248,7 @@ function SignupPage() {
         return;
       }
 
-      await geekarena.auth.signOut();
+      await nexus.auth.signOut();
       navigate({ to: "/check-inbox", search: { email: result.email } });
     } catch (err: any) {
       toast.error(translateAuthError(err?.message ?? ""));
@@ -270,7 +272,7 @@ function SignupPage() {
             Únete al Circuito
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
-            Reclama tu Geek Tag
+            Reclama tu Nexus Tag
           </h1>
         </div>
 
@@ -395,7 +397,7 @@ function SignupPage() {
 }
 
 function Stepper({ step }: { step: Step }) {
-  const labels = ["Identidad", "Tus Juegos", "Datos", "Confirmación"];
+  const labels = ["Identidad", "Tu ID", "Datos", "Confirmación"];
   return (
     <div className="mb-8 flex items-center gap-3">
       {labels.map((label, i) => {
@@ -471,7 +473,7 @@ function Step1(props: {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="jugador@geekarena.gg"
+          placeholder="jugador@nexus.gg"
           className="input-base"
         />
       </Field>
@@ -490,8 +492,8 @@ function Step1(props: {
       </div>
 
       <Field
-        label="Tu Geek Tag"
-        hint="Tu handle único en la Arena. Letras, números y guiones bajos."
+        label="Tu Nexus Tag"
+        hint="Tu nombre único en Nexus. Letras, números y guiones bajos."
         error={step1Errors.tag}
         rightHint={<TagBadge status={tagStatus} />}
       >
@@ -579,10 +581,10 @@ function Step2({
   return (
     <div>
       <h2 className="mb-1 text-xl font-semibold text-white">
-        ¿Qué TCGs juegas?
+        Tu Bandai ID
       </h2>
       <p className="mb-5 text-sm text-gray-400">
-        Selecciona los juegos en los que participas e ingresa tu ID en cada uno.
+        Las tiendas registran tus torneos con este ID. Si no coincide, tus resultados no llegarán a tu perfil. Revísalo bien: no se puede cambiar después.
       </p>
 
       {loading ? (
@@ -748,7 +750,7 @@ function Step4Confirm({
 
       <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
         <Row label="Correo" value={email} />
-        <Row label="Geek Tag" value={tag} />
+        <Row label="Nexus Tag" value={tag} />
         <div>
           <div className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">
             Juegos

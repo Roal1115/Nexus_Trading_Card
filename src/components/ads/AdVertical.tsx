@@ -1,12 +1,16 @@
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { registerSponsorView } from "@/lib/geekarena-ads.functions";
+import { registerSponsorView } from "@/lib/nexus-ads.functions";
 
 export function AdVertical({ sponsor }: { sponsor: any }) {
   const registerSponsorViewFn = useServerFn(registerSponsorView);
 
   useEffect(() => {
     if (!sponsor?.id) return;
+    // Una vista por sponsor por sesión de navegador
+    const key = `ad_viewed_${sponsor.id}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
     registerSponsorViewFn({ data: { sponsor_id: sponsor.id } }).catch(() => {});
   }, [sponsor?.id]);
 

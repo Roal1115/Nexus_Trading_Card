@@ -5,7 +5,7 @@ const ACTIVITY_LAST_SEEN_KEY = "geek_arena_activity_last_seen";
 export function useActivityLastSeen() {
   const get = () =>
     typeof window !== "undefined"
-      ? localStorage.getItem(ACTIVITY_LAST_SEEN_KEY) ?? undefined
+      ? (localStorage.getItem(ACTIVITY_LAST_SEEN_KEY) ?? undefined)
       : undefined;
   const markSeen = () => {
     if (typeof window !== "undefined") {
@@ -37,8 +37,22 @@ export function useBadgeCounts<T extends Record<string, number>>(
   useEffect(() => {
     load();
     const interval = setInterval(load, refreshMs);
-    return () => clearInterval(interval);
+    window.addEventListener(BADGES_CHANGED, load);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(BADGES_CHANGED, load);
+    };
   }, [load, refreshMs]);
 
   return { counts, reload: load };
+}
+
+const BADGES_CHANGED = "nexus:badges-changed";
+
+/**
+ * Pide al sidebar que vuelva a contar ya, sin esperar el siguiente minuto. Para pantallas
+ * que resuelven algo que el badge cuenta (aprobar una tienda, revisar un torneo...).
+ */
+export function refreshBadges() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(BADGES_CHANGED));
 }

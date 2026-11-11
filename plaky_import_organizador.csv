@@ -1,0 +1,10 @@
+Item,Priority,Status,Notes
+Jugadores nuevos (nomenclatura),Baja,Por hacer,Logica ya existe en manager analytics solo falta portar y renombrar
+Puntos por jugador en tienda,Alta,Bloqueado - definir con negocio,Falta definir formula de puntos
+Maximo de jugadores en torneo (liga),Alta,Por hacer,Calculo directo sobre datos existentes
+Jugadores promedio por torneo,Alta,Por hacer,Combinable con maximo de jugadores
+Mapa de ubicacion embebido,Media,Por hacer,Actualmente solo hay link a Google Maps
+Achievements de jugadores,Alta,Bloqueado - definir con negocio,Falta definir catalogo de logros
+Achievements de la tienda,Alta,Bloqueado - definir con negocio,Falta definir catalogo de logros de tienda
+Administrador de la tienda (explicito),Media,Bloqueado - definir con negocio,Falta definir si es distinto del organizer actual
+Managers de la tienda,Media,Bloqueado - definir con negocio,Requiere modelo de permisos y depende de definicion de admin

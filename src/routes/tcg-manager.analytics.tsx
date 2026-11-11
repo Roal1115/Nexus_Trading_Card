@@ -1,17 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-
+import { BlockSelect } from "@/components/ui/block-select";
+import { listZones } from "@/lib/nexus-zones.functions";
 import {
-  Users,
-  Store,
-  MapPin,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Activity,
-} from "lucide-react";
+  PLAYER_STATUS_COLORS,
+  PLAYER_STATUS_LABELS,
+  PLAYER_STATUSES,
+  type PlayerStatus,
+} from "@/lib/player-status";
+
+import { Users, Store, MapPin, TrendingUp, TrendingDown, Activity } from "lucide-react";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 import {
   AreaChart,
@@ -30,14 +30,12 @@ import {
   getManagerGames,
   getManagerAnalyticsOverview,
   getManagerAnalyticsTrend,
-} from "@/lib/geekarena-manager.functions";
+} from "@/lib/nexus-manager.functions";
 
 export const Route = createFileRoute("/tcg-manager/analytics")({
-  head: () => ({ meta: [{ title: "Analytics — TCG Manager" }] }),
+  head: () => ({ meta: [{ title: "Estadísticas — TCG Manager" }] }),
   component: ManagerAnalyticsPage,
 });
-
-const ZONES = ["Zona Monterrey", "Zona Guadalajara", "Zona Centro", "Zona Extendida"];
 
 type Game = { id: string; name: string; slug: string };
 
@@ -61,11 +59,7 @@ type TrendData = {
     new_players: number;
     returning_players: number;
   }>;
-  player_classification: Array<{
-    player_id: string;
-    last_visit: string;
-    total_tournaments: number;
-  }>;
+  status_summary: Record<PlayerStatus, number> | null;
   peak_days: Array<{ date: string; players: number; type: "peak" | "valley" }>;
 };
 
@@ -109,12 +103,12 @@ function ManagerAnalyticsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">TCG Manager</h1>
-        <p className="text-sm text-gray-400">Analytics</p>
-        <p className="text-xs text-gray-500">Salud nacional de tu TCG por zona y tienda.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Red</p>
+        <h1 className="mt-2 text-3xl font-bold text-white">Estadísticas</h1>
+        <p className="mt-1 text-sm text-gray-400">Salud nacional de tu TCG por zona y tienda.</p>
       </div>
 
-      <div className="relative flex gap-0 border-b border-white/10">
+      <div className="relative flex flex-wrap gap-0 border-b border-white/10">
         {games.map((g) => (
           <button
             key={g.id}
@@ -147,11 +141,17 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
   const [zone, setZone] = useState("");
+  const fetchZones = useServerFn(listZones);
+  const [zones, setZones] = useState<string[]>([]);
+  useEffect(() => {
+    fetchZones()
+      .then((res) => setZones(res.zones.map((z) => z.name)))
+      .catch(() => setZones([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [storeId, setStoreId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [atRiskDays, setAtRiskDays] = useState(21);
-  const [inactiveDays, setInactiveDays] = useState(45);
 
   const load = () => {
     setLoading(true);
@@ -179,60 +179,32 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, zone, storeId, dateFrom, dateTo]);
 
-  const categorySummary = useMemo(() => {
-    if (!trendData?.player_classification) return null;
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const summary = { recurrente: 0, ocasional: 0, una_vez: 0, en_riesgo: 0, inactivo: 0 };
-    for (const p of trendData.player_classification) {
-      const lastVisit = new Date(p.last_visit + "T12:00:00");
-      const daysSince = Math.floor((today.getTime() - lastVisit.getTime()) / 86_400_000);
-      if (daysSince > inactiveDays) {
-        summary.inactivo++;
-        continue;
-      }
-      if (daysSince > atRiskDays) {
-        summary.en_riesgo++;
-        continue;
-      }
-      if (p.total_tournaments === 1) summary.una_vez++;
-      else if (p.total_tournaments >= 4) summary.recurrente++;
-      else summary.ocasional++;
-    }
-    return summary;
-  }, [trendData, atRiskDays, inactiveDays]);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
-        <select
-          value={zone}
-          onChange={(e) => {
-            setZone(e.target.value);
-            setStoreId("");
-          }}
-          className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
-        >
-          <option value="">Todas las zonas</option>
-          {ZONES.map((z) => (
-            <option key={z} value={z}>
-              {z}
-            </option>
-          ))}
-        </select>
+        <div className="w-40">
+          <BlockSelect
+            value={zone || null}
+            onChange={(v) => {
+              setZone(v ?? "");
+              setStoreId("");
+            }}
+            placeholder="Todas las zonas"
+            options={zones.map((z) => ({ value: z, label: z }))}
+          />
+        </div>
         {overview && overview.store_ranking.length > 0 && (
-          <select
-            value={storeId}
-            onChange={(e) => setStoreId(e.target.value)}
-            className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
-          >
-            <option value="">Todas las tiendas</option>
-            {overview.store_ranking.map((s) => (
-              <option key={s.store_id} value={s.store_id}>
-                {s.store_name}
-              </option>
-            ))}
-          </select>
+          <div className="w-48">
+            <BlockSelect
+              value={storeId || null}
+              onChange={(v) => setStoreId(v ?? "")}
+              placeholder="Todas las tiendas"
+              options={overview.store_ranking.map((s) => ({
+                value: s.store_id,
+                label: s.store_name,
+              }))}
+            />
+          </div>
         )}
         <input
           type="date"
@@ -322,10 +294,18 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-400">
-                      <th className="pb-2 pr-4">#</th>
-                      <th className="pb-2 pr-4">Tienda</th>
-                      <th className="pb-2 pr-4">Zona</th>
-                      <th className="pb-2 text-right">Jugadores</th>
+                      <th scope="col" className="pb-2 pr-4">
+                        #
+                      </th>
+                      <th scope="col" className="pb-2 pr-4">
+                        Tienda
+                      </th>
+                      <th scope="col" className="pb-2 pr-4">
+                        Zona
+                      </th>
+                      <th scope="col" className="pb-2 text-right">
+                        Jugadores
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -437,7 +417,7 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
           {trendData && trendData.monthly_trend.length > 0 && (
             <div className="glass rounded-2xl p-5">
               <h3 className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-                <Users size={14} className="text-primary" /> Nuevos vs. recurrentes por mes
+                <Users size={14} className="text-primary" /> Nuevos y los que regresan por mes
               </h3>
               <p className="mb-4 text-xs text-gray-500">
                 Jugadores que aparecen por primera vez ese mes vs. jugadores que ya habían
@@ -508,7 +488,7 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
                     }}
                     formatter={(value, name) => [
                       value,
-                      name === "new_players" ? "Jugadores nuevos" : "Jugadores recurrentes",
+                      name === "new_players" ? "Jugadores nuevos" : "Jugadores que regresan",
                     ]}
                   />
                   <Legend
@@ -540,67 +520,34 @@ function GameAnalyticsTab({ gameId }: { gameId: string }) {
             </div>
           )}
 
-          {categorySummary && (
+          {trendData?.status_summary && (
             <div className="glass space-y-4 rounded-2xl p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-                  <Users size={14} /> Clasificación de jugadores
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-primary">
+                  <Users size={14} /> Estado de los jugadores
                 </h3>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
-                  <label className="flex items-center gap-1.5">
-                    En riesgo si no juega en
-                    <input
-                      type="number"
-                      min={1}
-                      value={atRiskDays}
-                      onChange={(e) => setAtRiskDays(Number(e.target.value))}
-                      className="w-14 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-center text-white"
-                    />
-                    días
-                  </label>
-                  <label className="flex items-center gap-1.5">
-                    Inactivo después de
-                    <input
-                      type="number"
-                      min={1}
-                      value={inactiveDays}
-                      onChange={(e) => setInactiveDays(Number(e.target.value))}
-                      className="w-14 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-center text-white"
-                    />
-                    días
-                  </label>
-                </div>
+                <Link
+                  to="/tcg-manager/players"
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Ver jugadores →
+                </Link>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {[
-                  {
-                    label: "Recurrentes",
-                    value: categorySummary.recurrente,
-                    color: "text-emerald-400",
-                  },
-                  {
-                    label: "Ocasionales",
-                    value: categorySummary.ocasional,
-                    color: "text-blue-400",
-                  },
-                  { label: "Una vez", value: categorySummary.una_vez, color: "text-gray-300" },
-                  { label: "En riesgo", value: categorySummary.en_riesgo, color: "text-amber-400" },
-                  { label: "Inactivos", value: categorySummary.inactivo, color: "text-red-400" },
-                ].map((cat) => (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {PLAYER_STATUSES.map((s) => (
                   <div
-                    key={cat.label}
+                    key={s}
                     className="rounded-md border border-white/10 bg-white/[0.02] p-4 text-center"
                   >
-                    <p className={`text-2xl font-bold ${cat.color}`}>{cat.value}</p>
-                    <p className="mt-1 text-xs text-gray-400">{cat.label}</p>
+                    <p className="text-2xl font-bold" style={{ color: PLAYER_STATUS_COLORS[s] }}>
+                      {trendData.status_summary?.[s] ?? 0}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">{PLAYER_STATUS_LABELS[s]}</p>
                   </div>
                 ))}
               </div>
-
-              <p className="flex items-center gap-1.5 text-xs text-gray-500">
-                <AlertTriangle size={12} /> Los umbrales ajustan la vista en tiempo real sin
-                modificar la configuración de cada tienda.
+              <p className="text-xs text-gray-500">
+                Jugadores del periodo, con su estado a fecha de hoy.
               </p>
             </div>
           )}

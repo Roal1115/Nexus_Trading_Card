@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Ligas Internas — Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #060a10;
+      }
+      body {
+        font-family: "Inter", "Segoe UI", sans-serif;
+        color: #fff;
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #060a10;
+      }
+      .bg-glow {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(760px 460px at 78% 18%, rgba(50, 217, 255, 0.16), transparent 60%),
+          radial-gradient(620px 420px at 15% 85%, rgba(217, 70, 239, 0.14), transparent 60%);
+      }
+      .eyebrow {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: #32d9ff;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        backdrop-filter: blur(6px);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 999px;
+        padding: 10px 22px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .pill-cyan {
+        background: rgba(50, 217, 255, 0.14);
+        border: 1px solid rgba(50, 217, 255, 0.35);
+        color: #32d9ff;
+      }
+      .pill-fuchsia {
+        background: rgba(217, 70, 239, 0.14);
+        border: 1px solid rgba(217, 70, 239, 0.35);
+        color: #e879f9;
+      }
+
+      /* ---------- Scene 1: Title ---------- */
+      #s1-title {
+        font-size: 128px;
+        font-weight: 800;
+        line-height: 1.05;
+      }
+      #s1-sub {
+        font-size: 34px;
+        color: #9aa4b2;
+        max-width: 1050px;
+      }
+      .weekday-chip {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        font-size: 22px;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #9aa4b2;
+      }
+      .weekday-chip.on {
+        background: rgba(50, 217, 255, 0.16);
+        border-color: rgba(50, 217, 255, 0.5);
+        color: #32d9ff;
+      }
+
+      /* ---------- Scene 3: upload select ---------- */
+      .select-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 22px 28px;
+        font-size: 30px;
+        font-weight: 600;
+      }
+      .select-box.active {
+        border-color: rgba(217, 70, 239, 0.6);
+        box-shadow: 0 0 0 4px rgba(217, 70, 239, 0.15);
+      }
+      .field-label {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #9aa4b2;
+      }
+
+      /* ---------- Scene 4: leaderboard + calendar ---------- */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 26px;
+      }
+      thead td {
+        font-size: 18px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #9aa4b2;
+        padding: 14px 20px;
+        background: rgba(0, 0, 0, 0.5);
+      }
+      tbody td {
+        padding: 16px 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .rank-gold {
+        color: #fbbf24;
+        font-weight: 800;
+      }
+      .rank-silver {
+        color: #cbd5e1;
+        font-weight: 800;
+      }
+      .rank-bronze {
+        color: #fb923c;
+        font-weight: 800;
+      }
+      .cal-cell {
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+      .cal-national {
+        background: rgba(50, 217, 255, 0.14);
+        border: 1px solid rgba(50, 217, 255, 0.4);
+        color: #a5f3ff;
+      }
+      .cal-league {
+        background: rgba(50, 217, 255, 0.14);
+        border: 1px solid rgba(50, 217, 255, 0.4);
+        border-left: 5px solid #e879f9;
+        color: #a5f3ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-wx9m" id="root" data-composition-id="main" data-start="0" data-duration="22" data-width="1920" data-height="1080">
+      <!-- ===================== SCENE 1 — Título (0–5.5s) ===================== -->
+      <section data-hf-id="hf-8go2" id="scene1" class="clip" data-start="0" data-duration="5.5" data-track-index="1">
+        <div data-hf-id="hf-rc9h" class="bg-glow"></div>
+        <div data-hf-id="hf-7cav" style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 0 160px">
+          <div data-hf-id="hf-kgz8" id="s1-eyebrow" class="eyebrow">Épica 4 · Trading Card Nexus</div>
+          <h1 data-hf-id="hf-qntu" id="s1-title">Ligas<br data-hf-id="hf-x5px">Internas</h1>
+          <p data-hf-id="hf-r8fw" id="s1-sub">
+            Cada tienda corre su propia liga en paralelo al Circuito Nacional — fechas propias,
+            calendario propio, leaderboard propio.
+          </p>
+          <div data-hf-id="hf-zp3q" id="s1-pills" style="display: flex; gap: 16px; margin-top: 8px">
+            <span data-hf-id="hf-k04h" class="pill pill-cyan">Control total del organizador</span>
+            <span data-hf-id="hf-ppbk" class="pill pill-fuchsia">Sin límite de ligas</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SCENE 2 — Crear liga (5.5–11s) ===================== -->
+      <section data-hf-id="hf-tu2j" id="scene2" class="clip" data-start="5.5" data-duration="5.5" data-track-index="1">
+        <div data-hf-id="hf-jrwp" class="bg-glow"></div>
+        <div data-hf-id="hf-hiuz" style="position: absolute; inset: 0; display: flex; align-items: center; gap: 90px; padding: 0 150px">
+          <div data-hf-id="hf-r6fk" style="max-width: 620px">
+            <div data-hf-id="hf-wlzv" class="eyebrow">Paso 1</div>
+            <h2 data-hf-id="hf-iyxf" id="s2-title" style="font-size: 68px; font-weight: 800; margin-top: 18px">
+              El organizador crea su liga
+            </h2>
+            <p data-hf-id="hf-awvv" style="font-size: 30px; color: #9aa4b2; margin-top: 22px; line-height: 1.5">
+              Nombre, fecha de inicio/fin obligatorias y los días de la semana en los que corre —
+              calendario 100% flexible.
+            </p>
+          </div>
+
+          <div data-hf-id="hf-7rwk" id="s2-card" class="glass" style="width: 760px; padding: 44px; display: flex; flex-direction: column; gap: 26px">
+            <div data-hf-id="hf-ri0j" style="font-size: 34px; font-weight: 800">Nueva liga interna</div>
+            <div data-hf-id="hf-yeow">
+              <div data-hf-id="hf-skas" class="field-label">Nombre</div>
+              <div data-hf-id="hf-nips" class="select-box" style="margin-top: 10px; font-size: 28px">Liga de Verano 2026</div>
+            </div>
+            <div data-hf-id="hf-6jxd" style="display: flex; gap: 20px">
+              <div data-hf-id="hf-ytoz" style="flex: 1">
+                <div data-hf-id="hf-cws1" class="field-label">Fecha inicio</div>
+                <div data-hf-id="hf-1ycl" class="select-box" style="margin-top: 10px; font-size: 24px">01 / 09 / 2026</div>
+              </div>
+              <div data-hf-id="hf-gkz7" style="flex: 1">
+                <div data-hf-id="hf-bvcb" class="field-label">Fecha fin</div>
+                <div data-hf-id="hf-chv2" class="select-box" style="margin-top: 10px; font-size: 24px">30 / 11 / 2026</div>
+              </div>
+            </div>
+            <div data-hf-id="hf-y7yw">
+              <div data-hf-id="hf-5h33" class="field-label">Días activos</div>
+              <div data-hf-id="hf-nsjb" id="s2-weekdays" style="display: flex; gap: 12px; margin-top: 12px">
+                <div data-hf-id="hf-pby7" class="weekday-chip">Dom</div>
+                <div data-hf-id="hf-ho7k" class="weekday-chip">Lun</div>
+                <div data-hf-id="hf-49tr" class="weekday-chip">Mar</div>
+                <div data-hf-id="hf-jzdu" class="weekday-chip">Mié</div>
+                <div data-hf-id="hf-g503" class="weekday-chip">Jue</div>
+                <div data-hf-id="hf-1uqz" class="weekday-chip">Vie</div>
+                <div data-hf-id="hf-c5t9" class="weekday-chip">Sáb</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SCENE 3 — Subir torneo (11–16.5s) ===================== -->
+      <section data-hf-id="hf-rz06" id="scene3" class="clip" data-start="11" data-duration="5.5" data-track-index="1">
+        <div data-hf-id="hf-kyts" class="bg-glow"></div>
+        <div data-hf-id="hf-qmpn" style="position: absolute; inset: 0; display: flex; align-items: center; gap: 90px; padding: 0 150px">
+          <div data-hf-id="hf-pqug" style="max-width: 620px">
+            <div data-hf-id="hf-w7ou" class="eyebrow">Paso 2</div>
+            <h2 data-hf-id="hf-q2h7" style="font-size: 68px; font-weight: 800; margin-top: 18px">
+              Cada torneo declara su liga
+            </h2>
+            <p data-hf-id="hf-3x3g" style="font-size: 30px; color: #9aa4b2; margin-top: 22px; line-height: 1.5">
+              Campo obligatorio al subir resultados. Sin liga interna elegida, cae por default al
+              Circuito Nacional — así conviven dos torneos del mismo TCG el mismo día.
+            </p>
+          </div>
+
+          <div data-hf-id="hf-d9qa" class="glass" style="width: 780px; padding: 44px; display: flex; flex-direction: column; gap: 22px">
+            <div data-hf-id="hf-uehh" style="font-size: 34px; font-weight: 800">Subir resultados</div>
+            <div data-hf-id="hf-x11t">
+              <div data-hf-id="hf-b2g1" class="field-label">Tienda · Juego · Fecha</div>
+              <div data-hf-id="hf-ade8" class="select-box" style="margin-top: 10px; font-size: 24px; color: #9aa4b2">
+                Geek Collector · One Piece · Sáb 30 Ago
+              </div>
+            </div>
+            <div data-hf-id="hf-xfcu">
+              <div data-hf-id="hf-725y" class="field-label">Liga a la que pertenece este torneo *</div>
+              <div data-hf-id="hf-5yu0" id="s3-select" class="select-box active" style="margin-top: 10px">
+                <span data-hf-id="hf-0u30" id="s3-select-text">Liga Semestral (Circuito Nacional)</span>
+                <span data-hf-id="hf-hsz0" style="color: #e879f9">▾</span>
+              </div>
+            </div>
+            <div data-hf-id="hf-n4q0" id="s3-hint" style="font-size: 20px; color: #9aa4b2">
+              Puedes subir varios torneos del mismo TCG el mismo día si pertenecen a ligas distintas.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SCENE 4 — Página pública (16.5–22s) ===================== -->
+      <section data-hf-id="hf-1lst" id="scene4" class="clip" data-start="16.5" data-duration="5.5" data-track-index="1">
+        <div data-hf-id="hf-kkir" class="bg-glow"></div>
+        <div data-hf-id="hf-vii8" style="position: absolute; inset: 0; display: flex; flex-direction: column; gap: 30px; padding: 70px 130px">
+          <div data-hf-id="hf-w8fr">
+            <div data-hf-id="hf-vtdt" class="eyebrow">Paso 3</div>
+            <h2 data-hf-id="hf-yyld" style="font-size: 60px; font-weight: 800; margin-top: 14px">
+              Leaderboard y calendario público
+            </h2>
+          </div>
+
+          <div data-hf-id="hf-8l2f" style="display: flex; gap: 40px; flex: 1; min-height: 0">
+            <!-- Leaderboard card -->
+            <div data-hf-id="hf-gmxv" id="s4-board" class="glass" style="flex: 1.2; padding: 34px; display: flex; flex-direction: column; gap: 18px">
+              <div data-hf-id="hf-nhs2" style="display: flex; align-items: center; justify-content: space-between">
+                <span data-hf-id="hf-d1ep" class="pill pill-fuchsia">Liga Interna · Liga de Verano</span>
+                <span data-hf-id="hf-227p" style="font-size: 20px; color: #9aa4b2">42 días restantes</span>
+              </div>
+              <table data-hf-id="hf-2j5r">
+                <thead data-hf-id="hf-zd89">
+                  <tr data-hf-id="hf-p3r7">
+                    <td data-hf-id="hf-y2du">#</td>
+                    <td data-hf-id="hf-404z">Tag</td>
+                    <td data-hf-id="hf-6zww" style="text-align: right">Pts</td>
+                    <td data-hf-id="hf-4mj1" style="text-align: right">Trn</td>
+                    <td data-hf-id="hf-dehs" style="text-align: right">W</td>
+                    <td data-hf-id="hf-x99j" style="text-align: right">OMW%</td>
+                  </tr>
+                </thead>
+                <tbody data-hf-id="hf-bsvf">
+                  <tr data-hf-id="hf-ddj7">
+                    <td data-hf-id="hf-noig" class="rank-gold">🏆</td>
+                    <td data-hf-id="hf-wso8" style="font-weight: 700">DragonSlayer_MX</td>
+                    <td data-hf-id="hf-9llv" style="text-align: right; font-weight: 700">312</td>
+                    <td data-hf-id="hf-uznp" style="text-align: right; color: #9aa4b2">6</td>
+                    <td data-hf-id="hf-w6ks" style="text-align: right; color: #9aa4b2">5</td>
+                    <td data-hf-id="hf-lxn2" style="text-align: right; color: #9aa4b2">58.3%</td>
+                  </tr>
+                  <tr data-hf-id="hf-cz86">
+                    <td data-hf-id="hf-qk1d" class="rank-silver">🥈</td>
+                    <td data-hf-id="hf-yjhy" style="font-weight: 700">Aeris_TCG</td>
+                    <td data-hf-id="hf-qpgh" style="text-align: right; font-weight: 700">277</td>
+                    <td data-hf-id="hf-zazd" style="text-align: right; color: #9aa4b2">6</td>
+                    <td data-hf-id="hf-wz6u" style="text-align: right; color: #9aa4b2">3</td>
+                    <td data-hf-id="hf-ilo1" style="text-align: right; color: #9aa4b2">51.1%</td>
+                  </tr>
+                  <tr data-hf-id="hf-ckx5">
+                    <td data-hf-id="hf-rz2d" class="rank-bronze">🥉</td>
+                    <td data-hf-id="hf-1m5n" style="font-weight: 700">Kaelen</td>
+                    <td data-hf-id="hf-oea8" style="text-align: right; font-weight: 700">245</td>
+                    <td data-hf-id="hf-91lw" style="text-align: right; color: #9aa4b2">5</td>
+                    <td data-hf-id="hf-wkvt" style="text-align: right; color: #9aa4b2">2</td>
+                    <td data-hf-id="hf-ra24" style="text-align: right; color: #9aa4b2">47.9%</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div data-hf-id="hf-6no7" style="margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08)">
+                <div data-hf-id="hf-9t8i" class="field-label">🎁 Premios y recompensas</div>
+                <div data-hf-id="hf-kt3t" style="font-size: 22px; color: #d1d5db; margin-top: 10px">
+                  1er lugar: caja de sobres + playmat exclusivo
+                </div>
+              </div>
+            </div>
+
+            <!-- Calendar card -->
+            <div data-hf-id="hf-ec5l" id="s4-cal" class="glass" style="flex: 1; padding: 34px; display: flex; flex-direction: column; gap: 16px">
+              <div data-hf-id="hf-1ocy" style="font-size: 24px; font-weight: 800">Calendario de torneos</div>
+              <div data-hf-id="hf-ltxd" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px">
+                <div data-hf-id="hf-gs74" class="cal-cell cal-national">One Piece<br data-hf-id="hf-rsrt">9:00 PM</div>
+                <div data-hf-id="hf-6fiz" class="cal-cell cal-league">One Piece<br data-hf-id="hf-szow">Liga Interna<br data-hf-id="hf-sldv">3:00 PM</div>
+                <div data-hf-id="hf-8vis" class="cal-cell cal-national">Pokémon<br data-hf-id="hf-qluq">6:00 PM</div>
+              </div>
+              <div data-hf-id="hf-gghj" style="margin-top: auto; display: flex; gap: 14px; align-items: center; font-size: 18px; color: #9aa4b2">
+                <span data-hf-id="hf-zxnb" style="display:inline-flex; align-items:center; gap:8px"><span data-hf-id="hf-y0pj" style="width:14px;height:14px;border-radius:4px;background:rgba(50,217,255,0.4);display:inline-block"></span>Circuito Nacional</span>
+                <span data-hf-id="hf-sdvd" style="display:inline-flex; align-items:center; gap:8px"><span data-hf-id="hf-t63d" style="width:14px;height:4px;border-radius:2px;background:#e879f9;display:inline-block"></span>Acento de Liga Interna</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene 1
+      tl.from("#s1-eyebrow", { opacity: 0, y: -20, duration: 0.5, ease: "power2.out" }, 0.15)
+        .from("#s1-title", { opacity: 0, y: 40, duration: 0.7, ease: "power3.out" }, 0.3)
+        .from("#s1-sub", { opacity: 0, y: 24, duration: 0.6, ease: "power2.out" }, 0.75)
+        .from("#s1-pills > *", { opacity: 0, y: 16, duration: 0.5, stagger: 0.12, ease: "power2.out" }, 1.05);
+
+      // Scene 2
+      tl.from("#scene2 .eyebrow", { opacity: 0, y: -16, duration: 0.4, ease: "power2.out" }, 5.75)
+        .from("#s2-title", { opacity: 0, y: 30, duration: 0.55, ease: "power3.out" }, 5.9)
+        .from("#s2-card", { opacity: 0, x: 60, duration: 0.6, ease: "power3.out" }, 6.0)
+        .from("#s2-weekdays .weekday-chip", { opacity: 0, y: 12, duration: 0.35, stagger: 0.06, ease: "power2.out" }, 6.6)
+        .to(
+          [
+            "#s2-weekdays .weekday-chip:nth-child(1)",
+            "#s2-weekdays .weekday-chip:nth-child(6)",
+            "#s2-weekdays .weekday-chip:nth-child(7)",
+          ],
+          {
+            backgroundColor: "rgba(50, 217, 255, 0.16)",
+            borderColor: "rgba(50, 217, 255, 0.5)",
+            color: "#32d9ff",
+            duration: 0.35,
+            stagger: 0.12,
+            ease: "power2.out",
+          },
+          7.4,
+        );
+
+      // Scene 3
+      tl.from("#scene3 .eyebrow", { opacity: 0, y: -16, duration: 0.4, ease: "power2.out" }, 11.25)
+        .from("#scene3 h2", { opacity: 0, y: 30, duration: 0.55, ease: "power3.out" }, 11.4)
+        .from("#scene3 .glass", { opacity: 0, x: 60, duration: 0.6, ease: "power3.out" }, 11.5)
+        .from("#s3-hint", { opacity: 0, duration: 0.4 }, 12.3)
+        .to("#s3-select", { scale: 1.03, duration: 0.25, ease: "power1.inOut" }, 13.6)
+        .to("#s3-select", { scale: 1, duration: 0.25, ease: "power1.inOut" }, 13.85)
+        .call(() => {
+          document.getElementById("s3-select-text").textContent = "Liga de Verano 2026";
+        }, null, 14.1);
+
+      // Scene 4
+      tl.from("#scene4 .eyebrow", { opacity: 0, y: -16, duration: 0.4, ease: "power2.out" }, 16.75)
+        .from("#scene4 h2", { opacity: 0, y: 30, duration: 0.55, ease: "power3.out" }, 16.9)
+        .from("#s4-board", { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, 17.1)
+        .from("#s4-cal", { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, 17.25)
+        .from("#s4-board tbody tr", { opacity: 0, x: -20, duration: 0.4, stagger: 0.12, ease: "power2.out" }, 17.6)
+        .from(".cal-cell", { opacity: 0, y: 14, duration: 0.4, stagger: 0.1, ease: "power2.out" }, 18.3);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -2,11 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { geekarena } from "@/integrations/geekarena/client";
+import { nexus } from "@/integrations/nexus/client";
 import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
 
 export const Route = createFileRoute("/reset-password")({
-  head: () => ({ meta: [{ title: "Restablecer contraseña — Geek Arena" }] }),
+  head: () => ({ meta: [{ title: "Restablecer contraseña — Nexus" }] }),
   component: ResetPasswordPage,
 });
 
@@ -36,12 +36,12 @@ function ResetPasswordPage() {
   useEffect(() => {
     // Supabase establece la sesión de recuperación automáticamente al detectar
     // el token en la URL (hash o query param) cuando el cliente carga.
-    geekarena.auth.getSession().then(({ data }) => {
+    nexus.auth.getSession().then(({ data }) => {
       setValidSession(!!data.session);
       setChecking(false);
     });
 
-    const { data: listener } = geekarena.auth.onAuthStateChange((event, session) => {
+    const { data: listener } = nexus.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
         setValidSession(true);
         setChecking(false);
@@ -65,7 +65,7 @@ function ResetPasswordPage() {
     }
 
     setLoading(true);
-    const { error } = await geekarena.auth.updateUser({ password });
+    const { error } = await nexus.auth.updateUser({ password });
     setLoading(false);
 
     if (error) {
@@ -82,7 +82,7 @@ function ResetPasswordPage() {
       <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
         <div className="mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Geek Arena
+            Nexus
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">Nueva contraseña</h1>
           <p className="mt-1 text-sm text-gray-400">
