@@ -9,6 +9,7 @@ import { setEquippedTitle, setEquippedBadge, setEquippedNameplate } from "@/lib/
 import { getRewardKinds, isNameplateReward } from "@/lib/achievement-rewards";
 import { NAMEPLATE_BANNER_STYLES, DEFAULT_NAMEPLATE_BANNER } from "@/lib/nameplate-styles";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { InlineError } from "@/components/stores/store-ui";
 
 export const Route = createFileRoute("/players/$playerTag_/achievements")({
   loader: async ({ context, params }) => {
@@ -258,9 +259,9 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
 
   return (
     <div
-      className={`group flex items-start gap-3 rounded-xl border border-l-4 p-3 transition-all duration-150 ease-out active:scale-[0.98] sm:hover:-translate-y-0.5 sm:hover:scale-[1.015] ${
+      className={`group flex items-start gap-3 rounded-xl border p-3 transition-all duration-150 ease-out active:scale-[0.98] sm:hover:-translate-y-0.5 sm:hover:scale-[1.015] ${
         item.unlocked
-          ? `border-white/10 bg-white/5 ${style.accent} ${style.glow}`
+          ? `border-white/10 bg-white/5 ${style.glow}`
           : secretLocked
             ? "border-dashed border-white/10 border-l-white/15 bg-black/20 sm:hover:border-white/25 sm:hover:bg-black/30"
             : `border-white/5 border-l-white/10 bg-black/20 grayscale sm:hover:grayscale-0 sm:hover:border-white/15 ${style.glow}`
@@ -517,6 +518,14 @@ function AchievementsHubPage() {
           <SkeletonBlock className="h-40 w-full rounded-2xl" />
           <SkeletonBlock className="h-40 w-full rounded-2xl" />
         </div>
+      </main>
+    );
+  }
+
+  if (query.isError && !data) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-16">
+        <InlineError onRetry={() => query.refetch()}>No pudimos cargar los logros.</InlineError>
       </main>
     );
   }
