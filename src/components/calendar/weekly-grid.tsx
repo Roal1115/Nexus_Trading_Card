@@ -119,7 +119,7 @@ export function CalendarEntry({
       )}
       {!compact && entry.is_scheduled && (
         <p className="text-xs text-foreground-secondary truncate">
-          Horario habitual · Por confirmar
+          Por confirmar
         </p>
       )}
       {!compact && entry.league_name && (
