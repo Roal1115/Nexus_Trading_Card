@@ -40,3 +40,6 @@ backups/
 # Generated locally
 .playwright-mcp/
 supabase/.temp/
+
+# impeccable: el launcher descarga su binario la primera vez; no se versiona (20 MB por copia)
+**/impeccable/scripts/bin/
