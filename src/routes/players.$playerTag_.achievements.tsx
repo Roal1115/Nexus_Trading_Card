@@ -37,42 +37,36 @@ export const Route = createFileRoute("/players/$playerTag_/achievements")({
 // de un vistazo en vez de vivir solo en una etiqueta de 10px.
 const TIER_STYLES: Record<
   string,
-  { ring: string; pill: string; accent: string; glow: string }
+  { ring: string; pill: string; glow: string }
 > = {
   Bronze: {
     ring: "border-amber-700/40 bg-amber-900/10 text-amber-500",
     pill: "border-amber-700/40 bg-amber-900/20 text-amber-500",
-    accent: "border-l-amber-600",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(180,83,9,0.6)] sm:hover:border-amber-600/60",
   },
   Silver: {
     ring: "border-gray-400/40 bg-gray-400/10 text-gray-300",
     pill: "border-gray-400/40 bg-gray-400/10 text-gray-300",
-    accent: "border-l-gray-400",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(156,163,175,0.6)] sm:hover:border-gray-400/60",
   },
   Gold: {
     ring: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400",
     pill: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400",
-    accent: "border-l-yellow-500",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(234,179,8,0.6)] sm:hover:border-yellow-500/60",
   },
   Platinum: {
     ring: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
     pill: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
-    accent: "border-l-cyan-400",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(34,211,238,0.6)] sm:hover:border-cyan-400/60",
   },
   Legacy: {
     ring: "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300",
     pill: "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300",
-    accent: "border-l-fuchsia-500",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(217,70,239,0.6)] sm:hover:border-fuchsia-500/60",
   },
   "Road Bonus": {
     ring: "border-primary/40 bg-primary/10 text-primary",
     pill: "border-primary/40 bg-primary/10 text-primary",
-    accent: "border-l-primary",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(232,106,34,0.6)] sm:hover:border-primary/60",
   },
 };
