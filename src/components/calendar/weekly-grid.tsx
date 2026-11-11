@@ -204,7 +204,7 @@ export function WeeklyGrid({
                   className={`p-2 text-center border-l border-white/10 ${isToday ? "bg-primary/10" : ""}`}
                   style={{ minWidth: 0 }}
                 >
-                  <div className="text-[10px] uppercase text-foreground-secondary">
+                  <div className="text-xs uppercase text-foreground-secondary">
                     {DAY_NAMES[d.getDay()]}
                   </div>
                   <div
@@ -223,7 +223,7 @@ export function WeeklyGrid({
               style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
               className="border-b border-white/5"
             >
-              <div className="p-2 text-[10px] text-foreground-subtle text-right border-r border-white/5 flex items-start justify-end pt-2">
+              <div className="p-2 text-xs text-foreground-subtle text-right border-r border-white/5 flex items-start justify-end pt-2">
                 {hour}:00
               </div>
               {[0, 1, 2, 3, 4, 5, 6].map((colIdx) => {
