@@ -363,6 +363,7 @@ function HeroLeaderPicker({
 }) {
   const fetchLeaders = useServerFn(getDeckIdentifiers);
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"art" | "search">(value ? "art" : "search");
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<DeckIdentifier[]>([]);
   const [searching, setSearching] = useState(false);
@@ -370,11 +371,11 @@ function HeroLeaderPicker({
   useEffect(() => {
     if (!open) return;
     setSearching(true);
-    const trimmed = search.trim();
+    const trimmed = mode === "search" ? search.trim() : "";
     const t = setTimeout(() => {
       const query = trimmed
         ? { game_id: gameId, search: trimmed, basic_only: true }
-        : value?.card_set_id
+        : mode === "art" && value?.card_set_id
           ? { game_id: gameId, card_set_id: value.card_set_id }
           : { game_id: gameId, basic_only: true };
       fetchLeaders({ data: query })
@@ -383,10 +384,11 @@ function HeroLeaderPicker({
         .finally(() => setSearching(false));
     }, 200);
     return () => clearTimeout(t);
-  }, [open, search, gameId, value?.card_set_id, fetchLeaders]);
+  }, [open, mode, search, gameId, value?.card_set_id, fetchLeaders]);
 
   const close = () => {
     setOpen(false);
+    setMode(value ? "art" : "search");
     setSearch("");
   };
 
@@ -396,7 +398,7 @@ function HeroLeaderPicker({
         type="button"
         onClick={() => setOpen(true)}
         title="Cambiar leader"
-        className="relative flex-shrink-0 block"
+        className="relative block flex-shrink-0"
       >
         {value?.card_image ? (
           <img
@@ -428,82 +430,168 @@ function HeroLeaderPicker({
             />
             <motion.div
               key="sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="leader-picker-title"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 320 }}
-              className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-white/10 bg-[#0f1117] sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[75vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border"
+              className="fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-2xl border border-border bg-popover shadow-2xl sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[80vh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
             >
-              <div className="flex flex-shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-                <h2 className="text-sm font-bold text-white">Cambiar leader</h2>
+              <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-4 py-2">
+                <h2 id="leader-picker-title" className="text-base font-semibold text-foreground">
+                  Líder de la partida
+                </h2>
                 <button
                   type="button"
                   onClick={close}
-                  className="rounded-md p-1.5 text-gray-500 transition hover:bg-white/5 hover:text-white"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg text-foreground-secondary transition hover:bg-secondary hover:text-foreground"
                   aria-label="Cerrar"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
 
-              <div className="flex-shrink-0 p-3">
-                <div className="relative">
-                  <Search
-                    size={14}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                  />
-                  <input
-                    autoFocus
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar leader o ID (ej. OP10-010)…"
-                    className="w-full rounded-lg border border-white/10 bg-white/5 py-3 pl-9 pr-3 text-sm text-white outline-none focus:border-primary"
-                  />
-                </div>
-                {!search.trim() && value && (
-                  <p className="mt-3 px-0.5 text-xs uppercase tracking-widest text-gray-600">
-                    Otras versiones de esta carta
-                  </p>
-                )}
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                {searching ? (
-                  <p className="py-10 text-center text-xs text-gray-500">Buscando…</p>
-                ) : results.length === 0 ? (
-                  <p className="py-10 text-center text-xs text-gray-500">Sin resultados.</p>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
-                    {results.map((opt) => (
+              {value && (
+                <div className="flex-shrink-0 px-4 pt-4">
+                  <div
+                    role="tablist"
+                    aria-label="Qué quieres cambiar"
+                    className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1"
+                  >
+                    {(["art", "search"] as const).map((tab) => (
                       <button
-                        key={opt.id}
+                        key={tab}
                         type="button"
-                        onClick={() => {
-                          onChange(opt);
-                          close();
-                        }}
-                        className={`flex flex-col items-center gap-1.5 rounded-lg border p-2 text-center transition active:scale-95 ${
-                          opt.id === value?.id
-                            ? "border-primary bg-primary/10"
-                            : "border-white/10 hover:border-white/30"
+                        role="tab"
+                        aria-selected={mode === tab}
+                        onClick={() => setMode(tab)}
+                        className={`min-h-10 rounded-md px-3 text-sm font-medium transition ${
+                          mode === tab
+                            ? "bg-card text-foreground"
+                            : "text-foreground-secondary hover:text-foreground"
                         }`}
                       >
-                        {opt.card_image ? (
-                          <img
-                            src={opt.card_image}
-                            alt={opt.base_name}
-                            className="h-20 w-14 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-20 w-14 items-center justify-center rounded-md bg-black/30">
-                            <ShieldQuestion size={16} className="text-gray-600" />
-                          </div>
-                        )}
-                        <span className="line-clamp-2 text-xs leading-tight text-gray-300">
-                          {cleanLeaderName(opt.base_name)}
-                        </span>
+                        {tab === "art" ? "Elegir arte" : "Otro líder"}
                       </button>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                {mode === "art" && value ? (
+                  <>
+                    <div className="flex items-center gap-4 border-b border-border pb-4">
+                      {value.card_image ? (
+                        <img
+                          src={value.card_image}
+                          alt={value.base_name}
+                          className="h-32 w-[92px] flex-shrink-0 rounded-lg border border-primary object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-32 w-[92px] flex-shrink-0 items-center justify-center rounded-lg border border-border bg-secondary">
+                          <ShieldQuestion size={24} className="text-foreground-subtle" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {cleanLeaderName(value.base_name)}
+                        </h3>
+                        <p className="mt-1 font-mono text-xs text-foreground-secondary">
+                          {value.card_image_id ?? value.card_set_id}
+                        </p>
+                        <p className="mt-2 text-xs text-foreground-subtle">Arte seleccionado</p>
+                      </div>
+                    </div>
+                    <div className="mb-3 mt-4 flex items-baseline justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-foreground">Versiones disponibles</h3>
+                      {!searching && results.length > 0 && (
+                        <span className="text-xs text-foreground-subtle">
+                          {results.length} {results.length === 1 ? "versión" : "versiones"}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="mb-4">
+                    <label htmlFor="leader-search" className="mb-2 block text-sm font-medium text-foreground">
+                      Buscar otro líder
+                    </label>
+                    <div className="relative">
+                      <Search
+                        size={18}
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
+                      />
+                      <input
+                        id="leader-search"
+                        autoFocus
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Nombre o ID (ej. OP10-010)"
+                        className="h-11 w-full rounded-lg border border-input bg-transparent pl-10 pr-3 text-base text-foreground outline-none placeholder:text-foreground-subtle focus:border-primary sm:h-9 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {searching ? (
+                  <p className="py-10 text-center text-sm text-foreground-secondary" role="status">
+                    {mode === "art" ? "Buscando versiones…" : "Buscando líderes…"}
+                  </p>
+                ) : results.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-foreground-secondary">
+                    {mode === "art" ? "No hay otras versiones disponibles." : "Sin resultados."}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                    {results.map((opt) => {
+                      const selected = opt.id === value?.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => {
+                            onChange(opt);
+                            close();
+                          }}
+                          className="group min-w-0 text-left"
+                        >
+                          <span
+                            className={`relative block aspect-[5/7] overflow-hidden rounded-lg border bg-secondary transition ${
+                              selected
+                                ? "border-primary ring-1 ring-primary"
+                                : "border-border group-hover:border-foreground-subtle"
+                            }`}
+                          >
+                            {opt.card_image ? (
+                              <img
+                                src={opt.card_image}
+                                alt={opt.base_name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span className="flex h-full items-center justify-center">
+                                <ShieldQuestion size={24} className="text-foreground-subtle" />
+                              </span>
+                            )}
+                            {selected && (
+                              <span className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                <Check size={16} aria-label="Seleccionado" />
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-2 line-clamp-2 block text-xs font-medium leading-snug text-foreground">
+                            {cleanLeaderName(opt.base_name)}
+                          </span>
+                          <span className="mt-0.5 block truncate font-mono text-xs text-foreground-subtle">
+                            {opt.card_image_id ?? opt.card_set_id}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
