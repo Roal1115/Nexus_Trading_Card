@@ -43,6 +43,7 @@ import {
   RoundSaveButton,
   type DeckIdentifier,
 } from "@/components/tournament-tracker/round-ui";
+import { InlineError } from "@/components/stores/store-ui";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -154,7 +155,7 @@ function WinRateTooltip({ active, payload }: any) {
 function StatusBadge({ status }: { status: string }) {
   if (status === "unlinked") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-400">
         <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
         Pendiente
       </span>
@@ -162,14 +163,14 @@ function StatusBadge({ status }: { status: string }) {
   }
   if (status === "matched") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-400">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
         <CheckCircle2 size={12} />
         Vinculada
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-gray-400">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-gray-400">
       <Swords size={12} />
       Casual
     </span>
@@ -231,7 +232,7 @@ function LeaderArtSwitcher({
           >
             <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
               {variants.length === 0 ? (
-                <p className="text-[10px] text-gray-500">Buscando artes…</p>
+                <p className="text-xs text-gray-500">Buscando artes…</p>
               ) : (
                 variants.map((v) => (
                   <button
@@ -460,7 +461,7 @@ function HeroLeaderPicker({
                   />
                 </div>
                 {!search.trim() && value && (
-                  <p className="mt-3 px-0.5 text-[10px] uppercase tracking-widest text-gray-600">
+                  <p className="mt-3 px-0.5 text-xs uppercase tracking-widest text-gray-600">
                     Otras versiones de esta carta
                   </p>
                 )}
@@ -498,7 +499,7 @@ function HeroLeaderPicker({
                             <ShieldQuestion size={16} className="text-gray-600" />
                           </div>
                         )}
-                        <span className="line-clamp-2 text-[10px] leading-tight text-gray-300">
+                        <span className="line-clamp-2 text-xs leading-tight text-gray-300">
                           {cleanLeaderName(opt.base_name)}
                         </span>
                       </button>
@@ -768,7 +769,7 @@ function StandaloneRoundTracker({
                   </motion.div>
                 )}
               </AnimatePresence>
-              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
                 <span>{session?.game_name}</span>
                 {!header.editingDetails && session?.session_date && (
                   <>
@@ -797,10 +798,10 @@ function StandaloneRoundTracker({
             {session?.status !== "matched" && (
               <button
                 onClick={() => header.setDeleteConfirming(true)}
-                className="rounded-md p-1.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
+                className="rounded-md p-2.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
                 aria-label="Eliminar partida"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
               </button>
             )}
           </div>
@@ -859,17 +860,17 @@ function StandaloneRoundTracker({
                   transition={{ duration: 0.15 }}
                   className="flex items-center gap-1.5"
                 >
-                  <span className="text-[11px] text-gray-300">¿Deshacer?</span>
+                  <span className="text-xs text-gray-300">¿Deshacer?</span>
                   <button
                     onClick={header.onUndo}
                     disabled={header.undoing}
-                    className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-50"
+                    className="rounded-md bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-50"
                   >
                     {header.undoing ? "…" : "Sí"}
                   </button>
                   <button
                     onClick={() => header.setUndoConfirming(false)}
-                    className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-gray-300"
+                    className="rounded-md border border-white/10 px-3 py-2 text-xs text-gray-300"
                   >
                     No
                   </button>
@@ -914,7 +915,7 @@ function StandaloneRoundTracker({
           <HeroLeaderPicker gameId={gameId} value={heroLeader} onChange={handleHeroLeaderChange} />
 
           <div className="min-w-0 flex-1 pb-1">
-            <p className="text-[10px] uppercase tracking-widest text-gray-600">Récord</p>
+            <p className="text-xs uppercase tracking-widest text-gray-600">Récord</p>
             <p className="font-mono text-lg font-bold text-white">
               <span className="text-emerald-400">{wins}V</span>
               <span className="text-gray-600"> · </span>
@@ -924,7 +925,7 @@ function StandaloneRoundTracker({
 
           {chartData.length >= 2 && (
             <div className="flex-shrink-0 pb-1 text-right">
-              <p className="text-[10px] uppercase tracking-widest text-gray-600">Win rate</p>
+              <p className="text-xs uppercase tracking-widest text-gray-600">Win rate</p>
               <p className="font-mono text-2xl font-bold text-white">{winRate}%</p>
             </div>
           )}
@@ -938,7 +939,7 @@ function StandaloneRoundTracker({
             transition={{ duration: 0.3 }}
             className="mt-3"
           >
-            <div className="mb-2 flex items-center justify-end gap-3 text-[10px] text-gray-500">
+            <div className="mb-2 flex items-center justify-end gap-3 text-xs text-gray-500">
               <span className="flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" /> Victoria
               </span>
@@ -958,7 +959,7 @@ function StandaloneRoundTracker({
                   dataKey="round"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: "#6b7280", fontSize: 10 }}
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
                   tickFormatter={(v) => `R${v}`}
                 />
                 <YAxis hide domain={[0, 100]} />
@@ -985,15 +986,15 @@ function StandaloneRoundTracker({
       {/* Table header */}
       {rounds.length > 0 && (
         <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
-          <span className="text-[10px] uppercase tracking-widest text-gray-600">Round</span>
-          <span className="text-[10px] uppercase tracking-widest text-gray-600">Deck</span>
-          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+          <span className="text-xs uppercase tracking-widest text-gray-600">Round</span>
+          <span className="text-xs uppercase tracking-widest text-gray-600">Deck</span>
+          <span className="text-center text-xs uppercase tracking-widest text-gray-600">
             Dado
           </span>
-          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+          <span className="text-center text-xs uppercase tracking-widest text-gray-600">
             Turno
           </span>
-          <span className="text-center text-[10px] uppercase tracking-widest text-gray-600">
+          <span className="text-center text-xs uppercase tracking-widest text-gray-600">
             Res
           </span>
         </div>
@@ -1037,7 +1038,7 @@ function StandaloneRoundTracker({
           type="button"
           onClick={addRound}
           aria-label="Agregar Ronda"
-          className="fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 transition hover:brightness-110 active:scale-95 sm:hidden"
+          className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 transition hover:brightness-110 active:scale-95 sm:hidden"
         >
           <Plus size={24} />
         </button>
@@ -1204,7 +1205,7 @@ function DisambiguationPicker({
                 ) : (
                   <div className="space-y-3">
                     {homeZone && homeZoneCandidates.length > 0 && (
-                      <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                      <p className="text-xs uppercase tracking-widest text-gray-500">
                         Tu zona · {homeZone}
                       </p>
                     )}
@@ -1225,7 +1226,7 @@ function DisambiguationPicker({
                             {formatTime(c.tournament_time)}
                           </p>
                         </div>
-                        <span className="ml-3 flex-shrink-0 text-[10px] text-gray-500">
+                        <span className="ml-3 flex-shrink-0 text-xs text-gray-500">
                           ~{c.diff_hours.toFixed(1)}h
                         </span>
                       </button>
@@ -1275,11 +1276,13 @@ function SessionDetailPage() {
   const [dateDraft, setDateDraft] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
 
+  const [loadError, setLoadError] = useState(false);
   const loadDetail = () => {
     setLoading(true);
+    setLoadError(false);
     fetchDetail({ data: { session_id: sessionId } })
       .then(setDetail)
-      .catch((e: any) => toast.error(e?.message ?? "Error al cargar la partida"))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   };
 
@@ -1417,6 +1420,8 @@ function SessionDetailPage() {
             onLinkManually: () => setPickerOpen(true),
           }}
         />
+      ) : loadError ? (
+        <InlineError onRetry={loadDetail}>No pudimos cargar la partida.</InlineError>
       ) : null}
 
       {/* Disambiguation picker */}
