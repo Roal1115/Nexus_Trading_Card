@@ -13,6 +13,10 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    server: {
+      // Cloudflare Quick Tunnels use a different random subdomain each time.
+      allowedHosts: [".trycloudflare.com"],
+    },
     plugins: [
       {
         // ponytail: lovable config hardcodes injectSource:true with no option;
