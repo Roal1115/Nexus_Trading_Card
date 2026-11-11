@@ -17,6 +17,7 @@ import { getMyStats } from "@/lib/nexus-player.functions";
 import { myStatsGamesQuery, myStatsSourceQuery } from "@/lib/my-stats-queries";
 import { myDashboardQuery } from "@/lib/dashboard-queries";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
+import { InlineError } from "@/components/stores/store-ui";
 import { shortLeaderName, setBadge } from "@/lib/leader-display";
 
 export const Route = createFileRoute("/my-stats")({
