@@ -446,6 +446,7 @@ function HeroLeaderPicker({
                 <button
                   type="button"
                   onClick={close}
+                  autoFocus={mode === "art"}
                   className="flex h-11 w-11 items-center justify-center rounded-lg text-foreground-secondary transition hover:bg-secondary hover:text-foreground"
                   aria-label="Cerrar"
                 >
