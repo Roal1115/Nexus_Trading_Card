@@ -630,6 +630,10 @@ function StandaloneRoundTracker({
 
   const handleSave = async (idx: number): Promise<boolean> => {
     const r = rounds[idx];
+    if (!r.is_bye && !r.opponent_leader_id) {
+      toast.error("Selecciona el leader del oponente para guardar la ronda");
+      return false;
+    }
     setSavingIdx(idx);
     try {
       await saveRound({
