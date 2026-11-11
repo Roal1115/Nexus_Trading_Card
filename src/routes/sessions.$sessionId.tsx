@@ -255,7 +255,7 @@ function LeaderArtSwitcher({
                         className="h-16 w-11 object-cover"
                       />
                     ) : (
-                      <div className="flex h-16 w-11 items-center justify-center bg-black/30 text-[8px] text-gray-600">
+                      <div className="flex h-16 w-11 items-center justify-center bg-black/30 text-xs text-gray-600">
                         ?
                       </div>
                     )}
@@ -985,7 +985,7 @@ function StandaloneRoundTracker({
 
       {/* Table header */}
       {rounds.length > 0 && (
-        <div className="grid grid-cols-[40px_1fr_52px_52px_52px] gap-2 px-3 pb-1">
+        <div className="grid grid-cols-[28px_1fr_40px_40px_28px] gap-2 px-3 pb-1 sm:grid-cols-[40px_1fr_52px_52px_52px]">
           <span className="text-xs uppercase tracking-widest text-gray-600">Round</span>
           <span className="text-xs uppercase tracking-widest text-gray-600">Deck</span>
           <span className="text-center text-xs uppercase tracking-widest text-gray-600">

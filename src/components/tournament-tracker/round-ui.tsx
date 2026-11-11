@@ -187,7 +187,7 @@ export function RoundCardFrame({
             />
           ) : (
             <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-              <span className="text-[8px] text-gray-600">?</span>
+              <span className="text-xs text-gray-600">?</span>
             </div>
           )}
           <span className="truncate text-xs text-gray-300">{opponentLabel}</span>
