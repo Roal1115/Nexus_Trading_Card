@@ -176,7 +176,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
         </div>
         <div className="min-w-0 flex-1">
           <p className={`truncate text-sm font-semibold ${secretLocked ? "italic text-gray-400" : "text-gray-300"}`}>{item.name}</p>
-          <p className="truncate text-xs text-gray-500">{item.requirement_text}</p>
+          <p className="text-xs text-gray-500">{item.requirement_text}</p>
         </div>
         <span className="flex-shrink-0 text-xs font-semibold text-gray-500">+{item.base_lp} PL</span>
       </div>
