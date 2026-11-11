@@ -845,7 +845,12 @@ function StatsPage() {
       const saved = window.localStorage.getItem(
         `nexus:leader-art:${player.id}:${selectedGameId}`,
       );
-      if (saved) setLeaderArtOverrides(JSON.parse(saved));
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          setLeaderArtOverrides(parsed);
+        }
+      }
     } catch {
       // La personalización no impide consultar estadísticas.
     }
