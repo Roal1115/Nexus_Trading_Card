@@ -132,8 +132,8 @@ function formatTime(time: string | null): string {
 
 function ResultDot({ cx, cy, payload }: any) {
   if (cx == null || cy == null) return null;
-  const color = payload.result === "win" ? "#34d399" : "#f87171";
-  return <circle cx={cx} cy={cy} r={4} fill={color} stroke="#0f1117" strokeWidth={1.5} />;
+  const color = payload.result === "win" ? "var(--success)" : "var(--danger)";
+  return <circle cx={cx} cy={cy} r={4} fill={color} stroke="var(--card)" strokeWidth={1.5} />;
 }
 
 function WinRateTooltip({ active, payload }: any) {
