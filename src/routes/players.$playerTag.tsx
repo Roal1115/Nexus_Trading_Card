@@ -28,16 +28,12 @@ export const Route = createFileRoute("/players/$playerTag")({
   // vía useQuery().isError sobre la misma query key.
   loader: async ({ context, params }) => {
     try {
-      const profile = await context.queryClient.ensureQueryData(
-        playerProfileQuery(params.playerTag),
-      );
+      const profile = await context.queryClient.ensureQueryData(playerProfileQuery(params.playerTag));
       // Precargamos achievements junto con el perfil para que el teaser no
       // aparezca tarde y empuje el layout — mismo patrón que el resto de la
       // página. Best effort: si falla, el useQuery del componente reintenta.
       if (profile && !(profile as any).is_private) {
-        context.queryClient
-          .ensureQueryData(playerAchievementsQuery(params.playerTag))
-          .catch(() => {});
+        context.queryClient.ensureQueryData(playerAchievementsQuery(params.playerTag)).catch(() => {});
       }
       return profile;
     } catch {
@@ -101,11 +97,7 @@ function FilterGroup({
   onChange: (key: string | null) => void;
 }) {
   return (
-    <div
-      role="group"
-      aria-label={label}
-      className="flex overflow-x-auto border-b border-border px-2"
-    >
+    <div role="group" aria-label={label} className="flex overflow-x-auto border-b border-border px-2">
       {options.map((o) => (
         <button
           key={o.key ?? "all"}
@@ -170,19 +162,13 @@ function HistoryRow({ t, showTcg }: { t: any; showTcg: boolean }) {
         <span className="whitespace-nowrap text-center font-mono-stat text-xs text-foreground-secondary">
           {wl ? `${wl.w} / ${wl.l}` : "—"}
         </span>
-        <span className={`text-right font-mono-stat text-sm font-semibold ${place}`}>
-          #{t.placement}
-        </span>
-        <span className="text-right font-mono-stat font-semibold text-foreground">
-          +{fmtPts(t.pointsEarned)}
-        </span>
+        <span className={`text-right font-mono-stat text-sm font-semibold ${place}`}>#{t.placement}</span>
+        <span className="text-right font-mono-stat font-semibold text-foreground">+{fmtPts(t.pointsEarned)}</span>
       </div>
 
       {/* Móvil: lugar, tienda con su contexto en una línea, y puntos */}
       <div className="relative flex items-center gap-3 px-4 py-3 transition active:bg-white/5 sm:hidden">
-        <span className={`min-w-10 flex-shrink-0 font-mono-stat text-base font-bold ${place}`}>
-          #{t.placement}
-        </span>
+        <span className={`min-w-10 flex-shrink-0 font-mono-stat text-base font-bold ${place}`}>#{t.placement}</span>
         <div className="min-w-0 flex-1">
           {storeLink("block truncate font-semibold text-foreground")}
           <p className="mt-0.5 truncate text-xs text-foreground-secondary">
@@ -294,8 +280,7 @@ function PublicProfilePage() {
     }
   };
 
-  const tournaments: any[] =
-    profile && !profile.is_private ? ((profile as any).tournaments ?? []) : [];
+  const tournaments: any[] = profile && !profile.is_private ? ((profile as any).tournaments ?? []) : [];
 
   // Win-rate y forma reciente: calculados en cliente a partir de
   // profile.tournaments (ya viene ordenado por fecha desc) — no hace falta
@@ -319,9 +304,7 @@ function PublicProfilePage() {
     () =>
       Array.from(
         new Map(
-          tournaments
-            .filter((t: any) => t.game_id)
-            .map((t: any) => [t.game_id, { id: t.game_id, name: t.tcg }]),
+          tournaments.filter((t: any) => t.game_id).map((t: any) => [t.game_id, { id: t.game_id, name: t.tcg }]),
         ).values(),
       ),
     [tournaments],
@@ -401,9 +384,7 @@ function PublicProfilePage() {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
         <h2 className="text-2xl font-bold text-foreground">Jugador no encontrado</h2>
-        <p className="mt-2 text-sm text-foreground-secondary">
-          No existe un jugador con ese Nexus Tag.
-        </p>
+        <p className="mt-2 text-sm text-foreground-secondary">No existe un jugador con ese Nexus Tag.</p>
         <Link to="/" className={`${BTN_OUTLINE} mt-6 px-6`}>
           Volver al inicio
         </Link>
@@ -417,8 +398,7 @@ function PublicProfilePage() {
         <Lock className="mb-4 text-foreground-subtle" size={40} aria-hidden="true" />
         <h2 className="text-2xl font-bold text-foreground">Perfil privado</h2>
         <p className="mt-2 text-sm text-foreground-secondary">
-          El perfil de <span className="font-semibold text-foreground">@{profile.geek_tag}</span> es
-          privado.
+          El perfil de <span className="font-semibold text-foreground">@{profile.geek_tag}</span> es privado.
         </p>
         <Link to="/" className={`${BTN_OUTLINE} mt-6 px-6`}>
           Volver al inicio
@@ -428,8 +408,7 @@ function PublicProfilePage() {
   }
 
   // El lugar del héroe es el del primer TCG en el que el jugador ya tiene posición.
-  const primaryRanking =
-    profile.rankings.find((r: any) => r.rank_position > 0) ?? profile.rankings[0] ?? null;
+  const primaryRanking = profile.rankings.find((r: any) => r.rank_position > 0) ?? profile.rankings[0] ?? null;
   const otherRankings = profile.rankings.filter((r: any) => r !== primaryRanking);
   const primaryTier =
     primaryRanking && primaryRanking.rank_position >= 1 && primaryRanking.rank_position <= 3
@@ -438,8 +417,7 @@ function PublicProfilePage() {
   // Con perfil privado no se ve el deck de otros jugadores (el propio sí).
   const mainLeader = hidesOthersDecks && !profile.is_owner ? null : (profile.main_leader ?? null);
   const leaderImage: string | null = mainLeader?.image ?? null;
-  const showStats =
-    record.total > 0 || !!mainLeader || recentForm.length > 0 || !!profile.total_tournaments_won;
+  const showStats = record.total > 0 || !!mainLeader || recentForm.length > 0 || !!profile.total_tournaments_won;
   const metaLine = [
     profile.store_city,
     profile.member_since
@@ -493,16 +471,14 @@ function PublicProfilePage() {
                 />
                 {(profile.equipped_title || profile.equipped_badge) && (
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    {[profile.equipped_title, profile.equipped_badge]
-                      .filter(Boolean)
-                      .map((label) => (
-                        <span
-                          key={label}
-                          className="rounded-md border border-border bg-secondary px-2.5 py-1 text-sm font-medium text-foreground"
-                        >
-                          {label}
-                        </span>
-                      ))}
+                    {[profile.equipped_title, profile.equipped_badge].filter(Boolean).map((label) => (
+                      <span
+                        key={label}
+                        className="rounded-md border border-border bg-secondary px-2.5 py-1 text-sm font-medium text-foreground"
+                      >
+                        {label}
+                      </span>
+                    ))}
                   </div>
                 )}
                 {metaLine.length > 0 && (
@@ -524,9 +500,7 @@ function PublicProfilePage() {
                 )}
                 {primaryRanking && (
                   <div className="min-w-0">
-                    <p className="text-sm text-foreground-secondary">
-                      Ranking de temporada · {primaryRanking.game_name}
-                    </p>
+                    <p className="text-sm text-foreground-secondary">Ranking Nacional · {primaryRanking.game_name}</p>
                     <p
                       className={`mt-1 font-mono-stat text-6xl font-bold leading-none sm:text-7xl @4xl:text-8xl ${primaryTier}`}
                     >
@@ -568,25 +542,19 @@ function PublicProfilePage() {
                 {mainLeader && (
                   <div>
                     <dt className="text-xs text-foreground-subtle">Leader principal</dt>
-                    <dd className="max-w-[16rem] truncate text-lg font-semibold text-foreground">
-                      {mainLeader.name}
-                    </dd>
+                    <dd className="max-w-[16rem] truncate text-lg font-semibold text-foreground">{mainLeader.name}</dd>
                   </div>
                 )}
                 {recentForm.length > 0 && (
                   <div>
-                    <dt className="text-xs text-foreground-subtle">
-                      Últimos {recentForm.length} torneos (lugar)
-                    </dt>
+                    <dt className="text-xs text-foreground-subtle">Últimos {recentForm.length} torneos (lugar)</dt>
                     <dd>
                       <ol className="mt-1.5 flex items-center gap-1">
                         {recentForm.map((t: any, i: number) => (
                           <li
                             key={t.id ?? i}
                             className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 font-mono-stat text-xs font-bold ${
-                              t.placement <= 3
-                                ? "bg-primary/15 text-primary"
-                                : "bg-white/10 text-foreground-secondary"
+                              t.placement <= 3 ? "bg-primary/15 text-primary" : "bg-white/10 text-foreground-secondary"
                             }`}
                           >
                             <span className="sr-only">Lugar </span>
@@ -612,9 +580,7 @@ function PublicProfilePage() {
                 subtitle: profile.store_city ?? null,
                 badge: profile.equipped_title ?? null,
                 rankLabel:
-                  primaryRanking && primaryRanking.rank_position > 0
-                    ? `#${primaryRanking.rank_position}`
-                    : null,
+                  primaryRanking && primaryRanking.rank_position > 0 ? `#${primaryRanking.rank_position}` : null,
                 rankCaption: primaryRanking?.game_name ?? null,
                 stats: [
                   {
@@ -645,8 +611,7 @@ function PublicProfilePage() {
                 <div className="min-w-0">
                   <p className="truncate font-medium text-foreground">{r.game_name}</p>
                   <p className="text-xs text-foreground-secondary">
-                    {fmtPts(r.total_points)} pts ·{" "}
-                    {plural(r.tournaments_played, "torneo", "torneos")} esta temporada ·{" "}
+                    {fmtPts(r.total_points)} pts · {plural(r.tournaments_played, "torneo", "torneos")} esta temporada ·{" "}
                     {plural(r.tournaments_won, "ganado", "ganados")}
                   </p>
                 </div>
@@ -682,19 +647,13 @@ function PublicProfilePage() {
                           / {achievements.total_count}
                         </span>
                       </p>
-                      <p className="font-mono-stat text-xs text-foreground-subtle">
-                        {achievementsPct}% completado
-                      </p>
+                      <p className="font-mono-stat text-xs text-foreground-subtle">{achievementsPct}% completado</p>
                     </div>
                     <span className="hidden items-center gap-0.5 text-sm font-medium text-primary sm:inline-flex">
                       Ver todos
                       <ChevronRight size={16} aria-hidden="true" />
                     </span>
-                    <ChevronRight
-                      size={16}
-                      aria-hidden="true"
-                      className="text-foreground-subtle sm:hidden"
-                    />
+                    <ChevronRight size={16} aria-hidden="true" className="text-foreground-subtle sm:hidden" />
                   </div>
                 </Link>
               )
@@ -726,9 +685,7 @@ function PublicProfilePage() {
                 { key: null, label: `Todos (${tournaments.length})` },
                 ...uniqueGames.flatMap((g: any) => {
                   const count = tournaments.filter((t: any) => t.game_id === g.id).length;
-                  return count === 0
-                    ? []
-                    : [{ key: g.id as string, label: `${g.name} (${count})` }];
+                  return count === 0 ? [] : [{ key: g.id as string, label: `${g.name} (${count})` }];
                 }),
               ]}
             />
