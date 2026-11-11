@@ -388,7 +388,7 @@ function HeroLeaderPicker({
 
   const close = () => {
     setOpen(false);
-    setMode(value ? "art" : "search");
+    setMode("art");
     setSearch("");
   };
 
