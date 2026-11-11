@@ -100,7 +100,7 @@ export function LeaderSearchSelect({
                   }}
                   className="flex w-full items-center gap-2 bg-transparent px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
                 >
-                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-primary">
                     {opt.card_set_id}
                   </span>
                   <span className="flex-1 truncate">{cleanLeaderName(opt.base_name)}</span>
@@ -187,17 +187,17 @@ export function RoundCardFrame({
             />
           ) : (
             <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-              <span className="text-[8px] text-gray-600">?</span>
+              <span className="text-xs text-gray-600">?</span>
             </div>
           )}
           <span className="truncate text-xs text-gray-300">{opponentLabel}</span>
         </div>
 
-        <span className="text-center text-[11px] text-gray-400">
+        <span className="text-center text-xs text-gray-400">
           {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Opp"}
         </span>
 
-        <span className="text-center text-[11px] text-gray-400">
+        <span className="text-center text-xs text-gray-400">
           {round.turn_order === "first" ? "1st" : round.turn_order === "second" ? "2nd" : "—"}
         </span>
 
@@ -284,7 +284,7 @@ export function RoundCardFrame({
 
 export function RoundFieldLabel({ children }: { children: ReactNode }) {
   return (
-    <label className="mb-1.5 block text-[10px] uppercase tracking-widest text-gray-500">
+    <label className="mb-1.5 block text-xs uppercase tracking-widest text-gray-500">
       {children}
     </label>
   );
