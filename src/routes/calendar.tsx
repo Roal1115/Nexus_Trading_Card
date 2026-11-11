@@ -310,13 +310,13 @@ function CalendarPage() {
               <InlineError onRetry={() => refetch()}>No pudimos cargar los torneos.</InlineError>
             </div>
           ) : (
-          <WeeklyGrid
-            weekDates={weekDates}
-            calendarGrid={calendarGrid}
-            attendedIds={attendedIds}
-            loading={loading}
-            onSelectEntry={setSelectedEntry}
-          />
+            <WeeklyGrid
+              weekDates={weekDates}
+              calendarGrid={calendarGrid}
+              attendedIds={attendedIds}
+              loading={loading}
+              onSelectEntry={setSelectedEntry}
+            />
           )}
         </div>
 

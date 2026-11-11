@@ -114,12 +114,13 @@ export function CalendarEntry({
       </p>
       {!compact && (
         <p className="text-xs text-foreground-secondary truncate">
-          {entry.time ? `${entry.time.slice(0, 5)} · ` : ""}
-          {plain ? null : entry.game_name}
+          {[entry.time?.slice(0, 5), !plain && entry.game_name].filter(Boolean).join(" · ")}
         </p>
       )}
       {!compact && entry.is_scheduled && (
-        <p className="text-xs text-foreground-secondary truncate">Horario habitual · Por confirmar</p>
+        <p className="text-xs text-foreground-secondary truncate">
+          Horario habitual · Por confirmar
+        </p>
       )}
       {!compact && entry.league_name && (
         <p className="text-xs font-semibold text-foreground-secondary truncate">
@@ -236,7 +237,7 @@ export function WeeklyGrid({
                   >
                     {cellEntries.length === 0 ? null : cellEntries.length === 1 ? (
                       <CalendarEntry
- plain
+                        plain
                         entry={cellEntries[0]}
                         attended={attendedIds.has(cellEntries[0].id)}
                         onClick={() => onSelectEntry(cellEntries[0])}
@@ -245,7 +246,7 @@ export function WeeklyGrid({
                       <div className="space-y-0.5">
                         {cellEntries.slice(0, 2).map((e) => (
                           <CalendarEntry
- plain
+                            plain
                             key={e.id}
                             entry={e}
                             compact
@@ -261,7 +262,7 @@ export function WeeklyGrid({
                             {(close) =>
                               cellEntries.map((e) => (
                                 <CalendarEntry
- plain
+                                  plain
                                   key={e.id}
                                   entry={e}
                                   attended={attendedIds.has(e.id)}
@@ -321,7 +322,7 @@ function MobileWeeklyList({
               <div className="space-y-1.5">
                 {dayEntries.map((entry) => (
                   <CalendarEntry
- plain
+                    plain
                     key={entry.id}
                     entry={entry}
                     attended={attendedIds.has(entry.id)}
