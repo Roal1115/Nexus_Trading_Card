@@ -111,7 +111,7 @@ export function filterStatsByDate(stats: StatsData, days: number): StatsData {
           ? round1((second.filter((r) => r.won_match).length / second.length) * 100)
           : null,
         has_uncertain_data: allHist.some((r) => r.status !== "confirmed"),
-        tournaments_won: l.tournament_win_dates.filter((date) => date >= cutoff).length,
+        tournaments_won: (l.tournament_win_dates ?? []).filter((date) => date >= cutoff).length,
       };
     })
     .filter((l) => l.total_games > 0)
