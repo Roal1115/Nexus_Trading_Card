@@ -120,7 +120,9 @@ export function filterStatsByDate(stats: StatsData, days: number): StatsData {
   return {
     ...stats,
     total_rounds_in_meta: 0,
-    total_tournaments_won: stats.total_tournament_win_dates.filter((date) => date >= cutoff).length,
+    total_tournaments_won: (stats.total_tournament_win_dates ?? []).filter(
+      (date) => date >= cutoff,
+    ).length,
     leaders,
     no_leader_rounds: noLeaderOf(stats).filter((r) => r.date && r.date >= cutoff),
   };
