@@ -969,6 +969,7 @@ export const getMyStats = createServerFn({ method: "POST" })
         game_slug: (game as any)?.slug ?? "",
         total_rounds_in_meta: 0,
         total_tournaments_won: 0,
+        total_tournament_win_dates: [] as string[],
         leaders: [],
         no_leader_rounds: [] as NoLeaderRound[],
       };
@@ -1086,17 +1087,25 @@ export const getMyStats = createServerFn({ method: "POST" })
       tIdBatches.map((batch) =>
         admin
           .from("tournament_results")
-          .select("tournament_id")
+          .select("tournament_id, tournaments!inner(tournament_date)")
           .eq("player_id", player.id)
           .eq("rank", 1)
           .in("tournament_id", batch),
       ),
     );
-    const wonTournamentIds = new Set(
-      wonResultsBatches.flatMap((r) => ((r.data ?? []) as any[]).map((row) => row.tournament_id)),
+    const wonTournamentRows = wonResultsBatches.flatMap((r) => (r.data ?? []) as any[]);
+    const wonTournamentIds = new Set(wonTournamentRows.map((row) => row.tournament_id));
+    const wonTournamentDates = new Map<string, string>(
+      wonTournamentRows
+        .map((row) => [
+          row.tournament_id,
+          row.tournaments?.tournament_date ?? tournamentMetaMap.get(row.tournament_id)?.date,
+        ])
+        .filter((row): row is [string, string] => Boolean(row[1])),
     );
 
     const tournamentsWonByLeader = new Map<string, number>();
+    const tournamentWinDatesByLeader = new Map<string, string[]>();
     if (wonTournamentIds.size > 0) {
       const roundsByWonTournament = new Map<string, any[]>();
       for (const r of allRounds) {
@@ -1105,7 +1114,7 @@ export const getMyStats = createServerFn({ method: "POST" })
           roundsByWonTournament.set(r.tournament_id, []);
         roundsByWonTournament.get(r.tournament_id)!.push(r);
       }
-      for (const tRounds of roundsByWonTournament.values()) {
+      for (const [tournamentId, tRounds] of roundsByWonTournament.entries()) {
         const counts = new Map<string, number>();
         for (const r of tRounds) {
           if (!r.player_leader_id) continue;
@@ -1118,6 +1127,13 @@ export const getMyStats = createServerFn({ method: "POST" })
             topLeaderId,
             (tournamentsWonByLeader.get(topLeaderId) ?? 0) + 1,
           );
+          const winDate = wonTournamentDates.get(tournamentId);
+          if (winDate) {
+            tournamentWinDatesByLeader.set(topLeaderId, [
+              ...(tournamentWinDatesByLeader.get(topLeaderId) ?? []),
+              winDate,
+            ]);
+          }
         }
       }
     }
@@ -1254,6 +1270,7 @@ export const getMyStats = createServerFn({ method: "POST" })
               : null,
           has_uncertain_data: hasUncertain,
           tournaments_won: tournamentsWonByLeader.get(leaderId) ?? 0,
+          tournament_win_dates: tournamentWinDatesByLeader.get(leaderId) ?? [],
           matchups,
         };
       })
@@ -1272,6 +1289,7 @@ export const getMyStats = createServerFn({ method: "POST" })
       game_slug: (game as any)?.slug ?? "",
       total_rounds_in_meta: totalMetaRounds ?? 0,
       total_tournaments_won: wonTournamentIds.size,
+      total_tournament_win_dates: Array.from(wonTournamentDates.values()),
       leaders: leaderStats,
       no_leader_rounds: allRounds
         .filter((r: any) => !r.player_leader_id)

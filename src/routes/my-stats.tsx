@@ -44,6 +44,7 @@ type StatsSource = "official" | "casual" | "pending" | "all";
 type TimeRange = "30" | "90" | "all";
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
+const dateCutoff = (days: number) => new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
 
 // Las respuestas vacías de casual y pendientes no traen la lista.
 const noLeaderOf = (s: { no_leader_rounds?: StatsData["no_leader_rounds"] } | null) =>
@@ -51,8 +52,8 @@ const noLeaderOf = (s: { no_leader_rounds?: StatsData["no_leader_rounds"] } | nu
 
 // Recomputa todos los stats desde round_history con un corte de fecha.
 // ponytail: client-side sobre datos ya cargados; si el payload crece demasiado, mover el filtro al server
-function filterStatsByDate(stats: StatsData, days: number): StatsData {
-  const cutoff = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+export function filterStatsByDate(stats: StatsData, days: number): StatsData {
+  const cutoff = dateCutoff(days);
 
   const leaders = stats.leaders
     .map((l) => {
@@ -110,6 +111,7 @@ function filterStatsByDate(stats: StatsData, days: number): StatsData {
           ? round1((second.filter((r) => r.won_match).length / second.length) * 100)
           : null,
         has_uncertain_data: allHist.some((r) => r.status !== "confirmed"),
+        tournaments_won: (l.tournament_win_dates ?? []).filter((date) => date >= cutoff).length,
       };
     })
     .filter((l) => l.total_games > 0)
@@ -118,6 +120,9 @@ function filterStatsByDate(stats: StatsData, days: number): StatsData {
   return {
     ...stats,
     total_rounds_in_meta: 0,
+    total_tournaments_won: (stats.total_tournament_win_dates ?? []).filter(
+      (date) => date >= cutoff,
+    ).length,
     leaders,
     no_leader_rounds: noLeaderOf(stats).filter((r) => r.date && r.date >= cutoff),
   };
@@ -199,8 +204,11 @@ function computePlayerAggregates(stats: StatsData | null) {
 type DashboardEvent = { game_id: string | null; placement: number | null; date: string };
 
 // Solo torneos oficiales (dashboard events) — puesto/top-cut no aplican a partidas casuales.
-function computeTournamentSummary(events: DashboardEvent[], gameId: string) {
-  const filtered = events.filter((e) => e.game_id === gameId && e.placement != null);
+export function computeTournamentSummary(events: DashboardEvent[], gameId: string, days?: number) {
+  const cutoff = days ? dateCutoff(days) : null;
+  const filtered = events.filter(
+    (e) => e.game_id === gameId && e.placement != null && (!cutoff || e.date >= cutoff),
+  );
   if (filtered.length === 0) return null;
   const placements = filtered.map((e) => e.placement as number);
   const topCut = filtered.filter((e) => (e.placement as number) <= 8).length;
@@ -890,7 +898,11 @@ function StatsPage() {
   const playerAgg = computePlayerAggregates(displayStats);
   const tournamentSummary =
     selectedGameId && statsSource === "official"
-      ? computeTournamentSummary(dashboardQ.data?.events ?? [], selectedGameId)
+      ? computeTournamentSummary(
+          dashboardQ.data?.events ?? [],
+          selectedGameId,
+          timeRange === "all" ? undefined : Number(timeRange),
+        )
       : null;
 
   const sortedMatchups = selectedLeader
