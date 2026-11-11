@@ -61,11 +61,7 @@ Ranking de temporada: Suma acumulada durante la temporada completa.`;
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { dismissOnboarding, toggleProfilePrivacy } from "@/lib/nexus-player.functions";
-import {
-  myDashboardQuery,
-  tournamentDetailQuery,
-  tournamentRoundsQuery,
-} from "@/lib/dashboard-queries";
+import { myDashboardQuery, tournamentDetailQuery, tournamentRoundsQuery } from "@/lib/dashboard-queries";
 import { playerAchievementsQuery } from "@/lib/player-profile-queries";
 import { PlayerCardShare } from "@/components/player/PlayerCardShare";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
@@ -190,9 +186,7 @@ function DashboardPage() {
 
   const handleSkipSteps = async () => {
     const setShown = (show_onboarding: boolean) =>
-      queryClient.setQueryData(myDashboardQuery().queryKey, (old: any) =>
-        old ? { ...old, show_onboarding } : old,
-      );
+      queryClient.setQueryData(myDashboardQuery().queryKey, (old: any) => (old ? { ...old, show_onboarding } : old));
     setShown(false);
     try {
       await dismissOnboardingFn();
@@ -242,9 +236,7 @@ function DashboardPage() {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
         <h2 className="text-2xl font-bold text-foreground">Debes iniciar sesión</h2>
-        <p className="mt-2 text-sm text-foreground-secondary">
-          Tu dashboard muestra tu historial competitivo.
-        </p>
+        <p className="mt-2 text-sm text-foreground-secondary">Tu dashboard muestra tu historial competitivo.</p>
         <Link
           to="/login"
           className="mt-6 inline-flex h-10 items-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
@@ -261,8 +253,7 @@ function DashboardPage() {
 
   const top3DecksByGame = (data as any)?.top3DecksByGame ?? {};
   const globalRecord = (data as any)?.globalRecord ?? { wins: 0, losses: 0, total: 0 };
-  const winRate =
-    globalRecord.total > 0 ? Math.round((globalRecord.wins / globalRecord.total) * 100) : null;
+  const winRate = globalRecord.total > 0 ? Math.round((globalRecord.wins / globalRecord.total) * 100) : null;
 
   // Inicializar statsTcg al primer TCG disponible
   const statsGameIds = Object.keys(top3DecksByGame);
@@ -292,9 +283,7 @@ function DashboardPage() {
         <section className="mt-6 mb-8 overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex flex-col flex-wrap items-start gap-8 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-10">
             <div className="w-full min-w-0 sm:w-auto">
-              <h1 className="text-4xl font-bold text-foreground [overflow-wrap:anywhere] sm:text-6xl">
-                {tag}
-              </h1>
+              <h1 className="text-4xl font-bold text-foreground [overflow-wrap:anywhere] sm:text-6xl">{tag}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
                 {storeCity && <span className="text-foreground-secondary">{storeCity}</span>}
                 <Link
@@ -306,11 +295,7 @@ function DashboardPage() {
                 </Link>
                 <button
                   onClick={handleTogglePrivacy}
-                  aria-label={
-                    isPublic
-                      ? "Perfil público. Cambiar a privado"
-                      : "Perfil privado. Cambiar a público"
-                  }
+                  aria-label={isPublic ? "Perfil público. Cambiar a privado" : "Perfil privado. Cambiar a público"}
                   title="El staff de las tiendas y TCGs donde jugaste siempre puede ver esos resultados."
                   className="inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-foreground-subtle transition-colors hover:bg-white/5 hover:text-foreground"
                 >
@@ -325,10 +310,7 @@ function DashboardPage() {
                 <div className="h-[118px] w-[200px] animate-pulse rounded-md bg-white/[0.06]" />
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-[38px] w-[64px] animate-pulse rounded bg-white/[0.06]"
-                    />
+                    <div key={i} className="h-[38px] w-[64px] animate-pulse rounded bg-white/[0.06]" />
                   ))}
                 </div>
               </div>
@@ -357,9 +339,7 @@ function DashboardPage() {
                   <div>
                     <dt className="text-xs text-foreground-subtle">Mensual</dt>
                     <dd className="font-mono-stat font-semibold text-foreground">
-                      {activeTcg?.monthly_rank_position > 0
-                        ? `#${activeTcg.monthly_rank_position}`
-                        : "—"}
+                      {activeTcg?.monthly_rank_position > 0 ? `#${activeTcg.monthly_rank_position}` : "—"}
                     </dd>
                   </div>
                   {/* Con un solo TCG, "Mis Rankings" de abajo sería un duplicado del
@@ -382,9 +362,7 @@ function DashboardPage() {
                   )}
                   <div className="min-w-0 max-w-[12rem]">
                     <dt className="text-xs text-foreground-subtle">Tienda favorita</dt>
-                    <dd className="truncate font-semibold text-foreground">
-                      {data?.mostVisitedStore?.name ?? "—"}
-                    </dd>
+                    <dd className="truncate font-semibold text-foreground">{data?.mostVisitedStore?.name ?? "—"}</dd>
                   </div>
                 </dl>
               </div>
@@ -420,13 +398,9 @@ function DashboardPage() {
                     </div>
                   )}
                   <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-                    <span className="font-mono-stat text-2xl font-bold text-success">
-                      {globalRecord.wins}V
-                    </span>
+                    <span className="font-mono-stat text-2xl font-bold text-success">{globalRecord.wins}V</span>
                     <span className="font-mono-stat text-lg text-foreground-subtle">·</span>
-                    <span className="font-mono-stat text-2xl font-bold text-danger">
-                      {globalRecord.losses}D
-                    </span>
+                    <span className="font-mono-stat text-2xl font-bold text-danger">{globalRecord.losses}D</span>
                     <span className="ml-1 whitespace-nowrap text-xs text-foreground-subtle">
                       {globalRecord.total} partidas
                     </span>
@@ -438,9 +412,7 @@ function DashboardPage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-xs text-foreground-subtle">
-                  Sin partidas con resultados registrados aún.
-                </div>
+                <div className="text-xs text-foreground-subtle">Sin partidas con resultados registrados aún.</div>
               )}
 
               <div className="flex flex-wrap items-center gap-2">
@@ -491,9 +463,7 @@ function DashboardPage() {
             ancho completo apiladas (cada una con su propio header), ahora
             son tiles de igual altura en una sola fila. Mismo contenido,
             mitad del alto vertical antes de llegar a Torneos Recientes. */}
-        {(!showSteps ||
-          achievementsLoading ||
-          (achievements && achievements.unlocked_count > 0)) && (
+        {(!showSteps || achievementsLoading || (achievements && achievements.unlocked_count > 0)) && (
           <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {achievementsLoading ? (
               <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
@@ -521,14 +491,9 @@ function DashboardPage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-foreground">
                         {achievements.unlocked_count}
-                        <span className="text-foreground-subtle">
-                          {" "}
-                          / {achievements.total_count} logros
-                        </span>
+                        <span className="text-foreground-subtle"> / {achievements.total_count} logros</span>
                       </p>
-                      <p className="truncate text-xs text-foreground-subtle">
-                        {achievements.total_lp} Legacy Points
-                      </p>
+                      <p className="truncate text-xs text-foreground-subtle">{achievements.total_lp} Legacy Points</p>
                     </div>
                   </div>
                   <ChevronRight
@@ -762,8 +727,7 @@ function DashboardPage() {
                         <td className="w-full max-w-0 px-4 py-3 text-foreground">
                           <div className="flex min-w-0 items-center gap-2">
                             <span className="truncate" title={`${t.store} · ${t.city}`}>
-                              {t.store}{" "}
-                              <span className="text-xs text-foreground-subtle">· {t.city}</span>
+                              {t.store} <span className="text-xs text-foreground-subtle">· {t.city}</span>
                             </span>
                             {t.tournament_status === "APPROVED" && (
                               <span className="flex-shrink-0 rounded bg-yellow-500/15 px-1.5 py-0.5 text-xs font-medium text-yellow-300">
@@ -772,9 +736,7 @@ function DashboardPage() {
                             )}
                           </div>
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-xs text-foreground-secondary">
-                          {t.tcg}
-                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-xs text-foreground-secondary">{t.tcg}</td>
                         <td className="px-4 py-3 text-center font-mono-stat text-xs text-foreground-secondary whitespace-nowrap">
                           {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                         </td>
@@ -918,19 +880,14 @@ function DashboardPage() {
                             </span>
                           </div>
                         </div>
-                        <p className="text-xs font-mono-stat font-semibold text-foreground">
-                          {fmtPts(t.pointsEarned)}
-                        </p>
+                        <p className="text-xs font-mono-stat font-semibold text-foreground">{fmtPts(t.pointsEarned)}</p>
                       </div>
                     </div>
                   </div>
                 ))}
                 {hasMore && (
                   <div className="px-4 py-4 text-center">
-                    <button
-                      onClick={() => setPage((p) => p + 1)}
-                      className="text-xs text-primary hover:underline"
-                    >
+                    <button onClick={() => setPage((p) => p + 1)} className="text-xs text-primary hover:underline">
                       Ver más torneos
                     </button>
                   </div>
@@ -940,10 +897,7 @@ function DashboardPage() {
           </div>
         </section>
 
-        <DialogPrimitive.Root
-          open={!!selectedTournamentId}
-          onOpenChange={(o) => !o && closeModal()}
-        >
+        <DialogPrimitive.Root open={!!selectedTournamentId} onOpenChange={(o) => !o && closeModal()}>
           <AnimatePresence>
             {selectedTournamentId && (
               <DialogPrimitive.Portal forceMount>
@@ -974,9 +928,7 @@ function DashboardPage() {
                           <div>
                             <DialogPrimitive.Title asChild>
                               <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                                {loadingDetail
-                                  ? "Cargando…"
-                                  : (tournamentDetail?.game?.name ?? "—")}
+                                {loadingDetail ? "Cargando…" : (tournamentDetail?.game?.name ?? "—")}
                               </h2>
                             </DialogPrimitive.Title>
                           </div>
@@ -1017,10 +969,7 @@ function DashboardPage() {
                                     </div>
                                     <div className="divide-y divide-border">
                                       {Array.from({ length: 8 }).map((_, i) => (
-                                        <div
-                                          key={i}
-                                          className="px-3 py-2.5 grid grid-cols-5 gap-3 items-center"
-                                        >
+                                        <div key={i} className="px-3 py-2.5 grid grid-cols-5 gap-3 items-center">
                                           <SkeletonLine width="w-6" height="h-3" />
                                           <SkeletonLine width="w-28" height="h-3" />
                                           <SkeletonLine width="w-10" height="h-3" />
@@ -1057,9 +1006,7 @@ function DashboardPage() {
                                   <div>
                                     <p className="text-xs text-foreground-subtle">Fecha</p>
                                     <p className="mt-1 text-sm font-semibold text-foreground">
-                                      {new Date(
-                                        tournamentDetail.date + "T12:00:00",
-                                      ).toLocaleDateString("es-MX", {
+                                      {new Date(tournamentDetail.date + "T12:00:00").toLocaleDateString("es-MX", {
                                         day: "numeric",
                                         month: "long",
                                         year: "numeric",
@@ -1075,26 +1022,20 @@ function DashboardPage() {
                                       {tournamentDetail.total_participants}
                                     </p>
                                     {tournamentDetail.my_rank && (
-                                      <p className="text-xs text-primary">
-                                        Tu posición: #{tournamentDetail.my_rank}
-                                      </p>
+                                      <p className="text-xs text-primary">Tu posición: #{tournamentDetail.my_rank}</p>
                                     )}
                                   </div>
                                 </div>
 
                                 <div>
-                                  <h3 className="mb-3 text-sm font-semibold text-foreground">
-                                    Resultados del torneo
-                                  </h3>
+                                  <h3 className="mb-3 text-sm font-semibold text-foreground">Resultados del torneo</h3>
                                   <div className="overflow-x-auto rounded-xl border border-border">
                                     <table className="w-full text-sm">
                                       <thead className="border-b border-border text-xs uppercase tracking-wider text-foreground-subtle">
                                         <tr>
                                           <th className="px-3 py-2 text-left">#</th>
                                           <th className="px-3 py-2 text-left">Nexus Tag</th>
-                                          <th className="px-3 py-2 text-center whitespace-nowrap">
-                                            V / D
-                                          </th>
+                                          <th className="px-3 py-2 text-center whitespace-nowrap">V / D</th>
                                           <th className="px-3 py-2 text-right">OMW%</th>
                                           <th className="px-3 py-2 text-right">Puntos</th>
                                         </tr>
@@ -1113,9 +1054,7 @@ function DashboardPage() {
                                               }
                                             }}
                                             className={`border-t border-white/5 transition ${
-                                              r.is_me
-                                                ? "bg-primary/15"
-                                                : "cursor-pointer hover:bg-white/5"
+                                              r.is_me ? "bg-primary/15" : "cursor-pointer hover:bg-white/5"
                                             }`}
                                           >
                                             <td className="px-3 py-2">
@@ -1138,16 +1077,12 @@ function DashboardPage() {
                                                   </span>
                                                 </span>
                                               ) : (
-                                                <span className="font-semibold text-foreground">
-                                                  {r.geek_tag}
-                                                </span>
+                                                <span className="font-semibold text-foreground">{r.geek_tag}</span>
                                               )}
                                             </td>
 
                                             <td className="px-3 py-2 text-center font-mono-stat text-xs text-foreground-secondary whitespace-nowrap">
-                                              {r.wins != null && r.losses != null
-                                                ? `${r.wins} / ${r.losses}`
-                                                : "—"}
+                                              {r.wins != null && r.losses != null ? `${r.wins} / ${r.losses}` : "—"}
                                             </td>
                                             <td className="px-3 py-2 text-right font-mono-stat text-xs text-foreground-secondary">
                                               {r.omw_percentage != null
@@ -1166,9 +1101,7 @@ function DashboardPage() {
                               </div>
                               <div className="min-w-0 self-start border-t border-border pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
                                 <div className="mb-4 flex items-center justify-between">
-                                  <h3 className="text-sm font-semibold text-foreground">
-                                    Mis Partidas
-                                  </h3>
+                                  <h3 className="text-sm font-semibold text-foreground">Mis Partidas</h3>
                                   {editingTrackerInModal && (
                                     <button
                                       type="button"
@@ -1198,8 +1131,8 @@ function DashboardPage() {
                             </div>
                           ) : (
                             <div className="py-16 text-center text-sm text-foreground-subtle">
-                              No se pudo cargar el torneo. Cierra esta ventana y vuelve a abrirlo;
-                              si sigue fallando, revisa tu conexión.
+                              No se pudo cargar el torneo. Cierra esta ventana y vuelve a abrirlo; si sigue fallando,
+                              revisa tu conexión.
                             </div>
                           )}
                         </div>
@@ -1301,15 +1234,7 @@ function TooltipInfo({ text }: { text: string }) {
   );
 }
 
-function TcgRankCard({
-  tcg,
-  semesterLabel,
-  monthLabel,
-}: {
-  tcg: any;
-  semesterLabel: string;
-  monthLabel: string;
-}) {
+function TcgRankCard({ tcg, semesterLabel, monthLabel }: { tcg: any; semesterLabel: string; monthLabel: string }) {
   const [tab, setTab] = useState<"global" | "monthly">("global");
   const rankValue =
     tab === "global"
@@ -1332,9 +1257,7 @@ function TcgRankCard({
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
-              tab === t
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground-secondary hover:text-foreground"
+              tab === t ? "bg-primary text-primary-foreground" : "text-foreground-secondary hover:text-foreground"
             }`}
           >
             {t === "global" ? "Global" : "Mensual"}
@@ -1344,42 +1267,28 @@ function TcgRankCard({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <div className="text-xs text-foreground-subtle">
-            {tab === "global" ? "Temporada" : "Mensual"}
-          </div>
-          <p
-            className={`mt-1 font-mono-stat text-3xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-foreground"}`}
-          >
+          <div className="text-xs text-foreground-subtle">{tab === "global" ? "Temporada" : "Mensual"}</div>
+          <p className={`mt-1 font-mono-stat text-3xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-foreground"}`}>
             {rankValue}
           </p>
-          <p className="text-xs text-foreground-subtle">
-            {tab === "global" ? semesterLabel : monthLabel}
-          </p>
+          <p className="text-xs text-foreground-subtle">{tab === "global" ? semesterLabel : monthLabel}</p>
         </div>
 
         <div>
           <div className="text-xs text-foreground-subtle">Puntos</div>
-          <p className="mt-1 font-mono-stat text-3xl font-bold text-foreground">
-            {Number(points ?? 0).toFixed(0)}
-          </p>
-          <p className="text-xs text-foreground-subtle">
-            {tab === "global" ? "De temporada" : "Del mes"}
-          </p>
+          <p className="mt-1 font-mono-stat text-3xl font-bold text-foreground">{Number(points ?? 0).toFixed(0)}</p>
+          <p className="text-xs text-foreground-subtle">{tab === "global" ? "De temporada" : "Del mes"}</p>
         </div>
 
         {tab === "global" && (
           <>
             <div>
               <div className="text-xs text-foreground-subtle">Jugados</div>
-              <p className="mt-1 font-mono-stat text-2xl font-bold text-foreground">
-                {tcg.tournaments_played}
-              </p>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-foreground">{tcg.tournaments_played}</p>
             </div>
             <div>
               <div className="text-xs text-foreground-subtle">Ganados</div>
-              <p className="mt-1 font-mono-stat text-2xl font-bold text-foreground">
-                {tcg.tournaments_won}
-              </p>
+              <p className="mt-1 font-mono-stat text-2xl font-bold text-foreground">{tcg.tournaments_won}</p>
             </div>
           </>
         )}
@@ -1426,7 +1335,7 @@ function RankStory({ tcg, semesterLabel }: { tcg: any; semesterLabel: string }) 
   return (
     <div className="sm:text-right">
       <div className="flex items-center gap-1 text-sm text-foreground-secondary sm:justify-end">
-        Ranking de temporada · {semesterLabel}
+        Ranking Nacional · {semesterLabel}
         <TooltipInfo text={POINTS_HELP} />
       </div>
       <div
@@ -1441,9 +1350,7 @@ function RankStory({ tcg, semesterLabel }: { tcg: any; semesterLabel: string }) 
           {change && (
             <p className="flex flex-wrap items-center gap-x-1.5">
               {change}
-              {lastDate && (
-                <span className="text-foreground-subtle">desde tu torneo del {lastDate}</span>
-              )}
+              {lastDate && <span className="text-foreground-subtle">desde tu torneo del {lastDate}</span>}
             </p>
           )}
           {showNext &&
@@ -1466,21 +1373,11 @@ function RankStory({ tcg, semesterLabel }: { tcg: any; semesterLabel: string }) 
 
 /** "Tu último torneo": resumen en la página del evento más reciente, con la tira
  *  de rondas (resultado + líder rival). El detalle completo sigue en el modal. */
-function LastTournament({
-  event,
-  onOpen,
-  onTrack,
-}: {
-  event: any;
-  onOpen: () => void;
-  onTrack: () => void;
-}) {
+function LastTournament({ event, onOpen, onTrack }: { event: any; onOpen: () => void; onTrack: () => void }) {
   const roundsQ = useQuery(tournamentRoundsQuery(event.id));
   const rounds: any[] = roundsQ.data?.rounds ?? [];
   const summary: any = roundsQ.data?.summary ?? null;
-  const tagOf = new Map<string, string>(
-    ((roundsQ.data?.opponents ?? []) as any[]).map((o) => [o.id, o.geek_tag]),
-  );
+  const tagOf = new Map<string, string>(((roundsQ.data?.opponents ?? []) as any[]).map((o) => [o.id, o.geek_tag]));
   const tier = rankTier(event.placement);
   const hasRounds = rounds.length > 0;
 
@@ -1547,8 +1444,7 @@ function LastTournament({
       ) : !hasRounds ? (
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <p className="text-sm text-foreground-secondary">
-            Aún no registras las rondas de este torneo. Anota contra qué líder jugaste cada una para
-            ver tus matchups.
+            Aún no registras las rondas de este torneo. Anota contra qué líder jugaste cada una para ver tus matchups.
           </p>
           <button
             onClick={onTrack}
@@ -1563,25 +1459,17 @@ function LastTournament({
             const leader = r.opponent_leader;
             const result = r.won_match === true ? "V" : r.won_match === false ? "D" : "—";
             const resultClass =
-              r.won_match === true
-                ? "text-success"
-                : r.won_match === false
-                  ? "text-danger"
-                  : "text-foreground-subtle";
+              r.won_match === true ? "text-success" : r.won_match === false ? "text-danger" : "text-foreground-subtle";
             return (
               <li
                 key={r.id}
                 className="flex min-w-0 items-center gap-3 px-5 py-3 sm:min-w-[9.5rem] sm:flex-1 sm:flex-col sm:items-start sm:gap-2"
               >
                 <div className="flex w-12 flex-shrink-0 items-baseline gap-2 sm:w-auto">
-                  <span className="font-mono-stat text-xs text-foreground-subtle">
-                    R{r.round_number}
-                  </span>
+                  <span className="font-mono-stat text-xs text-foreground-subtle">R{r.round_number}</span>
                   <span
                     className={`font-mono-stat text-lg font-bold ${resultClass}`}
-                    aria-label={
-                      result === "V" ? "Victoria" : result === "D" ? "Derrota" : "Sin resultado"
-                    }
+                    aria-label={result === "V" ? "Victoria" : result === "D" ? "Derrota" : "Sin resultado"}
                   >
                     {result}
                   </span>
@@ -1608,9 +1496,7 @@ function LastTournament({
                         {leader?.base_name ?? "Líder sin registrar"}
                       </p>
                       {r.opponent_player_id && tagOf.get(r.opponent_player_id) && (
-                        <p className="truncate text-xs text-foreground-subtle">
-                          vs {tagOf.get(r.opponent_player_id)}
-                        </p>
+                        <p className="truncate text-xs text-foreground-subtle">vs {tagOf.get(r.opponent_player_id)}</p>
                       )}
                     </div>
                   </div>
@@ -1626,9 +1512,7 @@ function LastTournament({
           {summary?.toughest_opponent_tag ? (
             <>
               Rival más difícil:{" "}
-              <span className="font-medium text-foreground-secondary">
-                {summary.toughest_opponent_tag}
-              </span>
+              <span className="font-medium text-foreground-secondary">{summary.toughest_opponent_tag}</span>
               {summary.toughest_opponent_rank != null && (
                 <span className="font-mono-stat"> (#{summary.toughest_opponent_rank})</span>
               )}
