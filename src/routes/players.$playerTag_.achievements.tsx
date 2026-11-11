@@ -19,7 +19,14 @@ export const Route = createFileRoute("/players/$playerTag_/achievements")({
     }
   },
   head: ({ params }) => ({
-    meta: [{ title: `Achievements de ${params.playerTag} — Nexus` }],
+    meta: [
+      { title: `Logros de ${params.playerTag} — Nexus` },
+      { name: "description", content: `Logros, títulos e insignias de ${params.playerTag} en el circuito Nexus.` },
+      { property: "og:title", content: `Logros de ${params.playerTag} — Nexus` },
+      { property: "og:description", content: `Logros, títulos e insignias de ${params.playerTag} en el circuito Nexus.` },
+      { property: "og:type", content: "profile" },
+      { name: "twitter:card", content: "summary" },
+    ],
   }),
   component: AchievementsHubPage,
 });
@@ -83,7 +90,7 @@ type RewardCategory = "title" | "badge" | "other";
 const FILTERS: Array<{ id: "all" | RewardCategory; label: string }> = [
   { id: "all", label: "Todas" },
   { id: "title", label: "Títulos" },
-  { id: "badge", label: "Badges" },
+  { id: "badge", label: "Insignias" },
   { id: "other", label: "Otros" },
 ];
 const getRewardCategory = (item: any): RewardCategory => {
@@ -136,7 +143,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
       eligible: !!item.title_text,
       isEquipped: equip.equippedTitleKey === item.key,
       onToggle: equip.onEquipTitle,
-      label: "title",
+      label: "título",
       activeClass: "border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300",
       idleClass: "sm:hover:border-fuchsia-500/40 sm:hover:text-fuchsia-300",
     },
@@ -145,7 +152,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
       eligible: /badge/i.test(item.reward_type ?? ""),
       isEquipped: equip.equippedBadgeKey === item.key,
       onToggle: equip.onEquipBadge,
-      label: "badge",
+      label: "insignia",
       activeClass: "border-primary/40 bg-primary/15 text-primary",
       idleClass: "sm:hover:border-primary/40 sm:hover:text-primary",
     },
@@ -154,11 +161,27 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
       eligible: isNameplateReward(item),
       isEquipped: equip.equippedNameplateKey === item.key,
       onToggle: equip.onEquipNameplate,
-      label: "nameplate",
+      label: "placa",
       activeClass: "border-cyan-400/40 bg-cyan-400/15 text-cyan-300",
       idleClass: "sm:hover:border-cyan-400/40 sm:hover:text-cyan-300",
     },
   ].filter((slot) => isOwner && item.unlocked && slot.eligible);
+
+  // Bloqueados en una fila compacta: lo ganado debe destacar entre ~75 pendientes.
+  if (!item.unlocked) {
+    return (
+      <div className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${secretLocked ? "border-dashed border-white/10" : "border-white/5"} bg-black/20`}>
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-gray-500">
+          {secretLocked ? <HelpCircle size={14} /> : <Lock size={12} />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className={`truncate text-sm font-semibold ${secretLocked ? "italic text-gray-400" : "text-gray-300"}`}>{item.name}</p>
+          <p className="truncate text-xs text-gray-500">{item.requirement_text}</p>
+        </div>
+        <span className="flex-shrink-0 text-xs font-semibold text-gray-500">+{item.base_lp} PL</span>
+      </div>
+    );
+  }
 
   if (isNameplateReward(item)) {
     const banner = NAMEPLATE_BANNER_STYLES[item.tier] ?? DEFAULT_NAMEPLATE_BANNER;
@@ -199,16 +222,16 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <span
-            className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+            className={`rounded-full border px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
               item.unlocked ? style.pill : "border-white/10 bg-white/5 text-gray-500"
             }`}
           >
             {item.tier}
           </span>
-          <span className="text-[10px] font-semibold text-gray-500">+{item.base_lp} PL</span>
+          <span className="text-xs font-semibold text-gray-500">+{item.base_lp} PL</span>
         </div>
         {item.reward_detail && (
-          <p className="mt-1 text-[11px] leading-snug text-primary/80">{item.reward_detail}</p>
+          <p className="mt-1 text-xs leading-snug text-primary/80">{item.reward_detail}</p>
         )}
         {equipSlots.length > 0 && (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -216,7 +239,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
               <button
                 key={slot.id}
                 onClick={() => slot.onToggle!(slot.isEquipped ? null : item.key)}
-                className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition active:scale-95 ${
+                className={`rounded-lg border min-h-11 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition active:scale-95 ${
                   slot.isEquipped
                     ? slot.id === "nameplate"
                       ? banner.button
@@ -224,7 +247,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
                     : `border-white/15 bg-white/5 text-gray-300 ${slot.idleClass}`
                 }`}
               >
-                {slot.isEquipped ? `${slot.label} equipado ✓` : `Equipar ${slot.label}`}
+                {slot.isEquipped ? `${slot.label[0].toUpperCase()}${slot.label.slice(1)} equipado ✓` : `Equipar ${slot.label}`}
               </button>
             ))}
           </div>
@@ -267,16 +290,16 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
         <p className="mt-0.5 text-xs text-gray-500">{item.requirement_text}</p>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <span
-            className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+            className={`rounded-full border px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
               item.unlocked ? style.pill : "border-white/10 bg-white/5 text-gray-500"
             }`}
           >
             {item.tier}
           </span>
-          <span className="text-[10px] font-semibold text-gray-500">+{item.base_lp} PL</span>
+          <span className="text-xs font-semibold text-gray-500">+{item.base_lp} PL</span>
         </div>
         {item.reward_detail && (
-          <p className="mt-1 text-[11px] leading-snug text-primary/80">{item.reward_detail}</p>
+          <p className="mt-1 text-xs leading-snug text-primary/80">{item.reward_detail}</p>
         )}
         {equipSlots.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -284,13 +307,13 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
               <button
                 key={slot.id}
                 onClick={() => slot.onToggle!(slot.isEquipped ? null : item.key)}
-                className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition active:scale-95 ${
+                className={`rounded-full border min-h-11 px-3 py-1 text-xs font-bold uppercase tracking-wider transition active:scale-95 ${
                   slot.isEquipped
                     ? slot.activeClass
                     : `border-white/15 bg-white/5 text-gray-300 ${slot.idleClass}`
                 }`}
               >
-                {slot.isEquipped ? `${slot.label} equipado ✓` : `Equipar ${slot.label}`}
+                {slot.isEquipped ? `${slot.label[0].toUpperCase()}${slot.label.slice(1)} equipado ✓` : `Equipar ${slot.label}`}
               </button>
             ))}
           </div>
@@ -313,7 +336,9 @@ type EquipProps = {
 // Grid con el toggle de secretos colapsados — compartido entre RoadSection
 // (agrupado) y la lista plana filtrada, para no duplicar el patrón.
 function SecretAwareGrid({ items, equip }: { items: any[]; equip: EquipProps }) {
-  const visibleItems = items.filter((i: any) => !(i.is_secret && !i.unlocked));
+  const visibleItems = items
+    .filter((i: any) => !(i.is_secret && !i.unlocked))
+    .sort((a: any, b: any) => Number(b.unlocked) - Number(a.unlocked));
   const hiddenSecrets = items.filter((i: any) => i.is_secret && !i.unlocked);
   const [showSecrets, setShowSecrets] = useState(false);
 
@@ -400,7 +425,7 @@ function FilteredList({
   if (items.length === 0) {
     return (
       <section className="glass rounded-2xl border border-white/10 p-8 text-center text-sm text-gray-400">
-        Todavía no hay achievements de {categoryLabel.toLowerCase()} en el catálogo.
+        Todavía no hay logros de {categoryLabel.toLowerCase()} en el catálogo.
       </section>
     );
   }
@@ -443,7 +468,7 @@ function AchievementsHubPage() {
       await equipTitleFn({ data: { achievement_key } });
       invalidate();
     } catch (err: any) {
-      toast.error(err?.message ?? "No se pudo actualizar el title");
+      toast.error(err?.message ?? "No se pudo actualizar el título");
     }
   };
   const handleEquipBadge = async (achievement_key: string | null) => {
@@ -451,7 +476,7 @@ function AchievementsHubPage() {
       await equipBadgeFn({ data: { achievement_key } });
       invalidate();
     } catch (err: any) {
-      toast.error(err?.message ?? "No se pudo actualizar el badge");
+      toast.error(err?.message ?? "No se pudo actualizar la insignia");
     }
   };
   const handleEquipNameplate = async (achievement_key: string | null) => {
@@ -459,7 +484,7 @@ function AchievementsHubPage() {
       await equipNameplateFn({ data: { achievement_key } });
       invalidate();
     } catch (err: any) {
-      toast.error(err?.message ?? "No se pudo actualizar el nameplate");
+      toast.error(err?.message ?? "No se pudo actualizar la placa");
     }
   };
 
@@ -499,9 +524,9 @@ function AchievementsHubPage() {
   if (!data || data.roads.length === 0) {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold text-white">Sin achievements</h2>
+        <h2 className="text-2xl font-bold text-white">Sin logros</h2>
         <p className="mt-2 text-sm text-gray-400">
-          No hay achievements disponibles para este perfil.
+          No hay logros disponibles para este perfil.
         </p>
         <Link
           to="/players/$playerTag"
