@@ -950,7 +950,7 @@ function StatsPage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 pb-20">
+    <div className="@container mx-auto max-w-5xl px-4 py-10 sm:px-6 pb-20">
       {/* Header compacto: back + título + TCG en una fila */}
       <header className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <Link
@@ -1076,7 +1076,7 @@ function StatsPage() {
             </div>
           )}
           {loadingStats ? (
-            <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+            <div className="grid gap-6 @4xl:grid-cols-[240px_minmax(0,1fr)]">
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <SkeletonBlock key={i} className="h-20 rounded-xl" />
@@ -1158,7 +1158,13 @@ function StatsPage() {
                   <p className="mb-3 text-[10px] uppercase tracking-widest text-gray-500">
                     Tú como jugador
                   </p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div
+                    className={`grid gap-3 ${
+                      statsSource === "casual"
+                        ? "grid-cols-1 @md:grid-cols-3"
+                        : "grid-cols-2 @md:grid-cols-4"
+                    }`}
+                  >
                     {playerAgg && (
                       <div className="flex flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                         <p className="text-[10px] uppercase tracking-widest text-gray-500">
@@ -1228,7 +1234,7 @@ function StatsPage() {
                 </div>
               )}
 
-              <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+              <div className="grid gap-6 @4xl:grid-cols-[240px_minmax(0,1fr)]">
                 {/* Leaders: select nativo en móvil, sidebar en desktop */}
                 <div className="min-w-0">
                   <p className="mb-3 text-[10px] uppercase tracking-widest text-gray-500">
@@ -1237,7 +1243,7 @@ function StatsPage() {
                   <select
                     value={leaderIdx}
                     onChange={(e) => setSelectedLeaderIdx(Number(e.target.value))}
-                    className="w-full rounded-xl border border-white/10 bg-[#0f1117] px-4 py-3 text-sm font-semibold text-white lg:hidden"
+                    className="w-full rounded-xl border border-white/10 bg-[#0f1117] px-4 py-3 text-sm font-semibold text-white @4xl:hidden"
                   >
                     {displayStats.leaders.map((l, i) => {
                       const badge = setBadge(l.leader_set_code);
@@ -1250,7 +1256,7 @@ function StatsPage() {
                       );
                     })}
                   </select>
-                  <div className="hidden max-h-[calc(100vh-220px)] flex-col gap-2 overflow-y-auto pr-1 lg:sticky lg:top-24 lg:flex">
+                  <div className="hidden max-h-[calc(100vh-220px)] flex-col gap-2 overflow-y-auto pr-1 @4xl:sticky @4xl:top-24 @4xl:flex">
                     {displayStats.leaders.map((l, i) => (
                       <LeaderCard
                         key={l.leader_id}
@@ -1267,7 +1273,7 @@ function StatsPage() {
                   <div className="min-w-0 space-y-6">
                     {/* Hero del leader */}
                     <div className="glass rounded-2xl p-6">
-                      <div className="flex items-start gap-6">
+                      <div className="flex flex-col items-start gap-4 @lg:flex-row @lg:gap-6">
                         {selectedLeader.leader_image ? (
                           <img
                             src={selectedLeader.leader_image}
@@ -1283,7 +1289,7 @@ function StatsPage() {
                           </div>
                         )}
 
-                        <div className="min-w-0 flex-1">
+                        <div className="w-full min-w-0 flex-1">
                           <div className="flex items-start gap-2 flex-wrap">
                             <LeaderLabel
                               name={selectedLeader.leader_name}
@@ -1321,25 +1327,33 @@ function StatsPage() {
                       </div>
 
                       {/* Stats grid */}
-                      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <div
+                        className={`mt-5 grid grid-cols-2 gap-3 ${
+                          statsSource === "casual" ? "@md:grid-cols-4" : "@md:grid-cols-3"
+                        }`}
+                      >
                         <StatCard label="Total Games" value={`${selectedLeader.total_games}`} />
-                        <StatCard
-                          label="Torneos Ganados"
-                          value={`${selectedLeader.tournaments_won}`}
-                          sub={
-                            selectedLeader.tournaments_won > 0 ? "🏆 con este leader" : undefined
-                          }
-                        />
+                        {statsSource !== "casual" && (
+                          <StatCard
+                            label="Torneos Ganados"
+                            value={`${selectedLeader.tournaments_won}`}
+                            sub={
+                              selectedLeader.tournaments_won > 0 ? "🏆 con este leader" : undefined
+                            }
+                          />
+                        )}
                         <StatCard
                           label="WR Confirmado"
                           value={`${selectedLeader.wtd_win_rate}%`}
                           sub="Solo rondas confirmadas"
                         />
-                        <StatCard
-                          label="WR Total"
-                          value={`${selectedLeader.raw_win_rate}%`}
-                          sub="Todas las rondas"
-                        />
+                        {statsSource !== "casual" && (
+                          <StatCard
+                            label="WR Total"
+                            value={`${selectedLeader.raw_win_rate}%`}
+                            sub="Todas las rondas"
+                          />
+                        )}
                         {statsSource === "official" && timeRange === "all" && (
                           <StatCard
                             label="Play Rate"
