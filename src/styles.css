@@ -19,6 +19,12 @@
  */
 
 @theme inline {
+  /* Niveles de logro (Bronze…Legacy). */
+  --color-tier-bronze: var(--tier-bronze);
+  --color-tier-silver: var(--tier-silver);
+  --color-tier-gold: var(--tier-gold);
+  --color-tier-platinum: var(--tier-platinum);
+  --color-tier-legacy: var(--tier-legacy);
   /* Escala única: 8 controles, 12 tarjetas, 16 superficies grandes. */
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -98,6 +104,11 @@
   --ring: #32d9ff;
   --success: #4ef0a2;
   --warning: #ffd54a;
+  --tier-bronze: #e08a3c;
+  --tier-silver: #c7d0de;
+  --tier-gold: #f5c542;
+  --tier-platinum: #6fe3f5;
+  --tier-legacy: #e07cf5;
   --danger: #ff5f6d;
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
   --font-display: "Space Grotesk", system-ui, sans-serif;
