@@ -542,7 +542,7 @@ function HeroLeaderPicker({
                   </p>
                 ) : results.length === 0 ? (
                   <p className="py-10 text-center text-sm text-foreground-secondary">
-                    {mode === "art" ? "No hay otras versiones disponibles." : "Sin resultados."}
+                    {mode === "art" ? "No encontramos versiones de esta carta." : "Sin resultados."}
                   </p>
                 ) : (
                   <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
