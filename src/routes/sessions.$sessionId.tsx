@@ -457,7 +457,7 @@ function HeroLeaderPicker({
               {value && (
                 <div className="flex-shrink-0 px-4 pt-4">
                   <div
-                    role="tablist"
+                    role="group"
                     aria-label="Qué quieres cambiar"
                     className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1"
                   >
@@ -465,8 +465,7 @@ function HeroLeaderPicker({
                       <button
                         key={tab}
                         type="button"
-                        role="tab"
-                        aria-selected={mode === tab}
+                        aria-pressed={mode === tab}
                         onClick={() => setMode(tab)}
                         className={`min-h-10 rounded-md px-3 text-sm font-medium transition ${
                           mode === tab
