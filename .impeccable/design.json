@@ -8,46 +8,19 @@
         "role": "primary",
         "displayName": "Cian Circuito",
         "canonical": "#32d9ff",
-        "tonalRamp": [
-          "#04303b",
-          "#06495a",
-          "#0a6a83",
-          "#0f8fb0",
-          "#1bb5dc",
-          "#32d9ff",
-          "#8be9ff",
-          "#d6f7ff"
-        ]
+        "tonalRamp": ["#04303b", "#06495a", "#0a6a83", "#0f8fb0", "#1bb5dc", "#32d9ff", "#8be9ff", "#d6f7ff"]
       },
       "accent-violet": {
         "role": "secondary",
         "displayName": "Violeta Nexus",
         "canonical": "#9c5cff",
-        "tonalRamp": [
-          "#1f0b40",
-          "#33145f",
-          "#4b1f8a",
-          "#6630b8",
-          "#8247e6",
-          "#9c5cff",
-          "#c39dff",
-          "#ebdfff"
-        ]
+        "tonalRamp": ["#1f0b40", "#33145f", "#4b1f8a", "#6630b8", "#8247e6", "#9c5cff", "#c39dff", "#ebdfff"]
       },
       "night-navy": {
         "role": "neutral",
         "displayName": "Navy Nocturno",
         "canonical": "#08111f",
-        "tonalRamp": [
-          "#08111f",
-          "#111a2e",
-          "#17233d",
-          "#2a3a57",
-          "#72819d",
-          "#8a98b3",
-          "#aab6d1",
-          "#f5f7fa"
-        ]
+        "tonalRamp": ["#08111f", "#111a2e", "#17233d", "#2a3a57", "#72819d", "#8a98b3", "#aab6d1", "#f5f7fa"]
       },
       "card-navy": {
         "role": "neutral",
@@ -222,7 +195,7 @@
       "name": "Rank Display",
       "kind": "custom",
       "description": "Firma del sistema: rango de 60px en mono sin caja, con Stat Row debajo.",
-      "html": "<div class=\"ds-rank\"><span class=\"ds-rank-label\">Ranking de temporada</span><span class=\"ds-rank-num\">#62</span><span class=\"ds-rank-sub\">Temporada 2026</span><dl class=\"ds-stats\"><div><dt>Mensual</dt><dd>#33</dd></div><div><dt>Torneos</dt><dd>25</dd></div><div><dt>Puntos</dt><dd>185</dd></div></dl></div>",
+      "html": "<div class=\"ds-rank\"><span class=\"ds-rank-label\">Ranking Nacional</span><span class=\"ds-rank-num\">#62</span><span class=\"ds-rank-sub\">Temporada 2026</span><dl class=\"ds-stats\"><div><dt>Mensual</dt><dd>#33</dd></div><div><dt>Torneos</dt><dd>25</dd></div><div><dt>Puntos</dt><dd>185</dd></div></dl></div>",
       "css": ".ds-rank { display:flex; flex-direction:column; gap:4px; color:#f5f7fa; } .ds-rank-label { font:400 14px Inter, system-ui, sans-serif; color:#aab6d1; } .ds-rank-num { font:700 60px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; line-height:1; } .ds-rank-sub { font:400 12px Inter, system-ui, sans-serif; color:#8a98b3; } .ds-stats { display:flex; gap:20px; margin:12px 0 0; } .ds-stats dt { font:400 12px Inter, system-ui, sans-serif; color:#8a98b3; } .ds-stats dd { margin:0; font:600 14px 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }"
     },
     {
