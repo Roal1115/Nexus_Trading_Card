@@ -175,7 +175,7 @@ export function RoundCardFrame({
             round.won_match === null ? "text-gray-400" : resultText
           }`}
         >
-          R{round.round_number}
+          {round.round_number}
         </span>
 
         <div className="flex items-center gap-2 min-w-0 text-left">
@@ -194,20 +194,20 @@ export function RoundCardFrame({
         </div>
 
         <span className="text-center text-xs text-gray-400">
-          {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Opp"}
+          {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Rival"}
         </span>
 
         <span className="text-center text-xs text-gray-400">
-          {round.turn_order === "first" ? "1st" : round.turn_order === "second" ? "2nd" : "—"}
+          {round.turn_order === "first" ? "1.º" : round.turn_order === "second" ? "2.º" : "—"}
         </span>
 
         <span className={`text-center text-xs font-bold ${resultText}`}>
           {round.is_bye
-            ? "Bye"
+            ? "Pase"
             : round.won_match === true
-              ? "W"
+              ? "V"
               : round.won_match === false
-                ? "L"
+                ? "D"
                 : "—"}
         </span>
 
