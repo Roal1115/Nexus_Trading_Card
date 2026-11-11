@@ -363,6 +363,9 @@ export const saveStandaloneRound = createServerFn({ method: "POST" })
     if (session.status === "matched")
       throw new Error("No puedes editar una partida ya vinculada a un torneo oficial");
 
+    if (!data.is_bye && !data.opponent_leader_id)
+      throw new Error("Selecciona el leader del oponente para guardar la ronda");
+
     const wonMatch = data.is_bye ? true : (data.won_match ?? null);
 
     const payload = {
