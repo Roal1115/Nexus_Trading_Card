@@ -50,6 +50,17 @@ describe("periodo de Mis Stats", () => {
     expect(filterStatsByDate(stats() as any, 30).leaders[0].tournaments_won).toBe(1);
   });
 
+  it("filtra fuentes sin victorias de torneo sin romper sus estadísticas", () => {
+    const casual = stats() as any;
+    delete casual.total_tournament_win_dates;
+    delete casual.leaders[0].tournament_win_dates;
+
+    const filtered = filterStatsByDate(casual, 30);
+    expect(filtered.total_tournaments_won).toBe(0);
+    expect(filtered.leaders[0].tournaments_won).toBe(0);
+    expect(filtered.leaders[0].total_games).toBe(1);
+  });
+
   it("calcula mejor puesto y Top 8 solo con torneos de los últimos 30 días", () => {
     const summary = computeTournamentSummary(
       [
