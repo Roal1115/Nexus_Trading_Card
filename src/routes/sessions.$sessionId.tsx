@@ -318,7 +318,7 @@ function StandaloneRoundCard({
       {(close) => (
         <>
           <div>
-            <RoundFieldLabel>Leader del oponente</RoundFieldLabel>
+            <RoundFieldLabel>Leader del oponente (obligatorio)</RoundFieldLabel>
             <LeaderSearchSelect
               gameId={gameId}
               value={round.opponent_leader}
@@ -925,7 +925,7 @@ function StandaloneRoundTracker({
 
           {chartData.length >= 2 && (
             <div className="flex-shrink-0 pb-1 text-right">
-              <p className="text-xs uppercase tracking-widest text-gray-600">Win rate</p>
+              <p className="text-xs uppercase tracking-widest text-gray-600">% de victorias</p>
               <p className="font-mono text-2xl font-bold text-white">{winRate}%</p>
             </div>
           )}
@@ -951,28 +951,28 @@ function StandaloneRoundTracker({
               <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="winRateFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#34d399" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#34d399" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--success)" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="var(--success)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
                   dataKey="round"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                  tick={{ fill: "var(--foreground-subtle)", fontSize: 12 }}
                   tickFormatter={(v) => `R${v}`}
                 />
                 <YAxis hide domain={[0, 100]} />
-                <ReferenceLine y={50} stroke="#374151" strokeDasharray="3 3" />
-                <Tooltip content={<WinRateTooltip />} cursor={{ stroke: "#374151", strokeWidth: 1 }} />
+                <ReferenceLine y={50} stroke="var(--border)" strokeDasharray="3 3" />
+                <Tooltip content={<WinRateTooltip />} cursor={{ stroke: "var(--border)", strokeWidth: 1 }} />
                 <Area
                   type="monotone"
                   dataKey="rate"
-                  stroke="#34d399"
+                  stroke="var(--success)"
                   strokeWidth={2}
                   fill="url(#winRateFill)"
                   dot={<ResultDot />}
-                  activeDot={{ r: 5, stroke: "#0f1117", strokeWidth: 2 }}
+                  activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 2 }}
                   isAnimationActive
                   animationDuration={900}
                   animationEasing="ease-out"
@@ -987,7 +987,7 @@ function StandaloneRoundTracker({
       {rounds.length > 0 && (
         <div className="grid grid-cols-[28px_1fr_40px_40px_28px] gap-2 px-3 pb-1 sm:grid-cols-[40px_1fr_52px_52px_52px]">
           <span className="text-xs uppercase tracking-wide text-gray-600">#</span>
-          <span className="text-xs uppercase tracking-wide text-gray-600">Deck</span>
+          <span className="text-xs uppercase tracking-wide text-gray-600">Rival</span>
           <span className="text-center text-xs uppercase tracking-wide text-gray-600">
             Dado
           </span>
@@ -995,7 +995,8 @@ function StandaloneRoundTracker({
             Turno
           </span>
           <span className="text-center text-xs uppercase tracking-wide text-gray-600">
-            Res
+            <span className="sm:hidden">V/D</span>
+            <span className="hidden sm:inline">Resultado</span>
           </span>
         </div>
       )}
