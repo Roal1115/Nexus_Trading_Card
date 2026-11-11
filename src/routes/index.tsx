@@ -1,11 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { HelpCircle, Medal, Search, Trophy } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { LeaderboardRowSkeleton } from "@/components/ui/skeleton-loader";
-import { useNexusRole } from "@/hooks/use-nexus-role";
+import { useHidesOthersDecks, useNexusRole } from "@/hooks/use-nexus-role";
 
 import { useQuery } from "@tanstack/react-query";
 import { useTCG } from "@/context/tcg.context";
@@ -15,8 +14,8 @@ import { listActiveSponsors, getActiveBanner } from "@/lib/nexus-ads.functions";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { AdCarousel } from "@/components/ads/AdCarousel";
-import { ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
 import { PillSelect } from "@/components/ui/pill-select";
+import { PODIUM_TEXT, RankingBand } from "@/components/ranking/RankingBand";
 import { regionsForZone, storeRegion } from "@/lib/store-regions";
 
 type Period = "monthly" | "semestral";
@@ -41,11 +40,11 @@ export const Route = createFileRoute("/")({
   }),
   head: () => ({
     meta: [
-      { title: "Trading Card Nexus" },
+      { title: "Ranking nacional | Nexus" },
       {
         name: "description",
         content:
-          "Únete a Trading Card Nexus, la plataforma definitiva para jugadores competitivos de TCG.",
+          "El ranking oficial del circuito nacional de TCG en México: posiciones por mes y por temporada, con filtros por zona, región y tienda.",
       },
     ],
   }),
@@ -94,124 +93,11 @@ function monthLabel(m: string): string {
   return `${MONTH_NAMES[mm - 1]} ${y}`;
 }
 
-function HeroBackground() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 h-full w-full"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid slice"
-    >
-      <defs>
-        <radialGradient id="heroGlow1" cx="70%" cy="10%" r="50%">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="heroGlow2" cx="20%" cy="80%" r="40%">
-          <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
-        </radialGradient>
-        <filter id="cardBlur">
-          <feGaussianBlur stdDeviation="0.8" />
-        </filter>
-      </defs>
+const BTN_OUTLINE =
+  "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground-secondary transition hover:bg-white/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:min-h-9";
 
-      {/* Radial glows */}
-      <rect width="100%" height="100%" fill="url(#heroGlow1)" />
-      <rect width="100%" height="100%" fill="url(#heroGlow2)" />
-
-      {/* Constellation lines */}
-      <g stroke="var(--primary)" strokeOpacity="0.12" strokeWidth="0.8">
-        <line x1="10%" y1="20%" x2="30%" y2="45%" />
-        <line x1="30%" y1="45%" x2="55%" y2="30%" />
-        <line x1="55%" y1="30%" x2="75%" y2="55%" />
-        <line x1="75%" y1="55%" x2="90%" y2="35%" />
-        <line x1="20%" y1="70%" x2="40%" y2="55%" />
-        <line x1="40%" y1="55%" x2="60%" y2="75%" />
-        <line x1="60%" y1="75%" x2="80%" y2="60%" />
-        <line x1="15%" y1="40%" x2="25%" y2="65%" />
-        <line x1="65%" y1="15%" x2="80%" y2="35%" />
-      </g>
-
-      {/* Constellation dots */}
-      <g fill="var(--primary)" fillOpacity="0.35">
-        <circle cx="10%" cy="20%" r="1.5" />
-        <circle cx="30%" cy="45%" r="2" />
-        <circle cx="55%" cy="30%" r="1.5" />
-        <circle cx="75%" cy="55%" r="2.5" />
-        <circle cx="90%" cy="35%" r="1.5" />
-        <circle cx="20%" cy="70%" r="1.5" />
-        <circle cx="40%" cy="55%" r="1" />
-        <circle cx="60%" cy="75%" r="2" />
-        <circle cx="80%" cy="60%" r="1.5" />
-        <circle cx="15%" cy="40%" r="1" />
-        <circle cx="25%" cy="65%" r="1.5" />
-        <circle cx="65%" cy="15%" r="2" />
-      </g>
-
-      {/* Floating card silhouettes */}
-      <g filter="url(#cardBlur)" opacity="0.18">
-        <rect
-          x="78%"
-          y="8%"
-          width="8%"
-          height="11%"
-          rx="4"
-          ry="4"
-          fill="none"
-          stroke="var(--primary)"
-          strokeWidth="1.2"
-          transform="rotate(-12, 82, 13)"
-        />
-        <rect
-          x="83%"
-          y="5%"
-          width="8%"
-          height="11%"
-          rx="4"
-          ry="4"
-          fill="none"
-          stroke="var(--accent)"
-          strokeWidth="1.2"
-          transform="rotate(5, 87, 10)"
-        />
-        <rect
-          x="74%"
-          y="14%"
-          width="8%"
-          height="11%"
-          rx="4"
-          ry="4"
-          fill="none"
-          stroke="#5F8CFF"
-          strokeWidth="1"
-          transform="rotate(-20, 78, 19)"
-        />
-        <line
-          x1="79.5%"
-          y1="10%"
-          x2="84.5%"
-          y2="10%"
-          stroke="var(--primary)"
-          strokeWidth="0.6"
-          strokeOpacity="0.6"
-        />
-        <line
-          x1="79.5%"
-          y1="12%"
-          x2="82%"
-          y2="12%"
-          stroke="var(--primary)"
-          strokeWidth="0.6"
-          strokeOpacity="0.4"
-        />
-      </g>
-
-      {/* Scan line */}
-      <rect x="0" y="45%" width="100%" height="1px" fill="url(#heroGlow1)" opacity="0.08" />
-    </svg>
-  );
-}
+const GRID_DESKTOP = "grid-cols-[64px_minmax(0,1fr)_minmax(0,120px)_72px_64px_72px_64px]";
+const GRID_MOBILE = "grid-cols-[48px_minmax(0,1fr)_auto]";
 
 function PeriodSegmentedControl({
   period,
@@ -226,21 +112,20 @@ function PeriodSegmentedControl({
   ];
   return (
     <div
-      role="tablist"
+      role="group"
       aria-label="Periodo del ranking"
-      className="inline-flex gap-1 rounded-md border border-white/10 bg-white/5 p-1"
+      className="inline-flex gap-1 rounded-md border border-border bg-background p-1"
     >
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
-          role="tab"
-          aria-selected={period === o.value}
+          aria-pressed={period === o.value}
           onClick={() => onChange(o.value)}
-          className={`rounded px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+          className={`min-h-11 cursor-pointer rounded px-4 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:min-h-8 ${
             period === o.value
               ? "bg-primary/15 text-primary"
-              : "text-foreground-secondary hover:text-foreground-secondary"
+              : "text-foreground-secondary hover:text-foreground"
           }`}
         >
           {o.label}
@@ -255,6 +140,7 @@ function LeaderboardPage() {
   const fetchBanner = useServerFn(getActiveBanner);
   const { player: viewer, role, loading: authLoading } = useNexusRole();
   const myNexusTag = viewer?.geek_tag ?? null;
+  const hidesOthersDecks = useHidesOthersDecks();
 
   const isStaff = role === "admin" || role === "tcg_manager" || role === "organizer";
 
@@ -328,6 +214,16 @@ function LeaderboardPage() {
   // Teclear no debe ensuciar el historial: replace en vez de push.
   const setSearch = (v: string) => patchSearch({ q: v || undefined }, true);
   const setPeriod = (v: Period) => patchSearch({ period: v === "monthly" ? undefined : v });
+  // Restablecer = vista nacional sin búsqueda. Con sesión se guarda zone=all para
+  // que la región sugerida no vuelva a aplicarse sola.
+  const resetFilters = () =>
+    patchSearch({
+      zone: viewer ? ALL_ZONES_PARAM : undefined,
+      region: undefined,
+      store: undefined,
+      month: undefined,
+      q: undefined,
+    });
 
   const optionsQuery = useQuery(leaderboardOptionsQuery());
   const stores = (optionsQuery.data?.stores ?? []) as Store[];
@@ -354,9 +250,6 @@ function LeaderboardPage() {
   useEffect(() => {
     if (optionsQuery.isError) toast.error("Error al cargar los filtros. Intenta de nuevo.");
   }, [optionsQuery.isError]);
-  useEffect(() => {
-    if (boardQuery.isError) toast.error("Error al cargar el ranking. Intenta de nuevo.");
-  }, [boardQuery.isError]);
 
   const zones = useMemo(() => {
     const set = new Set<string>();
@@ -390,35 +283,140 @@ function LeaderboardPage() {
 
   const selectedStore = stores.find((s) => s.id === storeId);
 
+  // Filtros avanzados: abiertos solo si ya hay alguno aplicado; el conteo vive en el botón.
+  const activeFilterCount =
+    (zone !== ALL ? 1 : 0) +
+    (region !== ALL ? 1 : 0) +
+    (storeId !== ALL ? 1 : 0) +
+    (month !== ALL ? 1 : 0);
+  const [filtersOpen, setFiltersOpen] = useState(
+    () =>
+      !!(
+        urlSearch.region ||
+        urlSearch.store ||
+        urlSearch.month ||
+        (urlSearch.zone && urlSearch.zone !== ALL_ZONES_PARAM)
+      ),
+  );
+  const canReset = activeFilterCount > 0 || !!search;
+
+  // Un solo lugar dice qué alcance tiene la tabla (antes se repetía en 3).
+  const scopeLabel = selectedStore
+    ? `${selectedStore.name}${selectedStore.city ? ` — ${selectedStore.city}` : ""}`
+    : region !== ALL
+      ? `${zone} · ${region}`
+      : zone !== ALL
+        ? zone
+        : "Todo el país";
+  const shownRows = period === "semestral" ? filteredSemestral : filteredMonthly;
+  const periodLabel = period === "semestral" ? semesterLbl : monthLbl;
+
+  // Franja de apertura: el podio y las cifras siguen el periodo y los filtros de la tabla,
+  // pero no la búsqueda (habla del circuito, no de lo que se está tecleando).
+  const bandRows = period === "semestral" ? semestral : monthly;
+  const allBandLeaders =
+    (period === "semestral"
+      ? boardQuery.data?.semestral_leaders
+      : boardQuery.data?.monthly_leaders) ?? {};
+  // Con perfil privado no se ven los decks de los demás (solo el propio).
+  const bandLeaders = hidesOthersDecks
+    ? Object.fromEntries(Object.entries(allBandLeaders).filter(([id]) => id === viewer?.id))
+    : allBandLeaders;
+  const bandStats = {
+    players: bandRows.length,
+    // La Tabla General no se filtra por tienda; la mensual sí.
+    stores: period === "monthly" && selectedStore ? 1 : visibleStores.length,
+    tournaments:
+      (period === "semestral"
+        ? boardQuery.data?.semestral_tournaments
+        : boardQuery.data?.monthly_tournaments) ?? 0,
+    tournamentsLabel: period === "semestral" ? "Torneos de la temporada" : "Torneos del mes",
+  };
+
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px] items-start">
       <aside className="hidden xl:block">
         {!isStaff && <AdVertical sponsor={activeSponsor} />}
       </aside>
       <main className="min-w-0 pb-20">
-        <section className="relative my-4 overflow-hidden rounded-2xl border-border bg-card p-5 sm:my-8 sm:p-12">
-          <HeroBackground />
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-          <h1 className="max-w-2xl text-3xl font-bold leading-tight text-foreground sm:text-6xl bg-gradient-to-r from-primary via-[#5F8CFF] to-accent bg-clip-text text-transparent">
-            Circuito <span className="text-primary">Nacional</span>
+        <header className="mb-5 mt-6 sm:mt-8">
+          <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl">
+            Circuito Nacional
           </h1>
-        </section>
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground-secondary">
+            <span>{[activeTcg?.name, periodLabel, scopeLabel].filter(Boolean).join(" · ")}</span>
+            {suggested && (
+              <button
+                type="button"
+                onClick={() => setZone(ALL)}
+                className="cursor-pointer font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
+                Tu región · Ver nacional
+              </button>
+            )}
+          </p>
+        </header>
 
-        {!isStaff && <AdCarousel sponsors={allSponsors.filter((s) => s.is_active)} />}
+        <RankingBand
+          rows={bandRows}
+          leaders={bandLeaders}
+          loading={loading || optionsQuery.isPending}
+          periodLabel={periodLabel}
+          scopeLabel={scopeLabel}
+          showDelta={period === "monthly"}
+          stats={bandStats}
+          audience={isStaff ? "staff" : viewer ? "player" : "visitor"}
+          audienceLoading={authLoading}
+          viewerTag={myNexusTag}
+        />
 
-        <div
-          className="z-30 mb-6 rounded-xl px-4 py-3"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 32px rgba(0,0,0,0.3)",
-          }}
-        >
-          {" "}
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap w-full items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs transition hover:border-white/20 cursor-pointer ... min-w-[180px]">
+        <section aria-label="Filtros del ranking" className="mb-4 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodSegmentedControl period={period} onChange={setPeriod} />
+            <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
+              <Search
+                size={14}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar Nexus Tag…"
+                aria-label="Buscar jugador por Nexus Tag"
+                className="min-h-11 w-full rounded-md border border-border bg-transparent py-2 pl-9 pr-3 text-sm text-foreground outline-none transition placeholder:text-foreground-subtle focus:border-primary focus:ring-1 focus:ring-primary md:min-h-9"
+              />
+            </div>
+            <button
+              type="button"
+              aria-expanded={filtersOpen}
+              aria-controls="leaderboard-filters"
+              onClick={() => setFiltersOpen((o) => !o)}
+              className={BTN_OUTLINE}
+            >
+              Filtros
+              {activeFilterCount > 0 && (
+                <span className="font-mono-stat text-primary">({activeFilterCount})</span>
+              )}
+              <ChevronDown
+                size={14}
+                aria-hidden="true"
+                className={`transition-transform duration-200 ${filtersOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {canReset && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="min-h-11 cursor-pointer rounded-md px-2 text-sm font-medium text-foreground-secondary transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:min-h-9"
+              >
+                Restablecer filtros
+              </button>
+            )}
+          </div>
+          {filtersOpen && (
+            <div id="leaderboard-filters" className="flex flex-wrap items-center gap-2">
               <PillSelect
                 label="Zona"
                 value={zone}
@@ -461,71 +459,36 @@ function LeaderboardPage() {
                 ]}
               />
             </div>
-            <div className="relative w-full">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar Nexus Tag…"
-                className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-          </div>
-        </div>
-
-        {suggested && (
-          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground-secondary">
-            <span>
-              Tu región:{" "}
-              <strong className="text-foreground">
-                {suggested.zone} · {suggested.region}
-              </strong>
-            </span>
-            <button
-              type="button"
-              onClick={() => setZone(ALL)}
-              className="font-semibold text-primary hover:underline"
-            >
-              Ver nacional
-            </button>
-          </div>
-        )}
-
-        {selectedStore && (
-          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground-secondary">
-            Mostrando resultados de:{" "}
-            <strong className="text-foreground">
-              {selectedStore.name}
-              {selectedStore.city ? ` — ${selectedStore.city}` : ""}
-            </strong>
-          </div>
-        )}
-
-        <div className="mb-4">
-          <PeriodSegmentedControl period={period} onChange={setPeriod} />
-        </div>
-
-        <div className="lg:hidden">{!isStaff && <AdHorizontal sponsor={activeSponsor} />}</div>
+          )}
+        </section>
 
         <LeaderboardTable
           title={period === "semestral" ? "Tabla General" : "Tabla Mensual"}
-          badge={period === "semestral" ? semesterLbl : monthLbl.toUpperCase()}
-          subtitle={
+          note={
             period === "semestral"
-              ? "Ranking general · no filtrado por tienda"
-              : selectedStore
-                ? `Mostrando: ${selectedStore.name}${selectedStore.city ? ` — ${selectedStore.city}` : ""}`
-                : null
+              ? "Puntos acumulados de la temporada · no se filtra por tienda"
+              : "Puntos de los torneos del mes"
           }
-          rows={period === "semestral" ? filteredSemestral : filteredMonthly}
+          rows={shownRows}
           loading={loading}
+          fetching={boardQuery.isFetching && !loading}
+          error={boardQuery.isError}
+          onRetry={() => boardQuery.refetch()}
           myNexusTag={myNexusTag}
           search={search}
           onClearSearch={() => setSearch("")}
+          onReset={resetFilters}
+          canReset={canReset}
         />
+
+        {!isStaff && (
+          <div className="mt-6 space-y-4">
+            <AdCarousel sponsors={allSponsors.filter((s) => s.is_active)} />
+            <div className="lg:hidden">
+              <AdHorizontal sponsor={activeSponsor} />
+            </div>
+          </div>
+        )}
       </main>
       <aside className="hidden xl:block">
         {!isStaff && <AdVertical sponsor={activeSponsor} />}
@@ -536,47 +499,124 @@ function LeaderboardPage() {
 
 function RankDelta({ delta }: { delta: number | null }) {
   if (delta === null) {
-    return (
-      <span className="text-xs font-semibold text-foreground-secondary leading-none">NEW</span>
-    );
+    return <span className="text-xs font-medium leading-none text-foreground-subtle">Nuevo</span>;
   }
   if (delta === 0) {
-    return <span className="text-xs font-semibold text-foreground-secondary leading-none">—</span>;
-  }
-  if (delta > 0) {
     return (
-      <div className="flex items-center gap-0.5 text-emerald-400">
-        <ArrowUp size={10} className="shrink-0" />
-        <span className="text-xs font-medium leading-none">{delta}</span>
-      </div>
+      <span className="text-xs leading-none text-foreground-subtle">
+        —<span className="sr-only">Sin cambio de lugar</span>
+      </span>
     );
   }
+  const up = delta > 0;
+  const n = Math.abs(delta);
+  const Arrow = up ? ArrowUp : ArrowDown;
   return (
-    <div className="flex items-center gap-0.5 text-red-400">
-      <ArrowDown size={10} className="shrink-0" />
-      <span className="text-xs font-medium leading-none">{Math.abs(delta)}</span>
+    <span
+      className={`inline-flex items-center gap-0.5 font-mono-stat text-xs font-medium leading-none ${
+        up ? "text-success" : "text-danger"
+      }`}
+    >
+      <Arrow size={12} aria-hidden="true" className="shrink-0" />
+      {n}
+      <span className="sr-only">
+        {up ? "Subió" : "Bajó"} {n} {n === 1 ? "lugar" : "lugares"}
+      </span>
+    </span>
+  );
+}
+
+function RankCell({
+  rank,
+  delta,
+  podium,
+}: {
+  rank: number;
+  delta: number | null;
+  podium: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-start gap-1 leading-none">
+      <span
+        className={`font-mono-stat text-base font-bold ${
+          podium ? PODIUM_TEXT[rank - 1] : "text-foreground-secondary"
+        }`}
+      >
+        {rank}
+      </span>
+      <RankDelta delta={delta} />
     </div>
+  );
+}
+
+function MeBadge() {
+  return (
+    <span className="flex-shrink-0 rounded bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
+      Tú
+    </span>
+  );
+}
+
+function ColumnHelp() {
+  return (
+    <details className="border-b border-border px-4 text-xs text-foreground-secondary">
+      <summary className="flex min-h-11 cursor-pointer items-center font-medium hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:min-h-9">
+        Cómo leer la tabla
+      </summary>
+      <dl className="grid gap-x-8 gap-y-3 pb-3 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="font-semibold text-foreground">Puntos</dt>
+          <dd>Los que sumaste en los torneos del periodo.</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-foreground">Torneos y ganados</dt>
+          <dd>Torneos que jugaste y torneos que ganaste en el periodo.</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-foreground">OMW %</dt>
+          <dd>
+            Porcentaje de victorias de tus rivales (Opponent Match Win). Si dos jugadores empatan en
+            puntos, va arriba el de mayor OMW.
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-foreground">Flecha junto al lugar</dt>
+          <dd>
+            Lugares que subiste o bajaste frente al mes anterior. “Nuevo” = no jugaste el mes
+            anterior.
+          </dd>
+        </div>
+      </dl>
+    </details>
   );
 }
 
 function LeaderboardTable({
   title,
-  badge,
-  subtitle,
+  note,
   rows,
   loading,
+  fetching,
+  error,
+  onRetry,
   myNexusTag,
   search,
   onClearSearch,
+  onReset,
+  canReset,
 }: {
   title: string;
-  badge: string;
-  subtitle?: string | null;
+  note?: string | null;
   rows: Row[];
   loading: boolean;
+  fetching: boolean;
+  error: boolean;
+  onRetry: () => void;
   myNexusTag?: string | null;
   search?: string;
   onClearSearch?: () => void;
+  onReset?: () => void;
+  canReset?: boolean;
 }) {
   const omwFor = (r: Row) => r.omw_percentage ?? 0;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -584,23 +624,15 @@ function LeaderboardTable({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 44,
+    // Filas de dos líneas en móvil (~64px) y de una en escritorio (~56px).
+    estimateSize: () => (typeof window !== "undefined" && window.innerWidth < 768 ? 64 : 56),
     overscan: 10,
   });
 
   const myRowIndex = myNexusTag ? rows.findIndex((r) => r.geek_tag === myNexusTag) : -1;
   const scrollToMe = () => {
-    if (myRowIndex < 0 || !scrollRef.current) return;
-
-    // Calcular posición estimada de la fila
-    const estimatedTop = myRowIndex * 44; // estimateSize es 44px
-    const containerHeight = scrollRef.current.clientHeight;
-    const targetScroll = estimatedTop - containerHeight / 2 + 22;
-
-    scrollRef.current.scrollTo({
-      top: Math.max(0, targetScroll),
-      behavior: "smooth",
-    });
+    if (myRowIndex < 0) return;
+    virtualizer.scrollToIndex(myRowIndex, { align: "center", behavior: "smooth" });
 
     // Flash highlight después del scroll
     setTimeout(() => {
@@ -612,95 +644,103 @@ function LeaderboardTable({
     }, 500);
   };
 
-  // Grid columns: # | Nexus Tag | Ciudad | Pts | Torneos | Victorias | OMW%
-  const gridCols = "grid-cols-[40px_1fr_64px_56px_36px_36px_52px]";
-  const gridColsMobile = "grid-cols-[40px_1fr_68px]";
-
   return (
-    <section className="glass overflow-hidden rounded-2xl h-full flex flex-col">
-      <header className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Trophy className="text-primary" size={18} />
-              <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-            </div>
-            <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-              {badge || "—"}
-            </span>
-            {myRowIndex >= 0 && (
-              <button
-                onClick={scrollToMe}
-                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-foreground-secondary transition hover:border-primary/30 hover:text-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                → Mi posición
-              </button>
-            )}
-          </div>
+    <section className="@container flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          {note && <p className="mt-0.5 text-xs text-foreground-subtle">{note}</p>}
         </div>
-        {subtitle && <p className="mt-2 text-xs text-foreground-secondary">{subtitle}</p>}
+        <div className="flex items-center gap-3">
+          <span role="status" aria-live="polite" className="text-xs text-foreground-subtle">
+            {fetching ? "Actualizando…" : ""}
+          </span>
+          {myRowIndex >= 0 && (
+            <button
+              type="button"
+              onClick={scrollToMe}
+              className={`${BTN_OUTLINE} text-primary hover:text-primary`}
+            >
+              Mi posición
+            </button>
+          )}
+        </div>
       </header>
+
+      <ColumnHelp />
+
+      {error && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 text-sm text-foreground"
+        >
+          <span>
+            No pudimos cargar el ranking.
+            {rows.length > 0 ? " Esta tabla puede estar desactualizada." : ""}
+          </span>
+          <button type="button" onClick={onRetry} className={BTN_OUTLINE}>
+            Reintentar
+          </button>
+        </div>
+      )}
 
       {/* Header fijo */}
       <div
-        className={`hidden md:grid ${gridCols} gap-3.5 bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-foreground-secondary`}
+        className={`hidden @3xl:grid ${GRID_DESKTOP} gap-3 overflow-hidden border-b border-border bg-background/60 px-4 py-2 text-xs font-semibold text-foreground-subtle [scrollbar-gutter:stable]`}
       >
-        <div>#</div>
-        <div>Tag</div>
+        <div>Lugar</div>
+        <div>Jugador</div>
         <div>Ciudad</div>
-        <div className="text-right">Pts</div>
-        <div className="text-right" title="Torneos jugados">
-          Trn
-        </div>
-        <div className="text-right" title="Victorias">
-          W
-        </div>
-        <div className="text-right" title="Opponent Match Win %">
-          OMW%
-        </div>
+        <div className="text-right">Puntos</div>
+        <div className="text-right">Torneos</div>
+        <div className="text-right">Ganados</div>
+        <div className="text-right">OMW %</div>
       </div>
 
       <div
-        className={`grid md:hidden ${gridColsMobile} bg-black/80 px-3 py-2 text-xs uppercase tracking-wider text-foreground-secondary`}
+        className={`grid @3xl:hidden ${GRID_MOBILE} gap-3 overflow-hidden border-b border-border bg-background/60 px-4 py-2 text-xs font-semibold text-foreground-subtle [scrollbar-gutter:stable]`}
       >
-        <div>#</div>
-        <div>Nexus Tag</div>
-        <div className="text-right">Pts</div>
+        <div>Lugar</div>
+        <div>Jugador</div>
+        <div className="text-right">Puntos</div>
       </div>
 
       {/* Contenedor virtualizado */}
-      <div ref={scrollRef} className="max-h-[640px] overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="max-h-[min(640px,70vh)] overflow-y-auto [scrollbar-gutter:stable]"
+      >
         {loading ? (
-          <div>
+          <div aria-busy="true">
             {Array.from({ length: 8 }).map((_, i) => (
               <Fragment key={i}>
                 <div
-                  className={`hidden md:grid ${gridCols} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+                  className={`hidden @3xl:grid ${GRID_DESKTOP} items-center gap-3 border-b border-border px-4 py-4`}
                 >
-                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
-                  <div className="h-3 w-32 rounded bg-white/[0.06] animate-pulse" />
-                  <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
-                  <div className="h-3 w-12 rounded bg-white/[0.06] animate-pulse ml-auto" />
-                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
-                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse ml-auto" />
-                  <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                  <div className="h-3 w-6 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="h-3 w-32 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="h-3 w-16 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="ml-auto h-3 w-12 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="ml-auto h-3 w-6 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="ml-auto h-3 w-6 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="ml-auto h-3 w-10 animate-pulse rounded bg-white/[0.06]" />
                 </div>
                 <div
-                  className={`grid md:hidden ${gridColsMobile} border-b border-white/5 px-3 py-2.5 gap-2 items-center`}
+                  className={`grid @3xl:hidden ${GRID_MOBILE} items-center gap-3 border-b border-border px-4 py-3.5`}
                 >
-                  <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" />
-                  <div className="h-3 w-28 rounded bg-white/[0.06] animate-pulse" />
-                  <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse ml-auto" />
+                  <div className="h-3 w-6 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-28 animate-pulse rounded bg-white/[0.06]" />
+                    <div className="h-3 w-40 animate-pulse rounded bg-white/[0.06]" />
+                  </div>
+                  <div className="ml-auto h-3 w-10 animate-pulse rounded bg-white/[0.06]" />
                 </div>
               </Fragment>
             ))}
           </div>
-        ) : rows.length === 0 ? (
-          <div className="px-3 py-12 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5">
-              <Search size={16} className="text-foreground-subtle" />
-            </div>
-            <p className="text-sm text-foreground-secondary">
+        ) : rows.length === 0 && !error ? (
+          <div className="px-4 py-12 text-center">
+            <p className="text-sm text-foreground">
               {search
                 ? `No encontramos "${search}" en este ranking`
                 : "Sin resultados para estos filtros"}
@@ -708,15 +748,18 @@ function LeaderboardTable({
             <p className="mt-1 text-xs text-foreground-subtle">
               Prueba cambiando la zona, la región, la tienda o el mes
             </p>
-            {search && onClearSearch && (
-              <button
-                type="button" // Always specify the type for buttons to prevent accidental form submission
-                onClick={onClearSearch}
-                className="mt-4 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                Limpiar búsqueda
-              </button>
-            )}
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {search && onClearSearch && (
+                <button type="button" onClick={onClearSearch} className={BTN_OUTLINE}>
+                  Limpiar búsqueda
+                </button>
+              )}
+              {canReset && onReset && (
+                <button type="button" onClick={onReset} className={BTN_OUTLINE}>
+                  Restablecer filtros
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div style={{ height: `${virtualizer.getTotalSize()}px` }} className="relative w-full">
@@ -724,10 +767,8 @@ function LeaderboardTable({
               const r = rows[virtualRow.index];
               const rank = r.rank_position;
               const podium = rank > 0 && rank <= 3;
-              const isFirst = rank === 1;
-              const isSecond = rank === 2;
-              const isThird = rank === 3;
               const isMe = !!myNexusTag && r.geek_tag === myNexusTag;
+              const city = r.city && r.city !== "—" ? r.city : null;
               return (
                 <Link
                   key={r.player_id}
@@ -742,84 +783,61 @@ function LeaderboardTable({
                     width: "100%",
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className={`block border-b transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
-                    isFirst
-                      ? "border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/15"
-                      : isSecond
-                        ? "border-slate-300/30 bg-slate-300/10 hover:bg-slate-300/15"
-                        : isThird
-                          ? "border-orange-700/30 bg-orange-700/10 hover:bg-orange-700/15"
-                          : isMe
-                            ? "border-white/5 bg-primary/15 hover:bg-primary/20"
-                            : podium
-                              ? "border-white/5 bg-primary/5 hover:bg-primary/10"
-                              : "border-white/5 hover:bg-white/5"
+                  className={`block border-b border-border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
+                    isMe ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-white/5"
                   }`}
                 >
                   {/* Desktop */}
-                  <div className={`hidden md:grid ${gridCols} px-3 py-2.5 items-center gap-2`}>
-                    <div className="flex flex-col items-start leading-none">
+                  <div className={`hidden @3xl:grid ${GRID_DESKTOP} items-center gap-3 px-4 py-3`}>
+                    <RankCell rank={rank} delta={r.rank_delta} podium={podium} />
+                    <div className="flex min-w-0 items-center gap-2">
                       <span
-                        className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-foreground-secondary"}`}
-                      >
-                        {String(rank).padStart(2, "0")}
-                      </span>
-                      <RankDelta delta={r.rank_delta} />
-                    </div>
-                    <div className="flex items-center gap-2 min-w-0">
-                      {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <span
-                        className={`font-medium truncate ${isMe ? "text-primary" : "text-foreground"}`}
+                        className={`truncate font-medium ${isMe ? "text-primary" : "text-foreground"}`}
                       >
                         {r.geek_tag}
                       </span>
-                      {isMe && (
-                        <span className="flex-shrink-0 rounded bg-primary/30 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-primary">
-                          Tú
-                        </span>
-                      )}
+                      {isMe && <MeBadge />}
                     </div>
-                    <span className="text-xs text-foreground-secondary truncate">{r.city}</span>
-                    <span className="text-right font-mono font-semibold text-foreground text-sm">
-                      {r.points.toLocaleString()}
+                    <span className="truncate text-sm text-foreground-secondary">
+                      {city ?? "—"}
                     </span>
-                    <span className="text-right font-mono text-xs text-foreground-secondary">
+                    <span className="text-right font-mono-stat text-sm font-semibold text-foreground">
+                      {r.points.toLocaleString("es-MX")}
+                    </span>
+                    <span className="text-right font-mono-stat text-sm text-foreground-secondary">
                       {r.tournaments_played}
                     </span>
-                    <span className="text-right font-mono text-xs text-foreground-secondary">
+                    <span className="text-right font-mono-stat text-sm text-foreground-secondary">
                       {r.tournaments_won}
                     </span>
-                    <span className="text-right font-mono text-xs text-foreground-secondary">
+                    <span className="text-right font-mono-stat text-sm text-foreground-secondary">
                       {omwFor(r)}%
                     </span>
                   </div>
-                  {/* Mobile */}
-                  <div
-                    className={`grid md:hidden ${gridColsMobile} px-3 py-2.5 items-center gap-2`}
-                  >
-                    <div className="flex flex-col items-start leading-none">
-                      <span
-                        className={`font-mono text-xs ${podium ? "font-bold text-primary" : "text-foreground-secondary"}`}
-                      >
-                        {String(rank).padStart(2, "0")}
-                      </span>
-                      <RankDelta delta={r.rank_delta} />
-                    </div>
-                    <div className="flex items-center gap-2 min-w-0">
-                      {rank === 1 && <Medal className="text-amber-300 flex-shrink-0" size={14} />}
-                      <span
-                        className={`font-medium truncate ${isMe ? "text-primary" : "text-foreground"}`}
-                      >
-                        {r.geek_tag}
-                      </span>
-                      {isMe && (
-                        <span className="flex-shrink-0 rounded bg-primary/30 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
-                          Tú
+                  {/* Mobile: dos líneas, para comparar sin abrir el perfil */}
+                  <div className={`grid @3xl:hidden ${GRID_MOBILE} items-center gap-3 px-4 py-3`}>
+                    <RankCell rank={rank} delta={r.rank_delta} podium={podium} />
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={`truncate font-medium ${isMe ? "text-primary" : "text-foreground"}`}
+                        >
+                          {r.geek_tag}
                         </span>
-                      )}
+                        {isMe && <MeBadge />}
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-foreground-secondary">
+                        {[
+                          city,
+                          `${r.tournaments_played} ${r.tournaments_played === 1 ? "torneo" : "torneos"}`,
+                          `${r.tournaments_won} ${r.tournaments_won === 1 ? "ganado" : "ganados"}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
                     </div>
-                    <span className="text-right font-mono font-semibold text-foreground text-sm">
-                      {r.points.toLocaleString()}
+                    <span className="text-right font-mono-stat text-base font-semibold text-foreground">
+                      {r.points.toLocaleString("es-MX")}
                     </span>
                   </div>
                 </Link>

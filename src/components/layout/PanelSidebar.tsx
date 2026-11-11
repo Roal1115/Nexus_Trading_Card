@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { nexus } from "@/integrations/nexus/client";
 import { toast } from "sonner";
 import { NotificationBadge } from "@/components/ui/NotificationBadge";
+import { ConfirmLogout } from "@/components/layout/ConfirmLogout";
 
 export type SidebarItem = {
   to: string;
@@ -30,6 +31,8 @@ export function PanelSidebar({
   collapsible = false,
   topSlot,
   action,
+  userHref,
+  userMeta,
 }: {
   title: string;
   subtitle: string;
@@ -42,6 +45,10 @@ export function PanelSidebar({
   topSlot?: (collapsed: boolean) => React.ReactNode;
   /** Acción principal del panel (p. ej. Subir torneo), arriba del menú. */
   action?: { to: string; label: string; icon: React.ReactNode };
+  /** Destino de la fila de identidad del pie (p. ej. el perfil público). */
+  userHref?: string;
+  /** Línea bajo el nombre (p. ej. "#62 · Temporada 2026"); por defecto, el rol. */
+  userMeta?: string;
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -111,7 +118,9 @@ export function PanelSidebar({
       ? pathname === item.to
       : pathname === item.to || pathname.startsWith(item.to + "/");
     const cls = `flex min-h-11 items-center gap-2.5 overflow-hidden rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:min-h-0 ${
-      active ? "bg-primary/15 text-primary" : "text-gray-300 hover:bg-white/5 hover:text-white"
+      active
+        ? "bg-primary/15 text-primary"
+        : "text-foreground-secondary hover:bg-white/5 hover:text-foreground"
     }`;
     const title = collapsed ? item.label : undefined;
     const content = (
@@ -199,7 +208,7 @@ export function PanelSidebar({
       {(floating || overlayOpen) && <div aria-hidden className="w-[4.5rem] shrink-0" />}
 
       <aside
-        className={`panel-sidebar glass fixed inset-y-0 left-0 z-50 flex ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-white/10 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out ${floating || overlayOpen ? "md:fixed md:z-50" : "md:sticky md:top-0 md:z-auto"} md:translate-x-0 md:pb-4 ${
+        className={`panel-sidebar fixed inset-y-0 left-0 z-50 flex bg-card ${collapsed ? "w-[4.5rem]" : "w-64"} shrink-0 flex-col rounded-none border-r border-border p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-[width,transform] duration-200 ease-in-out ${floating || overlayOpen ? "md:fixed md:z-50" : "md:sticky md:top-0 md:z-auto"} md:translate-x-0 md:pb-4 ${
           mobileOpen ? "translate-x-0" : "invisible -translate-x-full md:visible md:translate-x-0"
         }`}
         style={{ height: "100dvh" }}
@@ -207,7 +216,7 @@ export function PanelSidebar({
         {/* Botón cerrar en mobile */}
         <button
           onClick={closeMobile}
-          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-gray-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:hidden"
+          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-foreground-subtle transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:hidden"
           aria-label="Cerrar menú"
         >
           <X size={20} />
@@ -218,7 +227,7 @@ export function PanelSidebar({
           className="mb-6 flex h-9 items-center gap-2 overflow-hidden px-2"
           onClick={closeMobile}
         >
-          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/20 text-primary">
+          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center text-foreground">
             <Trophy size={16} />
           </span>
           <div
@@ -226,8 +235,8 @@ export function PanelSidebar({
               collapsed ? "w-0 opacity-0" : "opacity-100"
             }`}
           >
-            <div className="text-sm font-bold text-white">Nexus</div>
-            <div className="text-[10px] uppercase tracking-widest text-primary">{subtitle}</div>
+            <div className="text-sm font-bold text-foreground">Nexus</div>
+            <div className="text-xs text-foreground-subtle">{subtitle}</div>
           </div>
         </Link>
 
@@ -254,7 +263,7 @@ export function PanelSidebar({
           {resolvedSections.map((sec) => (
             <div key={sec.title}>
               <div
-                className={`mb-2 overflow-hidden whitespace-nowrap px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500 transition-opacity duration-200 ${
+                className={`mb-1.5 overflow-hidden whitespace-nowrap px-3 text-xs font-medium text-foreground-subtle transition-opacity duration-200 ${
                   collapsed ? "opacity-0" : "opacity-100"
                 }`}
               >
@@ -265,15 +274,46 @@ export function PanelSidebar({
           ))}
         </nav>
 
-        <div className="flex-shrink-0 space-y-2 border-t border-white/10 pt-4 mt-2">
-          <div
-            className={`overflow-hidden whitespace-nowrap px-2 text-xs text-gray-400 transition-opacity duration-200 ${
-              collapsed ? "h-0 opacity-0" : "opacity-100"
-            }`}
-          >
-            <div className="text-[10px] uppercase tracking-widest text-gray-500">Sesión</div>
-            <div className="truncate text-white">{userLabel}</div>
-          </div>
+        <div className="mt-2 flex-shrink-0 space-y-1 border-t border-border pt-3">
+          {/* Identidad: quién eres y dónde vas en el circuito, en vez de un
+              rótulo "Sesión" genérico. Lleva a tu perfil cuando hay destino. */}
+          {userLabel &&
+            (() => {
+              const body = (
+                <>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-foreground">
+                    {userLabel.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span
+                    className={`min-w-0 transition-opacity duration-200 ${
+                      collapsed ? "w-0 opacity-0" : "flex-1 opacity-100"
+                    }`}
+                  >
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {userLabel}
+                    </span>
+                    <span className="block truncate text-xs text-foreground-subtle">
+                      {userMeta ?? subtitle}
+                    </span>
+                  </span>
+                </>
+              );
+              const rowCls =
+                "flex min-h-11 w-full items-center gap-2.5 overflow-hidden rounded-md px-2 py-1.5 text-left md:min-h-0";
+              return userHref ? (
+                <Link
+                  to={userHref}
+                  onClick={closeMobile}
+                  title={collapsed ? `${userLabel} · Ver perfil` : undefined}
+                  aria-label={`${userLabel}${userMeta ? `, ${userMeta}` : ""}. Ver perfil`}
+                  className={`${rowCls} transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+                >
+                  {body}
+                </Link>
+              ) : (
+                <div className={rowCls}>{body}</div>
+              );
+            })()}
           {collapsible && (
             <button
               type="button"
@@ -281,7 +321,7 @@ export function PanelSidebar({
               aria-expanded={!collapsed}
               aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
               title={collapsed ? "Expandir menú" : undefined}
-              className="hidden min-h-9 w-full items-center gap-2.5 overflow-hidden rounded-md px-2.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:flex"
+              className="hidden min-h-9 w-full items-center gap-2.5 overflow-hidden rounded-md px-3 text-sm text-foreground-secondary transition hover:bg-white/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:flex"
             >
               <span className="shrink-0">
                 {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
@@ -295,22 +335,27 @@ export function PanelSidebar({
               </span>
             </button>
           )}
-          <button
-            onClick={logout}
-            title={collapsed ? "Cerrar sesión" : undefined}
-            className="flex min-h-11 w-full items-center gap-2 overflow-hidden rounded-md border border-white/10 px-3 py-2 text-xs text-gray-300 transition hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:min-h-0"
-          >
-            <span className="shrink-0">
-              <LogOut size={12} />
-            </span>
-            <span
-              className={`whitespace-nowrap transition-opacity duration-200 ${
-                collapsed ? "w-0 opacity-0" : "opacity-100"
-              }`}
-            >
-              Cerrar sesión
-            </span>
-          </button>
+          <ConfirmLogout
+            onConfirm={logout}
+            trigger={
+              <button
+                type="button"
+                title={collapsed ? "Cerrar sesión" : undefined}
+                className="flex min-h-11 w-full items-center gap-2.5 overflow-hidden rounded-md px-3 py-2 text-sm text-foreground-secondary transition hover:bg-white/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:min-h-0"
+              >
+                <span className="shrink-0">
+                  <LogOut size={16} />
+                </span>
+                <span
+                  className={`whitespace-nowrap transition-opacity duration-200 ${
+                    collapsed ? "w-0 opacity-0" : "opacity-100"
+                  }`}
+                >
+                  Cerrar sesión
+                </span>
+              </button>
+            }
+          />
         </div>
       </aside>
     </>

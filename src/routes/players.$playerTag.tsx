@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Crown, Lock, Share2, Sparkles, Target, TrendingUp, Trophy } from "lucide-react";
+import { ChevronRight, Lock } from "lucide-react";
 import { playerProfileQuery, playerAchievementsQuery } from "@/lib/player-profile-queries";
 import { PlayerCardShare } from "@/components/player/PlayerCardShare";
 import { getActiveSponsor, registerAdView } from "@/lib/nexus-ads.functions";
@@ -12,6 +12,8 @@ import { isNameplateReward } from "@/lib/achievement-rewards";
 import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { NameplateBanner } from "@/components/player/NameplateBanner";
+import { PODIUM_TEXT } from "@/components/ranking/RankingBand";
+import { useHidesOthersDecks } from "@/hooks/use-nexus-role";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/players/$playerTag")({
@@ -64,21 +66,170 @@ export const Route = createFileRoute("/players/$playerTag")({
   component: PublicProfilePage,
 });
 
+const BTN_OUTLINE =
+  "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground-secondary transition hover:bg-white/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9";
+
+/** "2026-11-05" -> "5 nov" (con año solo si no es el actual). */
+function fmtDate(d: string | null | undefined): string {
+  if (!d || !/^\d{4}-\d{2}-\d{2}/.test(d)) return "—";
+  const date = new Date(`${d.slice(0, 10)}T12:00:00`);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
+
+/** "29.00" -> "29", "12.50" -> "12.5" (sin ceros sobrantes). */
+function fmtPts(v: unknown): string {
+  return Number(Number(v ?? 0).toFixed(2)).toLocaleString("es-MX", { maximumFractionDigits: 2 });
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** Filtro de una sola opción activa; botones de 44px en móvil con estado accesible. */
+function FilterGroup({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: Array<{ key: string | null; label: string }>;
+  value: string | null;
+  onChange: (key: string | null) => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex overflow-x-auto border-b border-border px-2"
+    >
+      {options.map((o) => (
+        <button
+          key={o.key ?? "all"}
+          type="button"
+          aria-pressed={value === o.key}
+          onClick={() => onChange(o.key)}
+          className={`-mb-px min-h-11 flex-shrink-0 cursor-pointer whitespace-nowrap border-b-2 px-4 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9 ${
+            value === o.key
+              ? "border-primary text-foreground"
+              : "border-transparent text-foreground-secondary hover:text-foreground"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function LeagueChip({ t }: { t: any }) {
+  if (!t.league_name || !t.store_slug) return null;
+  return (
+    <Link
+      to="/stores/$slug"
+      params={{ slug: t.store_slug }}
+      hash="liga-interna"
+      className="relative z-10 rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-foreground-secondary transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+    >
+      <span className="sr-only">Liga: </span>
+      {t.league_name}
+    </Link>
+  );
+}
+
+/**
+ * Una fila del historial. El enlace al torneo vive en el nombre de la tienda y se
+ * estira sobre toda la fila (after:inset-0), así la fila se abre con teclado y clic
+ * medio, y el chip de liga puede seguir siendo su propio enlace encima.
+ */
+function HistoryRow({ t, showTcg }: { t: any; showTcg: boolean }) {
+  const place = t.placement <= 3 ? "text-primary" : "text-foreground";
+  const wl = t.wins != null && t.losses != null ? { w: t.wins, l: t.losses } : null;
+  const stretched =
+    "after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-primary";
+  const storeLink = (cls: string) => (
+    <Link to="/tournaments/$id" params={{ id: t.id }} className={`${cls} ${stretched}`}>
+      {t.store}
+    </Link>
+  );
+  return (
+    <>
+      {/* Escritorio */}
+      <div className="relative hidden grid-cols-[96px_minmax(0,1fr)_72px_64px_80px] items-center gap-3 px-4 py-3 transition hover:bg-white/5 sm:grid">
+        <span className="font-mono-stat text-xs text-foreground-secondary">{fmtDate(t.date)}</span>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          {storeLink("min-w-0 truncate font-medium text-foreground")}
+          <span className="truncate text-xs text-foreground-subtle">
+            {[t.city, showTcg ? t.tcg : null].filter(Boolean).join(" · ")}
+          </span>
+          <LeagueChip t={t} />
+        </div>
+        <span className="whitespace-nowrap text-center font-mono-stat text-xs text-foreground-secondary">
+          {wl ? `${wl.w} / ${wl.l}` : "—"}
+        </span>
+        <span className={`text-right font-mono-stat text-sm font-semibold ${place}`}>
+          #{t.placement}
+        </span>
+        <span className="text-right font-mono-stat font-semibold text-foreground">
+          +{fmtPts(t.pointsEarned)}
+        </span>
+      </div>
+
+      {/* Móvil: lugar, tienda con su contexto en una línea, y puntos */}
+      <div className="relative flex items-center gap-3 px-4 py-3 transition active:bg-white/5 sm:hidden">
+        <span className={`min-w-10 flex-shrink-0 font-mono-stat text-base font-bold ${place}`}>
+          #{t.placement}
+        </span>
+        <div className="min-w-0 flex-1">
+          {storeLink("block truncate font-semibold text-foreground")}
+          <p className="mt-0.5 truncate text-xs text-foreground-secondary">
+            {[t.city, fmtDate(t.date), wl ? `${wl.w}V/${wl.l}D` : null, showTcg ? t.tcg : null]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          {t.league_name && t.store_slug && (
+            <div className="mt-1">
+              <LeagueChip t={t} />
+            </div>
+          )}
+        </div>
+        <span className="flex-shrink-0 font-mono-stat text-base font-semibold text-foreground">
+          +{fmtPts(t.pointsEarned)}
+        </span>
+      </div>
+    </>
+  );
+}
+
+function EmptyHistory() {
+  return (
+    <div className="px-4 py-14 text-center">
+      <p className="text-sm font-semibold text-foreground">Aún sin torneos registrados</p>
+      <p className="mt-1 text-xs text-foreground-subtle">
+        Participa en un torneo en tu tienda local para aparecer en el circuito.
+      </p>
+      <Link
+        to="/stores"
+        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-9"
+      >
+        Encontrar una tienda
+      </Link>
+    </div>
+  );
+}
+
 function PublicProfilePage() {
   const { playerTag } = Route.useParams();
   const loaderData = Route.useLoaderData();
-  const navigate = useNavigate();
-  // A diferencia del dashboard (donde un torneo lleva al detalle de gestión
-  // interno), en el perfil público lleva al detalle público del torneo
-  // (/tournaments/$id), que a su vez ofrece "Volver" y "Ver tienda".
-  const goToTournament = (tournamentId: string) => {
-    navigate({ to: "/tournaments/$id", params: { id: tournamentId } });
-  };
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
 
   const [sponsor, setSponsor] = useState<any>(null);
   const [avatarError, setAvatarError] = useState(false);
+  const hidesOthersDecks = useHidesOthersDecks();
 
   const [historyTcg, setHistoryTcg] = useState<string | null>(null);
   const NATIONAL_LEAGUE = "__national__";
@@ -202,42 +353,42 @@ function PublicProfilePage() {
     return (
       <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
         <aside className="hidden xl:block" />
-        <main className="min-w-0 pb-20">
-          {/* Hero — avatar, tag, pills de title/badge, fila de headline
-              stats y botón de compartir: mismo layout que el estado real
-              para que no haya salto de tamaño al resolver la query. */}
-          <div className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40 p-6 sm:p-10">
-            <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-              <SkeletonBlock className="h-20 w-20 flex-shrink-0 rounded-full sm:h-24 sm:w-24" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <SkeletonLine width="w-24" height="h-3" />
-                <SkeletonLine width="w-48" height="h-8" />
-                <div className="flex gap-2">
-                  <SkeletonBlock className="h-7 w-28 rounded-full" />
-                  <SkeletonBlock className="h-7 w-24 rounded-full" />
+        <main className="min-w-0 pb-20" aria-busy="true">
+          {/* Hero — misma forma que el estado real (identidad, lugar y fila de
+              stats) para que no haya salto de tamaño al resolver la query. */}
+          <div className="@container my-6 overflow-hidden rounded-2xl border border-border bg-card sm:my-8">
+            <div className="grid gap-6 p-5 sm:p-8 @4xl:grid-cols-[minmax(0,1fr)_auto] @4xl:items-center @4xl:gap-10">
+              <div className="flex items-start gap-4 sm:gap-5">
+                <SkeletonBlock className="h-16 w-16 flex-shrink-0 rounded-full sm:h-20 sm:w-20" />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <SkeletonLine width="w-48" height="h-9" />
+                  <SkeletonBlock className="h-7 w-28 rounded-md" />
+                  <SkeletonLine width="w-40" height="h-3" />
                 </div>
-                <div className="flex gap-5 pt-1">
-                  <SkeletonLine width="w-16" height="h-8" />
-                  <SkeletonLine width="w-16" height="h-8" />
-                  <SkeletonLine width="w-20" height="h-8" />
-                </div>
-                <SkeletonBlock className="h-8 w-36 rounded-md" />
               </div>
+              <div className="flex items-center gap-4 sm:gap-6">
+                <SkeletonBlock className="h-14 w-10 flex-shrink-0 rounded-md sm:h-28 sm:w-20" />
+                <div className="space-y-3">
+                  <SkeletonLine width="w-36" height="h-3" />
+                  <SkeletonLine width="w-28" height="h-14" />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-8 border-t border-border px-5 py-4 sm:px-8">
+              <SkeletonLine width="w-16" height="h-8" />
+              <SkeletonLine width="w-20" height="h-8" />
+              <SkeletonLine width="w-24" height="h-8" />
             </div>
           </div>
 
-          {/* Standing — 3 cards (rankings + achievements) */}
-          <div className="flex flex-wrap gap-4">
-            <SkeletonBlock className="h-32 w-full rounded-2xl sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]" />
-            <SkeletonBlock className="h-32 w-full rounded-2xl sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]" />
-            <SkeletonBlock className="h-32 w-full rounded-2xl sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]" />
-          </div>
+          {/* Más rankings y logros */}
+          <SkeletonBlock className="h-16 w-full rounded-xl" />
 
           {/* Historial de torneos */}
-          <SkeletonBlock className="mt-6 h-14 w-full rounded-t-2xl" />
+          <SkeletonBlock className="mt-6 h-14 w-full rounded-t-xl" />
           <div className="space-y-px">
             {Array.from({ length: 5 }).map((_, i) => (
-              <SkeletonBlock key={i} className="h-12 w-full last:rounded-b-2xl" />
+              <SkeletonBlock key={i} className="h-14 w-full last:rounded-b-xl" />
             ))}
           </div>
         </main>
@@ -253,10 +404,7 @@ function PublicProfilePage() {
         <p className="mt-2 text-sm text-foreground-secondary">
           No existe un jugador con ese Nexus Tag.
         </p>
-        <Link
-          to="/"
-          className="mt-6 inline-block rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-foreground"
-        >
+        <Link to="/" className={`${BTN_OUTLINE} mt-6 px-6`}>
           Volver al inicio
         </Link>
       </main>
@@ -266,21 +414,45 @@ function PublicProfilePage() {
   if (profile.is_private) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <Lock className="mb-4 text-foreground-subtle" size={40} />
+        <Lock className="mb-4 text-foreground-subtle" size={40} aria-hidden="true" />
         <h2 className="text-2xl font-bold text-foreground">Perfil privado</h2>
         <p className="mt-2 text-sm text-foreground-secondary">
-          El perfil de <span className="font-semibold text-primary">@{profile.geek_tag}</span> es
+          El perfil de <span className="font-semibold text-foreground">@{profile.geek_tag}</span> es
           privado.
         </p>
-        <Link
-          to="/"
-          className="mt-6 rounded-md border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-foreground"
-        >
+        <Link to="/" className={`${BTN_OUTLINE} mt-6 px-6`}>
           Volver al inicio
         </Link>
       </main>
     );
   }
+
+  // El lugar del héroe es el del primer TCG en el que el jugador ya tiene posición.
+  const primaryRanking =
+    profile.rankings.find((r: any) => r.rank_position > 0) ?? profile.rankings[0] ?? null;
+  const otherRankings = profile.rankings.filter((r: any) => r !== primaryRanking);
+  const primaryTier =
+    primaryRanking && primaryRanking.rank_position >= 1 && primaryRanking.rank_position <= 3
+      ? PODIUM_TEXT[primaryRanking.rank_position - 1]
+      : "text-foreground";
+  // Con perfil privado no se ve el deck de otros jugadores (el propio sí).
+  const mainLeader = hidesOthersDecks && !profile.is_owner ? null : (profile.main_leader ?? null);
+  const leaderImage: string | null = mainLeader?.image ?? null;
+  const showStats =
+    record.total > 0 || !!mainLeader || recentForm.length > 0 || !!profile.total_tournaments_won;
+  const metaLine = [
+    profile.store_city,
+    profile.member_since
+      ? `Miembro desde ${new Date(profile.member_since).toLocaleDateString("es-MX", {
+          month: "long",
+          year: "numeric",
+        })}`
+      : null,
+  ].filter(Boolean);
+  const achievementsPct =
+    achievements && achievements.total_count > 0
+      ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
+      : 0;
 
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
@@ -289,258 +461,244 @@ function PublicProfilePage() {
       </aside>
 
       <main className="min-w-0 pb-20">
-        {/* Hero */}
-        <section className="relative my-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40 p-6 sm:p-10">
-          <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
-          <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-            {profile.avatar_url && !avatarError ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.geek_tag}
-                onError={() => setAvatarError(true)}
-                className="h-20 w-20 flex-shrink-0 rounded-full border-2 border-primary/40 object-cover sm:h-24 sm:w-24"
-              />
-            ) : (
-              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary/40 bg-black/40 text-3xl font-bold text-primary sm:h-24 sm:w-24">
-                {profile.geek_tag.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="w-full min-w-0 sm:flex-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                Nexus Tag
-              </p>
-              <h1 className="mt-1 text-3xl font-bold text-foreground [overflow-wrap:anywhere] sm:text-5xl">
-                {profile.geek_tag}
-              </h1>
-              <NameplateBanner
-                equipped={profile.equipped_nameplate}
-                isOwner={!!profile.is_owner}
-                unlockedNameplates={unlockedNameplates}
-                onEquip={handleEquipNameplate}
-              />
-              {(profile.equipped_title || profile.equipped_badge) && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  {profile.equipped_title && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 px-3.5 py-1.5 text-sm font-bold uppercase tracking-wider text-fuchsia-300 shadow-[0_0_20px_-6px_rgba(217,70,239,0.6)]">
-                      <Sparkles size={13} /> {profile.equipped_title}
-                    </span>
-                  )}
-                  {profile.equipped_badge && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/15 px-3.5 py-1.5 text-sm font-semibold text-primary">
-                      <Trophy size={13} /> {profile.equipped_badge}
-                    </span>
-                  )}
+        {/* Hero: identidad a la izquierda; a la derecha, lo que el visitante viene a
+            buscar — el lugar del jugador y su leader. */}
+        <section className="@container my-6 overflow-hidden rounded-2xl border border-border bg-card sm:my-8">
+          <div className="grid gap-6 p-5 sm:p-8 @4xl:grid-cols-[minmax(0,1fr)_auto] @4xl:items-center @4xl:gap-10">
+            <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+              {profile.avatar_url && !avatarError ? (
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  onError={() => setAvatarError(true)}
+                  className="h-16 w-16 flex-shrink-0 rounded-full border border-border object-cover sm:h-20 sm:w-20"
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-2xl font-bold text-foreground sm:h-20 sm:w-20 sm:text-3xl"
+                >
+                  {profile.geek_tag.charAt(0).toUpperCase()}
                 </div>
               )}
-              {profile.store_city && (
-                <p className="mt-1 text-sm text-foreground-secondary">{profile.store_city}</p>
-              )}
-              {profile.member_since && (
-                <p className="mt-2 text-xs text-foreground-subtle">
-                  Miembro desde{" "}
-                  {new Date(profile.member_since).toLocaleDateString("es-MX", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
-              )}
-
-              {/* Headline stats: win-rate agregado, mazo/leader principal y
-                  forma reciente — hoy la única forma de saber "qué tan
-                  bueno es este jugador ahora mismo" era leer manualmente
-                  las 10 filas del historial. */}
-              {(record.total > 0 ||
-                profile.main_leader ||
-                recentForm.length > 0 ||
-                !!profile.total_tournaments_won) && (
-                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-                  {!!profile.total_tournaments_won && (
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                        Torneos Ganados
-                      </p>
-                      <p className="font-mono-stat text-lg font-bold text-foreground">
-                        🏆 {profile.total_tournaments_won}
-                      </p>
-                    </div>
-                  )}
-                  {record.winRate != null && (
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                        Win rate
-                      </p>
-                      <p className="font-mono-stat text-lg font-bold text-foreground">
-                        {record.winRate}%{" "}
-                        <span className="text-xs font-normal text-foreground-subtle">
-                          ({record.wins}V-{record.losses}D)
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold leading-tight text-foreground [overflow-wrap:anywhere] sm:text-4xl">
+                  {profile.geek_tag}
+                </h1>
+                <NameplateBanner
+                  equipped={profile.equipped_nameplate}
+                  isOwner={!!profile.is_owner}
+                  unlockedNameplates={unlockedNameplates}
+                  onEquip={handleEquipNameplate}
+                />
+                {(profile.equipped_title || profile.equipped_badge) && (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {[profile.equipped_title, profile.equipped_badge]
+                      .filter(Boolean)
+                      .map((label) => (
+                        <span
+                          key={label}
+                          className="rounded-md border border-border bg-secondary px-2.5 py-1 text-sm font-medium text-foreground"
+                        >
+                          {label}
                         </span>
-                      </p>
-                    </div>
-                  )}
-                  {profile.main_leader && (
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                        Leader principal
-                      </p>
-                      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                        {profile.main_leader.image && (
-                          <img
-                            src={profile.main_leader.image}
-                            alt=""
-                            className="h-6 w-6 rounded object-cover"
-                          />
-                        )}
-                        {profile.main_leader.name}
-                      </p>
-                    </div>
-                  )}
-                  {recentForm.length > 0 && (
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                        Últimos resultados
-                      </p>
-                      <div className="mt-0.5 flex items-center gap-1">
+                      ))}
+                  </div>
+                )}
+                {metaLine.length > 0 && (
+                  <p className="mt-2 text-sm text-foreground-secondary">{metaLine.join(" · ")}</p>
+                )}
+              </div>
+            </div>
+
+            {(primaryRanking || leaderImage) && (
+              <div className="flex items-center gap-4 sm:gap-6 @4xl:justify-end">
+                {leaderImage && (
+                  <img
+                    src={leaderImage}
+                    alt={`Leader ${mainLeader?.name ?? ""}`.trim()}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-14 w-10 flex-shrink-0 rounded-md border border-border object-cover sm:h-28 sm:w-20"
+                  />
+                )}
+                {primaryRanking && (
+                  <div className="min-w-0">
+                    <p className="text-sm text-foreground-secondary">
+                      Ranking de temporada · {primaryRanking.game_name}
+                    </p>
+                    <p
+                      className={`mt-1 font-mono-stat text-6xl font-bold leading-none sm:text-7xl @4xl:text-8xl ${primaryTier}`}
+                    >
+                      {primaryRanking.rank_position > 0 ? `#${primaryRanking.rank_position}` : "—"}
+                    </p>
+                    <p className="mt-2 text-balance font-mono-stat text-sm text-foreground-secondary">
+                      {fmtPts(primaryRanking.total_points)} pts ·{" "}
+                      {plural(primaryRanking.tournaments_played, "torneo", "torneos")} ·{" "}
+                      {plural(primaryRanking.tournaments_won, "ganado", "ganados")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-5 py-4 sm:px-8">
+            {showStats ? (
+              <dl className="flex flex-wrap items-start gap-x-8 gap-y-3">
+                {!!profile.total_tournaments_won && (
+                  <div>
+                    <dt className="text-xs text-foreground-subtle">Torneos ganados</dt>
+                    <dd className="font-mono-stat text-lg font-semibold text-foreground">
+                      {profile.total_tournaments_won}
+                    </dd>
+                  </div>
+                )}
+                {record.winRate != null && (
+                  <div>
+                    <dt className="text-xs text-foreground-subtle">Win rate</dt>
+                    <dd className="font-mono-stat text-lg font-semibold text-foreground">
+                      {record.winRate}%{" "}
+                      <span className="text-xs font-normal text-foreground-subtle">
+                        ({record.wins}V-{record.losses}D)
+                      </span>
+                    </dd>
+                  </div>
+                )}
+                {mainLeader && (
+                  <div>
+                    <dt className="text-xs text-foreground-subtle">Leader principal</dt>
+                    <dd className="max-w-[16rem] truncate text-lg font-semibold text-foreground">
+                      {mainLeader.name}
+                    </dd>
+                  </div>
+                )}
+                {recentForm.length > 0 && (
+                  <div>
+                    <dt className="text-xs text-foreground-subtle">
+                      Últimos {recentForm.length} torneos (lugar)
+                    </dt>
+                    <dd>
+                      <ol className="mt-1.5 flex items-center gap-1">
                         {recentForm.map((t: any, i: number) => (
-                          <span
+                          <li
                             key={t.id ?? i}
-                            title={`#${t.placement} — ${t.date}`}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full font-mono-stat text-[9px] font-bold ${
+                            className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 font-mono-stat text-xs font-bold ${
                               t.placement <= 3
-                                ? "bg-primary/20 text-primary"
+                                ? "bg-primary/15 text-primary"
                                 : "bg-white/10 text-foreground-secondary"
                             }`}
                           >
+                            <span className="sr-only">Lugar </span>
                             {t.placement}
-                          </span>
+                          </li>
                         ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                      </ol>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            ) : (
+              <span />
+            )}
 
-              <PlayerCardShare
-                url={`https://mxntcg.lovable.app/players/${profile.geek_tag}`}
-                title={`${profile.geek_tag} — TCG League`}
-                text={`Mira el ranking de ${profile.geek_tag} en TCG League 🏆`}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-white/10"
-                cardData={{
-                  nexusTag: profile.geek_tag,
-                  subtitle: profile.store_city ?? null,
-                  badge: profile.equipped_title ?? null,
-                  rankLabel:
-                    (profile.rankings?.[0] as any)?.rank_position > 0
-                      ? `#${(profile.rankings[0] as any).rank_position}`
-                      : null,
-                  rankCaption: (profile.rankings?.[0] as any)?.game_name ?? null,
-                  stats: [
-                    {
-                      label: "Win rate",
-                      value: record.winRate != null ? `${record.winRate}%` : "—",
-                    },
-                    { label: "Torneos", value: String(tournaments.length) },
-                    { label: "Ganados", value: String(profile.total_tournaments_won ?? 0) },
-                  ],
-                  leaderName: profile.main_leader?.name ?? null,
-                  recentPlacements: recentForm.map((t: any) => t.placement),
-                }}
-              />
-            </div>
+            <PlayerCardShare
+              url={`https://mxntcg.lovable.app/players/${profile.geek_tag}`}
+              title={`${profile.geek_tag} — TCG League`}
+              text={`Mira el ranking de ${profile.geek_tag} en TCG League 🏆`}
+              className={BTN_OUTLINE}
+              cardData={{
+                nexusTag: profile.geek_tag,
+                subtitle: profile.store_city ?? null,
+                badge: profile.equipped_title ?? null,
+                rankLabel:
+                  primaryRanking && primaryRanking.rank_position > 0
+                    ? `#${primaryRanking.rank_position}`
+                    : null,
+                rankCaption: primaryRanking?.game_name ?? null,
+                stats: [
+                  {
+                    label: "Win rate",
+                    value: record.winRate != null ? `${record.winRate}%` : "—",
+                  },
+                  { label: "Torneos", value: String(tournaments.length) },
+                  { label: "Ganados", value: String(profile.total_tournaments_won ?? 0) },
+                ],
+                leaderName: mainLeader?.name ?? null,
+                recentPlacements: recentForm.map((t: any) => t.placement),
+              }}
+            />
           </div>
         </section>
 
-        {/* Standing & Progression — Rankings y Achievements son la misma
-            pregunta ("qué tan bueno/comprometido es este jugador") y antes
-            vivían en dos cards sueltas sin relación visual entre sí. Un solo
-            módulo, un solo header. */}
-        {(profile.rankings.length > 0 || achievements || achievementsQuery.isPending) && (
-          <section className="mt-6">
-            <h2 className="mb-3 text-lg font-semibold text-foreground">Ranking</h2>
-            <div className="flex flex-wrap gap-4">
-              {profile.rankings.map((r: any) => (
-                <div
-                  key={r.game_id}
-                  className="glass flex w-full flex-col gap-3 rounded-2xl border border-white/10 p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
-                >
-                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
-                    <Crown size={14} className="text-primary" /> {r.game_name}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
-                        <Crown size={10} /> Temporada
-                      </p>
-                      <p className="mt-1 font-mono-stat text-3xl font-bold text-foreground">
-                        {r.rank_position > 0 ? `#${r.rank_position}` : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
-                        <Target size={10} className="text-primary" /> Puntos
-                      </p>
-                      <p className="mt-1 font-mono-stat text-3xl font-bold text-foreground">
-                        {Number(r.total_points).toFixed(0)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-foreground-secondary">
-                    <span>{r.tournaments_played} jugados esta temporada</span>
-                    <span>·</span>
-                    <span>{r.tournaments_won} ganados</span>
-                  </div>
+        {/* Más rankings (otros TCG) y logros, en una sola superficie separada por líneas.
+            El teaser de logros se muestra siempre, incluso en 0: a un jugador nuevo hay
+            que mostrarle que el sistema existe. Mientras resuelve (query aparte) va un
+            skeleton del mismo alto para que el layout no salte. */}
+        {(otherRankings.length > 0 || achievements || achievementsQuery.isPending) && (
+          <section
+            aria-label="Otros rankings y logros"
+            className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card"
+          >
+            {otherRankings.map((r: any) => (
+              <div key={r.game_id} className="flex items-center justify-between gap-4 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-foreground">{r.game_name}</p>
+                  <p className="text-xs text-foreground-secondary">
+                    {fmtPts(r.total_points)} pts ·{" "}
+                    {plural(r.tournaments_played, "torneo", "torneos")} esta temporada ·{" "}
+                    {plural(r.tournaments_won, "ganado", "ganados")}
+                  </p>
                 </div>
-              ))}
+                <span className="font-mono-stat text-2xl font-bold text-foreground">
+                  {r.rank_position > 0 ? `#${r.rank_position}` : "—"}
+                </span>
+              </div>
+            ))}
 
-              {/* Achievements teaser — visible siempre (incluso en 0), no
-                  solo cuando ya desbloqueó algo: a un jugador nuevo hay que
-                  mostrarle que el sistema existe, no ocultarlo hasta que ya
-                  lo use. Mismo ancho de card que los rankings para que lea
-                  como parte del mismo grupo, no como un módulo aparte.
-                  Mientras la query resuelve (es un query aparte de la del
-                  perfil) va un skeleton del mismo tamaño — sin esto la card
-                  aparecía de golpe y corría el layout de las cards de al
-                  lado, dando la sensación de que "todo aparece de repente". */}
-              {achievementsQuery.isPending ? (
-                <SkeletonBlock className="h-[126px] w-full rounded-2xl sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]" />
-              ) : (
-                achievements && (
-                  <Link
-                    to="/players/$playerTag/achievements"
-                    params={{ playerTag }}
-                    className="glass flex w-full flex-col justify-between gap-3 rounded-2xl border border-white/10 p-5 transition hover:border-primary/30 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
-                  >
-                    <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
-                      <Trophy size={14} className="text-primary" /> Logros
+            {achievementsQuery.isPending ? (
+              <SkeletonBlock className="h-[68px] w-full rounded-none" />
+            ) : (
+              achievements && (
+                <Link
+                  to="/players/$playerTag/achievements"
+                  params={{ playerTag }}
+                  className="flex min-h-[68px] items-center justify-between gap-4 px-4 py-3 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground">Logros</p>
+                    <p className="text-xs text-foreground-secondary">
+                      {achievements.unlocked_count > 0
+                        ? `${achievements.total_lp} Legacy Points`
+                        : "Empieza a competir para desbloquear logros"}
+                    </p>
+                  </div>
+                  <div className="flex flex-shrink-0 items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-mono-stat text-2xl font-bold text-foreground">
+                        {achievements.unlocked_count}
+                        <span className="font-sans text-base font-normal text-foreground-subtle">
+                          {" "}
+                          / {achievements.total_count}
+                        </span>
+                      </p>
+                      <p className="font-mono-stat text-xs text-foreground-subtle">
+                        {achievementsPct}% completado
+                      </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary">
-                        {achievements.total_count > 0
-                          ? Math.round(
-                              (achievements.unlocked_count / achievements.total_count) * 100,
-                            )
-                          : 0}
-                        %
-                      </div>
-                      <div>
-                        <p className="font-mono-stat text-2xl font-bold text-foreground">
-                          {achievements.unlocked_count}
-                          <span className="text-base text-foreground-subtle font-sans">
-                            {" "}
-                            / {achievements.total_count}
-                          </span>
-                        </p>
-                        <p className="text-xs text-foreground-subtle">
-                          {achievements.unlocked_count > 0
-                            ? `${achievements.total_lp} Legacy Points`
-                            : "Empieza a competir para desbloquear logros"}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-semibold text-primary">Ver todos →</span>
-                  </Link>
-                )
-              )}
-            </div>
+                    <span className="hidden items-center gap-0.5 text-sm font-medium text-primary sm:inline-flex">
+                      Ver todos
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </span>
+                    <ChevronRight
+                      size={16}
+                      aria-hidden="true"
+                      className="text-foreground-subtle sm:hidden"
+                    />
+                  </div>
+                </Link>
+              )
+            )}
           </section>
         )}
 
@@ -548,315 +706,75 @@ function PublicProfilePage() {
         <AdHorizontal sponsor={sponsor} />
 
         {/* Historial de torneos */}
-        <section className="glass mt-6 overflow-hidden rounded-2xl border border-white/10">
-          <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="text-primary" size={18} />
-              <h2 className="text-lg font-semibold text-foreground">Historial de torneos</h2>
-            </div>
-            <span className="text-xs uppercase tracking-wider text-foreground-subtle">
-              {filteredTournaments.length} torneos
+        <section className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+          <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+            <h2 className="text-lg font-semibold text-foreground">Historial de torneos</h2>
+            <span className="font-mono-stat text-xs text-foreground-subtle">
+              {plural(filteredTournaments.length, "torneo", "torneos")}
             </span>
           </header>
 
           {uniqueGames.length > 1 && (
-            <div className="flex overflow-x-auto border-b border-white/10 px-2">
-              <button
-                onClick={() => {
-                  setHistoryTcg(null);
-                  setPage(1);
-                }}
-                className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                  historyTcg === null
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-foreground-secondary hover:text-foreground-secondary"
-                }`}
-              >
-                Todos ({tournaments.length})
-              </button>
-              {uniqueGames.map((g: any) => {
-                const count = tournaments.filter((t: any) => t.game_id === g.id).length;
-                if (count === 0) return null;
-                return (
-                  <button
-                    key={g.id}
-                    onClick={() => {
-                      setHistoryTcg(g.id);
-                      setPage(1);
-                    }}
-                    className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                      historyTcg === g.id
-                        ? "border-primary text-foreground"
-                        : "border-transparent text-foreground-secondary hover:text-foreground-secondary"
-                    }`}
-                  >
-                    {g.name} ({count})
-                  </button>
-                );
-              })}
-            </div>
+            <FilterGroup
+              label="Filtrar por juego"
+              value={historyTcg}
+              onChange={(k) => {
+                setHistoryTcg(k);
+                setPage(1);
+              }}
+              options={[
+                { key: null, label: `Todos (${tournaments.length})` },
+                ...uniqueGames.flatMap((g: any) => {
+                  const count = tournaments.filter((t: any) => t.game_id === g.id).length;
+                  return count === 0
+                    ? []
+                    : [{ key: g.id as string, label: `${g.name} (${count})` }];
+                }),
+              ]}
+            />
           )}
 
           {uniqueLeagues.length > 0 && (
-            <div className="flex overflow-x-auto border-b border-white/10 px-2">
-              <button
-                onClick={() => {
-                  setHistoryLeague(null);
-                  setPage(1);
-                }}
-                className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                  historyLeague === null
-                    ? "border-fuchsia-400 text-foreground"
-                    : "border-transparent text-foreground-subtle hover:text-foreground-secondary"
-                }`}
-              >
-                Todas las ligas
-              </button>
-              <button
-                onClick={() => {
-                  setHistoryLeague(NATIONAL_LEAGUE);
-                  setPage(1);
-                }}
-                className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                  historyLeague === NATIONAL_LEAGUE
-                    ? "border-fuchsia-400 text-foreground"
-                    : "border-transparent text-foreground-subtle hover:text-foreground-secondary"
-                }`}
-              >
-                Circuito Nacional
-              </button>
-              {uniqueLeagues.map((l: any) => (
-                <button
-                  key={l.id}
-                  onClick={() => {
-                    setHistoryLeague(l.id);
-                    setPage(1);
-                  }}
-                  className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                    historyLeague === l.id
-                      ? "border-fuchsia-400 text-foreground"
-                      : "border-transparent text-foreground-subtle hover:text-foreground-secondary"
-                  }`}
-                >
-                  {l.name}
-                </button>
-              ))}
-            </div>
+            <FilterGroup
+              label="Filtrar por liga"
+              value={historyLeague}
+              onChange={(k) => {
+                setHistoryLeague(k);
+                setPage(1);
+              }}
+              options={[
+                { key: null, label: "Todas las ligas" },
+                { key: NATIONAL_LEAGUE, label: "Circuito Nacional" },
+                ...uniqueLeagues.map((l: any) => ({
+                  key: l.id as string,
+                  label: l.name as string,
+                })),
+              ]}
+            />
           )}
 
-          {/* Desktop */}
-          <div className="overflow-x-auto hidden sm:block">
-            <table className="w-full text-sm">
-              <thead className="bg-black/30 text-xs uppercase tracking-wider text-foreground-subtle">
-                <tr>
-                  <th className="px-4 py-2 text-left">Fecha</th>
-                  {/* Columna TCG solo si el jugador compite en más de un
-                      juego — con un solo TCG, repetir el mismo texto en
-                      todas las filas no aporta nada (el badge de liga se
-                      muda a la celda de Tienda para no perderlo). */}
-                  {uniqueGames.length > 1 && <th className="px-4 py-2 text-left">TCG</th>}
-                  <th className="px-4 py-2 text-left">Tienda</th>
-                  <th className="px-4 py-2 text-center whitespace-nowrap">V / D</th>
-                  <th className="px-4 py-2 text-right">Posición</th>
-                  <th
-                    className="px-4 py-2 text-right"
-                    title="Puntos de ranking otorgados por ese torneo — distintos de los Legacy Points de achievements."
-                  >
-                    Puntos
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedTournaments.length === 0 ? (
-                  <tr>
-                    <td colSpan={uniqueGames.length > 1 ? 6 : 5} className="px-4 py-16 text-center">
-                      <div className="mx-auto max-w-xs">
-                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
-                          <Trophy size={24} className="text-primary" />
-                        </div>
-                        <p className="text-sm font-semibold text-foreground">
-                          Aún sin torneos registrados
-                        </p>
-                        <p className="mt-2 text-xs text-foreground-subtle">
-                          Participa en un torneo en tu tienda local para aparecer en el circuito.
-                        </p>
-                        <Link
-                          to="/stores"
-                          className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
-                        >
-                          Encontrar una tienda →
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedTournaments.map((t: any) => (
-                    <tr
-                      key={t.id}
-                      onClick={() => goToTournament(t.id)}
-                      className="border-b border-white/5 cursor-pointer hover:bg-white/[0.03]"
-                    >
-                      <td className="px-4 py-3 text-foreground-secondary font-mono-stat text-xs">
-                        {t.date !== "—"
-                          ? new Date(t.date + "T12:00:00").toLocaleDateString("es-MX", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "—"}
-                      </td>
-                      {uniqueGames.length > 1 && (
-                        <td className="px-4 py-3 text-xs text-foreground-secondary">
-                          {t.tcg}
-                          {t.league_name && t.store_slug && (
-                            <Link
-                              to="/stores/$slug"
-                              params={{ slug: t.store_slug }}
-                              hash="liga-interna"
-                              title="Ver leaderboard de esta liga"
-                              onClick={(e) => e.stopPropagation()}
-                              className="ml-1.5 inline-block rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300 hover:bg-fuchsia-500/25"
-                            >
-                              {t.league_name}
-                            </Link>
-                          )}
-                        </td>
-                      )}
-                      <td className="px-4 py-3 text-foreground">
-                        {t.store} <span className="text-xs text-foreground-subtle">· {t.city}</span>
-                        {uniqueGames.length <= 1 && t.league_name && t.store_slug && (
-                          <Link
-                            to="/stores/$slug"
-                            params={{ slug: t.store_slug }}
-                            hash="liga-interna"
-                            title="Ver leaderboard de esta liga"
-                            onClick={(e) => e.stopPropagation()}
-                            className="ml-1.5 inline-block rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300 hover:bg-fuchsia-500/25"
-                          >
-                            {t.league_name}
-                          </Link>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center font-mono-stat text-xs text-foreground-secondary whitespace-nowrap">
-                        {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span
-                          className={`font-mono-stat text-sm font-semibold ${
-                            t.placement <= 3 ? "text-primary" : "text-foreground"
-                          }`}
-                        >
-                          #{t.placement}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono-stat font-semibold text-foreground">
-                        +{t.pointsEarned}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile */}
-          <div className="sm:hidden">
-            {paginatedTournaments.length === 0 ? (
-              <div className="px-4 py-16 text-center">
-                <div className="mx-auto max-w-xs">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
-                    <Trophy size={24} className="text-primary" />
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Aún sin torneos registrados
-                  </p>
-                  <p className="mt-2 text-xs text-foreground-subtle">
-                    Participa en un torneo en tu tienda local para aparecer en el circuito.
-                  </p>
-                  <Link
-                    to="/stores"
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
-                  >
-                    Encontrar una tienda →
-                  </Link>
-                </div>
+          {paginatedTournaments.length === 0 ? (
+            <EmptyHistory />
+          ) : (
+            <>
+              <div className="hidden grid-cols-[96px_minmax(0,1fr)_72px_64px_80px] gap-3 overflow-hidden border-b border-border bg-background/60 px-4 py-2 text-xs font-semibold text-foreground-subtle sm:grid">
+                <span>Fecha</span>
+                <span>Tienda</span>
+                <span className="text-center">V / D</span>
+                <span className="text-right">Lugar</span>
+                <span className="text-right">Puntos</span>
               </div>
-            ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-border">
                 {paginatedTournaments.map((t: any) => (
-                  <div
-                    key={t.id}
-                    onClick={() => goToTournament(t.id)}
-                    className="px-4 py-3 cursor-pointer active:bg-white/[0.03]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`font-mono-stat text-sm font-semibold ${
-                              t.placement <= 3 ? "text-primary" : "text-foreground"
-                            }`}
-                          >
-                            #{t.placement}
-                          </span>
-                          {uniqueGames.length > 1 && (
-                            <span className="text-xs text-foreground-secondary">{t.tcg}</span>
-                          )}
-                          {t.league_name && t.store_slug && (
-                            <Link
-                              to="/stores/$slug"
-                              params={{ slug: t.store_slug }}
-                              hash="liga-interna"
-                              onClick={(e) => e.stopPropagation()}
-                              className="rounded-full bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fuchsia-300"
-                            >
-                              {t.league_name}
-                            </Link>
-                          )}
-                          <span className="text-xs text-foreground-subtle">—</span>
-                          <span className="text-sm font-semibold text-foreground truncate">
-                            {t.store}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-foreground-subtle flex-wrap">
-                          <span>{t.city}</span>
-                          <span>·</span>
-                          <span>
-                            {t.date !== "—"
-                              ? new Date(t.date + "T12:00:00").toLocaleDateString("es-MX", {
-                                  day: "numeric",
-                                  month: "short",
-                                })
-                              : "—"}
-                          </span>
-                          {t.wins != null && t.losses != null && (
-                            <>
-                              <span>·</span>
-                              <span className="whitespace-nowrap">
-                                {t.wins}V/{t.losses}D
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0 ml-3">
-                        <p className="text-xs font-mono-stat font-semibold text-foreground">
-                          +{t.pointsEarned}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <HistoryRow key={t.id} t={t} showTcg={uniqueGames.length > 1} />
                 ))}
               </div>
-            )}
-          </div>
+            </>
+          )}
 
           {hasMoreTournaments && (
-            <div className="px-4 py-4 text-center border-t border-white/5">
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                className="text-xs text-primary hover:underline"
-              >
+            <div className="border-t border-border px-4 py-3 text-center">
+              <button type="button" onClick={() => setPage((p) => p + 1)} className={BTN_OUTLINE}>
                 Ver {Math.min(PAGE_SIZE, filteredTournaments.length - page * PAGE_SIZE)} más
               </button>
             </div>
@@ -864,7 +782,7 @@ function PublicProfilePage() {
           {/* getPublicProfile trae como máximo 100 torneos — si el jugador
               tiene más, avisamos en vez de cortar en silencio. */}
           {!hasMoreTournaments && tournaments.length === 100 && (
-            <p className="px-4 py-3 text-center text-xs text-foreground-subtle border-t border-white/5">
+            <p className="border-t border-border px-4 py-3 text-center text-xs text-foreground-subtle">
               Mostrando los 100 torneos más recientes.
             </p>
           )}

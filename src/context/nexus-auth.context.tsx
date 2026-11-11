@@ -21,6 +21,7 @@ type PlayerRow = {
   preferred_game_id: string | null;
   preferred_zone: string | null;
   preferences_prompted_at: string | null;
+  is_profile_public: boolean | null;
 };
 
 type AuthContextValue = {
@@ -115,7 +116,7 @@ export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = await nexus
         .from("players")
         .select(
-          "id, geek_tag, email, role, home_store_id, preferred_game_id, preferred_zone, preferences_prompted_at",
+          "id, geek_tag, email, role, home_store_id, preferred_game_id, preferred_zone, preferences_prompted_at, is_profile_public",
         )
         .eq("email", s.user.email)
         .maybeSingle();
@@ -172,6 +173,17 @@ export function NexusAuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useNexusRole() {
   return useContext(AuthContext);
+}
+
+/**
+ * Reciprocidad de privacidad: un jugador con perfil privado no ve el deck (leader) de los
+ * demás; lo propio siempre se ve. Es una regla de interfaz, no un control de seguridad:
+ * quien no inicia sesión sigue viendo lo público. Vive en el cliente a propósito: las
+ * páginas con loader arman su primer HTML en el servidor sin sesión y ahí no se sabe quién mira.
+ */
+export function useHidesOthersDecks(): boolean {
+  const { player } = useContext(AuthContext);
+  return player?.is_profile_public === false;
 }
 
 export function homeRouteForRole(role: AppRole | null): string {

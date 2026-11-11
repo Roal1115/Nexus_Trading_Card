@@ -2,14 +2,14 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import {
-  Trophy,
-  LayoutDashboard,
-  TrendingUp,
   CalendarDays,
-  User,
+  Layers,
+  LayoutDashboard,
+  ListOrdered,
   LogIn,
   Store,
-  Swords,
+  TrendingUp,
+  User,
 } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
@@ -21,7 +21,7 @@ type NavItem = {
 };
 
 const GUEST_ITEMS: NavItem[] = [
-  { to: "/", label: "Ranking", icon: Trophy },
+  { to: "/", label: "Ranking", icon: ListOrdered },
   { to: "/calendar", label: "Calendario", icon: CalendarDays },
   { to: "/meta", label: "Meta", icon: TrendingUp },
   { to: "/stores", label: "Tiendas", icon: Store },
@@ -30,9 +30,9 @@ const GUEST_ITEMS: NavItem[] = [
 
 const PLAYER_ITEMS: NavItem[] = [
   { to: "/dashboard", label: "Inicio", icon: LayoutDashboard },
+  { to: "/sessions", label: "Partidas", icon: Layers },
+  { to: "/", label: "Ranking", icon: ListOrdered },
   { to: "/calendar", label: "Calendario", icon: CalendarDays },
-  { to: "/sessions", label: "Partidas", icon: Swords },
-  { to: "/", label: "Ranking", icon: Trophy },
   { to: "__profile__", label: "Menú", icon: User },
 ];
 
@@ -46,7 +46,7 @@ function NavPill() {
     <motion.span
       layoutId="bottom-nav-pill"
       transition={PILL_TRANSITION}
-      className="absolute inset-x-1 inset-y-0.5 rounded-2xl border border-primary/30 bg-primary/15"
+      className="absolute inset-x-1 inset-y-0.5 rounded-xl bg-primary/15"
     />
   );
 }
@@ -58,7 +58,7 @@ function NavIcon({ isActive, children }: { isActive: boolean; children: React.Re
       whileTap={{ scale: 0.82 }}
       transition={{ type: "spring", stiffness: 420, damping: 18 }}
       className={`relative z-10 flex items-center justify-center transition-colors ${
-        isActive ? "text-primary drop-shadow-[0_0_6px_rgba(50,217,255,0.55)]" : "text-[#7A8CAD]"
+        isActive ? "text-primary" : "text-foreground-subtle"
       }`}
     >
       {children}
@@ -70,8 +70,8 @@ function NavLabel({ isActive, children }: { isActive: boolean; children: React.R
   // Siempre visible: los iconos solos no dicen a dónde lleva cada pestaña.
   return (
     <span
-      className={`relative z-10 text-[10px] font-semibold leading-none transition-colors duration-150 ${
-        isActive ? "text-primary" : "text-[#7A8CAD]"
+      className={`relative z-10 text-xs font-medium leading-none transition-colors duration-150 ${
+        isActive ? "text-primary" : "text-foreground-subtle"
       }`}
     >
       {children}
@@ -115,9 +115,7 @@ export function BottomNav() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-white/10 bg-gradient-to-b from-white/[0.04] to-[#08111f]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl md:hidden">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-      </div>
+      <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border bg-card md:hidden" />
       <nav
         aria-label="Navegación principal"
         className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2 md:hidden"
@@ -147,7 +145,7 @@ export function BottomNav() {
                       }}
                       src={(player as any).avatar_url}
                       alt={player?.geek_tag ?? "avatar"}
-                      className="h-6 w-6 rounded-full object-cover"
+                      className="h-7 w-7 rounded-full object-cover"
                     />
                   ) : (
                     <motion.span
@@ -156,9 +154,9 @@ export function BottomNav() {
                           ? "0 0 0 2px rgba(50,217,255,0.7)"
                           : "0 0 0 1px rgba(42,58,87,1)",
                       }}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-card"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary"
                     >
-                      <span className="text-[9px] font-bold text-primary">{initials}</span>
+                      <span className="text-xs font-bold text-foreground">{initials}</span>
                     </motion.span>
                   )}
                 </NavIcon>

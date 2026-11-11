@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 import { nexus } from "@/integrations/nexus/client";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { randomId } from "@/lib/random-id";
@@ -130,6 +128,15 @@ export function NotificationBell({
     };
   }, [open]);
 
+  // Foco: al abrir entra al panel (es un role="dialog"); al cerrar vuelve a
+  // la campana, así el teclado y el lector de pantalla no se pierden.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (open) panelRef.current?.focus();
+    else if (wasOpen.current) btnRef.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
+
   const openPanel = () => {
     if (btnRef.current) setAnchorRect(btnRef.current.getBoundingClientRect());
     setOpen((o) => !o);
@@ -139,7 +146,11 @@ export function NotificationBell({
     setItems((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read_at: n.read_at ?? new Date().toISOString() } : n)),
     );
-    await db.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id).is("read_at", null);
+    await db
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", id)
+      .is("read_at", null);
   };
 
   const markAllRead = async () => {
@@ -198,19 +209,23 @@ export function NotificationBell({
           type="button"
           onClick={openPanel}
           title={collapsed ? "Notificaciones" : undefined}
-          aria-label="Notificaciones"
+          aria-label={
+            unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones"
+          }
           aria-haspopup="dialog"
           aria-expanded={open}
           className={`flex w-full items-center overflow-hidden rounded-md py-2 text-sm transition ${
             collapsed ? "justify-center px-0" : "gap-2.5 px-3"
           } ${
-            open ? "bg-primary/15 text-primary" : "text-gray-300 hover:bg-white/5 hover:text-white"
+            open
+              ? "bg-primary/15 text-primary"
+              : "text-foreground-secondary hover:bg-white/5 hover:text-foreground"
           } ${className}`}
         >
           <span className="relative shrink-0">
             <Bell size={16} />
             {collapsed && unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />
             )}
           </span>
           <span
@@ -221,7 +236,7 @@ export function NotificationBell({
             Notificaciones
           </span>
           {!collapsed && unreadCount > 0 && (
-            <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 font-mono-stat text-xs font-bold leading-none text-primary-foreground">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -231,36 +246,40 @@ export function NotificationBell({
           ref={btnRef}
           type="button"
           onClick={openPanel}
-          aria-label="Notificaciones"
+          aria-label={
+            unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones"
+          }
           aria-haspopup="dialog"
           aria-expanded={open}
-          className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[#C5D1E4] transition hover:border-primary/40 hover:text-primary ${className}`}
+          className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground-secondary transition hover:bg-white/5 hover:text-foreground ${className}`}
         >
           <Bell size={17} />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#0f1117]">
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 font-mono-stat text-xs font-bold leading-none text-primary-foreground ring-2 ring-background">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </button>
       )}
 
-      {open && typeof document !== "undefined" &&
+      {open &&
+        typeof document !== "undefined" &&
         createPortal(
           <div
             ref={panelRef}
             role="dialog"
             aria-label="Notificaciones"
+            tabIndex={-1}
             style={panelStyle}
-            className="overflow-hidden rounded-xl border border-white/10 bg-[#0f1117]/95 shadow-2xl backdrop-blur-xl"
+            className="overflow-hidden rounded-xl border border-border bg-popover shadow-2xl outline-none"
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-              <div className="text-sm font-semibold text-white">Notificaciones</div>
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div className="text-sm font-semibold text-foreground">Notificaciones</div>
               {unreadCount > 0 && (
                 <button
                   type="button"
                   onClick={markAllRead}
-                  className="text-[11px] font-semibold uppercase tracking-wider text-primary transition hover:brightness-110"
+                  className="-my-1 rounded-md px-2 py-1 text-xs font-medium text-foreground-secondary transition-colors hover:bg-white/5 hover:text-foreground"
                 >
                   Marcar todas como leídas
                 </button>
@@ -274,18 +293,10 @@ export function NotificationBell({
                   No tienes notificaciones
                 </div>
               ) : (
-                <ul className="divide-y divide-white/5">
+                <ul className="divide-y divide-border">
                   {items.map((n) => {
                     const unread = !n.read_at;
-                    let rel = "";
-                    try {
-                      rel = formatDistanceToNow(new Date(n.created_at), {
-                        addSuffix: true,
-                        locale: es,
-                      });
-                    } catch {
-                      rel = "";
-                    }
+                    const rel = shortAgo(n.created_at);
                     return (
                       <li key={n.id}>
                         <button
@@ -297,24 +308,24 @@ export function NotificationBell({
                         >
                           <span
                             className={`mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full ${
-                              unread ? "bg-primary shadow-[0_0_6px_rgba(50,217,255,0.7)]" : "bg-transparent"
+                              unread ? "bg-primary" : "bg-transparent"
                             }`}
                           />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-baseline justify-between gap-2">
                               <div
                                 className={`truncate text-sm ${
-                                  unread ? "font-semibold text-white" : "font-medium text-[#C5D1E4]"
+                                  unread
+                                    ? "font-semibold text-foreground"
+                                    : "font-medium text-foreground-secondary"
                                 }`}
                               >
                                 {n.title}
                               </div>
-                              <div className="shrink-0 text-[10px] uppercase tracking-wide text-[#7A8CAD]">
-                                {rel}
-                              </div>
+                              <div className="shrink-0 text-xs text-foreground-subtle">{rel}</div>
                             </div>
                             {n.body && (
-                              <div className="mt-0.5 line-clamp-2 text-xs text-[#7A8CAD]">
+                              <div className="mt-0.5 line-clamp-2 text-xs text-foreground-subtle">
                                 {n.body}
                               </div>
                             )}
@@ -331,4 +342,19 @@ export function NotificationBell({
         )}
     </>
   );
+}
+
+/** "hace 5 min", "hace 10 h", "hace 3 d"; más de una semana → "5 nov".
+ *  Antes: "hace alrededor de 10 horas", que cortaba el título. */
+function shortAgo(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const min = Math.floor((Date.now() - t) / 60_000);
+  if (min < 1) return "ahora";
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `hace ${d} d`;
+  return new Date(t).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
 }

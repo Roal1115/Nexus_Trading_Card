@@ -2,19 +2,22 @@ import {
   BarChart3,
   CalendarDays,
   CircleHelp,
+  Layers,
   LayoutDashboard,
+  ListOrdered,
+  Medal,
   Settings,
   Shield,
   Store,
-  Swords,
   TrendingUp,
-  Trophy,
   UserCircle,
 } from "lucide-react";
 import type { SidebarSection } from "@/components/layout/PanelSidebar";
 
 // Única fuente de verdad de la navegación del jugador.
 // La consumen PlayerSidebar (desktop) y ProfileDrawer (mobile).
+// Orden: primero lo del jugador, luego el circuito, al final cuenta/ayuda.
+// Cada destino tiene un ícono único (el trofeo es la marca, no Ranking).
 export function playerNavSections(role: string, nexusTag?: string): SidebarSection[] {
   const sections: SidebarSection[] = [];
 
@@ -33,31 +36,31 @@ export function playerNavSections(role: string, nexusTag?: string): SidebarSecti
 
   sections.push(
     {
-      title: "Explorar",
+      title: "Mi carrera",
       items: [
-        { to: "/", label: "Ranking", icon: <Trophy size={16} />, exact: true },
-        { to: "/calendar", label: "Calendario", icon: <CalendarDays size={16} /> },
-        { to: "/playoffs", label: "Playoffs", icon: <Swords size={16} /> },
-        { to: "/meta", label: "Meta", icon: <TrendingUp size={16} /> },
-        { to: "/stores", label: "Tiendas", icon: <Store size={16} /> },
-        { to: "/faq", label: "FAQ", icon: <CircleHelp size={16} /> },
+        { to: "/dashboard", label: "Inicio", icon: <LayoutDashboard size={16} /> },
+        { to: "/sessions", label: "Mis partidas", icon: <Layers size={16} /> },
+        { to: "/my-stats", label: "Mis stats", icon: <BarChart3 size={16} /> },
+        ...(nexusTag
+          ? [{ to: `/players/${nexusTag}`, label: "Mi perfil", icon: <UserCircle size={16} /> }]
+          : []),
       ],
     },
     {
-      title: "Mi Carrera",
+      title: "Circuito",
       items: [
-        { to: "/dashboard", label: "Inicio", icon: <LayoutDashboard size={16} /> },
-        { to: "/my-stats", label: "Mis Stats", icon: <BarChart3 size={16} /> },
-        { to: "/sessions", label: "Partidas", icon: <Swords size={16} /> },
+        { to: "/", label: "Ranking", icon: <ListOrdered size={16} />, exact: true },
+        { to: "/calendar", label: "Calendario", icon: <CalendarDays size={16} /> },
+        { to: "/playoffs", label: "Playoffs", icon: <Medal size={16} /> },
+        { to: "/stores", label: "Tiendas", icon: <Store size={16} /> },
+        { to: "/meta", label: "Meta", icon: <TrendingUp size={16} /> },
       ],
     },
     {
       title: "Cuenta",
       items: [
-        ...(nexusTag
-          ? [{ to: `/players/${nexusTag}`, label: "Mi Perfil", icon: <UserCircle size={16} /> }]
-          : []),
         { to: "/settings", label: "Configuración", icon: <Settings size={16} /> },
+        { to: "/faq", label: "Ayuda", icon: <CircleHelp size={16} /> },
       ],
     },
   );

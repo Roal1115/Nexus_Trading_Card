@@ -52,7 +52,7 @@ export const getPublicStoresList = createServerFn({ method: "POST" }).handler(as
   const { data: stores, error } = await admin
     .from("stores")
     .select(
-      "id, slug, name, city, state, zone, google_maps_url, opening_hours, instagram, website, twitter, twitch",
+      "id, slug, name, city, state, zone, subzone, address, google_maps_url, opening_hours, instagram, website, twitter, twitch",
     )
     .eq("is_active", true)
     .order("name");

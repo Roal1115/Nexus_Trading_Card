@@ -7,6 +7,7 @@ import { standingsOf, type Standing } from "./playoffs";
 type Admin = ReturnType<typeof getNexusAdmin>;
 
 export type RankingRow = {
+  tournament_id: string;
   player_id: string;
   rank: number | null;
   points_earned: number | null;
@@ -34,7 +35,7 @@ async function fetchRows(
     let query = admin
       .from("tournament_results")
       .select(
-        "id, player_id, rank, points_earned, omw_percentage, tournaments!inner(store_id, tournament_date, status, game_id, league_id, season_id, qualifying_year, qualifying_month)",
+        "id, tournament_id, player_id, rank, points_earned, omw_percentage, tournaments!inner(store_id, tournament_date, status, game_id, league_id, season_id, qualifying_year, qualifying_month)",
       )
       .eq("tournaments.status", "PUBLISHED")
       .eq("tournaments.game_id", gameId)

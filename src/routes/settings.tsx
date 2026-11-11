@@ -211,6 +211,7 @@ function SettingsPage() {
     setIsPublic(next);
     try {
       await togglePrivacy({ data: { is_public: next } });
+      updatePlayer({ is_profile_public: next });
       toast.success(next ? "Tu perfil ahora es público" : "Tu perfil ahora es privado");
     } catch {
       setIsPublic(!next);

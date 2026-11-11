@@ -2,9 +2,20 @@ import { queryOptions } from "@tanstack/react-query";
 import { getStoreFichas } from "./nexus-schedule-events.functions";
 import {
   getPublicStoresList,
+  getStoreActiveLeagues,
   getStoreProfile,
   getStoreTournamentHistory,
 } from "./nexus-public.functions";
+
+// Una consulta (no un useEffect con catch → []) para que un fallo de red conserve su error y la
+// página pueda ofrecer "Reintentar" en vez de decir que la tienda no tiene liga.
+export const storeLeaguesQuery = (slug: string | undefined) =>
+  queryOptions({
+    queryKey: ["store-leagues", slug],
+    queryFn: () => getStoreActiveLeagues({ data: { slug: slug ?? "" } }),
+    enabled: !!slug,
+    staleTime: 60_000,
+  });
 
 export const publicStoresQuery = () =>
   queryOptions({

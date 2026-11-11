@@ -5,21 +5,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NewPlayerSteps } from "@/components/player/NewPlayerSteps";
 import {
-  Award,
+  ArrowDown,
+  ArrowUp,
   BarChart3,
   Check,
   ChevronRight,
-  Crown,
   Globe,
   HelpCircle,
   Layers,
   Lock,
   Share2,
   ShieldQuestion,
-  Store as StoreIcon,
-  Swords,
-  Target,
-  TrendingUp,
   X,
 } from "lucide-react";
 
@@ -35,9 +31,23 @@ function rankTier(rank: number | null | undefined): RankTier {
 }
 const RANK_TIER_TEXT: Record<Exclude<RankTier, null>, string> = {
   gold: "text-yellow-400",
-  silver: "text-foreground-secondary",
+  silver: "text-slate-200",
   bronze: "text-amber-600",
 };
+/** "2026-11-05" -> "5 nov" (con año solo si no es el actual). */
+function fmtDate(d: string | null | undefined): string {
+  if (!d || !/^\d{4}-\d{2}-\d{2}/.test(d)) return d ?? "—";
+  const date = new Date(`${d.slice(0, 10)}T12:00:00`);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
+/** 12 -> "+12", 12.5 -> "+12.5" (antes "+12.00"). */
+const fmtPts = (n: unknown) => `+${Number(Number(n ?? 0).toFixed(2))}`;
+
 const POINTS_HELP = `¿Cómo se calculan tus puntos?
 
 Puntos: Cada torneo normaliza tus puntos con la fórmula:
@@ -47,11 +57,6 @@ Regla top 2 por semana: Si juegas más de 2 torneos en la misma semana (lunes a 
 
 Ranking mensual: Suma de tus puntos en el mes actual.
 Ranking de temporada: Suma acumulada durante la temporada completa.`;
-const RANK_TIER_BOX: Record<Exclude<RankTier, null>, string> = {
-  gold: "border-yellow-500/40 bg-yellow-500/[0.06]",
-  silver: "border-gray-400/40 bg-gray-400/[0.06]",
-  bronze: "border-amber-700/40 bg-amber-900/[0.06]",
-};
 
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
@@ -95,7 +100,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  const { player: gaPlayer, loading: authLoading } = useNexusRole();
+  const { player: gaPlayer, loading: authLoading, updatePlayer } = useNexusRole();
   const navigate = useNavigate();
   const loaderData = Route.useLoaderData();
 
@@ -175,6 +180,7 @@ function DashboardPage() {
     setIsPublic(next);
     try {
       await togglePrivacyFn({ data: { is_public: next } });
+      updatePlayer({ is_profile_public: next });
       toast.success(next ? "Perfil ahora es público" : "Perfil ahora es privado");
     } catch {
       setIsPublic(!next);
@@ -241,7 +247,7 @@ function DashboardPage() {
         </p>
         <Link
           to="/login"
-          className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
+          className="mt-6 inline-flex h-10 items-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Iniciar sesión
         </Link>
@@ -281,32 +287,47 @@ function DashboardPage() {
         <AdVertical sponsor={sponsor} />
       </aside>
       <main className="min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-20">
-        {/* Hero */}
-        <section className="relative mt-6 mb-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/60 via-primary/10 to-black/40">
-          <div className="absolute -right-10 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
-
-          {/* Fila superior — Nexus Tag + Ranks */}
-          <div className="relative flex flex-col flex-wrap items-start gap-6 p-8 sm:flex-row sm:items-end sm:justify-between sm:p-12">
+        {/* Hero — cuenta la historia del rango: dónde estás, qué cambió desde tu
+            último torneo y cuánto falta para el siguiente lugar. */}
+        <section className="mt-6 mb-8 overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex flex-col flex-wrap items-start gap-8 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-10">
             <div className="w-full min-w-0 sm:w-auto">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                Tu Nexus Tag
-              </p>
-              <h1 className="mt-2 text-4xl font-bold text-foreground [overflow-wrap:anywhere] sm:text-7xl">
+              <h1 className="text-4xl font-bold text-foreground [overflow-wrap:anywhere] sm:text-6xl">
                 {tag}
               </h1>
-              {storeCity && <p className="mt-2 text-sm text-foreground-secondary">{storeCity}</p>}
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+                {storeCity && <span className="text-foreground-secondary">{storeCity}</span>}
+                <Link
+                  to="/players/$playerTag"
+                  params={{ playerTag: tag }}
+                  className="font-medium text-foreground-secondary underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-foreground"
+                >
+                  Ver perfil público
+                </Link>
+                <button
+                  onClick={handleTogglePrivacy}
+                  aria-label={
+                    isPublic
+                      ? "Perfil público. Cambiar a privado"
+                      : "Perfil privado. Cambiar a público"
+                  }
+                  title="El staff de las tiendas y TCGs donde jugaste siempre puede ver esos resultados."
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-foreground-subtle transition-colors hover:bg-white/5 hover:text-foreground"
+                >
+                  {isPublic ? <Globe size={12} /> : <Lock size={12} />}
+                  {isPublic ? "Público" : "Privado"}
+                </button>
+              </div>
             </div>
+
             {loading ? (
-              // Mismo layout final: caja de Rank Global + fila de hasta 5
-              // chips (Mensual/Tienda/Torneos/Puntos/Ganados) — antes eran
-              // 2 bloques genéricos que no se parecían al resultado real.
-              <div className="flex flex-col items-start gap-3">
-                <div className="h-[104px] w-[140px] animate-pulse rounded-xl bg-white/[0.06]" />
-                <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
+              <div className="flex flex-col items-start gap-4 sm:items-end">
+                <div className="h-[118px] w-[200px] animate-pulse rounded-md bg-white/[0.06]" />
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="h-[54px] w-[100px] animate-pulse rounded-lg bg-white/[0.06]"
+                      className="h-[38px] w-[64px] animate-pulse rounded bg-white/[0.06]"
                     />
                   ))}
                 </div>
@@ -314,231 +335,157 @@ function DashboardPage() {
             ) : !hasHistory ? (
               !showSteps && (
                 // Saltó los pasos sin torneos: queda un solo CTA en vez de 4 cards con "—".
-                <div className="flex max-w-xs flex-col items-start gap-3 rounded-xl border border-primary/30 bg-black/40 px-5 py-4">
+                <div className="flex max-w-xs flex-col items-start gap-3">
                   <p className="text-sm text-foreground-secondary">
                     Aún no has jugado ningún torneo. Busca uno cerca de ti y empieza tu ranking.
                   </p>
                   <Link
                     to="/calendar"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     Ver calendario de torneos →
                   </Link>
                 </div>
               )
             ) : (
-              <div className="flex flex-col items-start gap-3">
-                {/* Rank global — el número que más le importa al jugador al entrar, así que es el foco visual.
-                    Top 3 del leaderboard se colorea como medallero (oro/plata/bronce). */}
-                {(() => {
-                  const tier = rankTier(activeTcg?.rank_position);
-                  return (
-                    <div
-                      className={`rounded-xl border px-6 py-5 text-center min-w-[140px] ${
-                        tier ? RANK_TIER_BOX[tier] : "border-primary/30 bg-black/40"
-                      }`}
-                    >
-                      <div
-                        className={`flex items-center justify-center gap-1 text-xs uppercase tracking-widest mb-1 ${
-                          tier ? RANK_TIER_TEXT[tier] : "text-primary"
-                        }`}
-                      >
-                        <Crown size={10} /> Ranking de Temporada
-                        <TooltipInfo text={POINTS_HELP} />
-                      </div>
-                      <div
-                        className={`font-mono text-5xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-foreground"}`}
-                      >
-                        {activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : "—"}
-                      </div>
-                      <p className="text-xs text-foreground-subtle mt-0.5">{semesterLabel}</p>
-                    </div>
-                  );
-                })()}
+              <div className="flex flex-col items-start gap-5 sm:items-end">
+                <RankStory tcg={activeTcg} semesterLabel={semesterLabel} />
 
-                {/* Secundarios — mismo dato pero con menor peso visual */}
-                <div className="flex gap-2 flex-wrap">
-                  <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
-                    <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-foreground-subtle mb-0.5">
-                      <Crown size={9} /> Mensual
-                    </div>
-                    <div className="font-mono text-lg font-bold text-foreground">
+                {/* Secundarios: una fila de datos. "Torneos" ya vive en el encabezado
+                    de Torneos recientes, así que no se repite aquí. */}
+                <dl className="flex flex-wrap gap-x-5 gap-y-2 text-sm sm:justify-end">
+                  <div>
+                    <dt className="text-xs text-foreground-subtle">Mensual</dt>
+                    <dd className="font-mono-stat font-semibold text-foreground">
                       {activeTcg?.monthly_rank_position > 0
                         ? `#${activeTcg.monthly_rank_position}`
                         : "—"}
-                    </div>
+                    </dd>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
-                    <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-foreground-subtle mb-0.5">
-                      <StoreIcon size={9} /> Tienda favorita
-                    </div>
-                    <div className="text-xs font-bold text-foreground leading-tight">
-                      {data?.mostVisitedStore?.name ?? "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
-                    <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-foreground-subtle mb-0.5">
-                      <Swords size={9} /> Torneos
-                    </div>
-                    <div className="font-mono text-lg font-bold text-foreground">
-                      {data?.totalTournamentsAttended ?? 0}
-                    </div>
-                  </div>
-                  {/* Con un solo TCG, "Mis Rankings" de abajo sería un
-                      duplicado exacto del Rank Global de arriba — en vez de
-                      repetir la sección completa, sus datos únicos (Puntos/
-                      Ganados) se pliegan aquí y la sección se oculta. */}
+                  {/* Con un solo TCG, "Mis Rankings" de abajo sería un duplicado del
+                      rango de arriba: sus datos únicos (Puntos/Ganados) se pliegan aquí. */}
                   {tcgStats.length === 1 && activeTcg && (
                     <>
-                      <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
-                        <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-foreground-subtle mb-0.5">
-                          <Target size={9} className="text-primary" /> Puntos
-                        </div>
-                        <div className="font-mono text-lg font-bold text-foreground">
+                      <div>
+                        <dt className="text-xs text-foreground-subtle">Puntos</dt>
+                        <dd className="font-mono-stat font-semibold text-foreground">
                           {Number(activeTcg.total_points ?? 0).toFixed(0)}
-                        </div>
+                        </dd>
                       </div>
-                      <div className="rounded-lg border border-white/10 bg-black/30 px-3.5 py-2.5 text-center min-w-[100px]">
-                        <div className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest text-foreground-subtle mb-0.5">
-                          <Award size={9} className="text-primary" /> Ganados
-                        </div>
-                        <div className="font-mono text-lg font-bold text-foreground">
+                      <div>
+                        <dt className="text-xs text-foreground-subtle">Ganados</dt>
+                        <dd className="font-mono-stat font-semibold text-foreground">
                           {activeTcg.tournaments_won ?? 0}
-                        </div>
+                        </dd>
                       </div>
                     </>
                   )}
-                </div>
+                  <div className="min-w-0 max-w-[12rem]">
+                    <dt className="text-xs text-foreground-subtle">Tienda favorita</dt>
+                    <dd className="truncate font-semibold text-foreground">
+                      {data?.mostVisitedStore?.name ?? "—"}
+                    </dd>
+                  </div>
+                </dl>
               </div>
             )}
           </div>
 
-          {/* Franja inferior — Stats (oculta si aún no hay historial: el CTA
-              de arriba ya cubre ese caso, no hace falta repetirlo) */}
+          {/* Una sola franja inferior: récord a la izquierda, acciones a la derecha.
+              Antes eran dos franjas (stats + links) compitiendo por atención. */}
           {(loading || hasHistory) && (
-            <div className="relative border-t border-white/10 px-8 py-4 sm:px-12">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                {/* Izquierda — Tabs TCG + W-L */}
-                {loading ? (
-                  <div className="flex items-center gap-4">
-                    <div className="h-6 w-16 rounded bg-white/[0.06] animate-pulse" />
-                    <div className="h-8 w-32 rounded bg-white/[0.06] animate-pulse" />
-                  </div>
-                ) : globalRecord.total > 0 ? (
-                  <div className="flex flex-wrap items-center gap-4">
-                    {statsGameIds.length > 1 && (
-                      <div className="flex gap-1">
-                        {statsGameIds.map((gid) => {
-                          const tcgName = tcgStats.find((t) => t.game_id === gid)?.game_name ?? gid;
-                          return (
-                            <button
-                              key={gid}
-                              onClick={() => setStatsTcg(gid)}
-                              className={`rounded px-2.5 py-1 text-xs font-semibold uppercase tracking-wide transition ${
-                                activeStatsTcg === gid
-                                  ? "bg-primary/20 text-primary"
-                                  : "text-foreground-subtle hover:text-foreground-secondary"
-                              }`}
-                            >
-                              {tcgName}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-mono text-2xl font-bold text-emerald-400">
-                        {globalRecord.wins}W
-                      </span>
-                      <span className="font-mono text-lg text-foreground-subtle">·</span>
-                      <span className="font-mono text-2xl font-bold text-red-400">
-                        {globalRecord.losses}L
-                      </span>
-                      <span className="ml-1 text-xs text-foreground-subtle">
-                        {globalRecord.total} partidas
-                      </span>
-                      {winRate != null && (
-                        <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-xs font-bold text-primary">
-                          {winRate}% WR
-                        </span>
-                      )}
+            <div className="flex flex-col gap-4 border-t border-border px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+              {loading ? (
+                <div className="h-8 w-48 animate-pulse rounded bg-white/[0.06]" />
+              ) : globalRecord.total > 0 ? (
+                <div className="flex flex-wrap items-center gap-4">
+                  {statsGameIds.length > 1 && (
+                    <div className="flex gap-1">
+                      {statsGameIds.map((gid) => {
+                        const tcgName = tcgStats.find((t) => t.game_id === gid)?.game_name ?? gid;
+                        return (
+                          <button
+                            key={gid}
+                            onClick={() => setStatsTcg(gid)}
+                            className={`rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
+                              activeStatsTcg === gid
+                                ? "bg-primary/15 text-primary"
+                                : "text-foreground-subtle hover:text-foreground-secondary"
+                            }`}
+                          >
+                            {tcgName}
+                          </button>
+                        );
+                      })}
                     </div>
+                  )}
+                  <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+                    <span className="font-mono-stat text-2xl font-bold text-success">
+                      {globalRecord.wins}V
+                    </span>
+                    <span className="font-mono-stat text-lg text-foreground-subtle">·</span>
+                    <span className="font-mono-stat text-2xl font-bold text-danger">
+                      {globalRecord.losses}D
+                    </span>
+                    <span className="ml-1 whitespace-nowrap text-xs text-foreground-subtle">
+                      {globalRecord.total} partidas
+                    </span>
+                    {winRate != null && (
+                      <span className="whitespace-nowrap sm:ml-2 font-mono-stat text-sm font-semibold text-foreground-secondary">
+                        {winRate}% victorias
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-xs text-foreground-subtle">
-                    Sin partidas con resultados registrados aún.
-                  </div>
-                )}
+                </div>
+              ) : (
+                <div className="text-xs text-foreground-subtle">
+                  Sin partidas con resultados registrados aún.
+                </div>
+              )}
 
-                {/* Derecha — CTA Ver mis stats */}
+              <div className="flex flex-wrap items-center gap-2">
+                <PlayerCardShare
+                  url={`https://mxntcg.lovable.app/players/${tag}`}
+                  title={`${tag} — Nexus`}
+                  text="Mira mi ranking en el circuito Nexus de TCG en México"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground-secondary transition-colors hover:bg-white/5 hover:text-foreground"
+                  cardData={{
+                    nexusTag: tag,
+                    subtitle: storeCity ?? null,
+                    rankLabel: activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : null,
+                    rankCaption: activeTcg?.game_name ?? null,
+                    stats: [
+                      { label: "% victorias", value: winRate != null ? `${winRate}%` : "—" },
+                      { label: "Torneos", value: String(data?.totalTournamentsAttended ?? 0) },
+                      { label: "Ganados", value: String(activeTcg?.tournaments_won ?? 0) },
+                    ],
+                  }}
+                />
                 {loading ? (
-                  <div className="h-10 w-36 rounded-xl bg-white/[0.06] animate-pulse" />
+                  <div className="h-9 w-36 animate-pulse rounded-md bg-white/[0.06]" />
                 ) : (
                   <Link
                     to="/my-stats"
-                    className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(232,106,34,0.4)]"
+                    className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                   >
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-                    <BarChart3
-                      size={15}
-                      className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <span className="relative">Ver mis stats</span>
-                    <span className="relative text-xs font-normal opacity-60 group-hover:opacity-100 transition-opacity">
-                      →
-                    </span>
+                    <BarChart3 size={15} className="flex-shrink-0" />
+                    Ver mis stats
                   </Link>
                 )}
               </div>
             </div>
           )}
-
-          {/* Links — Ver perfil + Compartir + Visibilidad. Antes la
-              visibilidad vivía en una barra de ancho completo por encima de
-              todo el Hero — la única config de cuenta que competía por
-              atención antes que el propio nombre del jugador. Vive aquí
-              junto a las otras acciones sobre el perfil, mismo peso visual. */}
-          <div className="relative flex flex-wrap items-center gap-3 border-t border-white/5 px-8 py-3 sm:px-12">
-            <Link
-              to="/players/$playerTag"
-              params={{ playerTag: tag }}
-              className="text-xs font-semibold text-primary hover:underline"
-            >
-              Ver mi perfil público →
-            </Link>
-            <PlayerCardShare
-              url={`https://mxntcg.lovable.app/players/${tag}`}
-              title={`${tag} — TCG League`}
-              text="Mira mi ranking competitivo en TCG League 🏆"
-              className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-white/10"
-              cardData={{
-                nexusTag: tag,
-                subtitle: storeCity ?? null,
-                rankLabel: activeTcg?.rank_position > 0 ? `#${activeTcg.rank_position}` : null,
-                rankCaption: activeTcg?.game_name ?? null,
-                stats: [
-                  { label: "Win rate", value: winRate != null ? `${winRate}%` : "—" },
-                  { label: "Torneos", value: String(data?.totalTournamentsAttended ?? 0) },
-                  { label: "Ganados", value: String(activeTcg?.tournaments_won ?? 0) },
-                ],
-              }}
-            />
-            <button
-              onClick={handleTogglePrivacy}
-              title={`${isPublic ? "Perfil público — clic para hacer privado" : "Perfil privado — clic para hacer público"}. El staff de las tiendas y TCGs donde jugaste siempre puede ver esos resultados.`}
-              className={`ml-auto inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
-                isPublic
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                  : "border-white/15 bg-white/5 text-foreground-secondary hover:bg-white/10"
-              }`}
-            >
-              {isPublic ? <Globe size={12} /> : <Lock size={12} />}
-              {isPublic ? "Público" : "Privado"}
-            </button>
-          </div>
         </section>
 
         {showSteps && <NewPlayerSteps zone={gaPlayer.preferred_zone} onSkip={handleSkipSteps} />}
+
+        {!loading && hasHistory && events[0] && (
+          <LastTournament
+            event={events[0]}
+            onOpen={() => openTournament(events[0].id)}
+            onTrack={() => setTrackerTournament({ id: events[0].id, game_id: events[0].game_id })}
+          />
+        )}
 
         {/* Achievements + Performance Tracker — antes eran dos cards de
             ancho completo apiladas (cada una con su propio header), ahora
@@ -549,7 +496,7 @@ function DashboardPage() {
           (achievements && achievements.unlocked_count > 0)) && (
           <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {achievementsLoading ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4">
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
                 <div className="h-10 w-10 flex-shrink-0 animate-pulse rounded-full bg-white/[0.06]" />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="h-3.5 w-32 animate-pulse rounded bg-white/[0.06]" />
@@ -562,10 +509,10 @@ function DashboardPage() {
                 <Link
                   to="/players/$playerTag/achievements"
                   params={{ playerTag: tag }}
-                  className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
+                  className="group flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-secondary"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary transition group-hover:scale-105">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-border font-mono-stat text-xs font-bold text-foreground">
                       {achievements.total_count > 0
                         ? Math.round((achievements.unlocked_count / achievements.total_count) * 100)
                         : 0}
@@ -586,7 +533,7 @@ function DashboardPage() {
                   </div>
                   <ChevronRight
                     size={16}
-                    className="flex-shrink-0 text-foreground-subtle transition group-hover:text-primary"
+                    className="flex-shrink-0 text-foreground-subtle transition-colors group-hover:text-foreground"
                   />
                 </Link>
               )
@@ -595,10 +542,10 @@ function DashboardPage() {
             {!showSteps && (
               <Link
                 to="/sessions"
-                className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-primary/30 hover:bg-black/40"
+                className="group flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-secondary"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition group-hover:scale-105">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-border text-foreground-secondary">
                     <Layers size={18} />
                   </div>
                   <div className="min-w-0">
@@ -610,7 +557,7 @@ function DashboardPage() {
                 </div>
                 <ChevronRight
                   size={16}
-                  className="flex-shrink-0 text-foreground-subtle transition group-hover:text-primary"
+                  className="flex-shrink-0 text-foreground-subtle transition-colors group-hover:text-foreground"
                 />
               </Link>
             )}
@@ -634,7 +581,7 @@ function DashboardPage() {
               </h2>
             </div>
             {tcgStats.length === 0 ? (
-              <div className="glass rounded-2xl p-8 text-center text-sm text-foreground-subtle">
+              <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-foreground-subtle">
                 Aún no tienes rankings en esta temporada.
               </div>
             ) : (
@@ -660,14 +607,14 @@ function DashboardPage() {
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">Mis Decks Top</h2>
               {statsGameIds.length > 1 && (
-                <div className="flex gap-1 rounded-lg bg-black/40 p-1">
+                <div className="flex gap-1 rounded-lg bg-secondary p-1">
                   {statsGameIds.map((gid) => {
                     const tcgName = tcgStats.find((t) => t.game_id === gid)?.game_name ?? gid;
                     return (
                       <button
                         key={gid}
                         onClick={() => setStatsTcg(gid)}
-                        className={`rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                        className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
                           activeStatsTcg === gid
                             ? "bg-primary text-primary-foreground"
                             : "text-foreground-secondary hover:text-foreground"
@@ -680,12 +627,9 @@ function DashboardPage() {
                 </div>
               )}
             </div>
-            <div className="glass grid grid-cols-1 gap-3 rounded-2xl border border-white/10 p-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 divide-y divide-border rounded-xl border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {top3Decks.map((deck: any, i: number) => (
-                <div
-                  key={deck.id}
-                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-3"
-                >
+                <div key={deck.id} className="flex items-center gap-3 p-4">
                   <div className="relative flex-shrink-0">
                     {deck.image ? (
                       <img
@@ -693,20 +637,22 @@ function DashboardPage() {
                         alt={deck.name}
                         loading="lazy"
                         decoding="async"
-                        className="h-16 w-11 rounded-md border border-white/10 object-cover"
+                        className="h-16 w-11 rounded-md border border-border object-cover"
                       />
                     ) : (
-                      <div className="flex h-16 w-11 items-center justify-center rounded-md border border-white/10 bg-black/30">
+                      <div className="flex h-16 w-11 items-center justify-center rounded-md border border-border">
                         <ShieldQuestion size={16} className="text-foreground-subtle" />
                       </div>
                     )}
-                    <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-card font-mono-stat text-xs font-bold text-foreground">
                       {i + 1}
                     </span>
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-foreground">{deck.name}</p>
                     <p className="text-xs text-foreground-subtle">
+                      {/* El código distingue líderes con el mismo nombre (Luffy ST14 vs ST29). */}
+                      {deck.set && <span className="font-mono-stat">{deck.set} · </span>}
                       {deck.count} torneo{deck.count !== 1 ? "s" : ""}
                     </p>
                   </div>
@@ -718,19 +664,18 @@ function DashboardPage() {
 
         {/* Recent */}
         <section
-          className={`glass mt-6 overflow-hidden rounded-2xl ${hideEmptySections ? "hidden" : ""}`}
+          className={`mt-6 overflow-hidden rounded-xl border border-border bg-card ${hideEmptySections ? "hidden" : ""}`}
         >
-          <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="text-primary" size={18} />
-              <h2 className="text-lg font-semibold text-foreground">Torneos Recientes</h2>
-            </div>
-            <span className="text-xs uppercase tracking-wider text-foreground-subtle">
-              {filteredEvents.length} {historyTcg ? "torneos" : "torneos jugados"}
-            </span>
+          <header className="flex items-baseline justify-between gap-3 border-b border-border px-5 py-4">
+            <h2 className="text-lg font-semibold text-foreground">Torneos recientes</h2>
+            {!loading && (
+              <span className="whitespace-nowrap text-xs text-foreground-subtle">
+                {filteredEvents.length} {historyTcg ? "torneos" : "torneos jugados"}
+              </span>
+            )}
           </header>
           {tcgStats.length > 1 && (
-            <div className="flex overflow-x-auto border-b border-white/10 px-2">
+            <div className="flex overflow-x-auto border-b border-border px-2">
               <button
                 onClick={() => {
                   setHistoryTcg(null);
@@ -768,7 +713,7 @@ function DashboardPage() {
           )}
           <div className="overflow-x-auto hidden sm:block">
             <table className="w-full text-sm">
-              <thead className="bg-black/30 text-xs uppercase tracking-wider text-foreground-subtle">
+              <thead className="border-b border-border text-xs uppercase tracking-wider text-foreground-subtle">
                 <tr>
                   <th className="px-4 py-2 text-left">Fecha</th>
                   <th className="px-4 py-2 text-left">Tienda</th>
@@ -798,21 +743,38 @@ function DashboardPage() {
                       <tr
                         key={t.id}
                         onClick={() => openTournament(t.id)}
-                        className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition"
+                        onKeyDown={(e) => {
+                          if (e.target !== e.currentTarget) return;
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openTournament(t.id);
+                          }
+                        }}
+                        tabIndex={0}
+                        aria-label={`Ver detalle del torneo en ${t.store}, ${fmtDate(t.date)}`}
+                        className="border-b border-border/60 hover:bg-white/[0.03] cursor-pointer transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
                       >
-                        <td className="px-4 py-3 text-foreground-secondary font-mono-stat text-xs">
-                          {t.date}
+                        <td className="whitespace-nowrap px-4 py-3 font-mono-stat text-xs text-foreground-secondary">
+                          {fmtDate(t.date)}
                         </td>
-                        <td className="px-4 py-3 text-foreground">
-                          {t.store}{" "}
-                          <span className="text-xs text-foreground-subtle">· {t.city}</span>
-                          {t.tournament_status === "APPROVED" && (
-                            <span className="ml-2 inline-block rounded bg-yellow-500/15 px-1.5 py-0.5 text-xs font-medium text-yellow-300 align-middle">
-                              Pendiente de conteo oficial
+                        {/* max-w-0 + w-full: la columna toma el espacio sobrante y trunca,
+                            así un nombre largo no aprieta la fecha ni las demás columnas. */}
+                        <td className="w-full max-w-0 px-4 py-3 text-foreground">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate" title={`${t.store} · ${t.city}`}>
+                              {t.store}{" "}
+                              <span className="text-xs text-foreground-subtle">· {t.city}</span>
                             </span>
-                          )}
+                            {t.tournament_status === "APPROVED" && (
+                              <span className="flex-shrink-0 rounded bg-yellow-500/15 px-1.5 py-0.5 text-xs font-medium text-yellow-300">
+                                Pendiente de conteo oficial
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-foreground-secondary">{t.tcg}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-xs text-foreground-secondary">
+                          {t.tcg}
+                        </td>
                         <td className="px-4 py-3 text-center font-mono-stat text-xs text-foreground-secondary whitespace-nowrap">
                           {t.wins != null && t.losses != null ? `${t.wins} / ${t.losses}` : "—"}
                         </td>
@@ -822,15 +784,15 @@ function DashboardPage() {
                               className={`font-mono-stat text-sm font-semibold ${
                                 rankTier(t.placement)
                                   ? RANK_TIER_TEXT[rankTier(t.placement)!]
-                                  : "text-foreground"
+                                  : "text-foreground-secondary"
                               }`}
                             >
                               #{t.placement}
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right font-mono-stat font-semibold text-foreground">
-                          +{Number(t.pointsEarned).toFixed(2)}
+                        <td className="whitespace-nowrap px-4 py-3 text-right font-mono-stat font-semibold text-foreground">
+                          {fmtPts(t.pointsEarned)}
                         </td>
                         <td className="px-2 py-3 text-foreground-subtle">
                           <div className="flex items-center gap-1">
@@ -840,14 +802,11 @@ function DashboardPage() {
                                 setTrackerTournament({ id: t.id, game_id: t.game_id });
                               }}
                               title="Mis Partidas"
-                              className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_16px_rgba(232,106,34,0.35)]"
+                              aria-label="Mis partidas de este torneo"
+                              className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground-secondary transition-colors hover:bg-white/5 hover:text-foreground"
                             >
-                              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-                              <BarChart3
-                                size={13}
-                                className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                              />
-                              <span className="relative hidden sm:inline">Partidas</span>
+                              <BarChart3 size={13} className="flex-shrink-0" />
+                              <span className="hidden sm:inline">Partidas</span>
                             </button>
                             <ChevronRight size={14} />
                           </div>
@@ -873,7 +832,7 @@ function DashboardPage() {
           </div>
           <div className="sm:hidden">
             {loading ? (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-border">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="flex items-center justify-between gap-3 px-4 py-3">
                     <div className="flex-1 space-y-2">
@@ -892,12 +851,22 @@ function DashboardPage() {
                 Aún no has participado en ningún torneo.
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-border">
                 {paginatedEvents.map((t) => (
                   <div
                     key={t.id}
                     onClick={() => openTournament(t.id)}
-                    className="cursor-pointer px-4 py-3 hover:bg-white/5 transition"
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openTournament(t.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label={`Ver detalle del torneo en ${t.store}, ${fmtDate(t.date)}`}
+                    role="button"
+                    className="cursor-pointer px-4 py-3 transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
                   >
                     <div className="flex items-center justify-between">
                       <div className="min-w-0">
@@ -912,7 +881,7 @@ function DashboardPage() {
                         <div className="flex items-center gap-2 text-xs text-foreground-subtle flex-wrap">
                           <span>{t.city}</span>
                           <span>·</span>
-                          <span>{t.date}</span>
+                          <span className="whitespace-nowrap">{fmtDate(t.date)}</span>
                           {t.wins != null && t.losses != null && (
                             <>
                               <span>·</span>
@@ -931,21 +900,18 @@ function DashboardPage() {
                               setTrackerTournament({ id: t.id, game_id: t.game_id });
                             }}
                             title="Mis Partidas"
-                            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_16px_rgba(232,106,34,0.35)]"
+                            aria-label="Mis partidas de este torneo"
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground-secondary transition-colors hover:bg-white/5 hover:text-foreground"
                           >
-                            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-                            <BarChart3
-                              size={13}
-                              className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                            />
-                            <span className="relative hidden sm:inline">Partidas</span>
+                            <BarChart3 size={13} className="flex-shrink-0" />
+                            <span className="hidden sm:inline">Partidas</span>
                           </button>
                           <div className="flex flex-col items-end leading-none">
                             <span
                               className={`font-mono-stat text-sm font-semibold ${
                                 rankTier(t.placement)
                                   ? RANK_TIER_TEXT[rankTier(t.placement)!]
-                                  : "text-foreground"
+                                  : "text-foreground-secondary"
                               }`}
                             >
                               #{t.placement}
@@ -953,7 +919,7 @@ function DashboardPage() {
                           </div>
                         </div>
                         <p className="text-xs font-mono-stat font-semibold text-foreground">
-                          +{Number(t.pointsEarned).toFixed(2)}
+                          {fmtPts(t.pointsEarned)}
                         </p>
                       </div>
                     </div>
@@ -988,7 +954,7 @@ function DashboardPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6"
+                    className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 sm:p-6"
                   >
                     <DialogPrimitive.Content
                       asChild
@@ -1002,15 +968,12 @@ function DashboardPage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 16, scale: 0.98 }}
                         transition={{ duration: 0.25, ease: "easeOut" }}
-                        className="glass relative w-full max-w-6xl max-h-[calc(100vh-4rem-env(safe-area-inset-bottom))] lg:max-h-[90vh] rounded-2xl border border-white/10 bg-black/80 flex flex-col"
+                        className="relative w-full max-w-6xl max-h-[calc(100vh-4rem-env(safe-area-inset-bottom))] lg:max-h-[90vh] rounded-2xl border border-border bg-card shadow-2xl flex flex-col"
                       >
-                        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
+                        <div className="flex items-start justify-between gap-4 border-b border-border pb-4 px-6 pt-6 sm:px-8 sm:pt-8 flex-shrink-0">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                              Detalle del Torneo
-                            </p>
                             <DialogPrimitive.Title asChild>
-                              <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">
+                              <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                                 {loadingDetail
                                   ? "Cargando…"
                                   : (tournamentDetail?.game?.name ?? "—")}
@@ -1025,7 +988,7 @@ function DashboardPage() {
                             <X size={18} />
                           </button>
                         </div>
-                        <div className="overflow-y-auto flex-1 min-h-0 px-6 pb-16 sm:pb-8 sm:px-8">
+                        <div className="overflow-y-auto [scrollbar-gutter:stable] flex-1 min-h-0 px-6 pb-16 sm:pb-8 sm:px-8">
                           {loadingDetail ? (
                             <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                               {/* Columna principal */}
@@ -1044,15 +1007,15 @@ function DashboardPage() {
                                 {/* Tabla de resultados */}
                                 <div className="space-y-3">
                                   <SkeletonLine width="w-40" height="h-4" />
-                                  <div className="overflow-hidden rounded-xl border border-white/10">
-                                    <div className="bg-black/40 px-3 py-2">
+                                  <div className="overflow-hidden rounded-xl border border-border">
+                                    <div className="border-b border-border px-3 py-2">
                                       <div className="grid grid-cols-5 gap-3">
                                         {["w-4", "w-24", "w-12", "w-12", "w-16"].map((w, i) => (
                                           <SkeletonLine key={i} width={w} height="h-2" />
                                         ))}
                                       </div>
                                     </div>
-                                    <div className="divide-y divide-white/5">
+                                    <div className="divide-y divide-border">
                                       {Array.from({ length: 8 }).map((_, i) => (
                                         <div
                                           key={i}
@@ -1073,19 +1036,17 @@ function DashboardPage() {
                               </div>
 
                               {/* Columna Performance Tracker */}
-                              <div className="border-t border-white/10 pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
+                              <div className="border-t border-border pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
                                 <SkeletonLine width="w-40" height="h-4" className="mb-4" />
                                 <PerformanceTrackerSkeleton />
                               </div>
                             </div>
                           ) : tournamentDetail ? (
                             <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-                              <div className="space-y-6 lg:col-span-2">
+                              <div className="space-y-6 lg:sticky lg:top-0 lg:col-span-2">
                                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                                   <div>
-                                    <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                                      Tienda
-                                    </p>
+                                    <p className="text-xs text-foreground-subtle">Tienda</p>
                                     <p className="mt-1 text-sm font-semibold text-foreground">
                                       {tournamentDetail.store.name}
                                     </p>
@@ -1094,9 +1055,7 @@ function DashboardPage() {
                                     </p>
                                   </div>
                                   <div>
-                                    <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                                      Fecha
-                                    </p>
+                                    <p className="text-xs text-foreground-subtle">Fecha</p>
                                     <p className="mt-1 text-sm font-semibold text-foreground">
                                       {new Date(
                                         tournamentDetail.date + "T12:00:00",
@@ -1111,9 +1070,7 @@ function DashboardPage() {
                                     </p>
                                   </div>
                                   <div>
-                                    <p className="text-xs uppercase tracking-widest text-foreground-subtle">
-                                      Participantes
-                                    </p>
+                                    <p className="text-xs text-foreground-subtle">Participantes</p>
                                     <p className="mt-1 text-sm font-semibold text-foreground">
                                       {tournamentDetail.total_participants}
                                     </p>
@@ -1126,12 +1083,12 @@ function DashboardPage() {
                                 </div>
 
                                 <div>
-                                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-secondary">
+                                  <h3 className="mb-3 text-sm font-semibold text-foreground">
                                     Resultados del torneo
                                   </h3>
-                                  <div className="overflow-x-auto rounded-xl border border-white/10">
+                                  <div className="overflow-x-auto rounded-xl border border-border">
                                     <table className="w-full text-sm">
-                                      <thead className="bg-black/40 text-xs uppercase tracking-wider text-foreground-subtle">
+                                      <thead className="border-b border-border text-xs uppercase tracking-wider text-foreground-subtle">
                                         <tr>
                                           <th className="px-3 py-2 text-left">#</th>
                                           <th className="px-3 py-2 text-left">Nexus Tag</th>
@@ -1207,9 +1164,9 @@ function DashboardPage() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="min-h-0 min-w-0 max-h-[50vh] overflow-y-auto border-t border-white/10 pt-6 lg:col-span-1 lg:max-h-[calc(90vh-80px)] lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0 lg:sticky lg:top-0">
+                              <div className="min-w-0 self-start border-t border-border pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0">
                                 <div className="mb-4 flex items-center justify-between">
-                                  <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
+                                  <h3 className="text-sm font-semibold text-foreground">
                                     Mis Partidas
                                   </h3>
                                   {editingTrackerInModal && (
@@ -1241,7 +1198,8 @@ function DashboardPage() {
                             </div>
                           ) : (
                             <div className="py-16 text-center text-sm text-foreground-subtle">
-                              No se pudo cargar el torneo.
+                              No se pudo cargar el torneo. Cierra esta ventana y vuelve a abrirlo;
+                              si sigue fallando, revisa tu conexión.
                             </div>
                           )}
                         </div>
@@ -1284,42 +1242,58 @@ function DashboardPage() {
 
 function TooltipInfo({ text }: { text: string }) {
   const [show, setShow] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const btnRef = React.useRef<HTMLButtonElement>(null);
+  const id = React.useId();
 
-  const onEnter = () => {
+  const open = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      const tooltipWidth = Math.min(window.innerWidth * 0.5, 600);
-      const leftPos = Math.min(rect.left + window.scrollX, window.innerWidth - tooltipWidth - 16);
-      setPos({ top: rect.bottom + window.scrollY + 8, left: Math.max(leftPos, 16) });
+      const width = Math.min(window.innerWidth - 32, 448);
+      const left = Math.min(Math.max(rect.left, 16), window.innerWidth - width - 16);
+      setPos({ top: rect.bottom + 8, left, width });
     }
     setShow(true);
   };
+
+  useEffect(() => {
+    if (!show) return;
+    const close = (e: KeyboardEvent) => e.key === "Escape" && setShow(false);
+    const hide = () => setShow(false);
+    window.addEventListener("keydown", close);
+    window.addEventListener("scroll", hide, true);
+    return () => {
+      window.removeEventListener("keydown", close);
+      window.removeEventListener("scroll", hide, true);
+    };
+  }, [show]);
 
   return (
     <>
       <button
         ref={btnRef}
         type="button"
-        className="text-foreground-subtle hover:text-primary transition"
-        onMouseEnter={onEnter}
+        className="-m-2 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle transition-colors hover:text-foreground"
+        onMouseEnter={open}
         onMouseLeave={() => setShow(false)}
-        aria-label="Más información"
+        onFocus={open}
+        onBlur={() => setShow(false)}
+        onClick={open}
+        aria-label="Cómo se calculan los puntos"
+        aria-expanded={show}
+        aria-describedby={show ? id : undefined}
       >
-        <HelpCircle size={12} />
+        <HelpCircle size={14} />
       </button>
       {show &&
         ReactDOM.createPortal(
           <div
-            className="fixed z-[99999]"
-            style={{ top: pos.top, left: pos.left, width: `min(50vw, 600px)` }}
-            onMouseEnter={() => setShow(true)}
-            onMouseLeave={() => setShow(false)}
+            id={id}
+            role="tooltip"
+            className="fixed z-[99999] rounded-xl border border-border bg-popover p-5 text-left text-sm leading-6 text-foreground-secondary shadow-2xl whitespace-pre-line"
+            style={{ top: pos.top, left: pos.left, width: pos.width }}
           >
-            <div className="animate-in fade-in-0 zoom-in-95 duration-150 rounded-xl border border-primary/40 bg-[#0f1117] p-5 text-sm text-foreground-secondary leading-7 shadow-2xl whitespace-pre-line">
-              {text}
-            </div>
+            {text}
           </div>,
           document.body,
         )}
@@ -1349,12 +1323,10 @@ function TcgRankCard({
   const tier = rankTier(tab === "global" ? tcg.rank_position : tcg.monthly_rank_position);
 
   return (
-    <div className="glass flex w-full flex-col gap-3 rounded-2xl border border-white/10 p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
-      <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
-        <Crown size={14} className="text-primary" /> {tcg.game_name}
-      </div>
+    <div className="flex w-full flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
+      <div className="text-sm font-semibold text-foreground">{tcg.game_name}</div>
 
-      <div className="flex gap-1 rounded-lg bg-black/40 p-1">
+      <div className="flex gap-1 rounded-lg bg-secondary p-1">
         {(["global", "monthly"] as const).map((t) => (
           <button
             key={t}
@@ -1372,8 +1344,8 @@ function TcgRankCard({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
-            <Crown size={10} /> {tab === "global" ? "Temporada" : "Mensual"}
+          <div className="text-xs text-foreground-subtle">
+            {tab === "global" ? "Temporada" : "Mensual"}
           </div>
           <p
             className={`mt-1 font-mono-stat text-3xl font-bold ${tier ? RANK_TIER_TEXT[tier] : "text-foreground"}`}
@@ -1386,29 +1358,25 @@ function TcgRankCard({
         </div>
 
         <div>
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
-            <Target size={10} className="text-primary" /> Puntos
-          </div>
+          <div className="text-xs text-foreground-subtle">Puntos</div>
           <p className="mt-1 font-mono-stat text-3xl font-bold text-foreground">
             {Number(points ?? 0).toFixed(0)}
           </p>
-          <p className="text-xs text-foreground-subtle">Arena pts</p>
+          <p className="text-xs text-foreground-subtle">
+            {tab === "global" ? "De temporada" : "Del mes"}
+          </p>
         </div>
 
         {tab === "global" && (
           <>
             <div>
-              <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
-                <Swords size={10} className="text-primary" /> Jugados
-              </div>
+              <div className="text-xs text-foreground-subtle">Jugados</div>
               <p className="mt-1 font-mono-stat text-2xl font-bold text-foreground">
                 {tcg.tournaments_played}
               </p>
             </div>
             <div>
-              <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-foreground-subtle">
-                <Award size={10} className="text-primary" /> Ganados
-              </div>
+              <div className="text-xs text-foreground-subtle">Ganados</div>
               <p className="mt-1 font-mono-stat text-2xl font-bold text-foreground">
                 {tcg.tournaments_won}
               </p>
@@ -1417,5 +1385,275 @@ function TcgRankCard({
         )}
       </div>
     </div>
+  );
+}
+
+/** Rango de temporada con lo que cambió: subida/bajada desde el último torneo
+ *  y puntos que faltan para alcanzar el lugar de arriba. */
+function RankStory({ tcg, semesterLabel }: { tcg: any; semesterLabel: string }) {
+  const rank: number = tcg?.rank_position ?? 0;
+  const prev: number = tcg?.previous_rank_position ?? 0;
+  const tier = rankTier(rank);
+  const delta = rank > 0 && prev > 0 ? prev - rank : null;
+  const lastDate = tcg?.last_tournament_date
+    ? new Date(`${tcg.last_tournament_date}T12:00:00`).toLocaleDateString("es-MX", {
+        day: "numeric",
+        month: "short",
+      })
+    : null;
+  const toNext: number | null = tcg?.points_to_next ?? null;
+
+  let change: React.ReactNode = null;
+  if (rank > 0 && prev === 0) {
+    change = <span className="text-foreground-secondary">Nuevo en la tabla</span>;
+  } else if (delta != null && delta > 0) {
+    change = (
+      <span className="inline-flex items-center gap-1 font-semibold text-success">
+        <ArrowUp size={14} aria-hidden /> Subiste {delta} {delta === 1 ? "lugar" : "lugares"}
+      </span>
+    );
+  } else if (delta != null && delta < 0) {
+    change = (
+      <span className="inline-flex items-center gap-1 font-semibold text-danger">
+        <ArrowDown size={14} aria-hidden /> Bajaste {-delta} {delta === -1 ? "lugar" : "lugares"}
+      </span>
+    );
+  } else if (delta === 0) {
+    change = <span className="text-foreground-secondary">Mismo lugar</span>;
+  }
+  const showNext = toNext != null && rank > 1;
+
+  return (
+    <div className="sm:text-right">
+      <div className="flex items-center gap-1 text-sm text-foreground-secondary sm:justify-end">
+        Ranking de temporada · {semesterLabel}
+        <TooltipInfo text={POINTS_HELP} />
+      </div>
+      <div
+        className={`mt-1 font-mono-stat text-7xl font-bold leading-none tracking-tight sm:text-8xl ${
+          tier ? RANK_TIER_TEXT[tier] : "text-foreground"
+        }`}
+      >
+        {rank > 0 ? `#${rank}` : "—"}
+      </div>
+      {(change || showNext) && (
+        <div className="mt-3 flex flex-col gap-1 text-sm sm:items-end">
+          {change && (
+            <p className="flex flex-wrap items-center gap-x-1.5">
+              {change}
+              {lastDate && (
+                <span className="text-foreground-subtle">desde tu torneo del {lastDate}</span>
+              )}
+            </p>
+          )}
+          {showNext &&
+            (toNext === 0 ? (
+              <p className="text-foreground-secondary">Empatado en puntos con el #{rank - 1}</p>
+            ) : (
+              <p className="text-foreground-secondary">
+                A{" "}
+                <span className="font-mono-stat font-semibold text-foreground">
+                  {Number(toNext.toFixed(1))} {toNext === 1 ? "pt" : "pts"}
+                </span>{" "}
+                del #{rank - 1}
+              </p>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** "Tu último torneo": resumen en la página del evento más reciente, con la tira
+ *  de rondas (resultado + líder rival). El detalle completo sigue en el modal. */
+function LastTournament({
+  event,
+  onOpen,
+  onTrack,
+}: {
+  event: any;
+  onOpen: () => void;
+  onTrack: () => void;
+}) {
+  const roundsQ = useQuery(tournamentRoundsQuery(event.id));
+  const rounds: any[] = roundsQ.data?.rounds ?? [];
+  const summary: any = roundsQ.data?.summary ?? null;
+  const tagOf = new Map<string, string>(
+    ((roundsQ.data?.opponents ?? []) as any[]).map((o) => [o.id, o.geek_tag]),
+  );
+  const tier = rankTier(event.placement);
+  const hasRounds = rounds.length > 0;
+
+  return (
+    <section className="mb-6 overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-foreground">Tu último torneo</h2>
+          <p className="mt-0.5 min-w-0 text-sm text-foreground-secondary">
+            <span className="block truncate sm:inline">{event.store}</span>
+            <span className="text-foreground-subtle">
+              <span className="hidden sm:inline"> · </span>
+              {event.city}
+            </span>
+            <span className="whitespace-nowrap text-foreground-subtle">
+              {" · "}
+              {fmtDate(event.date)}
+            </span>
+          </p>
+          {event.tournament_status === "APPROVED" && (
+            <span className="mt-2 inline-block rounded bg-yellow-500/15 px-1.5 py-0.5 text-xs font-medium text-yellow-300">
+              Pendiente de conteo oficial
+            </span>
+          )}
+        </div>
+        <div className="flex-shrink-0 text-right">
+          <div
+            className={`font-mono-stat text-4xl font-bold leading-none ${
+              tier ? RANK_TIER_TEXT[tier] : "text-foreground"
+            }`}
+          >
+            #{event.placement}
+          </div>
+          <div className="mt-1 whitespace-nowrap text-xs text-foreground-subtle">
+            <span className="font-mono-stat">{fmtPts(event.pointsEarned)}</span> pts
+            {event.wins != null && event.losses != null && (
+              <>
+                {" · "}
+                <span className="font-mono-stat">
+                  {event.wins}V–{event.losses}D
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {roundsQ.isLoading ? (
+        <div className="flex gap-3 px-5 py-4" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-[92px] flex-1 animate-pulse rounded-md bg-white/[0.06]" />
+          ))}
+        </div>
+      ) : roundsQ.isError ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm text-foreground-secondary">
+          No se pudieron cargar tus rondas.
+          <button
+            onClick={() => roundsQ.refetch()}
+            className="inline-flex min-h-8 items-center rounded-md border border-border px-3 text-xs font-semibold text-foreground-secondary transition-colors hover:bg-white/5 hover:text-foreground"
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : !hasRounds ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <p className="text-sm text-foreground-secondary">
+            Aún no registras las rondas de este torneo. Anota contra qué líder jugaste cada una para
+            ver tus matchups.
+          </p>
+          <button
+            onClick={onTrack}
+            className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-white/5"
+          >
+            Registrar rondas
+          </button>
+        </div>
+      ) : (
+        <ol className="flex flex-col divide-y divide-border sm:flex-row sm:divide-x sm:divide-y-0 sm:overflow-x-auto">
+          {rounds.map((r) => {
+            const leader = r.opponent_leader;
+            const result = r.won_match === true ? "V" : r.won_match === false ? "D" : "—";
+            const resultClass =
+              r.won_match === true
+                ? "text-success"
+                : r.won_match === false
+                  ? "text-danger"
+                  : "text-foreground-subtle";
+            return (
+              <li
+                key={r.id}
+                className="flex min-w-0 items-center gap-3 px-5 py-3 sm:min-w-[9.5rem] sm:flex-1 sm:flex-col sm:items-start sm:gap-2"
+              >
+                <div className="flex w-12 flex-shrink-0 items-baseline gap-2 sm:w-auto">
+                  <span className="font-mono-stat text-xs text-foreground-subtle">
+                    R{r.round_number}
+                  </span>
+                  <span
+                    className={`font-mono-stat text-lg font-bold ${resultClass}`}
+                    aria-label={
+                      result === "V" ? "Victoria" : result === "D" ? "Derrota" : "Sin resultado"
+                    }
+                  >
+                    {result}
+                  </span>
+                </div>
+                {r.is_bye ? (
+                  <p className="text-sm text-foreground-secondary">Bye</p>
+                ) : (
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    {leader?.card_image ? (
+                      <img
+                        src={leader.card_image}
+                        alt={leader.base_name ?? "Líder rival"}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-14 w-10 flex-shrink-0 rounded border border-border object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-10 flex-shrink-0 items-center justify-center rounded border border-border">
+                        <ShieldQuestion size={14} className="text-foreground-subtle" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {leader?.base_name ?? "Líder sin registrar"}
+                      </p>
+                      {r.opponent_player_id && tagOf.get(r.opponent_player_id) && (
+                        <p className="truncate text-xs text-foreground-subtle">
+                          vs {tagOf.get(r.opponent_player_id)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3">
+        <p className="text-xs text-foreground-subtle">
+          {summary?.toughest_opponent_tag ? (
+            <>
+              Rival más difícil:{" "}
+              <span className="font-medium text-foreground-secondary">
+                {summary.toughest_opponent_tag}
+              </span>
+              {summary.toughest_opponent_rank != null && (
+                <span className="font-mono-stat"> (#{summary.toughest_opponent_rank})</span>
+              )}
+            </>
+          ) : (
+            " "
+          )}
+        </p>
+        <div className="flex items-center gap-2">
+          {hasRounds && (
+            <button
+              onClick={onTrack}
+              className="inline-flex min-h-8 items-center rounded-md px-2.5 text-xs font-semibold text-foreground-secondary transition-colors hover:bg-white/5 hover:text-foreground"
+            >
+              Editar rondas
+            </button>
+          )}
+          <button
+            onClick={onOpen}
+            className="inline-flex min-h-8 items-center gap-1 rounded-md border border-border px-2.5 text-xs font-semibold text-foreground-secondary transition-colors hover:bg-white/5 hover:text-foreground"
+          >
+            Ver detalle <ChevronRight size={14} aria-hidden />
+          </button>
+        </div>
+      </footer>
+    </section>
   );
 }

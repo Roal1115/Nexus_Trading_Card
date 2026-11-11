@@ -1,5 +1,6 @@
 export {
   useNexusRole,
+  useHidesOthersDecks,
   homeRouteForRole,
   NexusAuthProvider,
 } from "@/context/nexus-auth.context";

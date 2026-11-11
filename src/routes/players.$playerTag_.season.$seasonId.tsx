@@ -5,6 +5,7 @@ import { Crown, Download, Share2, Check, Trophy, Target } from "lucide-react";
 import { getSeasonProfile } from "@/lib/nexus-season-profile.functions";
 import { seasonProfileQuery } from "@/lib/season-profile-queries";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { useHidesOthersDecks, useNexusRole } from "@/hooks/use-nexus-role";
 
 export const Route = createFileRoute("/players/$playerTag_/season/$seasonId")({
   loader: async ({ context, params }) => {
@@ -132,6 +133,8 @@ async function downloadCard(p: any) {
 }
 
 function SeasonProfilePage() {
+  const { player: viewer } = useNexusRole();
+  const hidesOthersDecks = useHidesOthersDecks();
   const { playerTag, seasonId } = Route.useParams();
   const loaderData = Route.useLoaderData();
   const [copied, setCopied] = useState(false);
@@ -188,7 +191,10 @@ function SeasonProfilePage() {
     );
   }
 
-  const p = data as Extract<SeasonProfile, { record: any }>;
+  const full = data as Extract<SeasonProfile, { record: any }>;
+  // Con perfil privado no se ven los decks de otros jugadores (la tarjeta propia sí).
+  const isOwnCard = full.player.geek_tag.toLowerCase() === viewer?.geek_tag?.toLowerCase();
+  const p = hidesOthersDecks && !isOwnCard ? { ...full, leaders: [] as typeof full.leaders } : full;
   const r = p.record;
   const wr = r && r.wins + r.losses > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : null;
   const topLeader = p.leaders[0];
@@ -235,7 +241,9 @@ function SeasonProfilePage() {
             <div className="mt-1 text-[10px] uppercase tracking-widest text-gray-500">Récord</div>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">
-            <div className={`font-mono text-2xl font-bold ${wr !== null ? wrColor(wr) : "text-gray-500"}`}>
+            <div
+              className={`font-mono text-2xl font-bold ${wr !== null ? wrColor(wr) : "text-gray-500"}`}
+            >
               {wr !== null ? `${wr}%` : "—"}
             </div>
             <div className="mt-1 text-[10px] uppercase tracking-widest text-gray-500">Win rate</div>
@@ -260,8 +268,7 @@ function SeasonProfilePage() {
             Líder más jugado:{" "}
             <span className="font-semibold text-white">{topLeader.leader_name}</span>
             <span className="text-gray-500">
-              ({topLeader.wins}-{topLeader.total_rounds - topLeader.wins},{" "}
-              {topLeader.win_rate}%)
+              ({topLeader.wins}-{topLeader.total_rounds - topLeader.wins}, {topLeader.win_rate}%)
             </span>
           </div>
         )}
@@ -310,7 +317,9 @@ function SeasonProfilePage() {
                 <div className="font-mono text-xs text-gray-400">
                   {l.wins}-{l.total_rounds - l.wins}
                 </div>
-                <div className={`w-14 text-right font-mono text-sm font-bold ${wrColor(l.win_rate)}`}>
+                <div
+                  className={`w-14 text-right font-mono text-sm font-bold ${wrColor(l.win_rate)}`}
+                >
                   {l.win_rate}%
                 </div>
               </div>

@@ -10,30 +10,24 @@ import {
   cancelRsvp,
 } from "@/lib/nexus-rsvp.functions";
 import { RSVP_NOTICE } from "@/lib/rsvp-rules";
-import { useNexusRole } from "@/hooks/use-nexus-role";
+import { useHidesOthersDecks, useNexusRole } from "@/hooks/use-nexus-role";
 import { buildIcs, icsDataUri, icsFileName } from "@/lib/ics";
 import { todayInMexicoStr } from "@/lib/utils";
-import {
-  Trophy,
-  MapPin,
-  Clock,
-  CalendarPlus,
-  Share2,
-  Check,
-  ShieldQuestion,
-  Heart,
-  Users,
-  ArrowLeft,
-  Store,
-} from "lucide-react";
+import { BTN_OUTLINE, FOCUS_RING, InlineError, SECTION } from "@/components/stores/store-ui";
+import { Trophy, MapPin, Clock, CalendarPlus, Share2, Check, Heart, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+
+const BTN_PRIMARY = `inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_RING} sm:min-h-9`;
 
 export const Route = createFileRoute("/tournaments/$id")({
   loader: async ({ params }) => {
     try {
       return await getPublicTournament({ data: { tournament_id: params.id } });
-    } catch {
-      throw notFound();
+    } catch (e: any) {
+      // Solo "no existe / no publicado" es un 404; un fallo de red o de base de datos va al
+      // errorComponent, que ofrece reintentar en vez de decir que el torneo no existe.
+      if (/no encontrado/i.test(e?.message ?? "")) throw notFound();
+      throw e;
     }
   },
   head: ({ loaderData, params }) => {
@@ -63,26 +57,37 @@ export const Route = createFileRoute("/tournaments/$id")({
       links: [{ rel: "canonical", href: url }],
     };
   },
-  errorComponent: TournamentNotFound,
+  errorComponent: TournamentLoadError,
   notFoundComponent: TournamentNotFound,
   component: PublicTournamentPage,
 });
 
 function TournamentNotFound() {
   return (
-    <div className="mx-auto max-w-md px-4 py-16 text-center">
-      <ShieldQuestion className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-      <h1 className="mb-2 text-xl font-bold text-white">Torneo no disponible</h1>
-      <p className="mb-6 text-sm text-secondary-foreground">
+    <main className="mx-auto max-w-md space-y-4 px-4 py-16">
+      <h1 className="text-xl font-bold text-foreground">Torneo no disponible</h1>
+      <p className="text-sm text-foreground-secondary">
         Este torneo no existe o aún no ha sido publicado.
       </p>
-      <Link
-        to="/"
-        className="inline-flex items-center rounded-xl border border-border bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
-      >
+      <Link to="/" className={BTN_OUTLINE}>
         Ver el ranking nacional
       </Link>
-    </div>
+    </main>
+  );
+}
+
+function TournamentLoadError() {
+  const router = useRouter();
+  return (
+    <main className="mx-auto max-w-md space-y-4 px-4 py-16">
+      <h1 className="text-xl font-bold text-foreground">No pudimos cargar el torneo</h1>
+      <InlineError onRetry={() => router.invalidate()}>
+        Revisa tu conexión e inténtalo de nuevo.
+      </InlineError>
+      <Link to="/" className={BTN_OUTLINE}>
+        Ver el ranking nacional
+      </Link>
+    </main>
   );
 }
 
@@ -110,11 +115,14 @@ function PublicTournamentPage() {
   const data = Route.useLoaderData();
   const [copied, setCopied] = useState(false);
   const { player } = useNexusRole();
+  const hidesOthersDecks = useHidesOthersDecks();
+  // Con perfil privado no se ven los decks de los demás (solo el propio).
+  const sees = (geekTag: string) => !hidesOthersDecks || geekTag === player?.geek_tag;
   const qc = useQueryClient();
-  const router = useRouter();
 
   const t = data.tournament;
   const winner = data.standings[0];
+  const myRow = player ? data.standings.find((s) => s.geek_tag === player.geek_tag) : undefined;
   const today = todayInMexicoStr();
   const isFuture = t.date >= today;
 
@@ -156,7 +164,7 @@ function PublicTournamentPage() {
   const handleShare = async () => {
     const shareData = {
       title: `${t.game_name} — ${t.store_name}`,
-      text: "Mira los resultados de este torneo 🏆",
+      text: "Mira los resultados de este torneo",
       url: typeof window !== "undefined" ? window.location.href : "",
     };
     try {
@@ -180,64 +188,68 @@ function PublicTournamentPage() {
     }
   };
 
+  const goToMyRow = () =>
+    document.getElementById("mi-lugar")?.scrollIntoView({ block: "center", behavior: "smooth" });
+
+  const place = [t.game_name, t.zone].filter(Boolean).join(" · ");
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <button
-          onClick={() => router.history.back()}
-          className="inline-flex items-center gap-1.5 text-sm text-secondary-foreground hover:text-white transition"
+    <main className="@container mx-auto max-w-3xl space-y-4 px-4 py-6">
+      {/* Destino fijo: con un enlace compartido el historial del navegador puede llevar a
+          cualquier parte. */}
+      {t.store_slug ? (
+        <Link
+          to="/stores/$slug"
+          params={{ slug: t.store_slug }}
+          className={`inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground-secondary transition hover:text-foreground ${FOCUS_RING}`}
         >
-          <ArrowLeft className="h-4 w-4" /> Volver
-        </button>
-        {t.store_slug && (
-          <Link
-            to="/stores/$slug"
-            params={{ slug: t.store_slug }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white/5 px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-white/10 hover:text-white transition"
-          >
-            <Store className="h-3.5 w-3.5" /> Ver tienda
-          </Link>
-        )}
-      </div>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a {t.store_name}
+        </Link>
+      ) : (
+        <Link
+          to="/"
+          className={`inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground-secondary transition hover:text-foreground ${FOCUS_RING}`}
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Ver el ranking nacional
+        </Link>
+      )}
 
-      {/* Header card */}
-      <div className="glass rounded-2xl border border-border p-6">
-        <span className="inline-block rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-          {t.game_name}
-        </span>
-        <h1 className="mt-2 text-2xl font-bold text-white">{t.store_name}</h1>
-        <div className="mt-3 flex flex-wrap gap-3 text-sm text-secondary-foreground">
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5" /> {t.store_city}, {t.store_state}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" /> {formatLongDate(t.date)}
-          </span>
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{t.zone}</span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          {data.total_participants > 0 && <span>{data.total_participants} participantes</span>}
-          {isFuture ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-secondary-foreground">
-              <Users className="h-3 w-3" /> {rsvpCountQuery.data?.count ?? 0} interesados
-            </span>
-          ) : null}
+      <header className={`${SECTION} space-y-4`}>
+        <div className="space-y-1">
+          <h1 className="text-balance break-words text-2xl font-bold text-foreground">
+            {t.store_name}
+          </h1>
+          {place && <p className="text-sm text-foreground-secondary">{place}</p>}
         </div>
 
-        {isFuture ? <p className="mt-3 text-xs text-muted-foreground">{RSVP_NOTICE}</p> : null}
+        <div className="space-y-1.5 text-sm text-foreground-secondary">
+          <p className="flex items-start gap-2">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+            {t.store_city}, {t.store_state}
+          </p>
+          <p className="flex items-start gap-2">
+            <Clock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+            {formatLongDate(t.date)}
+          </p>
+          {isFuture && rsvpCountQuery.data && (
+            <p>
+              <span className="font-mono-stat">{rsvpCountQuery.data.count}</span> interesados
+            </p>
+          )}
+        </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        {isFuture ? <p className="text-sm text-foreground-subtle">{RSVP_NOTICE}</p> : null}
+
+        <div className="flex flex-wrap gap-2">
           {isFuture && player ? (
             <button
+              type="button"
               onClick={() => (isRsvped ? cancelMut.mutate() : createMut.mutate())}
               disabled={rsvpBusy || rsvpStatusQuery.isLoading}
-              className={`flex min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
-                isRsvped
-                  ? "border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                  : "bg-[#F97316] text-white hover:bg-[#F97316]/90"
-              }`}
+              aria-pressed={isRsvped}
+              className={isRsvped ? BTN_OUTLINE : BTN_PRIMARY}
             >
-              <Heart className={`h-4 w-4 ${isRsvped ? "fill-current" : ""}`} />
+              <Heart className={`h-4 w-4 ${isRsvped ? "fill-current" : ""}`} aria-hidden="true" />
               {isRsvped ? "Te interesa ir · Quitar" : "Me interesa ir"}
             </button>
           ) : null}
@@ -255,163 +267,235 @@ function PublicTournamentPage() {
                 }),
               )}
               download={icsFileName(`${t.game_name}-${t.store_name}-${t.date}`)}
-              className="flex min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
+              className={BTN_OUTLINE}
             >
-              <CalendarPlus className="h-4 w-4" /> Agregar a mi calendario
+              <CalendarPlus className="h-4 w-4" aria-hidden="true" /> Agregar a mi calendario
             </a>
           ) : null}
-          <button
-            onClick={handleShare}
-            className="flex min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-white/5 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-white/10"
-          >
+          <button type="button" onClick={handleShare} className={BTN_OUTLINE} aria-live="polite">
             {copied ? (
               <>
-                <Check className="h-4 w-4" /> ¡Link copiado!
+                <Check className="h-4 w-4" aria-hidden="true" /> Enlace copiado
               </>
             ) : (
               <>
-                <Share2 className="h-4 w-4" /> Compartir
+                <Share2 className="h-4 w-4" aria-hidden="true" /> Compartir
               </>
             )}
           </button>
         </div>
-      </div>
 
-      {/* Stat tiles */}
-      {data.standings.length > 0 && (
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
-            <div className="text-2xl font-bold text-white">{data.total_participants}</div>
-            <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-              Total de Jugadores
+        {data.standings.length > 0 && (
+          <dl className="grid grid-cols-3 gap-4 border-t border-border pt-4">
+            <div>
+              <dt className="text-xs text-foreground-subtle">Jugadores</dt>
+              <dd className="font-mono-stat text-2xl font-bold text-foreground">
+                {data.total_participants}
+              </dd>
             </div>
-          </div>
-          <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
-            <div className="text-2xl font-bold text-white">{t.rounds ?? "—"}</div>
-            <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-              Total de Rondas
+            <div>
+              <dt className="text-xs text-foreground-subtle">Rondas</dt>
+              <dd className="font-mono-stat text-2xl font-bold text-foreground">
+                {t.rounds ?? "—"}
+              </dd>
             </div>
-          </div>
-          <div className="rounded-2xl border border-border bg-white/5 p-4 text-center">
-            <div className="text-2xl font-bold text-white">{data.undefeated_count}</div>
-            <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-              Jugadores Invictos
+            <div>
+              <dt className="text-xs text-foreground-subtle">Invictos</dt>
+              <dd className="font-mono-stat text-2xl font-bold text-foreground">
+                {data.undefeated_count}
+              </dd>
             </div>
-          </div>
-        </div>
-      )}
+          </dl>
+        )}
+      </header>
 
-      {/* Winner highlight */}
       {winner ? (
-        <div className="mt-6 flex items-center gap-4 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 to-transparent p-4">
-          {winner.leader_image ? (
+        <section className={`${SECTION} flex items-center gap-4`}>
+          {sees(winner.geek_tag) && winner.leader_image ? (
             <img
               src={winner.leader_image}
               alt={winner.leader_name ?? ""}
-              className="h-16 w-11 flex-shrink-0 rounded border border-white/10 object-cover"
+              loading="lazy"
+              decoding="async"
+              className="h-16 w-11 flex-shrink-0 rounded border border-border object-cover"
             />
           ) : (
-            <div className="flex h-16 w-11 flex-shrink-0 items-center justify-center rounded border border-white/10 bg-white/5">
-              <Trophy className="h-5 w-5 text-primary" />
+            <div className="flex h-16 w-11 flex-shrink-0 items-center justify-center rounded border border-border">
+              <Trophy className="h-5 w-5 text-foreground-subtle" aria-hidden="true" />
             </div>
           )}
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
-              🏆 Campeón
-            </div>
-            <div className="truncate text-lg font-bold text-white">{winner.geek_tag}</div>
-            {winner.leader_name ? (
-              <div className="truncate text-xs text-secondary-foreground">{winner.leader_name}</div>
+            <h2 className="text-sm font-medium text-foreground-secondary">Campeón</h2>
+            <p className="truncate text-lg font-bold text-foreground">{winner.geek_tag}</p>
+            {sees(winner.geek_tag) && winner.leader_name ? (
+              <p className="truncate text-sm text-foreground-secondary">{winner.leader_name}</p>
             ) : null}
           </div>
-        </div>
+        </section>
       ) : null}
 
-      {/* Standings */}
       {data.standings.length > 0 ? (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-border glass">
-          <div className="grid grid-cols-[28px_minmax(0,1fr)_52px_52px] gap-2 border-b border-white/10 px-3 sm:grid-cols-[40px_1fr_70px_60px_60px] sm:px-4 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-            <div>#</div>
-            <div>Jugador</div>
-            <div>V/D/E</div>
-            <div className="hidden sm:block">OMW%</div>
-            <div>PTS</div>
+        <section className={`${SECTION} space-y-3`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-foreground">Posiciones</h2>
+            {myRow && (
+              <button type="button" onClick={goToMyRow} className={BTN_OUTLINE}>
+                Ir a mi lugar (#{myRow.rank})
+              </button>
+            )}
           </div>
-          {data.standings.map((s: (typeof data.standings)[number]) => {
-            const isTop3 = s.rank <= 3;
-            const vde = s.wins == null ? "—" : `${s.wins}/${s.losses ?? 0}/${s.draws ?? 0}`;
-            const omw =
-              typeof s.omw_percentage === "number" ? `${s.omw_percentage.toFixed(1)}%` : "—";
-            const pts = typeof s.points_earned === "number" ? s.points_earned.toFixed(2) : "—";
-            return (
-              <div
-                key={`${s.rank}-${s.geek_tag}`}
-                className="grid grid-cols-[28px_minmax(0,1fr)_52px_52px] items-center gap-2 border-b border-white/[0.05] px-3 sm:grid-cols-[40px_1fr_70px_60px_60px] sm:px-4 py-3"
-              >
-                <div
-                  className={`font-mono text-sm ${isTop3 ? "font-bold text-primary" : "text-muted-foreground"}`}
-                >
-                  {s.rank}
-                </div>
-                <div className="flex min-w-0 items-center gap-2">
-                  {s.leader_image ? (
-                    <img
-                      src={s.leader_image}
-                      alt=""
-                      className="h-9 w-6 flex-shrink-0 rounded border border-white/10 object-cover"
-                    />
-                  ) : null}
-                  <div className="min-w-0">
-                    {s.is_profile_public ? (
-                      <Link
-                        to="/players/$playerTag"
-                        params={{ playerTag: s.geek_tag }}
-                        className="block truncate text-sm font-medium text-white hover:text-primary"
-                      >
-                        {s.geek_tag}
-                      </Link>
-                    ) : (
-                      <div className="truncate text-sm font-medium text-white">{s.geek_tag}</div>
-                    )}
-                    {s.leader_name ? (
-                      <div className="truncate text-[10px] text-muted-foreground">
-                        {s.leader_name}
+
+          <table className="w-full text-sm">
+            <caption className="sr-only">
+              Posiciones del torneo de {t.game_name} en {t.store_name}
+            </caption>
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-foreground-subtle">
+                <th scope="col" className="w-10 py-2 pr-2 font-medium">
+                  #
+                </th>
+                <th scope="col" className="py-2 pr-2 font-medium">
+                  Jugador
+                </th>
+                <th scope="col" className="py-2 pl-2 text-right font-medium">
+                  V/D/E
+                </th>
+                <th scope="col" className="hidden py-2 pl-4 text-right font-medium @lg:table-cell">
+                  OMW %
+                </th>
+                <th scope="col" className="py-2 pl-4 text-right font-medium">
+                  Pts
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.standings.map((s: (typeof data.standings)[number]) => {
+                const isTop3 = s.rank <= 3;
+                const isMe = !!myRow && s.geek_tag === myRow.geek_tag;
+                const vde = s.wins == null ? "—" : `${s.wins}/${s.losses ?? 0}/${s.draws ?? 0}`;
+                const omw =
+                  typeof s.omw_percentage === "number" ? `${s.omw_percentage.toFixed(1)} %` : "—";
+                const pts = typeof s.points_earned === "number" ? s.points_earned.toFixed(2) : "—";
+                const leader = sees(s.geek_tag) && s.leader_name ? s.leader_name : null;
+                return (
+                  <tr
+                    key={`${s.rank}-${s.geek_tag}`}
+                    id={isMe ? "mi-lugar" : undefined}
+                    className={`border-b border-border last:border-0 ${isMe ? "bg-primary/10" : ""}`}
+                  >
+                    <td
+                      className={`py-1 pr-2 align-top font-mono-stat ${isTop3 ? "font-bold text-foreground" : "text-foreground-subtle"}`}
+                    >
+                      <span className="inline-flex min-h-11 items-center sm:min-h-9">{s.rank}</span>
+                    </td>
+                    <td className="min-w-0 py-1 pr-2">
+                      <div className="flex items-center gap-2">
+                        {sees(s.geek_tag) && s.leader_image ? (
+                          <img
+                            src={s.leader_image}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="h-9 w-6 flex-shrink-0 rounded border border-border object-cover"
+                          />
+                        ) : null}
+                        <div className="min-w-0">
+                          {s.is_profile_public ? (
+                            <Link
+                              to="/players/$playerTag"
+                              params={{ playerTag: s.geek_tag }}
+                              className={`inline-flex min-h-11 items-center break-all font-medium text-foreground hover:text-primary hover:underline sm:min-h-9 ${FOCUS_RING}`}
+                            >
+                              {s.geek_tag}
+                            </Link>
+                          ) : (
+                            <span className="inline-flex min-h-11 items-center break-all font-medium text-foreground sm:min-h-9">
+                              {s.geek_tag}
+                            </span>
+                          )}
+                          {isMe && <span className="sr-only"> (tú)</span>}
+                          {(leader || omw !== "—") && (
+                            <p className="-mt-1 pb-1 text-xs text-foreground-subtle">
+                              {leader}
+                              {omw !== "—" && (
+                                <span className="@lg:hidden">
+                                  {leader ? " · " : ""}OMW{" "}
+                                  <span className="font-mono-stat">{omw}</span>
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="whitespace-nowrap font-mono text-xs text-secondary-foreground">
-                  {vde}
-                </div>
-                <div className="hidden font-mono text-xs text-muted-foreground sm:block">{omw}</div>
-                <div className="font-mono text-sm font-semibold text-white">{pts}</div>
+                    </td>
+                    <td className="whitespace-nowrap py-1 pl-2 text-right align-top font-mono-stat text-foreground-secondary">
+                      <span className="inline-flex min-h-11 items-center sm:min-h-9">{vde}</span>
+                    </td>
+                    <td className="hidden py-1 pl-4 text-right align-top font-mono-stat text-foreground-secondary @lg:table-cell">
+                      <span className="inline-flex min-h-9 items-center">{omw}</span>
+                    </td>
+                    <td className="py-1 pl-4 text-right align-top font-mono-stat font-semibold text-foreground">
+                      <span className="inline-flex min-h-11 items-center sm:min-h-9">{pts}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <details className="text-sm text-foreground-secondary">
+            <summary
+              className={`flex min-h-11 cursor-pointer items-center font-medium hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+            >
+              Cómo leer la tabla
+            </summary>
+            <dl className="grid gap-x-8 gap-y-3 pb-1 pt-1 @lg:grid-cols-2">
+              <div>
+                <dt className="font-semibold text-foreground">Pts</dt>
+                <dd>
+                  Puntos que obtuvo cada jugador en este torneo; los lugares siguen ese orden.
+                </dd>
               </div>
-            );
-          })}
-        </div>
+              <div>
+                <dt className="font-semibold text-foreground">V/D/E</dt>
+                <dd>Victorias, derrotas y empates.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-foreground">OMW %</dt>
+                <dd>
+                  Porcentaje de victorias de sus rivales (Opponent Match Win), un criterio de
+                  desempate.
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-foreground">Rondas e invictos</dt>
+                <dd>
+                  Las rondas son las partidas que jugó el primer lugar. Los invictos son quienes no
+                  perdieron ninguna.
+                </dd>
+              </div>
+            </dl>
+          </details>
+        </section>
       ) : (
-        <div className="mt-6 rounded-2xl border border-border bg-white/5 p-6 text-center text-sm text-secondary-foreground">
+        <section className={`${SECTION} text-sm text-foreground-secondary`}>
           {isFuture
             ? "Los resultados aparecerán aquí después del torneo."
             : "Este torneo no tiene resultados registrados."}
-        </div>
+        </section>
       )}
 
-      {/* Footer CTA */}
       {!player && (
-        <div className="mt-8 text-center">
-          <h3 className="text-sm font-semibold text-white">¿Compites en este circuito?</h3>
-          <p className="mt-1 text-xs text-secondary-foreground">
+        <section className={`${SECTION} space-y-3`}>
+          <h2 className="text-base font-semibold text-foreground">¿Compites en este circuito?</h2>
+          <p className="text-sm text-foreground-secondary">
             Registra tus partidas, sigue tu ranking nacional y consulta el meta.
           </p>
-          <Link
-            to="/signup"
-            className="mt-3 inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-[#0B1220] hover:bg-primary/90"
-          >
+          <Link to="/signup" className={BTN_PRIMARY}>
             Crear mi cuenta
           </Link>
-        </div>
+        </section>
       )}
-    </div>
+    </main>
   );
 }

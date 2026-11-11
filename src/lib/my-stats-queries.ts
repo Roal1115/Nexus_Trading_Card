@@ -1,5 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getMyStats, getMyStatsGames, getMyCasualStats, getMyPendingStats } from "./nexus-player.functions";
+import {
+  getMyStats,
+  getMyStatsGames,
+  getMyCasualStats,
+  getMyPendingStats,
+} from "./nexus-player.functions";
 
 type StatsData = Awaited<ReturnType<typeof getMyStats>>;
 
@@ -9,6 +14,9 @@ export const myStatsGamesQuery = () =>
     queryFn: () => getMyStatsGames(),
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
+    // Nada invalida esta caché al crear una partida en "Mis partidas": sin esto, quien ya
+    // había abierto "Mis stats" seguía viendo la lista vieja hasta 5 min después.
+    refetchOnMount: "always",
   });
 
 const FETCHERS = {
@@ -25,4 +33,6 @@ export const myStatsSourceQuery = (gameId: string, source: "official" | "casual"
     queryFn: () => FETCHERS[source]({ data: { game_id: gameId } }) as Promise<StatsData>,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    // Mismo motivo: registrar rondas en "Mis partidas" no invalida estas stats.
+    refetchOnMount: "always",
   });

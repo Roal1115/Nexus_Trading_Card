@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarDays, Navigation, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { fullDate } from "@/components/calendar/tournament-detail-dialog";
 import { acceptsSlotRsvp, SlotRsvpPanel } from "@/components/calendar/slot-rsvp";
+import { BTN_OUTLINE, FOCUS_RING, InlineError, SECTION } from "@/components/stores/store-ui";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { publicCalendarQuery } from "@/lib/calendar-queries";
@@ -47,10 +48,17 @@ export function useStoreUpcoming(storeId: string | undefined) {
     .filter(
       (e) => e.date > today || (e.date === today && (!e.time || e.time.slice(0, 5) > nowTime)),
     );
-  return { upcoming, loading: results.some((r) => r.isPending) };
+  return {
+    upcoming,
+    loading: results.some((r) => r.isPending),
+    // Una semana que falla no es "sin torneos": se avisa para no decirle al visitante que la
+    // tienda está inactiva cuando solo falló la red.
+    error: results.some((r) => r.isError),
+    retry: () => results.forEach((r) => r.isError && r.refetch()),
+  };
 }
 
-function FavoriteButton({ storeId }: { storeId: string }) {
+function FavoriteButton({ storeId, storeName }: { storeId: string; storeName: string }) {
   const { player } = useNexusRole();
   const fetchFavorites = useServerFn(getMyFavoriteStores);
   const toggleFavorite = useServerFn(toggleFavoriteStore);
@@ -92,27 +100,29 @@ function FavoriteButton({ storeId }: { storeId: string }) {
   }
 
   if (!player) return null;
+  const label = isFavorite
+    ? `Quitar ${storeName} de favoritas`
+    : `Marcar ${storeName} como favorita`;
   return (
     <button
+      type="button"
       onClick={toggle}
       disabled={busy}
       aria-pressed={isFavorite}
-      aria-label={isFavorite ? "Quitar de favoritas" : "Agregar a favoritas"}
-      title={isFavorite ? "Quitar de favoritas" : "Agregar a favoritas"}
-      className={`flex-shrink-0 rounded-full border p-2.5 transition ${
-        isFavorite
-          ? "border-primary/50 bg-primary/10 text-primary"
-          : "border-white/10 text-gray-400 hover:border-primary/40 hover:text-primary"
+      aria-label={label}
+      title={label}
+      className={`flex min-h-11 min-w-11 flex-shrink-0 cursor-pointer items-center justify-center rounded-md border border-border transition hover:bg-white/5 disabled:opacity-40 sm:min-h-9 sm:min-w-9 ${FOCUS_RING} ${
+        isFavorite ? "text-warning" : "text-foreground-subtle hover:text-warning"
       }`}
     >
-      <Star size={18} className={isFavorite ? "fill-primary" : ""} />
+      <Star size={18} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
     </button>
   );
 }
 
 function NextTournament({ storeId }: { storeId: string }) {
   const { player } = useNexusRole();
-  const { upcoming, loading } = useStoreUpcoming(storeId);
+  const { upcoming, loading, error, retry } = useStoreUpcoming(storeId);
   const { data: fichas } = useQuery(storeFichasQuery(storeId));
 
   if (loading) {
@@ -141,28 +151,30 @@ function NextTournament({ storeId }: { storeId: string }) {
     : [];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_240px] sm:items-start">
+    <div className="grid gap-4 @2xl:grid-cols-[minmax(0,1fr)_240px] @2xl:items-start">
       <div className="space-y-1">
-        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-          <CalendarDays size={13} /> Próximo torneo
-        </p>
+        <h2 className="text-sm font-medium text-foreground-secondary">Próximo torneo</h2>
         {cancelledFirst && (
-          <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <p className="text-sm text-destructive">
             <strong>{fullDate(cancelledFirst.date)}: cancelado.</strong>{" "}
             {cancelledFirst.cancellation_reason}
           </p>
         )}
         {next ? (
           <>
-            <h2 className="text-xl font-bold text-white">
+            <p className="text-xl font-bold text-foreground">
               {fullDate(next.date)}
               {next.time ? ` · ${next.time.slice(0, 5)} hrs` : ""}
-            </h2>
-            <p className="text-sm text-gray-300">{facts.join(" · ")}</p>
-            {next.league_name && <p className="text-xs text-gray-400">{next.league_name}</p>}
+            </p>
+            <p className="text-sm text-foreground-secondary">{facts.join(" · ")}</p>
+            {next.league_name && (
+              <p className="text-sm text-foreground-subtle">{next.league_name}</p>
+            )}
           </>
+        ) : error ? (
+          <InlineError onRetry={retry}>No pudimos cargar las próximas fechas.</InlineError>
         ) : (
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-foreground-secondary">
             Esta tienda no tiene torneos programados por ahora.
           </p>
         )}
@@ -175,35 +187,32 @@ function NextTournament({ storeId }: { storeId: string }) {
 /** Encabezado de la tienda, visible en todas sus pestañas. */
 export function StoreHero({ store }: { store: any }) {
   const mapsUrl = safeHref(store.google_maps_url);
+  const place = [store.zone, store.subzone].filter(Boolean).join(" · ");
   return (
-    <header className="glass space-y-4 rounded-2xl p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <header className={`${SECTION} space-y-4`}>
+      <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-start @2xl:justify-between">
         <div className="min-w-0 space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            {[store.zone, store.subzone].filter(Boolean).join(" · ") || "—"}
-          </p>
-          <h1 className="text-3xl font-bold text-white">{store.name}</h1>
+          <h1 className="text-balance break-words text-2xl font-bold text-foreground @2xl:text-3xl">
+            {store.name}
+          </h1>
+          {place && <p className="text-sm text-foreground-secondary">{place}</p>}
           {store.games.length > 0 && (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-foreground-subtle">
               {store.games.map((g: any) => g.name).join(" · ")}
             </p>
           )}
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           {mapsUrl && (
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-md border border-white/15 px-3 py-2 text-xs font-semibold text-white transition hover:border-primary/40"
-            >
-              <Navigation size={13} /> Cómo llegar
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className={BTN_OUTLINE}>
+              Cómo llegar
+              <span className="sr-only"> a {store.name} (se abre en otra pestaña)</span>
             </a>
           )}
-          <FavoriteButton storeId={store.id} />
+          <FavoriteButton storeId={store.id} storeName={store.name} />
         </div>
       </div>
-      <div className="border-t border-white/10 pt-4">
+      <div className="border-t border-border pt-4">
         <NextTournament storeId={store.id} />
       </div>
     </header>

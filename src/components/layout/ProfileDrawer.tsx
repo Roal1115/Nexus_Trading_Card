@@ -4,6 +4,9 @@ import { LogOut } from "lucide-react";
 import { nexus } from "@/integrations/nexus/client";
 import { playerNavSections } from "@/components/layout/player-nav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ConfirmLogout } from "@/components/layout/ConfirmLogout";
+import { useQuery } from "@tanstack/react-query";
+import { myDashboardQuery } from "@/lib/dashboard-queries";
 
 // 1. El prop player ya tiene role — confirma que el tipo lo incluye:
 type ProfileDrawerProps = {
@@ -23,6 +26,12 @@ type ProfileDrawerProps = {
 // tres cosas que el drawer anterior no tenía pese a declarar aria-modal.
 export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
   const initials = player.geek_tag?.slice(0, 2).toUpperCase() ?? "GA";
+  // Misma línea de identidad que el pie del sidebar de escritorio.
+  const dashboardQ = useQuery({ ...myDashboardQuery(), enabled: player.role === "player" });
+  const tcg = (dashboardQ.data as any)?.tcgStats?.[0];
+  const season = (dashboardQ.data as any)?.semesterLabel as string | undefined;
+  const rankLine =
+    tcg?.rank_position > 0 ? `#${tcg.rank_position}${season ? ` · ${season}` : ""}` : null;
 
   // Cierre explícito al navegar: confiar solo en el onClick del <Link> de
   // cada item no era confiable — al combinarse con la navegación de router
@@ -49,7 +58,7 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
       <SheetContent
         id="profile-drawer"
         side="right"
-        className="flex w-[86%] max-w-sm flex-col gap-0 border-white/10 bg-[#0B1220]/95 p-0 backdrop-blur-xl"
+        className="flex w-[86%] max-w-sm flex-col gap-0 border-border bg-card p-0"
       >
         <SheetTitle className="sr-only">Menú de perfil</SheetTitle>
         <SheetDescription className="sr-only">
@@ -57,8 +66,8 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
         </SheetDescription>
 
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/10 p-5">
-          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+        <div className="flex items-center gap-3 border-b border-border p-5">
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-secondary">
             {player.avatar_url ? (
               <img
                 src={player.avatar_url}
@@ -66,11 +75,12 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-sm font-bold text-primary">{initials}</span>
+              <span className="text-sm font-bold text-foreground">{initials}</span>
             )}
           </div>
-          <div>
-            <p className="font-mono-stat text-base font-bold text-white">{player.geek_tag}</p>
+          <div className="min-w-0">
+            <p className="truncate text-base font-semibold text-foreground">{player.geek_tag}</p>
+            {rankLine && <p className="truncate text-xs text-foreground-subtle">{rankLine}</p>}
           </div>
         </div>
 
@@ -80,7 +90,9 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
             <Section key={sec.title} title={sec.title}>
               {sec.items.map((item) => (
                 <DrawerLink key={item.to} to={item.to} onClose={onClose}>
-                  <span className="flex items-center gap-2.5 text-gray-400">{item.icon}</span>
+                  <span className="flex items-center gap-2.5 text-foreground-subtle">
+                    {item.icon}
+                  </span>
                   {item.label}
                 </DrawerLink>
               ))}
@@ -89,14 +101,19 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
         </div>
 
         {/* Logout */}
-        <div className="border-t border-white/10 p-4">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-red-400 transition hover:bg-red-500/10"
-          >
-            <LogOut size={16} />
-            Cerrar sesión
-          </button>
+        <div className="border-t border-border p-4">
+          <ConfirmLogout
+            onConfirm={handleLogout}
+            trigger={
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground-secondary transition hover:bg-white/5 hover:text-foreground"
+              >
+                <LogOut size={16} />
+                Cerrar sesión
+              </button>
+            }
+          />
         </div>
       </SheetContent>
     </Sheet>
@@ -106,9 +123,7 @@ export function ProfileDrawer({ open, onClose, player }: ProfileDrawerProps) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-        {title}
-      </p>
+      <p className="mb-1.5 px-3 text-xs font-medium text-foreground-subtle">{title}</p>
       <div className="flex flex-col">{children}</div>
     </div>
   );

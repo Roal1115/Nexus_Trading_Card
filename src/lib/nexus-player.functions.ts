@@ -51,8 +51,25 @@ export const getMyDashboard = createServerFn({ method: "POST" })
             seasonRows(admin, game_id, activeSeason!.id as string),
             monthRows(admin, game_id, monthKey),
           ]);
-          const general = entryOf(tableOf(seasonResults), player.id);
+          const seasonTable = tableOf(seasonResults);
+          const general = entryOf(seasonTable, player.id);
           const monthly = entryOf(tableOf(monthResults), player.id);
+          // "Qué cambió": posición antes de tu último torneo (misma tabla, sin los
+          // resultados de ese día en adelante) y puntos que faltan para el de arriba.
+          const lastDate = seasonResults
+            .filter((r) => r.player_id === player.id)
+            .reduce(
+              (max, r) =>
+                r.tournaments.tournament_date > max ? r.tournaments.tournament_date : max,
+              "",
+            );
+          const before = lastDate
+            ? entryOf(
+                tableOf(seasonResults.filter((r) => r.tournaments.tournament_date < lastDate)),
+                player.id,
+              ).rank_position
+            : 0;
+          const above = general.rank_position > 1 ? seasonTable[general.rank_position - 2] : null;
           return {
             game_id,
             game_name: snapGameMap.get(game_id)?.name ?? "—",
@@ -60,6 +77,10 @@ export const getMyDashboard = createServerFn({ method: "POST" })
             ...general,
             monthly_rank_position: monthly.rank_position,
             monthly_total_points: monthly.total_points,
+            // 0 = no había jugado antes de ese día (entra nuevo a la tabla).
+            previous_rank_position: before,
+            last_tournament_date: lastDate || null,
+            points_to_next: above ? Math.max(0, above.points - general.total_points) : null,
           };
         }),
       )
@@ -199,60 +220,67 @@ export const getMyDashboard = createServerFn({ method: "POST" })
           .in("tournaments.game_id", allTcgGameIds)
       : { data: [] as any[] };
 
-    // Agrupar por game_id → contar usos de cada leader
-    const leaderUsageByGame = new Map<string, Map<string, number>>();
-    for (const r of (deckRounds ?? []) as any[]) {
-      const gameId = r.tournaments?.game_id;
-      const leaderId = r.player_leader_id;
-      if (!gameId || !leaderId) continue;
-      if (!leaderUsageByGame.has(gameId)) leaderUsageByGame.set(gameId, new Map());
-      const gameMap = leaderUsageByGame.get(gameId)!;
-      gameMap.set(leaderId, (gameMap.get(leaderId) ?? 0) + 1);
-    }
-
-    // Top 3 leader IDs por game
-    const top3LeaderIdsByGame = new Map<string, string[]>();
-    for (const [gameId, usageMap] of leaderUsageByGame.entries()) {
-      const sorted = Array.from(usageMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([id]) => id);
-      top3LeaderIdsByGame.set(gameId, sorted);
-    }
-
-    // Fetchear info de esos leaders
-    const allTopLeaderIds = Array.from(new Set(Array.from(top3LeaderIdsByGame.values()).flat()));
-    const { data: topLeaderRows } = allTopLeaderIds.length
+    // Resolver cada leader a su canónico ANTES de contar: si no, un arte
+    // alterno cuenta como otro leader y aparece duplicado en el top 3.
+    const usedLeaderIds = Array.from(
+      new Set(((deckRounds ?? []) as any[]).map((r) => r.player_leader_id).filter(Boolean)),
+    ) as string[];
+    const { data: usedLeaderRows } = usedLeaderIds.length
       ? await admin
           .from("deck_identifiers")
-          .select("id, base_name, card_image, canonical_leader_id")
-          .in("id", allTopLeaderIds)
+          .select("id, base_name, card_image, canonical_leader_id, set_code")
+          .in("id", usedLeaderIds)
       : { data: [] as any[] };
+    const leaderRowMap = new Map((usedLeaderRows ?? []).map((l: any) => [l.id, l]));
+    const canonicalIds = Array.from(
+      new Set(
+        (usedLeaderRows ?? [])
+          .map((l: any) => l.canonical_leader_id)
+          .filter((id: string | null) => id && !leaderRowMap.has(id)),
+      ),
+    ) as string[];
+    if (canonicalIds.length) {
+      const { data: canonicalRows } = await admin
+        .from("deck_identifiers")
+        .select("id, base_name, card_image, canonical_leader_id, set_code")
+        .in("id", canonicalIds);
+      for (const l of (canonicalRows ?? []) as any[]) leaderRowMap.set(l.id, l);
+    }
+    const canonicalOf = (id: string): string =>
+      (leaderRowMap.get(id) as any)?.canonical_leader_id ?? id;
 
-    // Resolver canónicos
-    const topLeaderMap = new Map((topLeaderRows ?? []).map((l: any) => [l.id, l]));
-    const resolveTopLeader = (id: string) => {
-      const l = topLeaderMap.get(id);
-      if (l?.canonical_leader_id) return topLeaderMap.get(l.canonical_leader_id) ?? l;
-      return l;
-    };
+    // Contar TORNEOS distintos por leader canónico (antes se contaban rondas
+    // y se mostraban como "torneos": 55 contra 25 jugados).
+    const tournamentsByLeader = new Map<string, Map<string, Set<string>>>();
+    for (const r of (deckRounds ?? []) as any[]) {
+      const gameId = r.tournaments?.game_id;
+      if (!gameId || !r.player_leader_id || !r.tournament_id) continue;
+      const leaderId = canonicalOf(r.player_leader_id);
+      if (!tournamentsByLeader.has(gameId)) tournamentsByLeader.set(gameId, new Map());
+      const gameMap = tournamentsByLeader.get(gameId)!;
+      if (!gameMap.has(leaderId)) gameMap.set(leaderId, new Set());
+      gameMap.get(leaderId)!.add(r.tournament_id);
+    }
 
-    // Construir top3Decks por game_id
     const top3DecksByGame: Record<
       string,
-      Array<{ id: string; name: string; image: string | null; count: number }>
+      Array<{ id: string; name: string; image: string | null; set: string | null; count: number }>
     > = {};
-    for (const [gameId, leaderIds] of top3LeaderIdsByGame.entries()) {
-      const usage = leaderUsageByGame.get(gameId)!;
-      top3DecksByGame[gameId] = leaderIds.map((id) => {
-        const resolved = resolveTopLeader(id);
-        return {
-          id: resolved?.id ?? id,
-          name: resolved?.base_name ?? "—",
-          image: resolved?.card_image ?? null,
-          count: usage.get(id) ?? 0,
-        };
-      });
+    for (const [gameId, usage] of tournamentsByLeader.entries()) {
+      top3DecksByGame[gameId] = Array.from(usage.entries())
+        .map(([id, tournaments]) => ({ id, count: tournaments.size }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3)
+        .map(({ id, count }) => {
+          const l = leaderRowMap.get(id) as any;
+          return {
+            id,
+            name: l?.base_name ?? "—",
+            image: l?.card_image ?? null,
+            set: l?.set_code ?? null,
+            count,
+          };
+        });
     }
 
     // Stats globales W-L-D del player
@@ -1259,25 +1287,33 @@ export const getMyStatsGames = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
-    const { data: tournamentIds } = await admin
-      .from("tournament_round_results")
-      .select("tournament_id")
-      .eq("player_id", player.id)
-      .eq("is_bye", false)
-      .not("won_match", "is", null);
+    // Juegos con torneos oficiales jugados + juegos con partidas propias (casuales o
+    // pendientes). Antes solo contaban los oficiales: un jugador con únicamente partidas
+    // casuales recibía `games: []`, la página nunca elegía un juego y no consultaba nada.
+    const [{ data: tournamentIds }, { data: ownSessions }] = await Promise.all([
+      admin
+        .from("tournament_round_results")
+        .select("tournament_id")
+        .eq("player_id", player.id)
+        .eq("is_bye", false)
+        .not("won_match", "is", null),
+      admin.from("standalone_sessions").select("game_id").eq("player_id", player.id),
+    ]);
 
     const uniqueTournamentIds = Array.from(
       new Set((tournamentIds ?? []).map((r: any) => r.tournament_id)),
     );
 
-    if (uniqueTournamentIds.length === 0) return { games: [] };
+    const { data: tournaments } = uniqueTournamentIds.length
+      ? await admin.from("tournaments").select("game_id").in("id", uniqueTournamentIds)
+      : { data: [] as any[] };
 
-    const { data: tournaments } = await admin
-      .from("tournaments")
-      .select("game_id")
-      .in("id", uniqueTournamentIds);
-
-    const uniqueGameIds = Array.from(new Set((tournaments ?? []).map((t: any) => t.game_id)));
+    const uniqueGameIds = Array.from(
+      new Set([
+        ...(tournaments ?? []).map((t: any) => t.game_id),
+        ...(ownSessions ?? []).map((s: any) => s.game_id),
+      ]),
+    ).filter(Boolean);
 
     if (uniqueGameIds.length === 0) return { games: [] };
 
@@ -1584,6 +1620,7 @@ export const getMyCasualStats = createServerFn({ method: "POST" })
           wtd_win_rate:
             agg.confirmed_total > 0 ? round1((agg.confirmed_wins / agg.confirmed_total) * 100) : 0,
           play_rate: 0, // sin meta en casual
+          tournaments_won: 0, // las casuales no cuentan torneos; sin esto la tarjeta decía "undefined"
           first_games: agg.first_games,
           first_win_rate:
             agg.first_games > 0 ? round1((agg.first_wins / agg.first_games) * 100) : null,
@@ -1847,6 +1884,7 @@ export const getMyPendingStats = createServerFn({ method: "POST" })
           wtd_win_rate:
             agg.confirmed_total > 0 ? round1((agg.confirmed_wins / agg.confirmed_total) * 100) : 0,
           play_rate: 0,
+          tournaments_won: 0, // las pendientes tampoco cuentan torneos
           first_games: agg.first_games,
           first_win_rate:
             agg.first_games > 0 ? round1((agg.first_wins / agg.first_games) * 100) : null,

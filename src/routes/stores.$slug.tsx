@@ -9,10 +9,14 @@ import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { storeProfileQuery } from "@/lib/stores-queries";
 import { StoreHero } from "@/components/stores/store-hero";
+import { BTN_OUTLINE, FOCUS_RING, InlineError, SECTION } from "@/components/stores/store-ui";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
 export const Route = createFileRoute("/stores/$slug")({
-  head: () => ({ meta: [{ title: "Tienda — Nexus" }] }),
+  head: ({ loaderData }) => {
+    const name = (loaderData as { store?: { name?: string } } | undefined)?.store?.name;
+    return { meta: [{ title: name ? `${name} — Nexus` : "Tienda — Nexus" }] };
+  },
   loader: async ({ context, params }) => {
     try {
       return await context.queryClient.ensureQueryData(storeProfileQuery(params.slug));
@@ -30,41 +34,30 @@ function StoreProfileSkeleton() {
   return (
     <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 sm:px-6 xl:grid-cols-[160px_minmax(0,1fr)_160px]">
       <aside className="hidden xl:block" />
-      <main className="min-w-0 max-w-4xl space-y-6 py-10">
-        <SkeletonLine width="w-40" height="h-3" />
+      <main aria-busy="true" className="@container min-w-0 max-w-4xl space-y-6 py-10">
+        <SkeletonLine width="w-40" height="h-4" />
 
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-24" height="h-3" />
+        <div className={`${SECTION} space-y-4`}>
           <SkeletonLine width="w-2/3" height="h-8" />
-          <SkeletonLine width="w-full" height="h-4" />
-          <div className="flex gap-2">
-            <SkeletonLine width="w-20" height="h-6" className="rounded-md" />
-            <SkeletonLine width="w-24" height="h-6" className="rounded-md" />
-          </div>
+          <SkeletonLine width="w-1/3" height="h-4" />
           <div className="flex gap-2 pt-2">
-            <SkeletonBlock className="h-9 w-32 rounded-md" />
-            <SkeletonBlock className="h-9 w-9 rounded-md" />
-            <SkeletonBlock className="h-9 w-9 rounded-md" />
+            <SkeletonBlock className="h-11 w-32 rounded-md" />
+            <SkeletonBlock className="h-11 w-11 rounded-md" />
           </div>
+          <SkeletonBlock className="h-16 w-full rounded-lg" />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="glass space-y-3 rounded-2xl p-6">
+        <div className="grid gap-4 @2xl:grid-cols-2">
+          <div className={`${SECTION} space-y-3`}>
             <SkeletonLine width="w-40" height="h-4" />
             <SkeletonLine width="w-full" height="h-3" />
             <SkeletonLine width="w-3/4" height="h-3" />
           </div>
-          <div className="glass space-y-3 rounded-2xl p-6">
+          <div className={`${SECTION} space-y-3`}>
             <SkeletonLine width="w-32" height="h-4" />
-            <SkeletonBlock className="h-9 w-full rounded-lg" />
-            <SkeletonBlock className="h-9 w-full rounded-lg" />
-            <SkeletonBlock className="h-9 w-full rounded-lg" />
+            <SkeletonBlock className="h-11 w-full rounded-lg" />
+            <SkeletonBlock className="h-11 w-full rounded-lg" />
           </div>
-        </div>
-
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-48" height="h-4" />
-          <SkeletonBlock className="h-96 w-full rounded-lg" />
         </div>
       </main>
       <aside className="hidden xl:block" />
@@ -87,13 +80,18 @@ function StoreLayout() {
   const loaderData = Route.useLoaderData();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const { data: profileData, isLoading: loading } = useQuery({
+  const {
+    data: profileData,
+    isLoading: loading,
+    error,
+    isError,
+    refetch,
+  } = useQuery({
     ...storeProfileQuery(slug),
     initialData: loaderData,
     retry: false,
   });
   const store = profileData?.store ?? null;
-  const notFound = !loading && !store;
 
   const fetchActiveSponsor = useServerFn(getActiveSponsor);
   const registerView = useServerFn(registerAdView);
@@ -124,14 +122,33 @@ function StoreLayout() {
     return <StoreProfileSkeleton />;
   }
 
-  if (notFound || !store) {
+  // Un fallo de red no es una tienda inexistente: se distingue para ofrecer "Reintentar".
+  // getStoreProfile lanza "Tienda no encontrada" cuando el slug no existe.
+  if (isError && !store && !/no encontrada/i.test(error?.message ?? "")) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-16 text-center sm:px-6">
-        <p className="text-sm text-gray-400">No encontramos esta tienda.</p>
-        <Link to="/stores" className="text-sm font-semibold text-primary hover:underline">
-          ← Volver al directorio
+      <main className="mx-auto max-w-3xl space-y-4 px-4 py-16 sm:px-6">
+        <h1 className="text-xl font-bold text-foreground">No pudimos cargar la tienda</h1>
+        <InlineError onRetry={() => refetch()}>
+          Revisa tu conexión e inténtalo de nuevo.
+        </InlineError>
+        <Link to="/stores" className={BTN_OUTLINE}>
+          Ver directorio de tiendas
         </Link>
-      </div>
+      </main>
+    );
+  }
+
+  if (!store) {
+    return (
+      <main className="mx-auto max-w-3xl space-y-4 px-4 py-16 sm:px-6">
+        <h1 className="text-xl font-bold text-foreground">No encontramos esta tienda</h1>
+        <p className="text-sm text-foreground-secondary">
+          Puede que el enlace esté mal escrito o que la tienda ya no esté en el circuito.
+        </p>
+        <Link to="/stores" className={BTN_OUTLINE}>
+          Ver directorio de tiendas
+        </Link>
+      </main>
     );
   }
 
@@ -150,22 +167,20 @@ function StoreLayout() {
         </aside>
       )}
 
-      <main className="mx-auto w-full min-w-0 max-w-4xl space-y-6 py-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            to="/stores"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-primary"
-          >
-            <ArrowLeft size={12} /> Volver al directorio
-          </Link>
-        </div>
+      <main className="@container mx-auto w-full min-w-0 max-w-4xl space-y-6 py-10">
+        <Link
+          to="/stores"
+          className={`inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground-secondary transition hover:text-foreground ${FOCUS_RING}`}
+        >
+          <ArrowLeft size={14} aria-hidden="true" /> Volver al directorio
+        </Link>
 
         {/* Ad horizontal mobile */}
         <AdHorizontal sponsor={sponsor} />
 
         <StoreHero store={store} />
 
-        <nav className="flex gap-1 border-b border-white/10">
+        <nav aria-label="Secciones de la tienda" className="flex gap-1 border-b border-border">
           {TABS.map((tab) => {
             const to = tab.to.replace("$slug", slug);
             const active = tab.exact
@@ -177,13 +192,14 @@ function StoreLayout() {
                 to={tab.to}
                 params={{ slug }}
                 activeOptions={{ exact: tab.exact }}
-                className={`flex items-center gap-1.5 border-b-2 -mb-px px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition ${
+                aria-current={active ? "page" : undefined}
+                className={`-mb-px flex min-h-11 items-center gap-1.5 border-b-2 px-4 text-sm font-medium transition ${FOCUS_RING} ${
                   active
-                    ? "border-primary text-white"
-                    : "border-transparent text-gray-400 hover:text-gray-200"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-foreground-secondary hover:text-foreground"
                 }`}
               >
-                {tab.icon}
+                <span aria-hidden="true">{tab.icon}</span>
                 {tab.label}
               </Link>
             );
