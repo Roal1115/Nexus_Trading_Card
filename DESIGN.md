@@ -96,12 +96,13 @@ components:
 
 # Design System: Nexus
 
-<!-- Actualizado 2026-11-10. Pantallas migradas a la dirección "Tabla Oficial" y que
+<!-- Actualizado 2026-11-11. Pantallas migradas a la dirección "Tabla Oficial" y que
      sirven de referencia: /dashboard, el ranking público (/), el perfil público del
-     jugador, el directorio de tiendas (/stores), la ficha de tienda (/stores/$slug) y
-     el resultado de un torneo (/tournaments/$id). Glass, gradientes, glows y shimmer
-     ya no son parte del sistema; el resto de pantallas todavía los usa y es deuda a
-     migrar. design-system/nexus/MASTER.md (morado + Russo One) NO refleja el código. -->
+     jugador, el directorio de tiendas (/stores), la ficha de tienda (/stores/$slug),
+     el resultado de un torneo (/tournaments/$id), el calendario (/calendar) y el
+     selector de líder y arte de /sessions/$sessionId. Glass, gradientes, glows y
+     shimmer ya no son parte del sistema; el resto de pantallas todavía los usa y es
+     deuda a migrar. design-system/nexus/MASTER.md (morado + Russo One) NO refleja el código. -->
 
 ## Overview
 
@@ -109,7 +110,7 @@ components:
 
 Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.
 
-El sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (163 líneas con `.glass` en 54 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`) y el resultado de un torneo (`/tournaments/$id`) son las referencias de cómo debe verse.
+El sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (163 líneas con `.glass` en 54 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`) y el selector de líder y arte (`/sessions/$sessionId`) son las referencias de cómo debe verse.
 
 La densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.
 
@@ -258,6 +259,19 @@ Es el patrón de control para listas largas (ranking, directorio de tiendas); vi
 - **Restablecer:** texto "Restablecer filtros" sin borde, visible solo si hay algo aplicado. Vuelve a la vista completa.
 - **Estado:** la URL es la fuente de verdad (`?q=…&zone=…`): se comparte y sobrevive atrás y adelante. Teclear usa `replace` para no ensuciar el historial.
 - **Sin resultados:** una superficie plana con la frase "Sin tiendas para “…”", la pista de que las tiendas entran por invitación (nunca un CTA de registro de tienda) y el botón "Restablecer filtros".
+
+### Calendario semanal
+El calendario comparte una sola superficie plana y cambia de una rejilla semanal en escritorio a una agenda vertical en móvil.
+- **Eventos:** fondo `card-navy`, borde `panel-border` y texto principal, sin rellenos de color por juego. El evento completo es el botón; en la agenda móvil mide al menos 44px de alto. La tienda va en 14px semibold y la hora, la liga y los estados en 12px como mínimo.
+- **Estados:** el día actual usa un tinte cian discreto; cancelado usa rojo y texto tachado; asistencia e interés se indican con sus íconos y nombres accesibles. Un horario habitual muestra "Por confirmar" en la entrada y "Horario habitual de la tienda · Por confirmar" en el detalle.
+- **Carga y error:** el esqueleto conserva la estructura. Un fallo muestra `InlineError` con "No pudimos cargar los torneos." y "Reintentar"; nunca se presenta como una semana sin eventos.
+
+### Selector de líder y arte
+En `/sessions/$sessionId`, la carta del encabezado abre una hoja inferior de hasta 90dvh en móvil y un diálogo centrado de hasta 80vh en escritorio. La superficie es `popover` sólida con borde de 1px y sombra flotante.
+- **Dos recorridos:** un segmentado con `role="group"` separa "Elegir arte" y "Otro líder"; el activo lleva `aria-pressed`. Con un líder elegido, el recorrido inicial es el arte.
+- **Arte actual:** una vista previa de 92×128px acompaña al nombre y al identificador de la impresión, separados de las versiones por una línea. No se mete otra tarjeta dentro del diálogo.
+- **Versiones:** rejilla de tres columnas en móvil y cuatro en escritorio, con cartas de proporción 5:7, nombre e identificador en 12px como mínimo. La seleccionada lleva borde y anillo cian más una marca de confirmación; toda la carta es el área de acción.
+- **Otro líder:** búsqueda con label visible, 44px de alto y texto de 16px en móvil. Los estados de carga y vacío explican si se están buscando versiones o líderes.
 
 ### Fila o tarjeta con enlace estirado
 Para que toda una fila o tarjeta sea un enlace sin meter botones dentro de un `<a>`: el enlace real vive en el nombre (`after:absolute after:inset-0`) y el contenedor es `relative`. Los demás controles (estrella, "Cómo llegar", chip de liga) llevan `relative z-10` y son sus propios enlaces o botones. El foco se dibuja en el `::after` (`focus-visible:after:ring-2`). Así la fila se abre con teclado y con clic medio, y toda su altura es el área de toque aunque el enlace mida 24px.
