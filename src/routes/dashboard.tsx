@@ -56,7 +56,7 @@ Puntos: Cada torneo normaliza tus puntos con la fórmula:
 Regla top 2 por semana: Si juegas más de 2 torneos en la misma semana (lunes a domingo), solo tus 2 mejores resultados cuentan para el ranking.
 
 Ranking mensual: Suma de tus puntos en el mes actual.
-Ranking de temporada: Suma acumulada durante la temporada completa.`;
+Ranking Nacional: Suma acumulada durante la temporada completa.`;
 
 import { toast } from "sonner";
 import { useNexusRole } from "@/hooks/use-nexus-role";
