@@ -19,6 +19,9 @@ import { myDashboardQuery } from "@/lib/dashboard-queries";
 import { SkeletonBlock, SkeletonLine } from "@/components/ui/skeleton-loader";
 import { InlineError } from "@/components/stores/store-ui";
 import { shortLeaderName, setBadge } from "@/lib/leader-display";
+import { LeaderArtPicker } from "@/components/leaders/LeaderArtPicker";
+import type { DeckIdentifier } from "@/components/tournament-tracker/round-ui";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/my-stats")({
   head: () => ({ meta: [{ title: "Mis Stats — Nexus" }] }),
@@ -343,12 +346,15 @@ function LeaderLabel({
 function LeaderCard({
   stat,
   selected,
+  imageUrl,
   onClick,
 }: {
   stat: LeaderStat;
   selected: boolean;
+  imageUrl?: string | null;
   onClick: () => void;
 }) {
+  const image = imageUrl === undefined ? stat.leader_image : imageUrl;
   return (
     <button
       onClick={onClick}
@@ -358,9 +364,9 @@ function LeaderCard({
           : "border-white/10 bg-white/[0.02] hover:border-white/20"
       }`}
     >
-      {stat.leader_image ? (
+      {image ? (
         <img
-          src={stat.leader_image}
+          src={image}
           alt={stat.leader_name}
           loading="lazy"
           decoding="async"
@@ -830,6 +836,25 @@ function StatsPage() {
   const [matchupSearch, setMatchupSearch] = useState("");
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [vsLeaderId, setVsLeaderId] = useState<string | null>(null);
+  const [leaderArtOverrides, setLeaderArtOverrides] = useState<Record<string, DeckIdentifier>>({});
+
+  useEffect(() => {
+    setLeaderArtOverrides({});
+    if (!player?.id || !selectedGameId) return;
+    try {
+      const saved = window.localStorage.getItem(
+        `nexus:leader-art:${player.id}:${selectedGameId}`,
+      );
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          setLeaderArtOverrides(parsed);
+        }
+      }
+    } catch {
+      // La personalización no impide consultar estadísticas.
+    }
+  }, [player?.id, selectedGameId]);
 
   const { data: gamesData, isLoading: loadingGames } = useQuery({
     ...myStatsGamesQuery(),
@@ -892,6 +917,23 @@ function StatsPage() {
   const leaderIdx =
     displayStats && selectedLeaderIdx < displayStats.leaders.length ? selectedLeaderIdx : 0;
   const selectedLeader = displayStats?.leaders[leaderIdx] ?? null;
+  const selectedLeaderArt = selectedLeader ? leaderArtOverrides[selectedLeader.leader_id] : null;
+  const selectedLeaderImage = selectedLeaderArt
+    ? selectedLeaderArt.card_image
+    : selectedLeader?.leader_image;
+  const handleLeaderArtChange = (art: DeckIdentifier) => {
+    if (!player || !selectedGameId || !selectedLeader) return;
+    const next = { ...leaderArtOverrides, [selectedLeader.leader_id]: art };
+    setLeaderArtOverrides(next);
+    try {
+      window.localStorage.setItem(
+        `nexus:leader-art:${player.id}:${selectedGameId}`,
+        JSON.stringify(next),
+      );
+    } catch {
+      toast.error("El arte cambió, pero no pudimos guardarlo en este dispositivo");
+    }
+  };
 
   // Resumen global del dataset actual: todos los leaders más las rondas sin leader.
   const noLeaderRounds = noLeaderOf(displayStats);
@@ -1262,6 +1304,7 @@ function StatsPage() {
                         key={l.leader_id}
                         stat={l}
                         selected={leaderIdx === i}
+                        imageUrl={leaderArtOverrides[l.leader_id]?.card_image}
                         onClick={() => setSelectedLeaderIdx(i)}
                       />
                     ))}
@@ -1274,9 +1317,9 @@ function StatsPage() {
                     {/* Hero del leader */}
                     <div className="glass rounded-2xl p-6">
                       <div className="flex flex-col items-start gap-4 @lg:flex-row @lg:gap-6">
-                        {selectedLeader.leader_image ? (
+                        {selectedLeaderImage ? (
                           <img
-                            src={selectedLeader.leader_image}
+                            src={selectedLeaderImage}
                             alt={selectedLeader.leader_name}
                             className="h-32 w-auto flex-shrink-0 rounded-xl border border-white/10 object-cover shadow-2xl"
                           />
@@ -1303,6 +1346,18 @@ function StatsPage() {
                             {displayStats.game_name} · {selectedLeader.total_games} partidas
                             {timeRange !== "all" ? ` · últimos ${timeRange} días` : ""}
                           </p>
+                          {selectedLeader.leader_card_set_id && (
+                            <div className="mt-3">
+                              <LeaderArtPicker
+                                gameId={selectedGameId ?? ""}
+                                leaderId={selectedLeader.leader_id}
+                                leaderName={selectedLeader.leader_name}
+                                cardSetId={selectedLeader.leader_card_set_id}
+                                selectedArtId={selectedLeaderArt?.id}
+                                onSelect={handleLeaderArtChange}
+                              />
+                            </div>
+                          )}
 
                           {/* Dato estrella: el WR de este leader, grande */}
                           <div className="mt-3 flex items-baseline gap-3">
