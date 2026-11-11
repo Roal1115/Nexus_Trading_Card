@@ -174,6 +174,11 @@ function TournamentDetail({
           </h3>
         </Title>
         <p className="mt-0.5 text-base font-medium text-foreground-secondary">{entry.store_name}</p>
+        {entry.is_scheduled && (
+          <p className="mt-1 text-sm text-foreground-secondary">
+            Horario habitual de la tienda · Por confirmar
+          </p>
+        )}
       </div>
 
       <div className="flex items-start justify-between gap-3 text-sm text-foreground-secondary">

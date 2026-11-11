@@ -80,11 +80,14 @@ export function useCalendarGrid(events: any[], weekDates: Date[]) {
 export function CalendarEntry({
   entry,
   compact,
+  plain,
   attended,
   onClick,
 }: {
   entry: any;
   compact?: boolean;
+  // Calendario público: sin color por juego (DESIGN.md, superficie sobria).
+  plain?: boolean;
   attended: boolean;
   onClick: () => void;
 }) {
@@ -93,30 +96,33 @@ export function CalendarEntry({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded border px-1.5 py-1 transition hover:brightness-110 ${entry.cancellation_reason ? CANCELLED_TILE_CLASS : `${colorClass} ${accentClass}`} ${compact ? "py-0.5" : ""}`}
+      className={`w-full text-left rounded-lg border transition hover:brightness-110 ${compact ? "px-2 py-1" : "min-h-11 px-3 py-2"} ${entry.cancellation_reason ? CANCELLED_TILE_CLASS : plain ? "border-border bg-card text-foreground hover:border-primary/60" : `${colorClass} ${accentClass}`}`}
     >
       {entry.cancellation_reason && (
-        <p className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-wide text-red-300">
-          <Ban size={8} aria-hidden="true" /> Cancelado
+        <p className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-red-300">
+          <Ban size={12} aria-hidden="true" /> Cancelado
         </p>
       )}
       <p
-        className={`font-semibold truncate ${compact ? "text-[9px]" : "text-[10px]"} ${entry.cancellation_reason ? "line-through" : ""}`}
+        className={`font-semibold truncate ${compact ? "text-xs" : "text-sm"} ${entry.cancellation_reason ? "line-through" : ""}`}
       >
         {entry.store_name}
-        {attended && <CheckCircle2 size={8} className="inline text-emerald-400 ml-1" />}
+        {attended && <CheckCircle2 size={12} className="inline text-emerald-400 ml-1" />}
         {entry.my_rsvp && (
-          <Heart size={8} className="inline fill-current ml-1" aria-label="Te interesa ir" />
+          <Heart size={12} className="inline fill-current ml-1" aria-label="Te interesa ir" />
         )}
       </p>
       {!compact && (
-        <p className="text-[9px] opacity-70 truncate">
+        <p className="text-xs text-foreground-secondary truncate">
           {entry.time ? `${entry.time.slice(0, 5)} · ` : ""}
-          {entry.game_name}
+          {plain ? null : entry.game_name}
         </p>
       )}
+      {!compact && entry.is_scheduled && (
+        <p className="text-xs text-foreground-secondary truncate">Horario habitual · Por confirmar</p>
+      )}
       {!compact && entry.league_name && (
-        <p className="text-[8px] font-semibold uppercase tracking-wide opacity-80 truncate">
+        <p className="text-xs font-semibold text-foreground-secondary truncate">
           {entry.league_name}
         </p>
       )}
@@ -230,6 +236,7 @@ export function WeeklyGrid({
                   >
                     {cellEntries.length === 0 ? null : cellEntries.length === 1 ? (
                       <CalendarEntry
+ plain
                         entry={cellEntries[0]}
                         attended={attendedIds.has(cellEntries[0].id)}
                         onClick={() => onSelectEntry(cellEntries[0])}
@@ -238,6 +245,7 @@ export function WeeklyGrid({
                       <div className="space-y-0.5">
                         {cellEntries.slice(0, 2).map((e) => (
                           <CalendarEntry
+ plain
                             key={e.id}
                             entry={e}
                             compact
@@ -253,6 +261,7 @@ export function WeeklyGrid({
                             {(close) =>
                               cellEntries.map((e) => (
                                 <CalendarEntry
+ plain
                                   key={e.id}
                                   entry={e}
                                   attended={attendedIds.has(e.id)}
@@ -312,6 +321,7 @@ function MobileWeeklyList({
               <div className="space-y-1.5">
                 {dayEntries.map((entry) => (
                   <CalendarEntry
+ plain
                     key={entry.id}
                     entry={entry}
                     attended={attendedIds.has(entry.id)}

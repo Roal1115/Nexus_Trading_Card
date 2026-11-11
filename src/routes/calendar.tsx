@@ -1,3 +1,4 @@
+import { InlineError } from "@/components/stores/store-ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -45,7 +46,12 @@ function CalendarPage() {
   const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
   const [attendedIds, setAttendedIds] = useState<Set<string>>(new Set());
 
-  const { data: calendarData, isLoading: loading } = useQuery(
+  const {
+    data: calendarData,
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useQuery(
     publicCalendarQuery({
       game_id: activeTcg?.id ?? null,
       zone: filterZone,
@@ -298,7 +304,12 @@ function CalendarPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          {isError ? (
+            <div className="p-6">
+              <InlineError onRetry={() => refetch()}>No pudimos cargar los torneos.</InlineError>
+            </div>
+          ) : (
           <WeeklyGrid
             weekDates={weekDates}
             calendarGrid={calendarGrid}
@@ -306,6 +317,7 @@ function CalendarPage() {
             loading={loading}
             onSelectEntry={setSelectedEntry}
           />
+          )}
         </div>
 
         {onlyFavorites && !loading && events.length === 0 && (
