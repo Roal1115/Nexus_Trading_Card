@@ -40,34 +40,34 @@ const TIER_STYLES: Record<
   { ring: string; pill: string; glow: string }
 > = {
   Bronze: {
-    ring: "border-amber-700/40 bg-amber-900/10 text-amber-500",
-    pill: "border-amber-700/40 bg-amber-900/20 text-amber-500",
-    glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(180,83,9,0.6)] sm:hover:border-amber-600/60",
+    ring: "border-tier-bronze/40 bg-tier-bronze/10 text-tier-bronze",
+    pill: "border-tier-bronze/40 bg-tier-bronze/20 text-tier-bronze",
+    glow: "sm:hover:shadow-[0_0_24px_-8px_var(--tier-bronze)] sm:hover:border-tier-bronze/60",
   },
   Silver: {
-    ring: "border-gray-400/40 bg-gray-400/10 text-gray-300",
-    pill: "border-gray-400/40 bg-gray-400/10 text-gray-300",
-    glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(156,163,175,0.6)] sm:hover:border-gray-400/60",
+    ring: "border-tier-silver/40 bg-tier-silver/10 text-tier-silver",
+    pill: "border-tier-silver/40 bg-tier-silver/10 text-tier-silver",
+    glow: "sm:hover:shadow-[0_0_24px_-8px_var(--tier-silver)] sm:hover:border-tier-silver/60",
   },
   Gold: {
-    ring: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400",
-    pill: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400",
-    glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(234,179,8,0.6)] sm:hover:border-yellow-500/60",
+    ring: "border-tier-gold/40 bg-tier-gold/10 text-tier-gold",
+    pill: "border-tier-gold/40 bg-tier-gold/10 text-tier-gold",
+    glow: "sm:hover:shadow-[0_0_24px_-8px_var(--tier-gold)] sm:hover:border-tier-gold/60",
   },
   Platinum: {
-    ring: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
-    pill: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
-    glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(34,211,238,0.6)] sm:hover:border-cyan-400/60",
+    ring: "border-tier-platinum/40 bg-tier-platinum/10 text-tier-platinum",
+    pill: "border-tier-platinum/40 bg-tier-platinum/10 text-tier-platinum",
+    glow: "sm:hover:shadow-[0_0_24px_-8px_var(--tier-platinum)] sm:hover:border-tier-platinum/60",
   },
   Legacy: {
-    ring: "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300",
-    pill: "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300",
-    glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(217,70,239,0.6)] sm:hover:border-fuchsia-500/60",
+    ring: "border-tier-legacy/40 bg-tier-legacy/10 text-tier-legacy",
+    pill: "border-tier-legacy/40 bg-tier-legacy/10 text-tier-legacy",
+    glow: "sm:hover:shadow-[0_0_24px_-8px_var(--tier-legacy)] sm:hover:border-tier-legacy/60",
   },
   "Road Bonus": {
     ring: "border-primary/40 bg-primary/10 text-primary",
     pill: "border-primary/40 bg-primary/10 text-primary",
-    glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(232,106,34,0.6)] sm:hover:border-primary/60",
+    glow: "sm:hover:shadow-[0_0_24px_-8px_var(--primary)] sm:hover:border-primary/60",
   },
 };
 const DEFAULT_TIER_STYLE = TIER_STYLES.Silver;
@@ -139,8 +139,8 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
       isEquipped: equip.equippedTitleKey === item.key,
       onToggle: equip.onEquipTitle,
       label: "título",
-      activeClass: "border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300",
-      idleClass: "sm:hover:border-fuchsia-500/40 sm:hover:text-fuchsia-300",
+      activeClass: "border-tier-legacy/40 bg-tier-legacy/15 text-tier-legacy",
+      idleClass: "sm:hover:border-tier-legacy/40 sm:hover:text-tier-legacy",
     },
     {
       id: "badge" as const,
@@ -157,8 +157,8 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
       isEquipped: equip.equippedNameplateKey === item.key,
       onToggle: equip.onEquipNameplate,
       label: "placa",
-      activeClass: "border-cyan-400/40 bg-cyan-400/15 text-cyan-300",
-      idleClass: "sm:hover:border-cyan-400/40 sm:hover:text-cyan-300",
+      activeClass: "border-tier-platinum/40 bg-tier-platinum/15 text-tier-platinum",
+      idleClass: "sm:hover:border-tier-platinum/40 sm:hover:text-tier-platinum",
     },
   ].filter((slot) => isOwner && item.unlocked && slot.eligible);
 
@@ -182,7 +182,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
     const banner = NAMEPLATE_BANNER_STYLES[item.tier] ?? DEFAULT_NAMEPLATE_BANNER;
     return (
       <div
-        className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-150 ease-out active:scale-[0.98] sm:hover:-translate-y-0.5 ${
+        className={`relative overflow-hidden rounded-xl border p-3 transition-all duration-150 ease-out active:scale-[0.98] sm:hover:-translate-y-0.5 ${
           item.unlocked
             ? `bg-gradient-to-r ${banner.gradient} ${banner.border} ${banner.glow}`
             : secretLocked
@@ -192,12 +192,12 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
       >
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border ${
+            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border ${
               item.unlocked ? banner.icon : "border-white/15 bg-white/5 text-gray-500"
             }`}
           >
             {item.unlocked ? (
-              <Gem size={18} />
+              <Gem size={14} />
             ) : secretLocked ? (
               <HelpCircle size={18} />
             ) : (
@@ -206,7 +206,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
           </div>
           <div className="min-w-0 flex-1">
             <p
-              className={`truncate text-base font-extrabold uppercase tracking-wide ${
+              className={`truncate text-sm font-semibold ${
                 item.unlocked ? banner.text : secretLocked ? "italic text-gray-400" : "text-gray-300"
               }`}
             >
@@ -234,7 +234,7 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
               <button
                 key={slot.id}
                 onClick={() => slot.onToggle!(slot.isEquipped ? null : item.key)}
-                className={`rounded-lg border min-h-11 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition active:scale-95 ${
+                className={`rounded-full border min-h-11 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition active:scale-95 ${
                   slot.isEquipped
                     ? slot.id === "nameplate"
                       ? banner.button
@@ -565,10 +565,10 @@ function AchievementsHubPage() {
                 {data.unlocked_count}
                 <span className="font-normal text-gray-400">/ {data.total_count}</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2.5 py-1 text-xs font-semibold text-fuchsia-300 sm:text-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-tier-legacy/30 bg-tier-legacy/10 px-2.5 py-1 text-xs font-semibold text-tier-legacy sm:text-sm">
                 <Sparkles size={13} />
                 {data.total_lp}
-                <span className="font-normal text-fuchsia-300/70">PL</span>
+                <span className="font-normal text-tier-legacy/70">PL</span>
               </span>
             </div>
           </div>
