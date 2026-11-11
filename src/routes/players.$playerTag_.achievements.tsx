@@ -9,6 +9,7 @@ import { setEquippedTitle, setEquippedBadge, setEquippedNameplate } from "@/lib/
 import { getRewardKinds, isNameplateReward } from "@/lib/achievement-rewards";
 import { NAMEPLATE_BANNER_STYLES, DEFAULT_NAMEPLATE_BANNER } from "@/lib/nameplate-styles";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import { InlineError } from "@/components/stores/store-ui";
 
 export const Route = createFileRoute("/players/$playerTag_/achievements")({
   loader: async ({ context, params }) => {
@@ -36,42 +37,36 @@ export const Route = createFileRoute("/players/$playerTag_/achievements")({
 // de un vistazo en vez de vivir solo en una etiqueta de 10px.
 const TIER_STYLES: Record<
   string,
-  { ring: string; pill: string; accent: string; glow: string }
+  { ring: string; pill: string; glow: string }
 > = {
   Bronze: {
     ring: "border-amber-700/40 bg-amber-900/10 text-amber-500",
     pill: "border-amber-700/40 bg-amber-900/20 text-amber-500",
-    accent: "border-l-amber-600",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(180,83,9,0.6)] sm:hover:border-amber-600/60",
   },
   Silver: {
     ring: "border-gray-400/40 bg-gray-400/10 text-gray-300",
     pill: "border-gray-400/40 bg-gray-400/10 text-gray-300",
-    accent: "border-l-gray-400",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(156,163,175,0.6)] sm:hover:border-gray-400/60",
   },
   Gold: {
     ring: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400",
     pill: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400",
-    accent: "border-l-yellow-500",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(234,179,8,0.6)] sm:hover:border-yellow-500/60",
   },
   Platinum: {
     ring: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
     pill: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
-    accent: "border-l-cyan-400",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(34,211,238,0.6)] sm:hover:border-cyan-400/60",
   },
   Legacy: {
     ring: "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300",
     pill: "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300",
-    accent: "border-l-fuchsia-500",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(217,70,239,0.6)] sm:hover:border-fuchsia-500/60",
   },
   "Road Bonus": {
     ring: "border-primary/40 bg-primary/10 text-primary",
     pill: "border-primary/40 bg-primary/10 text-primary",
-    accent: "border-l-primary",
     glow: "sm:hover:shadow-[0_0_24px_-8px_rgba(232,106,34,0.6)] sm:hover:border-primary/60",
   },
 };
@@ -258,9 +253,9 @@ function AchievementCard({ item, isOwner, equip }: { item: any; isOwner: boolean
 
   return (
     <div
-      className={`group flex items-start gap-3 rounded-xl border border-l-4 p-3 transition-all duration-150 ease-out active:scale-[0.98] sm:hover:-translate-y-0.5 sm:hover:scale-[1.015] ${
+      className={`group flex items-start gap-3 rounded-xl border p-3 transition-all duration-150 ease-out active:scale-[0.98] sm:hover:-translate-y-0.5 sm:hover:scale-[1.015] ${
         item.unlocked
-          ? `border-white/10 bg-white/5 ${style.accent} ${style.glow}`
+          ? `border-white/10 bg-white/5 ${style.glow}`
           : secretLocked
             ? "border-dashed border-white/10 border-l-white/15 bg-black/20 sm:hover:border-white/25 sm:hover:bg-black/30"
             : `border-white/5 border-l-white/10 bg-black/20 grayscale sm:hover:grayscale-0 sm:hover:border-white/15 ${style.glow}`
@@ -517,6 +512,14 @@ function AchievementsHubPage() {
           <SkeletonBlock className="h-40 w-full rounded-2xl" />
           <SkeletonBlock className="h-40 w-full rounded-2xl" />
         </div>
+      </main>
+    );
+  }
+
+  if (query.isError && !data) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-16">
+        <InlineError onRetry={() => query.refetch()}>No pudimos cargar los logros.</InlineError>
       </main>
     );
   }
