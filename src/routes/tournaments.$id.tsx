@@ -238,7 +238,7 @@ function PublicTournamentPage() {
           )}
         </div>
 
-        {isFuture ? <p className="text-sm text-foreground-subtle">{RSVP_NOTICE}</p> : null}
+        {isFuture ? <p className="text-sm text-warning">{RSVP_NOTICE}</p> : null}
 
         <div className="flex flex-wrap gap-2">
           {isFuture && player ? (

@@ -133,7 +133,7 @@ export function SlotRsvpPanel({
           Inicia sesión para marcar que te interesa
         </Link>
       )}
-      {state === "open" && <p className="text-xs text-foreground-secondary">{RSVP_NOTICE}</p>}
+      {state === "open" && <p className="text-xs text-warning">{RSVP_NOTICE}</p>}
     </div>
   );
 }

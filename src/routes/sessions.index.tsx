@@ -1,16 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Layers,
   Plus,
-  Trophy,
-  Swords,
-  CheckCircle2,
-  AlertTriangle,
   Trash2,
   ChevronRight,
   ChevronDown,
@@ -34,6 +29,13 @@ import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import { cleanLeaderName } from "@/components/tournament-tracker/round-ui";
 import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import {
+  BTN_OUTLINE,
+  ChipGroup,
+  FOCUS_RING,
+  InlineError,
+  SECTION,
+} from "@/components/stores/store-ui";
 import { sessionsPageQuery } from "@/lib/sessions-queries";
 
 type DeckIdentifier = {
@@ -45,7 +47,8 @@ type DeckIdentifier = {
 };
 
 export const Route = createFileRoute("/sessions/")({
-  head: () => ({ meta: [{ title: "Mis Partidas — Nexus" }] }),
+  head: () => ({ meta: [{ title: "Mis partidas — Nexus" }] }),
+  // Si el loader falla no tumba la ruta: la query del cliente reintenta y la página muestra el error.
   loader: async ({ context }) => {
     try {
       return await context.queryClient.ensureQueryData(sessionsPageQuery());
@@ -62,166 +65,106 @@ type TrackedTournamentsResult = Awaited<ReturnType<typeof getMyTrackedTournament
 type TrackedTournament = TrackedTournamentsResult["tournaments"][number];
 type SlotToLog = Awaited<ReturnType<typeof getMySlotsToLog>>["slots"][number];
 
-function formatTournamentDate(date: string): string {
-  try {
-    const d = new Date(date + "T00:00:00");
-    return d.toLocaleDateString("es-MX", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return date;
-  }
-}
-
-function formatSessionDate(date: string | null): string {
+/** "10 nov"; el año solo si no es el actual. */
+function formatShortDate(date: string | null): string {
   if (!date) return "Sin fecha";
-  try {
-    const d = new Date(date + "T00:00:00");
-    return d.toLocaleDateString("es-MX", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return "Sin fecha";
-  }
+  const d = new Date(date + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "Sin fecha";
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
 }
 
-function StatusBadge({ status }: { status: SessionRow["status"] }) {
-  if (status === "unlinked") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-        Pendiente
-      </span>
-    );
-  }
-  if (status === "matched") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-400">
-        <CheckCircle2 size={12} />
-        Vinculada
-      </span>
-    );
-  }
+const INPUT =
+  "min-h-11 w-full rounded-md border border-border bg-transparent px-3 text-sm text-foreground placeholder:text-foreground-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50";
+const LABEL = "text-sm font-medium text-foreground-secondary";
+const BTN_PRIMARY = `inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-9 ${FOCUS_RING}`;
+
+/** Récord V–D en mono; en Casual va neutro porque no cuenta para el ranking. */
+function RecordCell({ wins, losses, muted }: { wins: number; losses: number; muted?: boolean }) {
+  const decided = wins + losses;
+  if (decided === 0) return <p className="text-sm text-foreground-subtle">Sin rondas</p>;
+  const winRate = Math.round((wins / decided) * 100);
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-gray-400">
-      <Swords size={12} />
-      Casual
-    </span>
+    <div className="text-right">
+      <p className="whitespace-nowrap font-mono-stat text-lg font-bold">
+        <span className={muted ? "text-foreground-secondary" : "text-success"}>{wins}V</span>
+        <span className="text-foreground-subtle">–</span>
+        <span className={muted ? "text-foreground-secondary" : "text-danger"}>{losses}D</span>
+      </p>
+      <p className="whitespace-nowrap font-mono-stat text-xs text-foreground-subtle">
+        {winRate}% victorias
+      </p>
+    </div>
   );
 }
 
-function getRecordTint(winRate: number | null, wins: number) {
-  if (winRate === null) return { border: "border-white/10", bg: "", ring: "" };
-  if (winRate === 100 && wins > 0) {
-    return {
-      border: "border-yellow-400/50",
-      bg: "bg-yellow-500/5",
-      ring: "ring-2 ring-yellow-400/50 shadow-[0_0_16px_-2px_rgba(250,204,21,0.45)]",
-    };
-  }
-  if (winRate < 50) return { border: "border-red-500/20", bg: "bg-red-500/5", ring: "" };
-  return { border: "border-emerald-500/20", bg: "bg-emerald-500/5", ring: "" };
-}
+// Enlace estirado: toda la fila es el área de toque y el foco se dibuja en el ::after.
+const TITLE_LINK =
+  "block truncate text-base font-semibold text-foreground after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:rounded-md focus-visible:after:ring-2 focus-visible:after:ring-primary/50";
 
 function SessionCard({
   session,
   onDelete,
   isDeleting,
+  showGame,
 }: {
   session: SessionRow;
   onDelete: (id: string) => void;
   isDeleting: boolean;
+  showGame: boolean;
 }) {
-  const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
-
-  const goToDetail = () => {
-    if (confirming) return;
-    navigate({ to: "/sessions/$sessionId", params: { sessionId: session.id } });
-  };
-
-  const tint = getRecordTint(session.win_rate, session.wins);
+  const meta = [
+    formatShortDate(session.session_date),
+    session.store_name,
+    showGame ? session.game_name : null,
+    session.leader ? cleanLeaderName(session.leader.base_name) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div
-      onClick={goToDetail}
-      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 sm:px-5 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
-    >
-      <div className="flex-shrink-0">
-        {session.leader?.card_image ? (
-          <img
-            src={session.leader.card_image}
-            alt={session.leader.base_name}
-            loading="lazy"
-            decoding="async"
-            className="h-10 w-7 rounded-md border border-white/10 object-cover"
-          />
-        ) : session.session_type === "competitive" ? (
-          <Trophy size={16} className="text-primary" />
-        ) : (
-          <Swords size={16} className="text-gray-500" />
-        )}
-      </div>
-
+    <li className="relative flex items-center gap-3 py-3 transition hover:bg-white/5">
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <StatusBadge status={session.status} />
-          {session.win_rate !== null && (
-            <span
-              className={`text-[10px] font-bold ${
-                session.win_rate === 100
-                  ? "text-yellow-400"
-                  : session.win_rate >= 50
-                    ? "text-emerald-400"
-                    : "text-red-400"
-              }`}
-            >
-              {session.win_rate}% WR
-            </span>
-          )}
-          <span className="truncate text-sm font-semibold text-white">{session.name}</span>
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
-          <span>{session.game_name}</span>
-          {session.leader && (
-            <>
-              <span className="text-gray-700">·</span>
-              <span className="truncate text-gray-400">
-                {cleanLeaderName(session.leader.base_name)}
-              </span>
-            </>
-          )}
-        </div>
+        <Link to="/sessions/$sessionId" params={{ sessionId: session.id }} className={TITLE_LINK}>
+          {session.name}
+        </Link>
+        <p className="truncate text-sm text-foreground-secondary">{meta}</p>
       </div>
 
-      <div className="hidden sm:block text-right min-w-0">
-        <div className="text-xs text-gray-300">{formatSessionDate(session.session_date)}</div>
-        <div className="mt-0.5 text-[11px] text-gray-500 truncate">
-          {session.store_name ?? "Sin tienda"}
-        </div>
-      </div>
+      {session.leader?.card_image && (
+        <img
+          src={session.leader.card_image}
+          alt={session.leader.base_name}
+          loading="lazy"
+          decoding="async"
+          className="hidden h-14 w-10 flex-shrink-0 rounded-md border border-border object-cover sm:block"
+        />
+      )}
 
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {session.status !== "matched" && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirming(true);
-            }}
-            className="rounded-md p-1.5 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition"
-            aria-label="Eliminar partida"
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
-        <ChevronRight size={16} className="text-gray-600 group-hover:text-primary transition" />
-      </div>
+      <RecordCell wins={session.wins} losses={session.losses} muted={session.status === "casual"} />
 
-      {/* Delete confirmation — full-row overlay, same format used on the round rows */}
+      {session.status !== "matched" && (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          aria-label={`Eliminar ${session.name}`}
+          className={`relative z-10 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-foreground-subtle transition hover:bg-destructive/10 hover:text-danger sm:h-9 sm:w-9 ${FOCUS_RING}`}
+        >
+          <Trash2 size={16} aria-hidden="true" />
+        </button>
+      )}
+      <ChevronRight
+        size={16}
+        aria-hidden="true"
+        className="hidden flex-shrink-0 text-foreground-subtle sm:block"
+      />
+
+      {/* Confirmación de borrado: cubre la fila, sin blur */}
       <AnimatePresence>
         {confirming && (
           <motion.div
@@ -229,144 +172,96 @@ function SessionCard({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            onClick={(e) => e.stopPropagation()}
-            className="absolute inset-0 z-10 flex items-center justify-between gap-3 rounded-2xl bg-red-950/95 px-4 backdrop-blur-sm"
+            role="alertdialog"
+            aria-label={`Eliminar ${session.name}`}
+            className="absolute inset-0 z-20 flex items-center justify-between gap-3 bg-card"
           >
-            <span className="truncate text-sm font-medium text-red-100">
+            <span className="truncate text-sm font-medium text-foreground">
               ¿Eliminar "{session.name}"?
             </span>
             <div className="flex flex-shrink-0 items-center gap-2">
               <button
+                type="button"
                 onClick={() => {
                   onDelete(session.id);
                   setConfirming(false);
                 }}
                 disabled={isDeleting}
-                className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
+                className={`inline-flex min-h-11 items-center rounded-md bg-destructive px-3 text-sm font-semibold text-destructive-foreground transition hover:bg-destructive/90 disabled:opacity-50 sm:min-h-9 ${FOCUS_RING}`}
               >
-                {isDeleting ? "…" : "Eliminar"}
+                {isDeleting ? "Eliminando…" : "Eliminar"}
               </button>
-              <button
-                onClick={() => setConfirming(false)}
-                className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/10"
-              >
+              <button type="button" onClick={() => setConfirming(false)} className={BTN_OUTLINE}>
                 Cancelar
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </li>
   );
 }
 
-function TrackedTournamentCard({ tournament }: { tournament: TrackedTournament }) {
-  const total = tournament.wins + tournament.losses;
-  const wr = total > 0 ? Math.round((tournament.wins / total) * 100) : null;
-  const tint = getRecordTint(wr, tournament.wins);
+function TrackedTournamentCard({
+  tournament,
+  showGame,
+}: {
+  tournament: TrackedTournament;
+  showGame: boolean;
+}) {
+  const meta = [
+    formatShortDate(tournament.tournament_date),
+    showGame ? tournament.game_name : null,
+    `${tournament.total_rounds} ${tournament.total_rounds === 1 ? "ronda" : "rondas"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <Link
-      to="/sessions/tournament/$tournamentId"
-      params={{ tournamentId: tournament.id }}
-      className={`glass group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border p-4 sm:px-5 transition hover:border-primary/40 hover:bg-white/[0.04] ${tint.border} ${tint.bg} ${tint.ring}`}
-    >
-      <div className="flex h-10 w-7 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-primary/10">
-        <Trophy size={14} className="text-primary" />
-      </div>
-
+    <li className="relative flex items-center gap-3 py-3 transition hover:bg-white/5">
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-400">
-            <CheckCircle2 size={12} />
-            Oficial
-          </span>
-          {wr !== null && (
-            <span
-              className={`text-[10px] font-bold ${
-                wr === 100 ? "text-yellow-400" : wr >= 50 ? "text-emerald-400" : "text-red-400"
-              }`}
-            >
-              {wr}% WR
-            </span>
-          )}
-          <span className="truncate text-sm font-semibold text-white">{tournament.store_name}</span>
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
-          <span>{tournament.game_name}</span>
-          <span className="text-gray-700">·</span>
-          <span>
-            {tournament.total_rounds} rondas · {tournament.wins}W {tournament.losses}L
-          </span>
-        </div>
+        <Link
+          to="/sessions/tournament/$tournamentId"
+          params={{ tournamentId: tournament.id }}
+          className={TITLE_LINK}
+        >
+          {tournament.store_name}
+        </Link>
+        <p className="truncate text-sm text-foreground-secondary">{meta}</p>
       </div>
-
-      <div className="hidden sm:block flex-shrink-0 text-right">
-        <div className="text-xs text-gray-300">
-          {formatTournamentDate(tournament.tournament_date)}
-        </div>
-        <div className="mt-0.5 text-[11px] text-gray-500">Registro oficial</div>
-      </div>
-
+      <RecordCell wins={tournament.wins} losses={tournament.losses} />
       <ChevronRight
         size={16}
-        className="flex-shrink-0 text-gray-600 transition group-hover:text-primary"
+        aria-hidden="true"
+        className="hidden flex-shrink-0 text-foreground-subtle sm:block"
       />
-    </Link>
+    </li>
   );
 }
 
 // ============================================================
-// Section — bloque agrupador con header (ícono + título + contador)
+// Section — una superficie plana por grupo; filas separadas con líneas
 // ============================================================
 function Section({
-  icon,
   title,
   count,
-  tone = "default",
   subtitle,
   children,
 }: {
-  icon: React.ReactNode;
   title: string;
   count: number;
-  tone?: "default" | "amber";
   subtitle?: string;
   children: React.ReactNode;
 }) {
   if (count === 0) return null;
   return (
-    <section className="mt-8 first:mt-6">
-      <div className="flex items-center gap-2.5">
-        <span
-          className={
-            tone === "amber"
-              ? "inline-flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400"
-              : "inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-gray-300"
-          }
-        >
-          {icon}
-        </span>
-        <h2
-          className={
-            tone === "amber"
-              ? "text-sm font-bold uppercase tracking-wider text-amber-300"
-              : "text-sm font-bold uppercase tracking-wider text-white"
-          }
-        >
-          {title}
-        </h2>
-        <span
-          className={
-            tone === "amber"
-              ? "rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-400"
-              : "rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold text-gray-300"
-          }
-        >
-          {count}
-        </span>
-      </div>
-      {subtitle && <p className="mt-1 pl-[38px] text-xs text-gray-500">{subtitle}</p>}
-      <div className="mt-3 space-y-3">{children}</div>
+    <section className={`${SECTION} mt-6`}>
+      <h2 className="text-lg font-semibold text-foreground">
+        {title}{" "}
+        <span className="font-mono-stat text-sm font-normal text-foreground-subtle">{count}</span>
+      </h2>
+      {subtitle && <p className="mt-1 text-sm text-foreground-secondary">{subtitle}</p>}
+      <ul className="mt-2 divide-y divide-border">{children}</ul>
     </section>
   );
 }
@@ -376,14 +271,14 @@ function SessionsPage() {
   const removeSession = useServerFn(deleteStandaloneSession);
   const loaderData = Route.useLoaderData();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const navigate = Route.useNavigate();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [prefill, setPrefill] = useState<SlotToLog | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fetchSlotsToLog = useServerFn(getMySlotsToLog);
   const cancelSlot = useServerFn(cancelSlotRsvp);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     ...sessionsPageQuery(),
     enabled: !!player,
     initialData: loaderData,
@@ -392,7 +287,11 @@ function SessionsPage() {
   const allTracked = data?.tournaments ?? [];
 
   const slotsKey = ["slots-to-log", player?.id];
-  const { data: slotsData } = useQuery({
+  const {
+    data: slotsData,
+    isError: slotsError,
+    refetch: refetchSlots,
+  } = useQuery({
     queryKey: slotsKey,
     queryFn: () => fetchSlotsToLog(),
     enabled: !!player,
@@ -402,10 +301,9 @@ function SessionsPage() {
     mutationFn: ({ store_id, game_id, date }: SlotToLog) =>
       cancelSlot({ data: { store_id, game_id, date } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: slotsKey }),
-    onError: (e: Error) => toast.error(e.message || "No se pudo quitar"),
+    onError: (e: Error) => toast.error(e.message || "No pudimos quitar este torneo de tu lista"),
   });
   const loading = roleLoading || (!!player && isLoading && !data);
-  const loadingTournaments = loading;
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => removeSession({ data: { session_id: id } }),
@@ -424,14 +322,13 @@ function SessionsPage() {
   if (!roleLoading && !player) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <div className="glass rounded-2xl border border-white/10 p-8 text-center">
-          <h1 className="text-xl font-bold text-white">Debes iniciar sesión</h1>
-          <p className="mt-2 text-sm text-gray-400">Inicia sesión para ver y crear tus partidas.</p>
-          <Link
-            to="/login"
-            className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
-          >
-            Iniciar Sesión
+        <div className={`${SECTION} p-8 text-center`}>
+          <h1 className="text-xl font-bold text-foreground">Debes iniciar sesión</h1>
+          <p className="mt-2 text-sm text-foreground-secondary">
+            Inicia sesión para ver y crear tus partidas.
+          </p>
+          <Link to="/login" className={`${BTN_PRIMARY} mt-5`}>
+            Iniciar sesión
           </Link>
         </div>
       </main>
@@ -445,101 +342,154 @@ function SessionsPage() {
   const linkedIds = new Set(matchedSessions.map((s) => s.tournament_id));
   const trackedTournaments = allTracked.filter((t) => !linkedIds.has(t.id));
   const officialCount = matchedSessions.length + trackedTournaments.length;
-  const isEmpty =
-    !loading && !loadingTournaments && sessions.length === 0 && allTracked.length === 0;
+
+  // Resumen de temporada: solo lo oficial (lo casual no cuenta para el ranking).
+  const officialRows = [...matchedSessions, ...trackedTournaments];
+  const officialWins = officialRows.reduce((n, r) => n + r.wins, 0);
+  const officialLosses = officialRows.reduce((n, r) => n + r.losses, 0);
+  const officialDecided = officialWins + officialLosses;
+  const officialWinRate =
+    officialDecided > 0 ? Math.round((officialWins / officialDecided) * 100) : null;
+
+  // El juego solo se repite en cada fila si el jugador tiene más de uno.
+  const showGame =
+    new Set([...sessions.map((s) => s.game_name), ...allTracked.map((t) => t.game_name)]).size > 1;
+
+  const loadFailed = !!player && isError && !data;
+  const isEmpty = !loading && !loadFailed && sessions.length === 0 && allTracked.length === 0;
+
+  const openCreateSheet = () => setShowCreateSheet(true);
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 pb-28 sm:px-6 sm:pb-8">
+    <main className="@container mx-auto max-w-4xl px-4 py-8 pb-28 sm:px-6 sm:pb-8">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-gray-500">
-            <Layers size={14} />
-            Mi carrera
-          </div>
-          <h1 className="mt-1 text-2xl font-bold text-white">Mis Partidas</h1>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-foreground">Mis partidas</h1>
 
-        {/* Create button (desktop) */}
-        <button
-          onClick={() => setShowCreateSheet(true)}
-          className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-        >
-          <Plus size={14} />
-          Nueva Partida
-        </button>
+        {/* Crear (escritorio): la única acción en cian de la pantalla */}
+        <div className="hidden sm:block">
+          <button type="button" onClick={openCreateSheet} className={BTN_PRIMARY}>
+            <Plus size={16} aria-hidden="true" />
+            Nueva partida
+          </button>
+        </div>
       </div>
 
-      <Section
-        icon={<Trophy size={14} />}
-        title="Registra tu partida"
-        count={slotsToLog.length}
-        subtitle="Marcaste que te interesaba ir a estos torneos. Los datos ya vienen llenos."
-      >
-        {slotsToLog.map((slot) => (
-          <div
-            key={`${slot.store_id}_${slot.date}`}
-            className="glass flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 p-3"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{slot.store_name}</p>
-              <p className="text-xs text-gray-400">
-                {formatSessionDate(slot.date)}
-                {slot.time ? ` · ${slot.time} hrs` : ""}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => skipSlot.mutate(slot)}
-                disabled={skipSlot.isPending}
-                className="rounded-lg px-3 py-2 text-xs font-medium text-gray-400 transition hover:text-white disabled:opacity-60"
-              >
-                No fui
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setPrefill(slot);
-                  setShowCreateSheet(true);
-                }}
-                className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110"
-              >
-                Registrar
-              </button>
-            </div>
-          </div>
-        ))}
-      </Section>
+      {isError && !loadFailed && (
+        <div className={`${SECTION} mt-6`}>
+          <InlineError onRetry={() => void refetch()}>
+            No pudimos actualizar tus partidas. Ves los últimos datos cargados.
+          </InlineError>
+        </div>
+      )}
 
-      {/* Content */}
-      {loading || loadingTournaments ? (
-        <div className="mt-6 space-y-3">
+      {slotsError ? (
+        <div className={`${SECTION} mt-6`}>
+          <InlineError onRetry={() => void refetchSlots()}>
+            No pudimos cargar tus torneos por registrar.
+          </InlineError>
+        </div>
+      ) : (
+        <Section
+          title="Registra tu partida"
+          count={slotsToLog.length}
+          subtitle="Marcaste que te interesaba ir a estos torneos. Los datos ya vienen llenos."
+        >
+          {slotsToLog.map((slot) => (
+            <li
+              key={`${slot.store_id}_${slot.date}`}
+              className="flex flex-wrap items-center justify-between gap-3 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold text-foreground">
+                  {slot.store_name}
+                </p>
+                <p className="text-sm text-foreground-secondary">
+                  {formatShortDate(slot.date)}
+                  {slot.time ? ` · ${slot.time}` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => skipSlot.mutate(slot)}
+                  disabled={skipSlot.isPending}
+                  className={`inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-foreground-secondary transition hover:bg-white/5 hover:text-foreground disabled:opacity-60 sm:min-h-9 ${FOCUS_RING}`}
+                >
+                  No fui
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPrefill(slot);
+                    openCreateSheet();
+                  }}
+                  className={BTN_OUTLINE}
+                >
+                  Registrar
+                </button>
+              </div>
+            </li>
+          ))}
+        </Section>
+      )}
+
+      {/* Contenido */}
+      {loading ? (
+        <div className={`${SECTION} mt-6 space-y-3`} aria-busy="true">
           <SkeletonBlock className="h-6 w-56" />
-          <SkeletonBlock className="h-20 w-full" />
-          <SkeletonBlock className="h-20 w-full" />
-          <SkeletonBlock className="h-6 w-40" />
-          <SkeletonBlock className="h-20 w-full" />
+          <SkeletonBlock className="h-14 w-full" />
+          <SkeletonBlock className="h-14 w-full" />
+          <SkeletonBlock className="h-14 w-full" />
+        </div>
+      ) : loadFailed ? (
+        <div className={`${SECTION} mt-6`}>
+          <InlineError onRetry={() => void refetch()}>No pudimos cargar tus partidas.</InlineError>
         </div>
       ) : isEmpty ? (
-        <div className="glass mt-6 flex flex-col items-center justify-center rounded-2xl border border-white/10 px-6 py-14 text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Layers size={22} />
-          </div>
-          <h2 className="mt-4 text-lg font-semibold text-white">Sin partidas registradas</h2>
-          <p className="mt-1 max-w-sm text-sm text-gray-400">
+        <div className={`${SECTION} mt-6 px-6 py-12 text-center`}>
+          <h2 className="text-lg font-semibold text-foreground">Aún no registras partidas</h2>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-foreground-secondary">
             Crea tu primera partida para empezar a registrar tus rondas.
           </p>
+          <button type="button" onClick={openCreateSheet} className={`${BTN_PRIMARY} mt-5`}>
+            <Plus size={16} aria-hidden="true" />
+            Nueva partida
+          </button>
         </div>
       ) : (
         <>
+          {/* Resumen oficial de la temporada */}
+          {officialCount > 0 && (
+            <dl className={`${SECTION} mt-6 grid grid-cols-3 divide-x divide-border !p-0`}>
+              <div className="px-4 py-3 text-center sm:py-4">
+                <dt className="text-xs text-foreground-subtle">Torneos</dt>
+                <dd className="mt-1 font-mono-stat text-xl font-bold text-foreground sm:text-2xl">
+                  {officialCount}
+                </dd>
+              </div>
+              <div className="px-4 py-3 text-center sm:py-4">
+                <dt className="text-xs text-foreground-subtle">Récord</dt>
+                <dd className="mt-1 whitespace-nowrap font-mono-stat text-xl font-bold sm:text-2xl">
+                  <span className="text-success">{officialWins}V</span>
+                  <span className="text-foreground-subtle">–</span>
+                  <span className="text-danger">{officialLosses}D</span>
+                </dd>
+              </div>
+              <div className="px-4 py-3 text-center sm:py-4">
+                <dt className="text-xs text-foreground-subtle">Win rate</dt>
+                <dd className="mt-1 font-mono-stat text-xl font-bold text-foreground sm:text-2xl">
+                  {officialWinRate !== null ? `${officialWinRate}%` : "—"}
+                </dd>
+              </div>
+            </dl>
+          )}
+
           {/* 1. Pendientes de vincular */}
           <Section
-            icon={<AlertTriangle size={14} />}
             title="Pendientes de vincular"
             count={pendingSessions.length}
-            tone="amber"
-            subtitle="Se vinculan solas al publicarse el torneo. Si ya se publicó, abre la partida y vincúlala a mano."
+            subtitle="Vincular es asociar tu partida a su torneo oficial para que cuente en el ranking. Se vinculan solas al publicarse el torneo; si ya se publicó, abre la partida y vincúlala a mano."
           >
             {pendingSessions.map((s) => (
               <SessionCard
@@ -547,14 +497,14 @@ function SessionsPage() {
                 session={s}
                 onDelete={handleDelete}
                 isDeleting={deletingId === s.id}
+                showGame={showGame}
               />
             ))}
           </Section>
 
           {/* 2. Torneos oficiales: sesiones matched + performance tracker, una sola lista */}
           <Section
-            icon={<Trophy size={14} />}
-            title="Torneos Oficiales"
+            title="Torneos oficiales"
             count={officialCount}
             subtitle="Vinculadas a un torneo oficial."
           >
@@ -564,19 +514,19 @@ function SessionsPage() {
                 session={s}
                 onDelete={handleDelete}
                 isDeleting={deletingId === s.id}
+                showGame={showGame}
               />
             ))}
             {trackedTournaments.map((t) => (
-              <TrackedTournamentCard key={t.id} tournament={t} />
+              <TrackedTournamentCard key={t.id} tournament={t} showGame={showGame} />
             ))}
           </Section>
 
           {/* 3. Casual */}
           <Section
-            icon={<Swords size={14} />}
             title="Casual"
             count={casualSessions.length}
-            subtitle="Prácticas y partidas fuera de torneo — no afectan tu ranking."
+            subtitle="Prácticas y partidas fuera de torneo. No cuentan para tu ranking."
           >
             {casualSessions.map((s) => (
               <SessionCard
@@ -584,20 +534,18 @@ function SessionsPage() {
                 session={s}
                 onDelete={handleDelete}
                 isDeleting={deletingId === s.id}
+                showGame={showGame}
               />
             ))}
           </Section>
         </>
       )}
 
-      {/* Create button (mobile sticky) */}
+      {/* Crear (móvil, fijo) */}
       <div className="fixed bottom-20 left-0 right-0 z-30 flex justify-center px-4 sm:hidden">
-        <button
-          onClick={() => setShowCreateSheet(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110"
-        >
-          <Plus size={16} />
-          Nueva Partida
+        <button type="button" onClick={openCreateSheet} className={`${BTN_PRIMARY} shadow-2xl`}>
+          <Plus size={16} aria-hidden="true" />
+          Nueva partida
         </button>
       </div>
 
@@ -648,15 +596,17 @@ function LeaderArtSwitcher({
         <img
           src={value.card_image ?? undefined}
           alt={value.base_name}
-          className="h-20 max-w-full rounded-md border border-white/10 object-contain"
+          className="h-20 max-w-full rounded-md border border-border object-contain"
         />
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           title="Cambiar arte"
-          className="absolute bottom-1 right-1 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-white backdrop-blur-sm transition hover:bg-black/90"
+          aria-label="Cambiar arte"
+          aria-expanded={open}
+          className={`absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-md border border-border bg-popover text-foreground-secondary transition hover:text-foreground ${FOCUS_RING}`}
         >
-          <Images size={11} />
+          <Images size={14} aria-hidden="true" />
         </button>
       </div>
 
@@ -671,20 +621,21 @@ function LeaderArtSwitcher({
           >
             <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
               {variants.length === 0 ? (
-                <p className="text-[10px] text-gray-500">Buscando artes…</p>
+                <p className="text-xs text-foreground-subtle">Buscando artes…</p>
               ) : (
                 variants.map((v) => (
                   <button
                     key={v.id}
                     type="button"
+                    aria-label={`Arte ${v.card_set_id ?? v.base_name}`}
                     onClick={() => {
                       onChange(v);
                       setOpen(false);
                     }}
-                    className={`flex-shrink-0 overflow-hidden rounded-md border transition ${
+                    className={`flex-shrink-0 overflow-hidden rounded-md border transition ${FOCUS_RING} ${
                       v.id === value.id
                         ? "border-primary ring-1 ring-primary"
-                        : "border-white/10 hover:border-white/30"
+                        : "border-border hover:border-foreground-subtle"
                     }`}
                   >
                     {v.card_image ? (
@@ -696,7 +647,7 @@ function LeaderArtSwitcher({
                         className="h-16 w-11 object-cover"
                       />
                     ) : (
-                      <div className="flex h-16 w-11 items-center justify-center bg-black/30 text-[8px] text-gray-600">
+                      <div className="flex h-16 w-11 items-center justify-center bg-muted text-xs text-foreground-subtle">
                         ?
                       </div>
                     )}
@@ -746,36 +697,43 @@ function LeaderSelect({
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={!gameId}
-        className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white disabled:opacity-50"
+        aria-expanded={open}
+        className={`flex min-h-11 w-full items-center justify-between rounded-md border border-border px-3 text-sm text-foreground disabled:opacity-50 ${FOCUS_RING}`}
       >
         <span className="truncate">
           {value ? (
             cleanLeaderName(value.base_name)
           ) : (
-            <span className="text-gray-500">Selecciona tu leader…</span>
+            <span className="text-foreground-subtle">Selecciona tu leader…</span>
           )}
         </span>
-        <ChevronDown size={14} className="flex-shrink-0 text-gray-500" />
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          className="flex-shrink-0 text-foreground-subtle"
+        />
       </button>
 
       {open && (
-        <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[#0f1117] shadow-xl">
+        <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-20 mt-1 w-full rounded-md border border-border bg-popover shadow-2xl">
           <div className="relative p-2">
             <Search
-              size={13}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+              size={16}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-foreground-subtle"
             />
             <input
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Buscar leader"
               placeholder="Buscar leader o ID (ej. OP10-010)…"
-              className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 text-sm text-white outline-none focus:border-primary"
+              className={`${INPUT} pl-9`}
             />
           </div>
           <div className="max-h-64 overflow-y-auto">
             {options.length === 0 ? (
-              <p className="px-3 py-3 text-xs text-gray-500">Sin resultados.</p>
+              <p className="px-3 py-3 text-sm text-foreground-subtle">Sin resultados.</p>
             ) : (
               options.map((opt) => (
                 <button
@@ -786,9 +744,9 @@ function LeaderSelect({
                     setOpen(false);
                     setSearch("");
                   }}
-                  className="flex w-full items-center gap-2 bg-transparent px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                  className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition hover:bg-white/5"
                 >
-                  <span className="flex-shrink-0 rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                  <span className="flex-shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-xs uppercase text-foreground-secondary">
                     {opt.card_set_id}
                   </span>
                   <span className="flex-1 truncate">{cleanLeaderName(opt.base_name)}</span>
@@ -804,8 +762,8 @@ function LeaderSelect({
         <LeaderArtSwitcher gameId={gameId} value={value} onChange={onChange} />
       )}
       {!value && (
-        <div className="mt-2 flex h-20 w-14 items-center justify-center rounded-md border border-white/10 bg-black/30">
-          <ShieldQuestion size={18} className="text-gray-600" />
+        <div className="mt-2 flex h-20 w-14 items-center justify-center rounded-md border border-border bg-muted">
+          <ShieldQuestion size={18} aria-hidden="true" className="text-foreground-subtle" />
         </div>
       )}
     </div>
@@ -992,7 +950,7 @@ function CreateSessionSheet({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/70"
           />
 
           {/* Container: bottom-sheet on mobile, centered modal on desktop */}
@@ -1002,53 +960,57 @@ function CreateSessionSheet({
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: "100%", opacity: 1 }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="pointer-events-auto glass w-full max-w-lg rounded-t-2xl border border-white/10 bg-black/90 shadow-2xl sm:rounded-2xl"
+              className="pointer-events-auto w-full max-w-lg rounded-t-2xl border border-border bg-popover shadow-2xl sm:rounded-2xl"
               style={{ maxHeight: "85vh" }}
             >
-              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                <h2 className="text-base font-bold text-white">
-                  {step === 1 ? "Nueva Partida" : "Detalles de la partida"}
+              <div className="flex items-center justify-between border-b border-border px-5 py-3">
+                <h2 className="text-base font-semibold text-foreground">
+                  {step === 1 ? "Nueva partida" : "Detalles de la partida"}
                 </h2>
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="rounded-md p-1 text-gray-500 hover:bg-white/5 hover:text-white transition"
+                  className={`flex h-11 w-11 items-center justify-center rounded-md text-foreground-secondary transition hover:bg-white/5 hover:text-foreground ${FOCUS_RING}`}
                   aria-label="Cerrar"
                 >
-                  <X size={18} />
+                  <X size={18} aria-hidden="true" />
                 </button>
               </div>
 
               <div className="overflow-y-auto px-5 py-5" style={{ maxHeight: "calc(85vh - 60px)" }}>
                 {step === 1 && (
-                  <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <button
+                      type="button"
                       onClick={() => {
                         setSessionType("competitive");
                         setStep(2);
                       }}
-                      className="glass flex flex-col items-start gap-3 rounded-2xl border border-white/10 p-5 text-left transition hover:border-primary/40 hover:bg-white/[0.03]"
+                      className={`flex flex-col items-start gap-1 rounded-xl border border-border p-4 text-left transition hover:bg-white/5 ${FOCUS_RING}`}
                     >
-                      <Trophy size={32} className="text-primary" />
-                      <h3 className="text-lg font-bold text-white">Torneo Competitivo</h3>
-                      <p className="text-xs text-gray-400">
+                      <span className="text-base font-semibold text-foreground">
+                        Torneo oficial
+                      </span>
+                      <span className="text-sm text-foreground-secondary">
                         Registra un torneo oficial. Se vinculará automáticamente cuando el
                         organizador suba los resultados.
-                      </p>
+                      </span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setSessionType("casual");
                         setStep(2);
                       }}
-                      className="glass flex flex-col items-start gap-3 rounded-2xl border border-white/10 p-5 text-left transition hover:border-white/20 hover:bg-white/[0.03]"
+                      className={`flex flex-col items-start gap-1 rounded-xl border border-border p-4 text-left transition hover:bg-white/5 ${FOCUS_RING}`}
                     >
-                      <Swords size={32} className="text-gray-400" />
-                      <h3 className="text-lg font-bold text-white">Partidas Casuales</h3>
-                      <p className="text-xs text-gray-400">
-                        Prácticas o partidas fuera de un torneo oficial. No afectan tu ranking
-                        competitivo.
-                      </p>
+                      <span className="text-base font-semibold text-foreground">
+                        Partida casual
+                      </span>
+                      <span className="text-sm text-foreground-secondary">
+                        Prácticas o partidas fuera de un torneo oficial. No cuentan para tu ranking.
+                      </span>
                     </button>
                   </div>
                 )}
@@ -1056,72 +1018,58 @@ function CreateSessionSheet({
                 {step === 2 && sessionType && (
                   <div className="space-y-4">
                     <button
+                      type="button"
                       onClick={() => setStep(1)}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition"
+                      className={`inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-foreground-secondary transition hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
                     >
-                      {sessionType === "competitive" ? (
-                        <Trophy size={12} className="text-primary" />
-                      ) : (
-                        <Swords size={12} />
-                      )}
-                      {sessionType === "competitive" ? "Torneo Competitivo" : "Partidas Casuales"}
-                      <span className="text-gray-600">· Cambiar</span>
+                      {sessionType === "competitive" ? "Torneo oficial" : "Partida casual"}
+                      <span className="text-foreground-subtle">· Cambiar</span>
                     </button>
 
                     {/* Nombre */}
                     <div>
-                      <label className="text-[11px] uppercase tracking-wider text-gray-500">
+                      <label htmlFor="session-name" className={LABEL}>
                         Nombre *
                       </label>
                       <input
+                        id="session-name"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Ej. Torneo Lunes, Práctica Miércoles"
+                        placeholder="Ej. Torneo lunes, Práctica miércoles"
                         maxLength={100}
-                        className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
+                        className={`${INPUT} mt-1.5`}
                       />
                     </div>
 
                     {/* TCG */}
                     <div>
-                      <label className="text-[11px] uppercase tracking-wider text-gray-500">
-                        TCG *
-                      </label>
+                      <span className={LABEL}>TCG *</span>
                       {gamesLoading ? (
-                        <div className="mt-1.5 text-xs text-gray-500">Cargando…</div>
+                        <div className="mt-1.5 text-sm text-foreground-subtle">Cargando…</div>
                       ) : games.length === 0 ? (
-                        <div className="mt-1.5 text-xs text-gray-500">No hay TCGs disponibles.</div>
+                        <div className="mt-1.5 text-sm text-foreground-subtle">
+                          No hay TCGs disponibles.
+                        </div>
                       ) : (
-                        <div className="mt-1.5 flex flex-wrap gap-2">
-                          {games.map((g) => {
-                            const active = gameId === g.id;
-                            return (
-                              <button
-                                key={g.id}
-                                onClick={() => {
-                                  setGameId(g.id);
-                                  setLeader(null);
-                                }}
-                                className={
-                                  active
-                                    ? "rounded-full border border-primary bg-primary/20 px-3 py-1.5 text-xs font-semibold text-primary transition"
-                                    : "rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300 hover:border-white/20 hover:text-white transition"
-                                }
-                              >
-                                {g.name}
-                              </button>
-                            );
-                          })}
+                        <div className="mt-1.5">
+                          <ChipGroup
+                            label="TCG"
+                            options={games.map((g) => ({ key: g.id, label: g.name }))}
+                            value={gameId}
+                            onChange={(key) => {
+                              if (!key) return;
+                              setGameId(key);
+                              setLeader(null);
+                            }}
+                          />
                         </div>
                       )}
                     </div>
 
                     {/* Leader / deck propio */}
                     <div>
-                      <label className="text-[11px] uppercase tracking-wider text-gray-500">
-                        Tu leader / deck (opcional)
-                      </label>
+                      <span className={LABEL}>Tu leader / deck (opcional)</span>
                       <div className="mt-1.5">
                         <LeaderSelect gameId={gameId} value={leader} onChange={setLeader} />
                       </div>
@@ -1129,14 +1077,15 @@ function CreateSessionSheet({
 
                     {/* Fecha */}
                     <div>
-                      <label className="text-[11px] uppercase tracking-wider text-gray-500">
+                      <label htmlFor="session-date" className={LABEL}>
                         {sessionType === "competitive" ? "Fecha del torneo *" : "Fecha (opcional)"}
                       </label>
                       <input
+                        id="session-date"
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary/50"
+                        className={`${INPUT} mt-1.5`}
                       />
                     </div>
 
@@ -1144,51 +1093,57 @@ function CreateSessionSheet({
                       <>
                         {/* Hora */}
                         <div>
-                          <label className="text-[11px] uppercase tracking-wider text-gray-500">
+                          <label htmlFor="session-time" className={LABEL}>
                             Hora de inicio *
                           </label>
                           <input
+                            id="session-time"
                             type="time"
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
-                            className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary/50"
+                            className={`${INPUT} mt-1.5`}
                           />
                         </div>
 
                         {/* Tienda */}
                         <div className="relative">
-                          <label className="text-[11px] uppercase tracking-wider text-gray-500">
+                          <label htmlFor="session-store" className={LABEL}>
                             Tienda *
                           </label>
                           {selectedStore ? (
-                            <div className="mt-1.5 flex items-center justify-between rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
+                            <div className="mt-1.5 flex items-center justify-between rounded-md border border-primary/40 bg-primary/15 px-3 py-2 text-sm">
                               <div>
-                                <div className="text-white font-medium">{selectedStore.name}</div>
+                                <div className="font-medium text-foreground">
+                                  {selectedStore.name}
+                                </div>
                                 {selectedStore.city && (
-                                  <div className="text-[11px] text-gray-400">
+                                  <div className="text-xs text-foreground-secondary">
                                     {selectedStore.city}
                                   </div>
                                 )}
                               </div>
                               <button
+                                type="button"
                                 onClick={() => {
                                   setSelectedStore(null);
                                   setStoreQuery("");
                                 }}
-                                className="rounded-md p-1 text-gray-400 hover:text-white transition"
+                                className={`flex h-11 w-11 items-center justify-center rounded-md text-foreground-secondary transition hover:text-foreground sm:h-9 sm:w-9 ${FOCUS_RING}`}
                                 aria-label="Quitar tienda"
                               >
-                                <X size={14} />
+                                <X size={16} aria-hidden="true" />
                               </button>
                             </div>
                           ) : (
                             <>
                               <div className="relative mt-1.5">
                                 <Search
-                                  size={14}
-                                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                                  size={16}
+                                  aria-hidden="true"
+                                  className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
                                 />
                                 <input
+                                  id="session-store"
                                   type="text"
                                   value={storeQuery}
                                   onChange={(e) => {
@@ -1197,30 +1152,34 @@ function CreateSessionSheet({
                                   }}
                                   onFocus={() => setStoreDropdownOpen(true)}
                                   placeholder="Buscar tienda…"
-                                  className="w-full rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 py-2 text-sm text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
+                                  className={`${INPUT} pl-9`}
                                 />
                                 {storeSearching && (
                                   <Loader2
-                                    size={14}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-500"
+                                    size={16}
+                                    aria-hidden="true"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-foreground-subtle"
                                   />
                                 )}
                               </div>
                               {storeDropdownOpen && storeResults.length > 0 && (
-                                <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-10 mt-1 w-full max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-black/95 shadow-xl">
+                                <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-10 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-border bg-popover shadow-2xl">
                                   {storeResults.map((s) => (
                                     <button
+                                      type="button"
                                       key={s.id}
                                       onClick={() => {
                                         setSelectedStore(s);
                                         setStoreDropdownOpen(false);
                                         setStoreQuery("");
                                       }}
-                                      className="flex w-full flex-col items-start px-3 py-2 text-left text-sm text-white hover:bg-white/5 transition"
+                                      className="flex min-h-11 w-full flex-col items-start justify-center px-3 py-2 text-left text-sm text-foreground transition hover:bg-white/5"
                                     >
                                       <span className="font-medium">{s.name}</span>
                                       {s.city && (
-                                        <span className="text-[11px] text-gray-500">{s.city}</span>
+                                        <span className="text-xs text-foreground-subtle">
+                                          {s.city}
+                                        </span>
                                       )}
                                     </button>
                                   ))}
@@ -1230,25 +1189,26 @@ function CreateSessionSheet({
                           )}
                         </div>
 
-                        <p className="text-[11px] text-amber-400/80">
-                          ⚠ Si ingresas datos incorrectos de fecha, hora o tienda, tendrás que
-                          vincular manualmente la sesión al torneo correcto después.
+                        <p className="text-sm text-warning">
+                          Si ingresas datos incorrectos de fecha, hora o tienda, tendrás que
+                          vincular manualmente tu partida al torneo correcto después.
                         </p>
                       </>
                     )}
 
                     <button
+                      type="button"
                       onClick={handleSubmit}
                       disabled={!canSubmit || submitting}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30 transition hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className={`${BTN_PRIMARY} w-full`}
                     >
                       {submitting ? (
                         <>
-                          <Loader2 size={14} className="animate-spin" />
+                          <Loader2 size={16} aria-hidden="true" className="animate-spin" />
                           Creando…
                         </>
                       ) : (
-                        "Crear Partida"
+                        "Crear partida"
                       )}
                     </button>
                   </div>
