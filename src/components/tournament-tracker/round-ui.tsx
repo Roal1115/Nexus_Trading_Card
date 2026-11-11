@@ -130,15 +130,21 @@ export function RoundCardFrame({
   opponentLabel,
   onDelete,
   deleting = false,
+  defaultOpen = false,
+  unsaved = false,
   children,
 }: {
   round: FrameRound;
   opponentLabel: string;
   onDelete?: () => void;
   deleting?: boolean;
+  /** Ronda recién agregada: arranca abierta para capturarla sin un toque extra. */
+  defaultOpen?: boolean;
+  /** Aún no está guardada en el servidor: se marca en la fila. */
+  unsaved?: boolean;
   children: (close: () => void) => ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const resultColor =
@@ -154,6 +160,33 @@ export function RoundCardFrame({
         ? "text-red-400"
         : "text-gray-500";
 
+  const resultWord = round.is_bye
+    ? "Pase"
+    : round.won_match === true
+      ? "Victoria"
+      : round.won_match === false
+        ? "Derrota"
+        : "Sin resultado";
+  // Nombre accesible de la fila: lo que las celdas muestran en columnas, dicho en una frase.
+  const rowLabel = [
+    `Ronda ${round.round_number}`,
+    resultWord,
+    `contra ${opponentLabel}`,
+    round.won_die_roll === null
+      ? null
+      : round.won_die_roll
+        ? "ganaste el dado"
+        : "perdiste el dado",
+    round.turn_order === "first"
+      ? "jugaste primero"
+      : round.turn_order === "second"
+        ? "jugaste segundo"
+        : null,
+    unsaved ? "sin guardar" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <div
       className={`rounded-xl border overflow-hidden transition-colors duration-150 ${
@@ -161,16 +194,26 @@ export function RoundCardFrame({
       } ${resultColor}`}
     >
       <div
-        onClick={() => !deleteConfirm && setOpen((o) => !o)}
         className={`relative grid ${
           onDelete
             ? "grid-cols-[28px_1fr_40px_40px_28px_28px] sm:grid-cols-[40px_1fr_52px_52px_52px_36px]"
             : "grid-cols-[28px_1fr_40px_40px_28px] sm:grid-cols-[40px_1fr_52px_52px_52px]"
-        } items-center gap-2 px-3 py-3 cursor-pointer transition-colors duration-150 ${
+        } items-center gap-2 px-3 py-3 transition-colors duration-150 ${
           open ? "bg-white/[0.04]" : "hover:bg-white/[0.04] active:bg-white/[0.07]"
         }`}
       >
+        {/* Botón real que cubre la fila: foco de teclado, Enter/Espacio y estado para lectores de pantalla.
+            Las celdas quedan debajo (aria-hidden): su contenido va en el nombre accesible del botón. */}
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={rowLabel}
+          disabled={deleteConfirm}
+          onClick={() => setOpen((o) => !o)}
+          className="absolute inset-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
+        />
         <span
+          aria-hidden="true"
           className={`font-mono text-sm font-bold ${
             round.won_match === null ? "text-gray-400" : resultText
           }`}
@@ -178,7 +221,7 @@ export function RoundCardFrame({
           {round.round_number}
         </span>
 
-        <div className="flex items-center gap-2 min-w-0 text-left">
+        <div aria-hidden="true" className="flex items-center gap-2 min-w-0 text-left">
           {round.opponent_leader?.card_image ? (
             <img
               src={round.opponent_leader.card_image}
@@ -190,18 +233,24 @@ export function RoundCardFrame({
               <span className="text-xs text-gray-600">?</span>
             </div>
           )}
-          <span className="truncate text-xs text-gray-300">{opponentLabel}</span>
+          <span
+            className={`truncate text-xs ${
+              unsaved && !round.opponent_leader ? "text-warning" : "text-gray-300"
+            }`}
+          >
+            {unsaved && !round.opponent_leader ? "Sin guardar" : opponentLabel}
+          </span>
         </div>
 
-        <span className="text-center text-xs text-gray-400">
+        <span aria-hidden="true" className="text-center text-xs text-gray-400">
           {round.won_die_roll === null ? "—" : round.won_die_roll ? "Yo" : "Rival"}
         </span>
 
-        <span className="text-center text-xs text-gray-400">
+        <span aria-hidden="true" className="text-center text-xs text-gray-400">
           {round.turn_order === "first" ? "1.º" : round.turn_order === "second" ? "2.º" : "—"}
         </span>
 
-        <span className={`text-center text-xs font-bold ${resultText}`}>
+        <span aria-hidden="true" className={`text-center text-xs font-bold ${resultText}`}>
           {round.is_bye
             ? "Pase"
             : round.won_match === true
@@ -284,9 +333,7 @@ export function RoundCardFrame({
 
 export function RoundFieldLabel({ children }: { children: ReactNode }) {
   return (
-    <label className="mb-1.5 block text-xs uppercase tracking-widest text-gray-500">
-      {children}
-    </label>
+    <label className="mb-1.5 block text-sm font-medium text-foreground-secondary">{children}</label>
   );
 }
 
@@ -294,8 +341,9 @@ const GOOD_ON = "bg-emerald-500 text-white";
 const GOOD_OFF = "hover:border-emerald-500/40 hover:text-emerald-400";
 const BAD_ON = "bg-red-500 text-white";
 const BAD_OFF = "hover:border-red-500/40 hover:text-red-400";
-const NEUTRAL_ON = "bg-primary text-primary-foreground";
-const NEUTRAL_OFF = "hover:border-primary/40 hover:text-primary";
+// Dado y turno no son el resultado del match: la selección va neutra, sin verde, rojo ni cian.
+const NEUTRAL_ON = "bg-white/15 text-white ring-1 ring-inset ring-white/40";
+const NEUTRAL_OFF = "hover:border-white/30 hover:text-white";
 
 function ChoiceButton({
   active,
@@ -324,31 +372,62 @@ function ChoiceButton({
   );
 }
 
-/** Dado, turno y resultado. */
+/**
+ * Dado, turno y resultado. Con `compact` el Resultado va primero y Dado, Turno y `extra`
+ * (p. ej. las notas) quedan plegados en "Más detalles": lo obligatorio no compite con lo opcional.
+ */
 export function RoundOutcomeFields({
   round,
   onChange,
+  compact = false,
+  extra,
 }: {
   round: Pick<FrameRound, "won_die_roll" | "turn_order" | "won_match">;
   onChange: (patch: Partial<Pick<FrameRound, "won_die_roll" | "turn_order" | "won_match">>) => void;
+  compact?: boolean;
+  extra?: ReactNode;
 }) {
-  return (
+  const hasDetails = round.won_die_roll !== null || round.turn_order !== null;
+  const result = (
+    <div>
+      <RoundFieldLabel>Resultado</RoundFieldLabel>
+      <div className="grid grid-cols-2 gap-2">
+        <ChoiceButton
+          active={round.won_match === true}
+          activeClass={GOOD_ON}
+          idleClass={GOOD_OFF}
+          onClick={() => onChange({ won_match: true })}
+        >
+          Victoria
+        </ChoiceButton>
+        <ChoiceButton
+          active={round.won_match === false}
+          activeClass={BAD_ON}
+          idleClass={BAD_OFF}
+          onClick={() => onChange({ won_match: false })}
+        >
+          Derrota
+        </ChoiceButton>
+      </div>
+    </div>
+  );
+  const details = (
     <>
       <div>
         <RoundFieldLabel>Dado</RoundFieldLabel>
         <div className="grid grid-cols-2 gap-2">
           <ChoiceButton
             active={round.won_die_roll === true}
-            activeClass={GOOD_ON}
-            idleClass={GOOD_OFF}
+            activeClass={NEUTRAL_ON}
+            idleClass={NEUTRAL_OFF}
             onClick={() => onChange({ won_die_roll: true })}
           >
             Gané
           </ChoiceButton>
           <ChoiceButton
             active={round.won_die_roll === false}
-            activeClass={BAD_ON}
-            idleClass={BAD_OFF}
+            activeClass={NEUTRAL_ON}
+            idleClass={NEUTRAL_OFF}
             onClick={() => onChange({ won_die_roll: false })}
           >
             Perdí
@@ -377,28 +456,31 @@ export function RoundOutcomeFields({
           </ChoiceButton>
         </div>
       </div>
+    </>
+  );
 
-      <div>
-        <RoundFieldLabel>Resultado</RoundFieldLabel>
-        <div className="grid grid-cols-2 gap-2">
-          <ChoiceButton
-            active={round.won_match === true}
-            activeClass={GOOD_ON}
-            idleClass={GOOD_OFF}
-            onClick={() => onChange({ won_match: true })}
-          >
-            Victoria
-          </ChoiceButton>
-          <ChoiceButton
-            active={round.won_match === false}
-            activeClass={BAD_ON}
-            idleClass={BAD_OFF}
-            onClick={() => onChange({ won_match: false })}
-          >
-            Derrota
-          </ChoiceButton>
+  if (!compact) {
+    return (
+      <>
+        {details}
+        {result}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {result}
+      <details open={hasDetails || undefined} className="group">
+        <summary className="flex min-h-11 cursor-pointer items-center gap-1 rounded-md text-sm font-medium text-gray-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+          Más detalles
+          <span className="text-xs font-normal text-gray-500">(dado, turno y notas)</span>
+        </summary>
+        <div className="space-y-5 pt-2">
+          {details}
+          {extra}
         </div>
-      </div>
+      </details>
     </>
   );
 }
@@ -430,9 +512,9 @@ export function RoundSaveButton({ saving, onClick }: { saving: boolean; onClick:
       type="button"
       onClick={onClick}
       disabled={saving}
-      className="w-full rounded-xl bg-primary py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50 transition hover:brightness-110"
+      className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50 transition hover:brightness-110"
     >
-      {saving ? "Guardando…" : "Guardar Ronda"}
+      {saving ? "Guardando…" : "Guardar ronda"}
     </button>
   );
 }

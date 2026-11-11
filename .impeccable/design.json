@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-11T05:17:00+00:00",
+  "generatedAt": "2026-11-11T18:24:00.364Z",
   "title": "Design System: Nexus",
   "extensions": {
     "colorMeta": {
@@ -8,19 +8,46 @@
         "role": "primary",
         "displayName": "Cian Circuito",
         "canonical": "#32d9ff",
-        "tonalRamp": ["#04303b", "#06495a", "#0a6a83", "#0f8fb0", "#1bb5dc", "#32d9ff", "#8be9ff", "#d6f7ff"]
+        "tonalRamp": [
+          "#04303b",
+          "#06495a",
+          "#0a6a83",
+          "#0f8fb0",
+          "#1bb5dc",
+          "#32d9ff",
+          "#8be9ff",
+          "#d6f7ff"
+        ]
       },
       "accent-violet": {
         "role": "secondary",
         "displayName": "Violeta Nexus",
         "canonical": "#9c5cff",
-        "tonalRamp": ["#1f0b40", "#33145f", "#4b1f8a", "#6630b8", "#8247e6", "#9c5cff", "#c39dff", "#ebdfff"]
+        "tonalRamp": [
+          "#1f0b40",
+          "#33145f",
+          "#4b1f8a",
+          "#6630b8",
+          "#8247e6",
+          "#9c5cff",
+          "#c39dff",
+          "#ebdfff"
+        ]
       },
       "night-navy": {
         "role": "neutral",
         "displayName": "Navy Nocturno",
         "canonical": "#08111f",
-        "tonalRamp": ["#08111f", "#111a2e", "#17233d", "#2a3a57", "#72819d", "#8a98b3", "#aab6d1", "#f5f7fa"]
+        "tonalRamp": [
+          "#08111f",
+          "#111a2e",
+          "#17233d",
+          "#2a3a57",
+          "#72819d",
+          "#8a98b3",
+          "#aab6d1",
+          "#f5f7fa"
+        ]
       },
       "card-navy": {
         "role": "neutral",
@@ -288,11 +315,39 @@
       "description": "Confirmación de acciones destructivas (cerrar sesión).",
       "html": "<div class=\"ds-confirm\"><h3>¿Cerrar sesión?</h3><p>Tendrás que volver a iniciar sesión para ver tu ranking y registrar partidas.</p><div><button class=\"ds-c-cancel\">Cancelar</button><button class=\"ds-c-ok\">Cerrar sesión</button></div></div>",
       "css": ".ds-confirm { width:360px; padding:24px; border-radius:12px; background:#111a2e; border:1px solid #2a3a57; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; box-shadow:0 25px 50px -12px rgba(0,0,0,.25); } .ds-confirm h3 { margin:0 0 8px; font:600 18px 'Space Grotesk', system-ui, sans-serif; } .ds-confirm p { margin:0 0 20px; color:#aab6d1; } .ds-confirm div { display:flex; justify-content:flex-end; gap:8px; } .ds-confirm button { height:36px; padding:0 16px; border-radius:8px; font:500 14px Inter, sans-serif; cursor:pointer; } .ds-c-cancel { background:#08111f; color:#f5f7fa; border:1px solid #17233d; } .ds-c-ok { background:#32d9ff; color:#08111f; border:none; } .ds-confirm button:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Result Summary",
+      "kind": "custom",
+      "description": "Resumen de tres cifras en una sola superficie con divisores (Mis stats y Mis partidas).",
+      "html": "<dl class=\"ds-sum\"><div><dt>Torneos</dt><dd>25</dd></div><div><dt>Récord</dt><dd><span class=\"ds-v\">54V</span><span class=\"ds-sep\">–</span><span class=\"ds-d\">61D</span></dd></div><div><dt>Win rate</dt><dd>47%</dd></div></dl>",
+      "css": ".ds-sum { font-family: Inter, system-ui, sans-serif; color: #f5f7fa; display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; background: #111a2e; border: 1px solid #2a3a57; border-radius: 12px; } .ds-sum > div { padding: 14px 16px; text-align: center; } .ds-sum > div + div { border-left: 1px solid #2a3a57; } .ds-sum dt { font-size: 12px; color: #8a98b3; } .ds-sum dd { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; margin: 4px 0 0; font-size: 22px; font-weight: 700; white-space: nowrap; } .ds-v { color: #4ef0a2; } .ds-d { color: #ff5f6d; } .ds-sep { color: #8a98b3; }"
+    },
+    {
+      "name": "Session Row",
+      "kind": "custom",
+      "description": "Fila de partida: nombre como enlace estirado, meta en una línea y récord V–D en mono a la derecha.",
+      "html": "<ul class=\"ds-rows\"><li class=\"ds-row\"><div class=\"ds-main\"><a href=\"#\" class=\"ds-title\">Taberna Mítico</a><p class=\"ds-meta\">5 nov · 4 rondas</p></div><div class=\"ds-rec\"><p class=\"ds-score\"><span class=\"ds-v\">3V</span><span class=\"ds-sep\">–</span><span class=\"ds-d\">1D</span></p><p class=\"ds-pct\">75% victorias</p></div></li><li class=\"ds-row\"><div class=\"ds-main\"><a href=\"#\" class=\"ds-title\">Arena Estelar</a><p class=\"ds-meta\">30 oct · 5 rondas</p></div><div class=\"ds-rec\"><p class=\"ds-score\"><span class=\"ds-v\">0V</span><span class=\"ds-sep\">–</span><span class=\"ds-d\">5D</span></p><p class=\"ds-pct\">0% victorias</p></div></li></ul>",
+      "css": ".ds-rows { font-family: Inter, system-ui, sans-serif; color: #f5f7fa; list-style: none; margin: 0; padding: 4px 20px; background: #111a2e; border: 1px solid #2a3a57; border-radius: 12px; } .ds-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 0; } .ds-row + .ds-row { border-top: 1px solid #2a3a57; } .ds-main { min-width: 0; flex: 1; } .ds-title { display: block; font-size: 16px; font-weight: 600; color: #f5f7fa; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-title::after { content: ''; position: absolute; inset: 0; } .ds-title:focus-visible { outline: none; } .ds-title:focus-visible::after { border-radius: 6px; box-shadow: 0 0 0 2px rgba(50,217,255,0.5); } .ds-row:hover { background: rgba(255,255,255,0.05); } .ds-meta { margin: 0; font-size: 14px; color: #aab6d1; } .ds-rec { text-align: right; } .ds-score { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; margin: 0; font-size: 18px; font-weight: 700; white-space: nowrap; } .ds-pct { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; margin: 0; font-size: 12px; color: #8a98b3; white-space: nowrap; } .ds-v { color: #4ef0a2; } .ds-d { color: #ff5f6d; } .ds-sep { color: #8a98b3; }"
+    },
+    {
+      "name": "Tournament Detail Header",
+      "kind": "custom",
+      "description": "Cabecera del detalle de torneo registrado: tienda y fecha a la izquierda, lugar final con color de podio a la derecha.",
+      "html": "<header class=\"ds-th\"><div><h1>Taberna Mítico</h1><p>San Pedro Garza García · 5 nov · One Piece Card Game</p></div><div class=\"ds-rank\"><div class=\"ds-n\">#2<span> de 13</span></div><p>12 pts · 3V–1D</p></div></header>",
+      "css": ".ds-th { font-family: Inter, system-ui, sans-serif; color: #f5f7fa; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px 20px; background: #111a2e; border: 1px solid #2a3a57; border-radius: 12px; } .ds-th h1 { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; } .ds-th p { margin: 2px 0 0; font-size: 14px; color: #aab6d1; } .ds-rank { text-align: right; flex-shrink: 0; } .ds-n { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 36px; font-weight: 700; line-height: 1; color: #e2e8f0; } .ds-n span { font-size: 14px; font-weight: 400; color: #8a98b3; } .ds-rank p { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; margin: 4px 0 0; font-size: 12px; color: #8a98b3; }"
+    },
+    {
+      "name": "Round Row",
+      "kind": "custom",
+      "description": "Fila de ronda: R#, resultado V/D, carta del líder rival, rival, dado y turno. Todo visible; en el editor lleva un botón real que cubre la fila.",
+      "html": "<ol class=\"ds-rr\"><li><div class=\"ds-k\"><span>R1</span><b class=\"ds-d\">D</b></div><div class=\"ds-card\"></div><div><p class=\"ds-opp\">Roronoa Zoro &amp; Sanji</p><p class=\"ds-sub\">vs XimenaPrime78</p><p class=\"ds-sub2\">Perdí dado · Primero</p></div></li><li><div class=\"ds-k\"><span>R2</span><b class=\"ds-v\">V</b></div><div class=\"ds-card\"></div><div><p class=\"ds-opp\">Monkey.D.Luffy</p><p class=\"ds-sub\">vs MateoDuelista32</p><p class=\"ds-sub2\">Gané dado · Primero</p></div></li></ol>",
+      "css": ".ds-rr { font-family: Inter, system-ui, sans-serif; color: #f5f7fa; list-style: none; margin: 0; padding: 0; background: #111a2e; border: 1px solid #2a3a57; border-radius: 12px; } .ds-rr li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 20px; } .ds-rr li + li { border-top: 1px solid #2a3a57; } .ds-k { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 8px; width: 56px; flex-shrink: 0; font-size: 12px; color: #8a98b3; } .ds-k b { font-size: 18px; } .ds-v { color: #4ef0a2; } .ds-d { color: #ff5f6d; } .ds-card { width: 40px; height: 56px; flex-shrink: 0; border: 1px solid #2a3a57; border-radius: 4px; background: #17233d; } .ds-opp { margin: 0; font-size: 14px; font-weight: 500; } .ds-sub { margin: 0; font-size: 12px; color: #8a98b3; } .ds-sub2 { margin: 0; font-size: 12px; color: #aab6d1; }"
     }
   ],
   "narrative": {
     "northStar": "La Tabla Oficial",
-    "overview": "Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.\n\nEl sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (163 líneas con `.glass` en 54 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`) y el selector de líder y arte (`/sessions/$sessionId`) son las referencias de cómo debe verse.\n\nLa densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.",
+    "overview": "Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.\n\nEl sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (146 líneas con `.glass` en 50 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`) y el selector de líder y arte (`/sessions/$sessionId`) son las referencias de cómo debe verse.\n\nLa densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.",
     "keyCharacteristics": [
       "Tema oscuro único, fondo `night-navy`; el halo radial del shell es lo único atmosférico que queda.",
       "Un acento cian que se usa con escasez: acción principal, estado activo y \"tu\" fila o rango.",
@@ -319,7 +374,7 @@
       },
       {
         "name": "The No Kicker Rule",
-        "body": "No hay etiquetas en mayúsculas espaciadas encima de un título (\"TU NEXUS TAG\", \"DETALLE DEL TORNEO\"). El título se sostiene solo. Las mayúsculas quedan reservadas para los encabezados de tabla.",
+        "body": "No hay etiquetas en mayúsculas espaciadas encima de un título (\"TU NEXUS TAG\", \"DETALLE DEL TORNEO\"). El título se sostiene solo. Las mayúsculas quedan reservadas para los encabezados de columna de una tabla (12px, `text-subtle`) y para códigos de carta o de set (\"ST29\"). Las etiquetas de formulario y de dato van en sentence case, 14px `font-medium` `text-secondary` (\"Leader del oponente\", \"Resultado\"); los botones también (\"Guardar ronda\", no \"GUARDAR RONDA\"). Esto no viene de una regla global: cada `uppercase tracking-*` es una clase escrita a mano, y la deuda legacy se barre pantalla por pantalla.",
         "section": "typography"
       },
       {
@@ -330,6 +385,16 @@
       {
         "name": "The One Surface Rule",
         "body": "Una superficie nunca contiene otra superficie con fondo y borde propios. Dentro de una tarjeta se separa con líneas (`divide-border`) y espacio.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Result Colors Rule",
+        "body": "Verde (`success`) y rojo (`danger`) significan el resultado de un match (V/D, victoria y derrota, movimiento de rango) y nada más. Datos que no son el resultado (quién ganó el dado, quién jugó primero) se marcan con una selección neutra (tinte blanco al 15% y aro fino), no con verde, rojo ni cian. En una vista solo hay un cian: la acción principal. En una partida casual, que no cuenta para el ranking, las cifras de victoria y derrota van neutras. Para fondos usa `.bg-success` y `.bg-danger` (definidas en `src/styles.css`, mismo valor que los tokens); para texto, `.text-success` y `.text-danger`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Portal Rule",
+        "body": "Un diálogo, hoja o menú con `position: fixed` nunca se renderiza dentro de un ancestro con `backdrop-filter`, `transform` o `filter`: ese ancestro se vuelve su bloque contenedor y lo recorta (la hoja del selector de leader quedó cortada dentro de una tarjeta `.glass`). Se monta en `document.body` con `createPortal`, cierra con Escape y devuelve el foco al elemento que lo abrió.",
         "section": "elevation"
       }
     ],
@@ -350,7 +415,13 @@
       "Do usar container queries (`@container` + `@3xl:`) para lo que depende del ancho del contenido, porque el sidebar y los rieles lo reducen.",
       "Do hacer clicable una fila o tarjeta completa con un enlace estirado, y dejar los demás controles encima con `relative z-10`.",
       "Do dar a las listas largas búsqueda, filtro, conteo y \"Restablecer filtros\", con el estado en la URL.",
-      "Do mostrar fechas cortas en `es-MX` (\"5 nov\", con año solo si no es el actual) y puntos sin ceros sobrantes (\"+12\", no \"+12.00\")."
+      "Do mostrar fechas cortas en `es-MX` (\"5 nov\", con año solo si no es el actual) y puntos sin ceros sobrantes (\"+12\", no \"+12.00\").",
+      "Do escribir el récord como \"3V–1D\" y el porcentaje como \"75% victorias\", en mono, con V en `success` y D en `danger`.",
+      "Do dar 44px de alto a todo control en móvil (`min-h-11 sm:min-h-9`) y 16px a los íconos de acción.",
+      "Do montar diálogos y hojas `fixed` en `document.body` con `createPortal`, cerrarlos con Escape y devolver el foco (The Portal Rule).",
+      "Do declarar siempre qué dataset se ve (Oficial, Casual, Pendientes, Todo) y si cuenta para el ranking.",
+      "Do abrir sola la fila nueva, poner lo obligatorio primero y plegar lo opcional en \"Más detalles\".",
+      "Do mantener intacta la gráfica de rate acumulado del detalle de partida: es firma del producto y viene de feedback de jugadores reales."
     ],
     "donts": [
       "Don't usar `.glass`, `backdrop-filter`, gradientes, glows ni destellos en el contenido.",
@@ -368,7 +439,13 @@
       "Don't convertir un fallo de red en \"no existe\" o \"sin datos\": un `catch` que devuelve `[]` esconde el error.",
       "Don't resaltar al campeón con degradado, borde de color o emoji; se destaca con tamaño y peso.",
       "Don't usar `text-[10px]` ni el naranja de una paleta anterior en botones.",
-      "Don't bajar labels a menos de 12px ni usar `text-muted` (#72819d) para texto pequeño sobre las tarjetas."
+      "Don't bajar labels a menos de 12px ni usar `text-muted` (#72819d) para texto pequeño sobre las tarjetas.",
+      "Don't pintar de verde o rojo algo que no es el resultado de un match (el dado, el turno, un estado de carga); ni poner dos cianes en una misma vista.",
+      "Don't usar `uppercase tracking-*` en etiquetas de formulario, botones ni títulos: solo en encabezados de columna y códigos de carta.",
+      "Don't renderizar un diálogo `fixed` dentro de una tarjeta con `.glass`, `backdrop-filter` o `transform`: queda recortado.",
+      "Don't usar `<div onClick>` para una fila expandible: usa un botón real (`aria-expanded`) o un enlace estirado.",
+      "Don't repetir en cada fila el nombre del juego cuando el jugador solo tiene uno.",
+      "Don't esconder un fallo de red detrás de \"sin resultados\" o \"no encontramos\": distingue el error y ofrece Reintentar."
     ]
   }
 }

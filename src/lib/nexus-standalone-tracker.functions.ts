@@ -110,6 +110,25 @@ export const getTournamentSessionDetail = createServerFn({ method: "POST" })
 
     const roundList = rounds ?? [];
 
+    // Lugar final y puntos del jugador en este torneo. Es un dato extra: si falla o aún no hay
+    // conteo oficial, la página sigue mostrando las rondas sin lugar.
+    const [myResultRes, playersCountRes] = await Promise.all([
+      admin
+        .from("tournament_results")
+        .select("rank, points_earned")
+        .eq("tournament_id", data.tournament_id)
+        .eq("player_id", player.id)
+        .maybeSingle(),
+      admin
+        .from("tournament_results")
+        .select("player_id", { count: "exact", head: true })
+        .eq("tournament_id", data.tournament_id),
+    ]);
+    const myResult = myResultRes.data as {
+      rank: number | null;
+      points_earned: number | null;
+    } | null;
+
     // Enriquecer con leaders y oponentes
     const leaderIds = Array.from(
       new Set(
@@ -152,8 +171,14 @@ export const getTournamentSessionDetail = createServerFn({ method: "POST" })
         tournament_id: t.id as string,
         tournament_date: t.tournament_date as string,
         tournament_store_name: t.stores?.name ?? null,
+        tournament_status: t.status as string,
         is_official: true, // flag para distinguirlo de standalone
       },
+      result:
+        myResult && myResult.rank != null
+          ? { rank: Number(myResult.rank), points_earned: Number(myResult.points_earned ?? 0) }
+          : null,
+      players_count: playersCountRes.count ?? null,
       rounds: roundList.map((r: any) => ({
         id: r.id as string,
         round_number: r.round_number as number,
@@ -193,6 +218,8 @@ export const getMyAttendedTournamentIds = createServerFn({ method: "POST" })
     if (error) failDb(error);
 
     return {
-      tournament_ids: Array.from(new Set((results ?? []).map((r: any) => r.tournament_id as string))),
+      tournament_ids: Array.from(
+        new Set((results ?? []).map((r: any) => r.tournament_id as string)),
+      ),
     };
   });

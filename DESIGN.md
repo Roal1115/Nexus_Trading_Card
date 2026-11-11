@@ -96,13 +96,15 @@ components:
 
 # Design System: Nexus
 
-<!-- Actualizado 2026-11-11. Pantallas migradas a la dirección "Tabla Oficial" y que
-     sirven de referencia: /dashboard, el ranking público (/), el perfil público del
-     jugador, el directorio de tiendas (/stores), la ficha de tienda (/stores/$slug),
-     el resultado de un torneo (/tournaments/$id), el calendario (/calendar) y el
-     selector de líder y arte de /sessions/$sessionId. Glass, gradientes, glows y
-     shimmer ya no son parte del sistema; el resto de pantallas todavía los usa y es
-     deuda a migrar. design-system/nexus/MASTER.md (morado + Russo One) NO refleja el código. -->
+<!-- Actualizado 2026-11-11 (refresco con /impeccable document). Pantallas migradas a la
+     dirección "Tabla Oficial" y que sirven de referencia: /dashboard, el ranking público (/),
+     el perfil público del jugador, el directorio de tiendas (/stores), la ficha de tienda
+     (/stores/$slug), el resultado de un torneo (/tournaments/$id), el calendario (/calendar),
+     Mis stats (/my-stats), Mis partidas (/sessions), el detalle de torneo registrado
+     (/sessions/tournament/$tournamentId) y el detalle de partida (/sessions/$sessionId, con su
+     gráfica de rate acumulado, que se conserva). Glass, gradientes, glows y shimmer ya no son
+     parte del sistema; el resto de pantallas todavía los usa y es deuda a migrar.
+     design-system/nexus/MASTER.md (morado + Russo One) NO refleja el código. -->
 
 ## Overview
 
@@ -110,7 +112,7 @@ components:
 
 Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.
 
-El sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (163 líneas con `.glass` en 54 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`) y el selector de líder y arte (`/sessions/$sessionId`) son las referencias de cómo debe verse.
+El sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (146 líneas con `.glass` en 50 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`), Mis stats (`/my-stats`), Mis partidas (`/sessions`) y los detalles de torneo y de partida (`/sessions/tournament/$tournamentId`, `/sessions/$sessionId`) son las referencias de cómo debe verse.
 
 La densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.
 
@@ -149,6 +151,8 @@ La paleta es un navy nocturno con un solo acento cian eléctrico y tres colores 
 
 **The One Theme Rule.** No hay tema claro ni toggle `.dark`. Todo color se define para el fondo `night-navy`.
 
+**The Result Colors Rule.** Verde (`success`) y rojo (`danger`) significan el resultado de un match (V/D, victoria y derrota, movimiento de rango) y nada más. Datos que no son el resultado (quién ganó el dado, quién jugó primero) se marcan con una selección neutra (tinte blanco al 15% y aro fino), no con verde, rojo ni cian. En una vista solo hay un cian: la acción principal. En una partida casual, que no cuenta para el ranking, las cifras de victoria y derrota van neutras. Para fondos usa `.bg-success` y `.bg-danger` (definidas en `src/styles.css`, mismo valor que los tokens); para texto, `.text-success` y `.text-danger`.
+
 ## Typography
 
 **Display Font:** Space Grotesk (con system-ui)
@@ -170,7 +174,7 @@ La escala declarada es 12, 14, 16, 20, 24, 32 y 40 px. El rango del hero llega a
 ### Named Rules
 **The Mono Numbers Rule.** Toda cifra competitiva (rango, puntos, V/D, %, OMW) va en `font-mono-stat` con números tabulares, para que las columnas se alineen.
 
-**The No Kicker Rule.** No hay etiquetas en mayúsculas espaciadas encima de un título ("TU NEXUS TAG", "DETALLE DEL TORNEO"). El título se sostiene solo. Las mayúsculas quedan reservadas para los encabezados de tabla.
+**The No Kicker Rule.** No hay etiquetas en mayúsculas espaciadas encima de un título ("TU NEXUS TAG", "DETALLE DEL TORNEO"). El título se sostiene solo. Las mayúsculas quedan reservadas para los encabezados de columna de una tabla (12px, `text-subtle`) y para códigos de carta o de set ("ST29"). Las etiquetas de formulario y de dato van en sentence case, 14px `font-medium` `text-secondary` ("Leader del oponente", "Resultado"); los botones también ("Guardar ronda", no "GUARDAR RONDA"). Esto no viene de una regla global: cada `uppercase tracking-*` es una clase escrita a mano, y la deuda legacy se barre pantalla por pantalla.
 
 ## Layout
 
@@ -194,7 +198,9 @@ El sistema es **plano, con capas tonales**. La profundidad sale de pasar de `nig
 **The One Surface Rule.** Una superficie nunca contiene otra superficie con fondo y borde propios. Dentro de una tarjeta se separa con líneas (`divide-border`) y espacio.
 
 ### Legado a migrar
-`.glass`, `.glow-primary`, `.glow-accent`, `.gradient-*` y el naranja `rgba(232,106,34,…)` (ese sigue en el thumb del scrollbar) siguen en `src/styles.css` y en 54 archivos de otras pantallas (163 líneas con `.glass`, 25 con `backdrop-blur`). No se usan en trabajo nuevo; se eliminan conforme se migre cada pantalla.
+`.glass`, `.glow-primary`, `.glow-accent`, `.gradient-*` y el naranja `rgba(232,106,34,…)` (ese sigue en el thumb del scrollbar) siguen en `src/styles.css` y en 50 archivos de otras pantallas (146 líneas con `.glass`, 17 con `backdrop-blur`). Lo mismo pasa con las etiquetas `uppercase tracking-*` (245 usos en 64 archivos). No se usan en trabajo nuevo; se eliminan conforme se migre cada pantalla.
+
+**The Portal Rule.** Un diálogo, hoja o menú con `position: fixed` nunca se renderiza dentro de un ancestro con `backdrop-filter`, `transform` o `filter`: ese ancestro se vuelve su bloque contenedor y lo recorta (la hoja del selector de leader quedó cortada dentro de una tarjeta `.glass`). Se monta en `document.body` con `createPortal`, cierra con Escape y devuelve el foco al elemento que lo abrió.
 
 ## Shapes
 
@@ -306,6 +312,39 @@ Un `<main class="@container">` de `max-w-3xl` con cuatro superficies planas: enc
 - **Ayuda:** "Cómo leer la tabla" explica Pts, V/D/E, OMW %, rondas e invictos.
 - **Estados:** 404 ("Torneo no disponible") y error de carga ("No pudimos cargar el torneo" + Reintentar) son pantallas distintas; solo el mensaje "no encontrado" del servidor produce un 404.
 
+### Resumen de tres cifras
+Una sola superficie `card-navy` con tres celdas separadas por `divide-x divide-border` (sin padding propio de la tarjeta), cada una con su label de 12px `text-subtle` y la cifra en mono de 20–24px. Es el encabezado de datos de Mis stats ("Récord", "Win rate", "Racha actual") y de Mis partidas ("Torneos", "Récord", "Win rate", solo con lo oficial). El récord va `whitespace-nowrap` para que "55V–65L" no se parta, con V en `success` y D en `danger` (neutras si es Casual).
+
+### Filtros de fuente y controles de toque (Mis stats)
+- **Fuente de las partidas:** `ChipGroup` de dos opciones (Oficial, Casual) como nivel principal; Pendientes y Todo son botones secundarios sin marco en un grupo aparte ("Otras vistas"). Periodo es otro `ChipGroup` (30 días, 90 días, Todo el tiempo). Todos `aria-pressed`.
+- **Leyenda de fuente:** una línea siempre visible bajo los filtros, también en Oficial: "Oficial · Solo torneos publicados. Cuentan para tu ranking." En Casual lleva además un chip neutro "No cuenta para el ranking".
+- **"Cómo leer estas stats":** un solo `<details>` con chevron reemplaza los tooltips de 20px por cifra; lista solo las stats que la fuente actual muestra.
+- **Toque:** todo control mide 44px de alto en móvil (`min-h-11 sm:min-h-9`), incluidos Volver y los cierres de diálogo.
+- **Tira de leaders:** una sola lista de `LeaderCard`; en móvil hace scroll horizontal (cada carta `w-64`) y desde `@4xl` es una columna sticky. Reemplaza al `select`.
+- **"Más sobre tu juego":** los agregados de baja frecuencia (mejor racha, dado, mejor puesto, Top 8) van colapsados en un `<details>` con chevron; lo accionable va primero.
+
+### Fila de partida (Mis partidas)
+- **Estructura:** una sola superficie por grupo (Pendientes de vincular, Torneos oficiales, Casual), con `h2` en sentence case, el conteo en mono de 14px `text-subtle`, un subtítulo de 14px y las filas separadas con `divide-border`. Los grupos vacíos no se muestran.
+- **Fila:** nombre en 16px semibold (es el enlace estirado), debajo "5 nov · tienda · leader" en 14px `text-secondary`, y a la derecha el récord "3V–1D" en mono de 18px con "75% victorias" en 12px. En Casual el récord va neutro. Sin badge de estado ni trofeo: el grupo ya lo dice.
+- **Juego:** el nombre del juego solo aparece en cada fila si el jugador tiene más de uno.
+- **Eliminar:** botón de 44px con confirmación (ver Confirmación destructiva).
+- **Un solo CTA cian:** "Nueva partida". "Registrar" y "No fui" son outline y ghost neutros.
+
+### Detalle de torneo registrado (`/sessions/tournament/$tournamentId`)
+Una `<main class="@container">` con un "Volver a Mis partidas" de destino fijo y una sola superficie plana:
+- **Cabecera:** tienda en `h1`, "ciudad · fecha · juego" en 14px, y a la derecha el lugar final en mono de 36px con color de podio ("#2" y "de 13" en 14px `text-subtle`), con "12 pts · 3V–1D" debajo. Sin lugar aún, el héroe es el récord. En estado APPROVED lleva "Pendiente de conteo oficial" en `warning`.
+- **Tira de rondas:** `ol` con `divide-border`; cada fila trae "R1", la V/D (con `aria-label` "Victoria"/"Derrota"), la carta del líder rival (40×56px), su nombre, "vs geek_tag", "Gané/Perdí dado · Primero/Segundo" y las notas. Todo visible, sin expandir.
+- **Pie:** "Ver torneo completo" (outline) a `/tournaments/$id`, solo cuando el torneo ya está publicado.
+- **Estados:** "Torneo no disponible" (404) y "No pudimos cargar el torneo" + Reintentar son distintos.
+
+### Detalle de partida (`/sessions/$sessionId`)
+- **Gráfica de rate acumulado (firma protegida):** la curva con puntos V/D junto al récord y la carta del leader viene de feedback de jugadores reales y se conserva tal cual (misma forma, gradiente y leyenda). Solo se le pueden ajustar tokens de color, y lleva `role="img"` con `aria-label` ("Racha por ronda: V, D, V. 66.7% de victorias acumulado."). Su tooltip usa `popover` y `success`/`danger`.
+- **Encabezado:** superficie plana; "Récord" y "% de victorias" como `<dl>` (Stat Row), sin kickers; estado como chip neutro (Pendiente en `warning`, Vinculada en `success`); los avisos de vinculación son filas con `border-t border-border`, no cajas.
+- **Fila de ronda:** `RoundCardFrame` lleva un botón real que cubre la fila (`aria-expanded`, nombre accesible "Ronda 1, Victoria, contra X, perdiste el dado, jugaste segundo, sin guardar"); la ronda nueva arranca abierta y dice "Sin guardar".
+- **Formulario de ronda:** leader del oponente (obligatorio) → Resultado (verde/rojo) → "Más detalles" plegado (dado, turno, notas) → "Guardar ronda" en cian. Dado y turno van con selección neutra. El toast al guardar dice el récord ("Ronda 3 guardada · 2V–1D").
+- **Selector de leader y arte:** ver arriba; se monta en `document.body` (The Portal Rule).
+- **Errores de carga:** el selector de leader y el de arte distinguen "no pudimos cargar" (con Reintentar) de "no hay versiones".
+
 ### Identity Row
 Va en el pie del sidebar y en la cabecera del drawer móvil. Lleva un círculo de 32px `raised-navy` con las iniciales en 12px bold, el geek tag en 14px medium y, debajo, "#62 · Temporada 2026" en 12px `text-subtle`. Para el staff, esa línea muestra el rol. Es un link al perfil público; colapsada solo quedan las iniciales. Reemplaza el rótulo genérico "Sesión".
 
@@ -315,6 +354,7 @@ Cerrar sesión (y cualquier acción que saque al usuario o borre algo) pasa por 
 - Título en pregunta ("¿Cerrar sesión?") y una línea con la consecuencia.
 - Botones Cancelar (outline) y la acción (primary), que muestra "Cerrando…" mientras termina.
 - Nunca se ejecuta con un solo clic.
+- **Borrar datos** ("Eliminar partida"): el disparador es un botón outline de 44px con texto, no solo un ícono de basura. El título pregunta ("¿Eliminar esta partida?"), la descripción nombra el objeto y la consecuencia ("Se borran "Práctica 1" y sus rondas registradas. No se puede deshacer.") y la acción va en `destructive` con el mismo texto que el disparador ("Eliminar partida"), que cambia a "Eliminando…" mientras termina. En una fila de lista, donde un `AlertDialog` sería excesivo, la confirmación puede ser un overlay plano (`bg-card`, sin blur) que cubre la fila con el nombre del objeto y botones de 44px.
 
 ### Notificaciones
 - La campana anuncia el conteo ("Notificaciones, 6 sin leer").
@@ -342,6 +382,12 @@ Cerrar sesión (y cualquier acción que saque al usuario o borre algo) pasa por 
 - **Do** hacer clicable una fila o tarjeta completa con un enlace estirado, y dejar los demás controles encima con `relative z-10`.
 - **Do** dar a las listas largas búsqueda, filtro, conteo y "Restablecer filtros", con el estado en la URL.
 - **Do** mostrar fechas cortas en `es-MX` ("5 nov", con año solo si no es el actual) y puntos sin ceros sobrantes ("+12", no "+12.00").
+- **Do** escribir el récord como "3V–1D" y el porcentaje como "75% victorias", en mono, con V en `success` y D en `danger`.
+- **Do** dar 44px de alto a todo control en móvil (`min-h-11 sm:min-h-9`) y 16px a los íconos de acción.
+- **Do** montar diálogos y hojas `fixed` en `document.body` con `createPortal`, cerrarlos con Escape y devolver el foco (The Portal Rule).
+- **Do** declarar siempre qué dataset se ve (Oficial, Casual, Pendientes, Todo) y si cuenta para el ranking.
+- **Do** abrir sola la fila nueva, poner lo obligatorio primero y plegar lo opcional en "Más detalles".
+- **Do** mantener intacta la gráfica de rate acumulado del detalle de partida: es firma del producto y viene de feedback de jugadores reales.
 
 ### Don't:
 - **Don't** usar `.glass`, `backdrop-filter`, gradientes, glows ni destellos en el contenido.
@@ -360,3 +406,9 @@ Cerrar sesión (y cualquier acción que saque al usuario o borre algo) pasa por 
 - **Don't** resaltar al campeón con degradado, borde de color o emoji; se destaca con tamaño y peso.
 - **Don't** usar `text-[10px]` ni el naranja de una paleta anterior en botones.
 - **Don't** bajar labels a menos de 12px ni usar `text-muted` (#72819d) para texto pequeño sobre las tarjetas.
+- **Don't** pintar de verde o rojo algo que no es el resultado de un match (el dado, el turno, un estado de carga); ni poner dos cianes en una misma vista.
+- **Don't** usar `uppercase tracking-*` en etiquetas de formulario, botones ni títulos: solo en encabezados de columna y códigos de carta.
+- **Don't** renderizar un diálogo `fixed` dentro de una tarjeta con `.glass`, `backdrop-filter` o `transform`: queda recortado.
+- **Don't** usar `<div onClick>` para una fila expandible: usa un botón real (`aria-expanded`) o un enlace estirado.
+- **Don't** repetir en cada fila el nombre del juego cuando el jugador solo tiene uno.
+- **Don't** esconder un fallo de red detrás de "sin resultados" o "no encontramos": distingue el error y ofrece Reintentar.
