@@ -986,15 +986,15 @@ function StandaloneRoundTracker({
       {/* Table header */}
       {rounds.length > 0 && (
         <div className="grid grid-cols-[28px_1fr_40px_40px_28px] gap-2 px-3 pb-1 sm:grid-cols-[40px_1fr_52px_52px_52px]">
-          <span className="text-xs uppercase tracking-widest text-gray-600">Round</span>
-          <span className="text-xs uppercase tracking-widest text-gray-600">Deck</span>
-          <span className="text-center text-xs uppercase tracking-widest text-gray-600">
+          <span className="text-xs uppercase tracking-wide text-gray-600">#</span>
+          <span className="text-xs uppercase tracking-wide text-gray-600">Deck</span>
+          <span className="text-center text-xs uppercase tracking-wide text-gray-600">
             Dado
           </span>
-          <span className="text-center text-xs uppercase tracking-widest text-gray-600">
+          <span className="text-center text-xs uppercase tracking-wide text-gray-600">
             Turno
           </span>
-          <span className="text-center text-xs uppercase tracking-widest text-gray-600">
+          <span className="text-center text-xs uppercase tracking-wide text-gray-600">
             Res
           </span>
         </div>
