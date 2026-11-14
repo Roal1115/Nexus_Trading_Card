@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { nexus } from "@/integrations/nexus/client";
+import { BTN_OUTLINE, SECTION } from "@/components/stores/store-ui";
 
 // Llave pública VAPID (segura de exponer; la privada vive en Vault del backend)
 const VAPID_PUBLIC_KEY =
@@ -78,38 +79,41 @@ export function PushNotificationsToggle() {
   };
 
   return (
-    <section className="glass space-y-4 rounded-2xl p-6">
-      <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-        <Bell size={14} className="text-primary" /> Notificaciones
+    <section aria-labelledby="s-notif" className={`${SECTION} space-y-3`}>
+      <h2 id="s-notif" className="text-lg font-semibold text-foreground">
+        Notificaciones
       </h2>
-      <p className="text-xs text-gray-400">
+      <p className="text-sm text-foreground-secondary">
         Recibe un aviso cuando haya torneo al día siguiente en tu tienda principal o en tus tiendas
         favoritas.
       </p>
       {!supported ? (
-        <p className="text-xs text-amber-400">
+        <p className="text-sm text-warning">
           Tu navegador no soporta notificaciones push. En iOS, primero instala la app desde
           Compartir → "Agregar a pantalla de inicio".
         </p>
       ) : (
-        <button
-          onClick={enabled ? disable : enable}
-          disabled={busy}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50 ${
-            enabled
-              ? "border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
-          }`}
-        >
-          {busy ? (
-            <Loader2 size={12} className="animate-spin" />
-          ) : enabled ? (
-            <BellOff size={12} />
-          ) : (
-            <Bell size={12} />
-          )}
-          {enabled ? "Desactivar notificaciones" : "Activar notificaciones"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={enabled ? disable : enable}
+            disabled={busy}
+            aria-pressed={enabled}
+            className={BTN_OUTLINE}
+          >
+            {busy ? (
+              <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+            ) : enabled ? (
+              <BellOff size={16} aria-hidden="true" />
+            ) : (
+              <Bell size={16} aria-hidden="true" />
+            )}
+            {enabled ? "Desactivar notificaciones" : "Activar notificaciones"}
+          </button>
+          <span className="text-sm text-foreground-subtle">
+            {enabled ? "Activadas en este dispositivo" : "Desactivadas"}
+          </span>
+        </div>
       )}
     </section>
   );

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-11T18:24:00.364Z",
+  "generatedAt": "2026-11-14T21:14:08.023662Z",
   "title": "Design System: Nexus",
   "extensions": {
     "colorMeta": {
@@ -343,11 +343,18 @@
       "description": "Fila de ronda: R#, resultado V/D, carta del líder rival, rival, dado y turno. Todo visible; en el editor lleva un botón real que cubre la fila.",
       "html": "<ol class=\"ds-rr\"><li><div class=\"ds-k\"><span>R1</span><b class=\"ds-d\">D</b></div><div class=\"ds-card\"></div><div><p class=\"ds-opp\">Roronoa Zoro &amp; Sanji</p><p class=\"ds-sub\">vs XimenaPrime78</p><p class=\"ds-sub2\">Perdí dado · Primero</p></div></li><li><div class=\"ds-k\"><span>R2</span><b class=\"ds-v\">V</b></div><div class=\"ds-card\"></div><div><p class=\"ds-opp\">Monkey.D.Luffy</p><p class=\"ds-sub\">vs MateoDuelista32</p><p class=\"ds-sub2\">Gané dado · Primero</p></div></li></ol>",
       "css": ".ds-rr { font-family: Inter, system-ui, sans-serif; color: #f5f7fa; list-style: none; margin: 0; padding: 0; background: #111a2e; border: 1px solid #2a3a57; border-radius: 12px; } .ds-rr li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 20px; } .ds-rr li + li { border-top: 1px solid #2a3a57; } .ds-k { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 8px; width: 56px; flex-shrink: 0; font-size: 12px; color: #8a98b3; } .ds-k b { font-size: 18px; } .ds-v { color: #4ef0a2; } .ds-d { color: #ff5f6d; } .ds-card { width: 40px; height: 56px; flex-shrink: 0; border: 1px solid #2a3a57; border-radius: 4px; background: #17233d; } .ds-opp { margin: 0; font-size: 14px; font-weight: 500; } .ds-sub { margin: 0; font-size: 12px; color: #8a98b3; } .ds-sub2 { margin: 0; font-size: 12px; color: #aab6d1; }"
+    },
+    {
+      "name": "Create Session Sheet",
+      "kind": "custom",
+      "description": "Formulario corto en diálogo (Nueva partida): campos que deciden la vinculación primero, selección neutra y pie fijo con la única acción cian y lo que falta.",
+      "html": "<div class=\"ds-sheet\" role=\"dialog\" aria-labelledby=\"ds-sheet-t\"><header><h2 id=\"ds-sheet-t\">Torneo oficial</h2><button class=\"ds-sheet-link\">Cambiar tipo</button></header><div class=\"ds-sheet-body\"><label>Tienda</label><div class=\"ds-sheet-pick\"><div><strong>Guarida Gamer</strong><span>Guadalupe</span></div><button class=\"ds-sheet-link\">Cambiar</button></div><div class=\"ds-sheet-row\"><div><label>Fecha</label><input value=\"17/11/2026\"></div><div><label>Hora de inicio</label><input value=\"7:00 p.m.\"></div></div><p class=\"ds-sheet-hint\">Con la tienda, fecha y hora correctas tu partida se vincula sola al torneo.</p><label>Tu leader <span>(opcional)</span></label><input placeholder=\"Selecciona tu leader…\"></div><footer><button class=\"ds-sheet-cta\" disabled>Crear partida</button><p>Falta: hora</p></footer></div>",
+      "css": ".ds-sheet { width:420px; background:#111a2e; border:1px solid #2a3a57; border-radius:16px; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; box-shadow:0 25px 50px -12px rgba(0,0,0,.25); overflow:hidden; } .ds-sheet header { display:flex; align-items:center; justify-content:space-between; padding:8px 8px 8px 20px; border-bottom:1px solid #2a3a57; } .ds-sheet h2 { margin:0; font:600 18px 'Space Grotesk', system-ui, sans-serif; letter-spacing:-0.02em; } .ds-sheet-link { background:none; border:none; color:#aab6d1; font:400 14px Inter, sans-serif; min-height:36px; padding:0 12px; border-radius:8px; cursor:pointer; } .ds-sheet-link:hover { color:#f5f7fa; } .ds-sheet-body { padding:20px; display:flex; flex-direction:column; gap:6px; } .ds-sheet label { color:#aab6d1; font-weight:500; margin-top:14px; } .ds-sheet label:first-child { margin-top:0; } .ds-sheet label span { color:#8a98b3; font-weight:400; } .ds-sheet input { height:36px; padding:0 12px; border-radius:8px; border:1px solid #2a3a57; background:transparent; color:#f5f7fa; font:400 14px Inter, sans-serif; width:100%; box-sizing:border-box; } .ds-sheet input:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; } .ds-sheet-pick { display:flex; align-items:center; justify-content:space-between; padding-left:12px; border:1px solid #2a3a57; border-radius:8px; background:#17233d; } .ds-sheet-pick div { display:flex; flex-direction:column; padding:8px 0; } .ds-sheet-pick span { color:#aab6d1; font-size:12px; } .ds-sheet-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; } .ds-sheet-row label { display:block; margin:0 0 6px; } .ds-sheet-hint { margin:6px 0 0; color:#8a98b3; } .ds-sheet footer { padding:16px; border-top:1px solid #2a3a57; text-align:center; } .ds-sheet-cta { width:100%; height:36px; border:none; border-radius:8px; background:#32d9ff; color:#08111f; font:600 14px Inter, sans-serif; cursor:pointer; } .ds-sheet-cta:hover { background:rgba(50,217,255,.9); } .ds-sheet-cta:disabled { opacity:.4; cursor:not-allowed; } .ds-sheet-cta:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; } .ds-sheet footer p { margin:8px 0 0; color:#8a98b3; font-size:12px; }"
     }
   ],
   "narrative": {
     "northStar": "La Tabla Oficial",
-    "overview": "Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.\n\nEl sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (146 líneas con `.glass` en 50 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`) y el selector de líder y arte (`/sessions/$sessionId`) son las referencias de cómo debe verse.\n\nLa densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.",
+    "overview": "Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.\n\nEl sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (146 líneas con `.glass` en 50 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`), Mis stats (`/my-stats`), Mis partidas (`/sessions`) y los detalles de torneo y de partida (`/sessions/tournament/$tournamentId`, `/sessions/$sessionId`) son las referencias de cómo debe verse.\n\nLa densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.",
     "keyCharacteristics": [
       "Tema oscuro único, fondo `night-navy`; el halo radial del shell es lo único atmosférico que queda.",
       "Un acento cian que se usa con escasez: acción principal, estado activo y \"tu\" fila o rango.",
@@ -365,6 +372,11 @@
       {
         "name": "The One Theme Rule",
         "body": "No hay tema claro ni toggle `.dark`. Todo color se define para el fondo `night-navy`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Result Colors Rule",
+        "body": "Verde (`success`) y rojo (`danger`) significan el resultado de un match (V/D, victoria y derrota, movimiento de rango) y nada más. Datos que no son el resultado (quién ganó el dado, quién jugó primero) se marcan con una selección neutra (tinte blanco al 15% y aro fino), no con verde, rojo ni cian. En una vista solo hay un cian: la acción principal. En una partida casual, que no cuenta para el ranking, las cifras de victoria y derrota van neutras. Para fondos usa `.bg-success` y `.bg-danger` (definidas en `src/styles.css`, mismo valor que los tokens); para texto, `.text-success` y `.text-danger`.",
         "section": "colors"
       },
       {
@@ -386,11 +398,6 @@
         "name": "The One Surface Rule",
         "body": "Una superficie nunca contiene otra superficie con fondo y borde propios. Dentro de una tarjeta se separa con líneas (`divide-border`) y espacio.",
         "section": "elevation"
-      },
-      {
-        "name": "The Result Colors Rule",
-        "body": "Verde (`success`) y rojo (`danger`) significan el resultado de un match (V/D, victoria y derrota, movimiento de rango) y nada más. Datos que no son el resultado (quién ganó el dado, quién jugó primero) se marcan con una selección neutra (tinte blanco al 15% y aro fino), no con verde, rojo ni cian. En una vista solo hay un cian: la acción principal. En una partida casual, que no cuenta para el ranking, las cifras de victoria y derrota van neutras. Para fondos usa `.bg-success` y `.bg-danger` (definidas en `src/styles.css`, mismo valor que los tokens); para texto, `.text-success` y `.text-danger`.",
-        "section": "colors"
       },
       {
         "name": "The Portal Rule",
@@ -421,6 +428,7 @@
       "Do montar diálogos y hojas `fixed` en `document.body` con `createPortal`, cerrarlos con Escape y devolver el foco (The Portal Rule).",
       "Do declarar siempre qué dataset se ve (Oficial, Casual, Pendientes, Todo) y si cuenta para el ranking.",
       "Do abrir sola la fila nueva, poner lo obligatorio primero y plegar lo opcional en \"Más detalles\".",
+      "Do decir junto a la acción principal deshabilitada qué falta (\"Falta: tienda, fecha\"), en vez de dejar un botón apagado sin explicación.",
       "Do mantener intacta la gráfica de rate acumulado del detalle de partida: es firma del producto y viene de feedback de jugadores reales."
     ],
     "donts": [

@@ -96,7 +96,7 @@ components:
 
 # Design System: Nexus
 
-<!-- Actualizado 2026-11-11 (refresco con /impeccable document). Pantallas migradas a la
+<!-- Actualizado 2026-11-14 (refresco con /impeccable document; se agregó la hoja "Nueva partida"). Pantallas migradas a la
      dirección "Tabla Oficial" y que sirven de referencia: /dashboard, el ranking público (/),
      el perfil público del jugador, el directorio de tiendas (/stores), la ficha de tienda
      (/stores/$slug), el resultado de un torneo (/tournaments/$id), el calendario (/calendar),
@@ -345,6 +345,17 @@ Una `<main class="@container">` con un "Volver a Mis partidas" de destino fijo y
 - **Selector de leader y arte:** ver arriba; se monta en `document.body` (The Portal Rule).
 - **Errores de carga:** el selector de leader y el de arte distinguen "no pudimos cargar" (con Reintentar) de "no hay versiones".
 
+### Hoja de formulario ("Nueva partida")
+El alta de una partida en `/sessions` (`CreateSessionSheet`) es el patrón para un formulario corto en diálogo: hoja inferior en móvil y diálogo centrado de `max-w-lg` en escritorio, `popover` sólida con borde de 1px, 16px de esquinas y sombra flotante.
+- **Montaje y foco:** se monta en `document.body` (The Portal Rule), con `role="dialog"`, `aria-modal` y `aria-labelledby`. Al abrir, el foco entra al diálogo; Escape lo cierra y el foco vuelve al botón que lo abrió. En móvil la hoja llega al borde inferior y el pie respeta `safe-area-inset-bottom`.
+- **Dos pasos:** primero "¿Qué vas a registrar?" con Torneo oficial y Partida casual como filas de una sola superficie (`divide-border`, chevron), no como tarjetas. Después, el tipo elegido es el título y "Cambiar tipo" es un botón de texto en el encabezado.
+- **Orden de campos:** lo que decide la vinculación va primero. En Torneo oficial: tienda → fecha y hora lado a lado → una línea neutra que explica la vinculación → nombre → TCG → leader. En Casual: nombre → TCG → fecha → leader.
+- **Labels:** sin asteriscos; solo lo opcional lo dice ("Tu leader (opcional)", con "(opcional)" en `text-subtle`).
+- **Nombre sugerido:** con tienda y fecha se llena "Torneo del martes — Guarida Gamer", el mismo formato que el prellenado desde un RSVP. En cuanto el jugador escribe, se respeta su nombre.
+- **Selección hecha:** la tienda elegida es una fila neutra (`secondary`, borde de 1px) con "Cambiar" en texto, nunca cian. Con un solo TCG el selector no se muestra.
+- **Listas dentro del diálogo:** la búsqueda de leader se abre en línea (empuja el contenido y se lleva a la vista), no como capa flotante que el pie fijo pueda tapar. Cada búsqueda distingue cargando, error con Reintentar y "Sin tiendas/leaders para “…”".
+- **Pie fijo:** la acción principal ("Crear partida", la única en cian) vive en un pie con `border-t` que no se desplaza. Mientras falte algo, debajo dice "Falta: tienda, fecha, hora" en 12px `text-subtle`, enlazado al botón con `aria-describedby`.
+
 ### Identity Row
 Va en el pie del sidebar y en la cabecera del drawer móvil. Lleva un círculo de 32px `raised-navy` con las iniciales en 12px bold, el geek tag en 14px medium y, debajo, "#62 · Temporada 2026" en 12px `text-subtle`. Para el staff, esa línea muestra el rol. Es un link al perfil público; colapsada solo quedan las iniciales. Reemplaza el rótulo genérico "Sesión".
 
@@ -387,6 +398,7 @@ Cerrar sesión (y cualquier acción que saque al usuario o borre algo) pasa por 
 - **Do** montar diálogos y hojas `fixed` en `document.body` con `createPortal`, cerrarlos con Escape y devolver el foco (The Portal Rule).
 - **Do** declarar siempre qué dataset se ve (Oficial, Casual, Pendientes, Todo) y si cuenta para el ranking.
 - **Do** abrir sola la fila nueva, poner lo obligatorio primero y plegar lo opcional en "Más detalles".
+- **Do** decir junto a la acción principal deshabilitada qué falta ("Falta: tienda, fecha"), en vez de dejar un botón apagado sin explicación.
 - **Do** mantener intacta la gráfica de rate acumulado del detalle de partida: es firma del producto y viene de feedback de jugadores reales.
 
 ### Don't:

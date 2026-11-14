@@ -278,6 +278,9 @@
   .bg-danger {
     background-color: #ff5f6d;
   }
+  .bg-warning {
+    background-color: #ffd54a;
+  }
   .text-secondary-label {
     color: #aab6d1;
   }

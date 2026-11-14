@@ -6,6 +6,7 @@ import { useTCG } from "@/context/tcg.context";
 import { nexus } from "@/integrations/nexus/client";
 import { ProfileDrawer } from "@/components/layout/ProfileDrawer";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { BTN_OUTLINE, BTN_PRIMARY, FOCUS_RING } from "@/components/stores/store-ui";
 
 const GUEST_LINKS = [
   { to: "/", label: "Ranking" },
@@ -21,6 +22,7 @@ export function AppHeader() {
   const { setTcgs } = useTCG();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAuthPage = ["/login", "/signup", "/check-inbox", "/reset-password"].includes(pathname);
 
   const isStaffRoute =
     pathname.startsWith("/admin") ||
@@ -93,18 +95,20 @@ export function AppHeader() {
               </>
             ) : !loading && !probablyAuthed ? (
               <>
-                <Link
-                  to="/login"
-                  className="hidden px-2 py-2 text-xs font-semibold uppercase tracking-wider text-gray-300 transition hover:text-white sm:inline-flex"
-                >
-                  Iniciar sesión
-                </Link>
-                <Link
-                  to="/signup"
-                  className="inline-flex rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground transition hover:brightness-110"
-                >
-                  Crear cuenta
-                </Link>
+                {pathname !== "/login" && (
+                  <Link
+                    to="/login"
+                    className={`hidden min-h-9 items-center rounded-md px-2 text-sm font-medium text-foreground-secondary transition hover:text-foreground sm:inline-flex ${FOCUS_RING}`}
+                  >
+                    Iniciar sesión
+                  </Link>
+                )}
+                {pathname !== "/signup" && (
+                  // En las pantallas de acceso el cian es del formulario; aquí va neutro.
+                  <Link to="/signup" className={isAuthPage ? BTN_OUTLINE : BTN_PRIMARY}>
+                    Crear cuenta
+                  </Link>
+                )}
               </>
             ) : null}
           </div>

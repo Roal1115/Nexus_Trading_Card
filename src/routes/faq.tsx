@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -6,8 +7,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/ui/page-header";
+import { BTN_OUTLINE, FOCUS_RING, SECTION, plural } from "@/components/stores/store-ui";
 
 export const Route = createFileRoute("/faq")({
+  // La búsqueda vive en la URL: se comparte ("/faq?q=empate") y sobrevive atrás/adelante.
+  validateSearch: (s: Record<string, unknown>): { q?: string } => ({
+    q: typeof s.q === "string" && s.q ? s.q : undefined,
+  }),
   head: () => ({ meta: [{ title: "Preguntas frecuentes — TCG League" }] }),
   component: FaqPage,
 });
@@ -233,39 +239,154 @@ const SECTIONS: FaqSection[] = [
   },
 ];
 
+/** Minúsculas y sin acentos: "Región" encuentra "region". */
+const norm = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+const slug = (s: string) =>
+  norm(s)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+const TOTAL = SECTIONS.reduce((n, s) => n + s.items.length, 0);
+
+/** Varias palabras se combinan con AND sobre la pregunta, la respuesta y los pasos. */
+function matches(item: Faq, words: string[]) {
+  const text = norm([item.q, ...item.a, ...(item.steps ?? [])].join(" "));
+  return words.every((w) => text.includes(w));
+}
+
 function FaqPage() {
+  const { q = "" } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const setQ = (v: string) => navigate({ search: { q: v || undefined }, replace: true });
+
+  const words = norm(q).split(/\s+/).filter(Boolean);
+  const searching = words.length > 0;
+  const visible = searching
+    ? SECTIONS.map((s) => ({ ...s, items: s.items.filter((i) => matches(i, words)) })).filter(
+        (s) => s.items.length > 0,
+      )
+    : SECTIONS;
+  const found = visible.reduce((n, s) => n + s.items.length, 0);
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-3xl space-y-5 px-4 py-8">
       <PageHeader
-        eyebrow="Temporada 2027"
         title="Preguntas frecuentes"
+        description="Temporada 2027 · Torneos, puntos, regiones y playoffs de la liga."
         actions={
           REGLAMENTO_URL && (
-            <a
-              href={REGLAMENTO_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-md border border-primary/40 px-3 py-1.5 text-sm font-semibold text-primary hover:bg-primary/10"
-            >
+            <a href={REGLAMENTO_URL} target="_blank" rel="noreferrer" className={BTN_OUTLINE}>
               Ver reglamento
+              <span className="sr-only"> (se abre en otra pestaña)</span>
             </a>
           )
         }
       />
-      <div className="space-y-5">
-        {SECTIONS.map((section) => (
-          <section key={section.title} className="glass rounded-2xl p-5">
-            <h2 className="mb-1 text-lg font-bold text-foreground">{section.title}</h2>
-            <Accordion type="multiple">
+
+      <section aria-label="Buscar en las preguntas" className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[220px] flex-1 sm:max-w-md">
+            <Search
+              size={16}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
+            />
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Puntos, empate, playoff…"
+              aria-label="Buscar en las preguntas frecuentes"
+              autoComplete="off"
+              className="min-h-11 w-full rounded-md border border-border bg-transparent py-2 pl-9 pr-3 text-base text-foreground outline-none transition placeholder:text-foreground-subtle focus:border-primary focus:ring-1 focus:ring-primary sm:min-h-9 sm:text-sm"
+            />
+          </div>
+          {searching && found > 0 && (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              className={`min-h-11 rounded-md px-2 text-sm font-medium text-foreground-secondary transition hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+            >
+              Restablecer filtros
+            </button>
+          )}
+        </div>
+        <p
+          role="status"
+          aria-live="polite"
+          className="font-mono-stat text-sm text-foreground-subtle"
+        >
+          {searching
+            ? `${found} de ${plural(TOTAL, "pregunta", "preguntas")}`
+            : plural(TOTAL, "pregunta", "preguntas")}
+        </p>
+        {!searching && (
+          <nav aria-label="Temas" className="-mx-4 overflow-x-auto px-4">
+            <ul className="flex gap-2">
+              {SECTIONS.map((s) => (
+                <li key={s.title} className="flex-shrink-0">
+                  <a
+                    href={`#${slug(s.title)}`}
+                    className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-md border border-border px-3 text-sm text-foreground-secondary transition hover:bg-white/5 hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+                  >
+                    {s.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+      </section>
+
+      {visible.length === 0 ? (
+        <section className={`${SECTION} space-y-3`}>
+          <p className="text-foreground">Sin preguntas para “{q.trim()}”.</p>
+          <p className="text-sm text-foreground-secondary">
+            Prueba con otra palabra, como “puntos”, “subregión” o “empate”.
+          </p>
+          <button type="button" onClick={() => setQ("")} className={BTN_OUTLINE}>
+            Restablecer filtros
+          </button>
+        </section>
+      ) : (
+        visible.map((section) => (
+          <section
+            key={section.title}
+            id={slug(section.title)}
+            aria-labelledby={`${slug(section.title)}-h`}
+            className={`${SECTION} scroll-mt-20 py-2 @2xl:py-2`}
+          >
+            <h2
+              id={`${slug(section.title)}-h`}
+              className="flex items-baseline gap-2 pt-2 text-lg font-semibold text-foreground"
+            >
+              {section.title}
+              <span
+                aria-hidden="true"
+                className="font-mono-stat text-sm font-normal text-foreground-subtle"
+              >
+                {section.items.length}
+              </span>
+              <span className="sr-only">
+                , {plural(section.items.length, "pregunta", "preguntas")}
+              </span>
+            </h2>
+            {/* Al buscar, las coincidencias se abren solas; key cambia para reiniciar el estado. */}
+            <Accordion
+              key={searching ? `q:${q}` : "all"}
+              type="multiple"
+              defaultValue={searching ? section.items.map((i) => i.q) : []}
+            >
               {section.items.map((item) => (
-                <AccordionItem key={item.q} value={item.q}>
-                  <AccordionTrigger className="text-left">{item.q}</AccordionTrigger>
-                  <AccordionContent className="space-y-2 text-foreground-secondary">
+                <AccordionItem key={item.q} value={item.q} className="last:border-b-0">
+                  <AccordionTrigger className={`min-h-11 text-left text-base ${FOCUS_RING}`}>
+                    {item.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="max-w-[65ch] space-y-2 leading-6 text-foreground-secondary">
                     {item.a.map((paragraph) => (
                       <p key={paragraph}>{paragraph}</p>
                     ))}
                     {item.steps && (
-                      <ol className="list-decimal space-y-1 pl-5">
+                      <ol className="list-decimal space-y-1 pl-5 marker:font-mono-stat marker:text-foreground-subtle">
                         {item.steps.map((step) => (
                           <li key={step}>{step}</li>
                         ))}
@@ -276,8 +397,8 @@ function FaqPage() {
               ))}
             </Accordion>
           </section>
-        ))}
-      </div>
+        ))
+      )}
     </main>
   );
 }

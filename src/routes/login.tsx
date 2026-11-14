@@ -9,8 +9,17 @@ import {
   sendPasswordReset,
 } from "@/lib/nexus-auth-helpers.functions";
 import { nexus } from "@/integrations/nexus/client";
-import { motion } from "framer-motion";
 import { homeRouteForRole, useNexusRole } from "@/hooks/use-nexus-role";
+import { BTN_OUTLINE, BTN_PRIMARY } from "@/components/stores/store-ui";
+import {
+  AuthShell,
+  Field,
+  FormError,
+  PasswordInput,
+  TEXT_LINK,
+  authInput,
+  fieldProps,
+} from "@/components/auth/auth-ui";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — Nexus" }] }),
@@ -25,7 +34,8 @@ function translateAuthError(msg: string): string {
   if (m.includes("user not found") || m.includes("no user"))
     return "No encontramos una cuenta con ese correo";
   if (m.includes("email not confirmed")) return "Debes verificar tu correo antes de entrar";
-  if (m.includes("banned")) return "Tu cuenta aún no está activa. Si registraste una tienda, sigue en revisión.";
+  if (m.includes("banned"))
+    return "Tu cuenta aún no está activa. Si registraste una tienda, sigue en revisión.";
   if (m.includes("invalid email")) return "Ingresa un correo electrónico válido";
   if (m.includes("already registered") || m.includes("user already"))
     return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
@@ -50,6 +60,9 @@ function LoginPage() {
   // Email enmascarado (j*****@gmail.com) — el email real nunca llega al cliente
   const [needsConfirm, setNeedsConfirm] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
+  // Error del último envío, en línea junto al formulario.
+  const [formError, setFormError] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
 
   // Ya hay sesión (llegó por bookmark/refresh a /login): sácalo a su panel
   // en vez de mostrarle el formulario de nuevo.
@@ -73,6 +86,7 @@ function LoginPage() {
     if (loading || cooldown) return;
     setLoading(true);
     setNeedsConfirm(null);
+    setFormError(null);
 
     const res: any = await doLogin({
       data: { identifier: identifier.trim(), password },
@@ -82,11 +96,11 @@ function LoginPage() {
 
     if (!res.ok) {
       if (res.code === "not_found") {
-        toast.error("No encontramos una cuenta con ese correo o Nexus Tag");
+        setFormError("No encontramos una cuenta con ese correo o Nexus Tag.");
       } else if (res.code === "unconfirmed") {
         setNeedsConfirm(res.masked_email ?? "tu correo");
       } else {
-        toast.error(translateAuthError(res.message ?? ""));
+        setFormError(translateAuthError(res.message ?? ""));
       }
       return;
     }
@@ -94,7 +108,7 @@ function LoginPage() {
     // Instalar la sesión emitida por el servidor en el cliente
     const { error: sessionError } = await nexus.auth.setSession(res.session);
     if (sessionError) {
-      toast.error(translateAuthError(sessionError.message));
+      setFormError(translateAuthError(sessionError.message));
       return;
     }
 
@@ -119,145 +133,143 @@ function LoginPage() {
     }).catch(() => {});
     setLoading(false);
     startCooldown();
-    // Respuesta idéntica exista o no la cuenta — sin señal de enumeración
-    toast.success("Si la cuenta existe, enviamos un enlace — revisa tu bandeja de entrada");
+    // Respuesta idéntica exista o no la cuenta: sin señal de enumeración.
+    setResetSent(true);
   };
 
-  return (
-    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
-      <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
-        <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Nexus</p>
-          <h1 className="mt-2 text-3xl font-bold text-white">
-            {forgotMode ? "Recupera tu acceso" : "Bienvenido de vuelta"}
-          </h1>
-          <p className="mt-1 text-sm text-gray-400">
-            {forgotMode
-              ? "Te enviaremos un enlace para restablecer tu contraseña."
-              : "Inicia sesión para seguir tu ranking."}
-          </p>
-        </div>
+  const setMode = (forgot: boolean) => {
+    setForgotMode(forgot);
+    setFormError(null);
+    setResetSent(false);
+  };
 
-        {needsConfirm ? (
-          <div className="space-y-4 text-center">
-            <p className="text-sm text-gray-300">
-              Debes verificar tu correo antes de entrar. Enviamos un enlace a{" "}
-              <span className="text-white">{needsConfirm}</span>.
+  if (needsConfirm) {
+    return (
+      <AuthShell
+        title="Verifica tu correo"
+        description={
+          <>
+            Antes de entrar, abre el enlace que enviamos a{" "}
+            <span className="text-foreground">{needsConfirm}</span>.
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-foreground-secondary">
+            ¿No te llegó? Revisa spam o pide otro.
+          </p>
+          <button type="button" onClick={resend} className={`${BTN_OUTLINE} w-full`}>
+            Reenviar verificación
+          </button>
+          <button
+            type="button"
+            onClick={() => setNeedsConfirm(null)}
+            className={`${TEXT_LINK} w-full justify-center`}
+          >
+            Volver a iniciar sesión
+          </button>
+        </div>
+      </AuthShell>
+    );
+  }
+
+  return (
+    <AuthShell
+      title={forgotMode ? "Recupera tu acceso" : "Inicia sesión"}
+      description={
+        forgotMode
+          ? "Te enviaremos un enlace para elegir una contraseña nueva."
+          : "Entra para seguir tu ranking y registrar tus partidas."
+      }
+      footer={
+        !forgotMode && (
+          <div className="space-y-1">
+            <p className="text-foreground-secondary">
+              ¿No tienes cuenta?{" "}
+              <Link to="/signup" className={`${TEXT_LINK} text-foreground`}>
+                Crea tu cuenta
+              </Link>
             </p>
-            <p className="text-xs text-gray-500">¿No recibiste el correo?</p>
-            <button
-              onClick={resend}
-              className="w-full rounded-md border border-primary/40 bg-primary/10 py-3 text-sm font-bold uppercase tracking-widest text-primary transition hover:bg-primary/20"
-            >
-              Reenviar verificación
-            </button>
-            <button
-              onClick={() => setNeedsConfirm(null)}
-              className="text-xs uppercase tracking-wider text-gray-500 hover:text-white"
-            >
-              ← Volver a iniciar sesión
-            </button>
+            <Link to="/" className={TEXT_LINK}>
+              Ver el ranking sin cuenta
+            </Link>
           </div>
-        ) : (
-          <form onSubmit={forgotMode ? sendReset : submit} className="space-y-4">
-            <Field label="Nexus Tag o correo electrónico">
-              <input
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+        )
+      }
+    >
+      {forgotMode && resetSent ? (
+        <div role="status" className="space-y-4">
+          <p className="text-foreground">Si la cuenta existe, ya enviamos el enlace.</p>
+          <p className="text-sm text-foreground-secondary">
+            Revisa tu bandeja de entrada y spam. El enlace te lleva a elegir tu contraseña nueva.
+          </p>
+          <button type="button" onClick={() => setMode(false)} className={`${BTN_OUTLINE} w-full`}>
+            Volver a iniciar sesión
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={forgotMode ? sendReset : submit} className="space-y-4">
+          <Field id="login-id" label="Nexus Tag o correo">
+            <input
+              {...fieldProps("login-id")}
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="VoidStriker o jugador@correo.com"
+              className={authInput()}
+            />
+          </Field>
+
+          {!forgotMode && (
+            <Field
+              id="login-pass"
+              label="Contraseña"
+              aside={
+                <button type="button" onClick={() => setMode(true)} className={TEXT_LINK}>
+                  ¿La olvidaste?
+                </button>
+              }
+            >
+              <PasswordInput
+                {...fieldProps("login-pass")}
+                show={showPass}
+                onToggle={() => setShowPass((v) => !v)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Nexus Tag o jugador@nexus.gg"
-                className="input-base"
+                autoComplete="current-password"
               />
             </Field>
+          )}
 
-            {!forgotMode && (
-              <div className="animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                <Field label="Contraseña">
-                  <div className="relative">
-                    <input
-                      type={showPass ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="••••••••"
-                      className="input-base pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass((s) => !s)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-                      aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
-                    >
-                      {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
-                </Field>
-              </div>
-            )}
+          {formError && <FormError>{formError}</FormError>}
 
-            <motion.button
-              type="submit"
-              disabled={loading || cooldown}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          <button type="submit" disabled={loading || cooldown} className={`${BTN_PRIMARY} w-full`}>
+            {loading && <Loader2 size={16} aria-hidden="true" className="animate-spin" />}
+            {forgotMode
+              ? loading
+                ? "Enviando…"
+                : "Enviar enlace"
+              : loading
+                ? "Entrando…"
+                : "Entrar"}
+          </button>
+
+          {forgotMode && (
+            <button
+              type="button"
+              onClick={() => setMode(false)}
+              className={`${TEXT_LINK} w-full justify-center`}
             >
-              {loading && <Loader2 size={14} className="animate-spin" />}
-              {forgotMode ? "Enviar enlace" : "Entrar"}
-            </motion.button>
-
-            <div className="flex items-center justify-between text-xs">
-              <button
-                type="button"
-                onClick={() => setForgotMode((f) => !f)}
-                className="text-gray-500 transition hover:text-primary"
-              >
-                {forgotMode ? "← Volver" : "¿Olvidaste tu contraseña?"}
-              </button>
-              {!forgotMode && (
-                <Link to="/signup" className="font-semibold text-primary hover:text-primary/80">
-                  ¿No tienes cuenta? Únete al Circuito →
-                </Link>
-              )}
-            </div>
-          </form>
-        )}
-
-        <Link
-          to="/"
-          className="mt-6 block text-center text-xs uppercase tracking-wider text-gray-600 transition hover:text-primary"
-        >
-          Continuar como invitado →
-        </Link>
-      </div>
-
-      <style>{`
-        .input-base {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(15,17,23,0.6);
-          padding: 0.75rem 1rem;
-          color: white;
-          font-size: 0.875rem;
-          outline: none;
-          transition: all 0.15s;
-        }
-        .input-base:focus {
-          border-color: #E86A22;
-          box-shadow: 0 0 0 3px rgba(232,106,34,0.25);
-        }
-      `}</style>
-    </main>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-        {label}
-      </label>
-      {children}
-    </div>
+              Volver a iniciar sesión
+            </button>
+          )}
+        </form>
+      )}
+    </AuthShell>
   );
 }

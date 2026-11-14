@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, User, Mail, Lock, Plus, Shield, Check, ChevronDown, LogOut } from "lucide-react";
+import { Loader2, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { nexus } from "@/integrations/nexus/client";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
@@ -22,6 +22,19 @@ import { TAG_RE, TAG_RULE_MESSAGE } from "@/lib/nexus-tag";
 import { setPlayerPreferences, toggleProfilePrivacy } from "@/lib/nexus-player.functions";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import ReactDOM from "react-dom";
+import { PageHeader } from "@/components/ui/page-header";
+import { ConfirmLogout } from "@/components/layout/ConfirmLogout";
+import {
+  BTN_OUTLINE,
+  BTN_PRIMARY,
+  INPUT,
+  InlineError,
+  LABEL,
+  SECTION,
+} from "@/components/stores/store-ui";
+
+const HINT = "text-xs text-foreground-subtle";
+const H2 = "text-lg font-semibold text-foreground";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Configuración — Nexus" }] }),
@@ -33,11 +46,13 @@ function SettingsSelect({
   onChange,
   options,
   placeholder,
+  id,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: Array<{ value: string; label: string }>;
   placeholder: string;
+  id?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -55,8 +70,18 @@ function SettingsSelect({
         setOpen(false);
       }
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        btnRef.current?.focus();
+      }
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   const handleOpen = () => {
@@ -81,14 +106,22 @@ function SettingsSelect({
     <div ref={ref} className="relative">
       <button
         ref={btnRef}
+        id={id}
         type="button"
         onClick={handleOpen}
-        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white transition hover:border-white/20"
+        aria-haspopup="listbox"
+        aria-labelledby={id ? `${id}-label ${id}` : undefined}
+        aria-expanded={open}
+        className={`${INPUT} flex items-center justify-between gap-2 text-left transition hover:border-foreground-subtle`}
       >
-        <span className={selected ? "text-white" : "text-gray-500"}>
+        <span className={`truncate ${selected ? "text-foreground" : "text-foreground-subtle"}`}>
           {selected?.label ?? placeholder}
         </span>
-        <ChevronDown size={14} className="text-gray-500 flex-shrink-0" />
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          className="flex-shrink-0 text-foreground-subtle"
+        />
       </button>
 
       {open &&
@@ -103,22 +136,30 @@ function SettingsSelect({
               width: pos.width,
               zIndex: 99999,
             }}
-            className="animate-in fade-in-0 zoom-in-95 duration-150 rounded-md border border-white/10 bg-[#0f1117] shadow-xl"
+            className="animate-in fade-in-0 zoom-in-95 duration-150 rounded-md border border-border bg-popover shadow-2xl"
           >
-            <div className="max-h-60 overflow-y-auto">
+            <div role="listbox" className="max-h-60 overflow-y-auto">
               {options.map((o) => (
                 <button
                   key={o.value}
                   type="button"
+                  role="option"
+                  aria-selected={o.value === value}
                   onClick={() => {
                     onChange(o.value);
                     setOpen(false);
+                    btnRef.current?.focus();
                   }}
-                  className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition hover:bg-white/10 ${
-                    o.value === value ? "text-primary font-semibold" : "text-white"
-                  }`}
+                  className="flex min-h-11 w-full items-center justify-between gap-2 px-3 text-left text-sm text-foreground transition hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-none"
                 >
                   {o.label}
+                  {o.value === value && (
+                    <Check
+                      size={16}
+                      aria-hidden="true"
+                      className="flex-shrink-0 text-foreground-secondary"
+                    />
+                  )}
                 </button>
               ))}
             </div>
@@ -176,8 +217,14 @@ function SettingsPage() {
   const [newTcgUserId, setNewTcgUserId] = useState("");
   const [savingTcgId, setSavingTcgId] = useState(false);
 
+  // Un fallo de carga no es un formulario vacío: se muestra el error con Reintentar.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
   useEffect(() => {
     if (!authPlayer?.id) return;
+    setLoading(true);
+    setLoadFailed(false);
     fetchProfile()
       .then((res: any) => {
         setCurrentNexusTag(res.profile?.geek_tag ?? "");
@@ -192,10 +239,10 @@ function SettingsPage() {
         setHomeStoreId(res.profile?.home_store_id ?? "");
         setStores(res.stores ?? []);
       })
-      .catch(() => toast.error("Error al cargar tu perfil"))
+      .catch(() => setLoadFailed(true))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authPlayer?.id]);
+  }, [authPlayer?.id, retryKey]);
 
   const isPlayer = playerRole === "player" || playerRole === "";
   const availableGames = allGames.filter((g) => !tcgIds.some((t) => t.game_id === g.id));
@@ -318,334 +365,252 @@ function SettingsPage() {
   if (!authLoading && !authPlayer) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <h2 className="text-2xl font-bold text-white">Debes iniciar sesión</h2>
-        <Link
-          to="/login"
-          className="mt-6 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground"
-        >
+        <h1 className="text-2xl font-bold text-foreground">
+          Inicia sesión para ver tu configuración
+        </h1>
+        <Link to="/login" className={`${BTN_PRIMARY} mt-6`}>
           Iniciar sesión
         </Link>
       </main>
     );
   }
 
+  const shell = (children: React.ReactNode) => (
+    <main className="mx-auto max-w-2xl space-y-5 px-4 py-8 sm:px-6">
+      <PageHeader title="Configuración" description="Tu perfil, privacidad y cuenta." />
+      {children}
+    </main>
+  );
+
   if (loading) {
-    return (
-      <div className="mx-auto max-w-2xl space-y-6 px-4 py-10 sm:px-6">
-        <header className="space-y-2">
-          <div className="h-2 w-20 rounded bg-white/[0.06] animate-pulse" />
-          <div className="h-7 w-40 rounded bg-white/[0.06] animate-pulse" />
-        </header>
-
-        {/* Perfil skeleton */}
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-40" height="h-4" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <SkeletonLine width="w-16" height="h-2" />
-              <SkeletonBlock className="h-9 w-full rounded-md" />
-              <SkeletonLine width="w-32" height="h-2" />
-            </div>
-            <div className="space-y-2">
-              <SkeletonLine width="w-24" height="h-2" />
-              <SkeletonBlock className="h-9 w-full rounded-md" />
-              <SkeletonLine width="w-28" height="h-2" />
-            </div>
-          </div>
-          <SkeletonLine width="w-32" height="h-8" className="rounded-lg" />
-        </div>
-
-        {/* Email skeleton */}
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-32" height="h-4" />
-          <SkeletonLine width="w-full" height="h-3" />
-          <SkeletonLine width="w-48" height="h-3" />
-          <div className="flex gap-2">
-            <SkeletonBlock className="h-9 flex-1 rounded-md" />
-            <SkeletonLine width="w-24" height="h-9" className="rounded-lg" />
-          </div>
-        </div>
-
-        {/* Password skeleton */}
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-40" height="h-4" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <SkeletonLine width="w-28" height="h-2" />
-              <SkeletonBlock className="h-9 w-full rounded-md" />
-            </div>
-            <div className="space-y-2">
-              <SkeletonLine width="w-32" height="h-2" />
-              <SkeletonBlock className="h-9 w-full rounded-md" />
-            </div>
-          </div>
-          <SkeletonLine width="w-36" height="h-8" className="rounded-lg" />
-        </div>
-
-        {/* TCG IDs skeleton */}
-        <div className="glass space-y-4 rounded-2xl p-6">
-          <SkeletonLine width="w-32" height="h-4" />
-          <SkeletonLine width="w-full" height="h-3" />
-          <div className="space-y-2">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.02] px-3 py-2.5"
-              >
-                <div className="space-y-1.5">
-                  <SkeletonLine width="w-20" height="h-2" />
-                  <SkeletonLine width="w-32" height="h-4" />
-                </div>
-                <SkeletonLine width="w-20" height="h-5" className="rounded-md" />
+    return shell(
+      <div aria-busy="true" aria-label="Cargando configuración" className="space-y-5">
+        {[3, 3, 2, 3].map((rows, i) => (
+          <div key={i} className={`${SECTION} space-y-4`}>
+            <SkeletonLine width="w-40" height="h-5" />
+            {Array.from({ length: rows }).map((_, j) => (
+              <div key={j} className="space-y-2">
+                <SkeletonLine width="w-28" height="h-3" />
+                <SkeletonBlock className="h-11 w-full rounded-md sm:h-9" />
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        ))}
+      </div>,
     );
   }
-  return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-10 sm:px-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Mi cuenta</p>
-        <h1 className="mt-1 text-2xl font-bold text-white">Configuración</h1>
-      </header>
 
+  if (loadFailed) {
+    return shell(
+      <section className={SECTION}>
+        <InlineError onRetry={() => setRetryKey((k) => k + 1)}>
+          No pudimos cargar tu configuración.
+        </InlineError>
+      </section>,
+    );
+  }
+
+  const passwordReady =
+    newPassword.length >= 8 &&
+    newPassword === confirmPassword &&
+    /[A-Z]/.test(newPassword) &&
+    /[a-z]/.test(newPassword) &&
+    /[0-9]/.test(newPassword);
+  const confirmMismatch = confirmPassword.length > 0 && confirmPassword !== newPassword;
+
+  return shell(
+    <>
       {/* Perfil */}
-      <section className="glass space-y-4 rounded-2xl p-6">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-          <User size={14} className="text-primary" /> Información de perfil
+      <section aria-labelledby="s-perfil" className={`${SECTION} space-y-4`}>
+        <h2 id="s-perfil" className={H2}>
+          Perfil
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label className="text-xs text-gray-400">Nexus Tag</label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label htmlFor="set-tag" className={LABEL}>
+              Nexus Tag
+            </label>
             <input
+              id="set-tag"
               value={nexusTag}
               onChange={(e) => setNexusTag(e.target.value)}
               placeholder={currentNexusTag}
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary placeholder:text-gray-600"
+              aria-invalid={tagInvalid}
+              aria-describedby="set-tag-hint"
+              autoComplete="off"
+              className={`${INPUT} ${tagInvalid ? "border-destructive" : ""}`}
             />
-            {tagInvalid ? (
-              <p className="text-[10px] text-red-400">{TAG_RULE_MESSAGE}</p>
-            ) : (
-              <p className="text-[10px] text-gray-500">
-                Visible públicamente en rankings y torneos.
-              </p>
-            )}
+            <p id="set-tag-hint" className={tagInvalid ? "text-xs text-destructive" : HINT}>
+              {tagInvalid ? TAG_RULE_MESSAGE : "Visible públicamente en rankings y torneos."}
+            </p>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-400">Nombre para mostrar</label>
+          <div className="space-y-1.5">
+            <label htmlFor="set-name" className={LABEL}>
+              Nombre para mostrar
+            </label>
             <input
+              id="set-name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder={currentDisplayName}
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary placeholder:text-gray-600"
+              aria-describedby="set-name-hint"
+              autoComplete="nickname"
+              className={INPUT}
             />
-            <p className="text-[10px] text-gray-500">Nombre visible en tu perfil público.</p>
+            <p id="set-name-hint" className={HINT}>
+              Nombre visible en tu perfil público.
+            </p>
           </div>
         </div>
         <button
+          type="button"
           onClick={onSaveProfile}
           disabled={savingProfile || tagInvalid || (!tagChanged && !nameChanged)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className={BTN_PRIMARY}
         >
-          {savingProfile ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-          Guardar cambios
+          {savingProfile && <Loader2 size={16} aria-hidden="true" className="animate-spin" />}
+          {savingProfile ? "Guardando…" : "Guardar cambios"}
         </button>
       </section>
 
       {/* Privacidad y preferencias */}
-      <section className="glass space-y-4 rounded-2xl p-6">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-          <Shield size={14} className="text-primary" /> Privacidad y preferencias
+      <section aria-labelledby="s-priv" className={SECTION}>
+        <h2 id="s-priv" className={H2}>
+          Privacidad y preferencias
         </h2>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm text-white">Perfil {isPublic ? "público" : "privado"}</p>
-            <p className="text-xs text-gray-500">
-              El staff de las tiendas y TCGs donde jugaste siempre puede ver esos resultados.
-            </p>
+        <div className="mt-2 divide-y divide-border">
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">
+                Perfil {isPublic ? "público" : "privado"}
+              </p>
+              <p className="mt-0.5 text-sm text-foreground-secondary">
+                El staff de las tiendas y TCGs donde jugaste siempre puede ver esos resultados.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onTogglePrivacy}
+              className={`${BTN_OUTLINE} flex-shrink-0`}
+            >
+              Hacer {isPublic ? "privado" : "público"}
+            </button>
           </div>
-          <button
-            onClick={onTogglePrivacy}
-            className="flex-shrink-0 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
-          >
-            Hacer {isPublic ? "privado" : "público"}
-          </button>
+          {zones.length > 0 && (
+            <div className="space-y-1.5 py-4">
+              <label id="set-zone-label" htmlFor="set-zone" className={LABEL}>
+                Mi zona
+              </label>
+              <SettingsSelect
+                id="set-zone"
+                value={zone}
+                onChange={onZoneChange}
+                placeholder="Selecciona tu zona"
+                options={zones.map((z) => ({ value: z, label: z }))}
+              />
+              <p className={HINT}>El calendario se abre en esta zona.</p>
+            </div>
+          )}
+          {isPlayer && stores.length > 0 && (
+            <div className="space-y-1.5 py-4 last:pb-0">
+              <label id="set-store-label" htmlFor="set-store" className={LABEL}>
+                Mi tienda principal{" "}
+                <span className="font-normal text-foreground-subtle">(opcional)</span>
+              </label>
+              <SettingsSelect
+                id="set-store"
+                value={homeStoreId}
+                onChange={onHomeStoreChange}
+                placeholder="Sin tienda principal"
+                options={[
+                  { value: "", label: "Sin tienda principal" },
+                  ...stores.map((s) => ({
+                    value: s.id,
+                    label: s.city ? `${s.name} · ${s.city}` : s.name,
+                  })),
+                ]}
+              />
+              <p className={HINT}>Se muestra en tu Inicio y en tu perfil.</p>
+            </div>
+          )}
         </div>
-        {zones.length > 0 && (
-          <div className="space-y-1">
-            <label className="text-xs text-gray-400">Mi zona</label>
-            <SettingsSelect
-              value={zone}
-              onChange={onZoneChange}
-              placeholder="Selecciona tu zona"
-              options={zones.map((z) => ({ value: z, label: z }))}
-            />
-            <p className="text-[10px] text-gray-500">El calendario se abre en esta zona.</p>
-          </div>
-        )}
-        {isPlayer && stores.length > 0 && (
-          <div className="space-y-1">
-            <label className="text-xs text-gray-400">Mi tienda principal (opcional)</label>
-            <SettingsSelect
-              value={homeStoreId}
-              onChange={onHomeStoreChange}
-              placeholder="Sin tienda principal"
-              options={[
-                { value: "", label: "Sin tienda principal" },
-                ...stores.map((s) => ({
-                  value: s.id,
-                  label: s.city ? `${s.name} · ${s.city}` : s.name,
-                })),
-              ]}
-            />
-            <p className="text-[10px] text-gray-500">Se muestra en tu Inicio y en tu perfil.</p>
-          </div>
-        )}
-      </section>
-
-      {/* Email */}
-      <section className="glass space-y-4 rounded-2xl p-6">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-          <Mail size={14} className="text-primary" /> Email
-        </h2>
-        {currentEmail && (
-          <p className="text-xs text-gray-500">
-            Email actual: <span className="font-mono text-gray-300">{currentEmail}</span>
-          </p>
-        )}
-        {/* ponytail: cambio de email apagado hasta tener SMTP propio; después va con
-            nexus.auth.updateUser({ email }) aquí y se borra updateMyEmail. */}
-        <p className="text-xs text-gray-400">Cambiar tu email estará disponible muy pronto.</p>
-      </section>
-
-      {/* Contraseña */}
-      <section className="glass space-y-4 rounded-2xl p-6">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-          <Lock size={14} className="text-primary" /> Cambiar contraseña
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label className="text-xs text-gray-400">Nueva contraseña</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Mínimo 8 caracteres"
-              className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-400">Confirmar contraseña</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repite la contraseña"
-              className={`w-full rounded-md border bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary ${
-                confirmPassword.length > 0 && confirmPassword !== newPassword
-                  ? "border-red-500/50"
-                  : "border-white/10"
-              }`}
-            />
-            {confirmPassword.length > 0 && confirmPassword !== newPassword && (
-              <p className="text-[10px] text-red-400">Las contraseñas no coinciden</p>
-            )}
-            {confirmPassword.length > 0 &&
-              confirmPassword === newPassword &&
-              newPassword.length >= 8 && (
-                <p className="text-[10px] text-emerald-400">✓ Las contraseñas coinciden</p>
-              )}
-          </div>
-        </div>
-
-        <PasswordStrength password={newPassword} />
-
-        <button
-          onClick={onUpdatePassword}
-          disabled={
-            savingPassword ||
-            newPassword.length < 8 ||
-            newPassword !== confirmPassword ||
-            !/[A-Z]/.test(newPassword) ||
-            !/[a-z]/.test(newPassword) ||
-            !/[0-9]/.test(newPassword)
-          }
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          {savingPassword ? <Loader2 size={12} className="animate-spin" /> : <Lock size={12} />}
-          Cambiar contraseña
-        </button>
       </section>
 
       {/* TCG IDs — solo jugadores */}
       {isPlayer && (
-        <section className="glass space-y-4 rounded-2xl p-6">
-          <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-            <Shield size={14} className="text-primary" /> Mis IDs de TCG
+        <section aria-labelledby="s-ids" className={SECTION}>
+          <h2 id="s-ids" className={H2}>
+            Mis IDs de TCG
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="mt-1 text-sm text-foreground-secondary">
             Una vez registrado un ID, no puede ser modificado. Si hay un error, contacta a un
             administrador.
           </p>
 
           {tcgIds.length > 0 && (
-            <div className="space-y-2">
+            <ul className="mt-3 divide-y divide-border border-y border-border">
               {tcgIds.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.02] px-3 py-2.5"
-                >
-                  <div>
-                    <p className="text-xs font-semibold text-primary">{t.game_name}</p>
-                    <p className="font-mono text-sm text-white">{t.tcg_user_id}</p>
+                <li key={t.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="text-xs text-foreground-subtle">{t.game_name}</p>
+                    <p className="truncate font-mono-stat text-base text-foreground">
+                      {t.tcg_user_id}
+                    </p>
                   </div>
-                  <span className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-gray-500">
+                  <span className="flex-shrink-0 rounded-md border border-border px-2 py-0.5 text-xs text-foreground-secondary">
                     Solo lectura
                   </span>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
           {availableGames.length > 0 ? (
-            <div className="space-y-3 rounded-md border border-white/10 bg-white/[0.02] p-4">
-              <p className="text-xs font-semibold text-gray-300">Agregar nuevo ID de TCG</p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <SettingsSelect
-                  value={selectedGameId}
-                  onChange={setSelectedGameId}
-                  placeholder="Selecciona el TCG"
-                  options={availableGames.map((g) => ({ value: g.id, label: g.name }))}
-                />
-                <input
-                  value={newTcgUserId}
-                  onChange={(e) => setNewTcgUserId(e.target.value)}
-                  placeholder="Tu ID de jugador"
-                  className="flex-1 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-primary"
-                />
+            <div className="mt-4 space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Agregar un ID</h3>
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto] sm:items-end">
+                <div className="space-y-1.5">
+                  <label id="set-id-game-label" htmlFor="set-id-game" className={LABEL}>
+                    TCG
+                  </label>
+                  <SettingsSelect
+                    id="set-id-game"
+                    value={selectedGameId}
+                    onChange={setSelectedGameId}
+                    placeholder="Selecciona el TCG"
+                    options={availableGames.map((g) => ({ value: g.id, label: g.name }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="set-id-value" className={LABEL}>
+                    Tu ID de jugador
+                  </label>
+                  <input
+                    id="set-id-value"
+                    value={newTcgUserId}
+                    onChange={(e) => setNewTcgUserId(e.target.value)}
+                    autoComplete="off"
+                    aria-describedby="set-id-hint"
+                    className={`${INPUT} font-mono-stat`}
+                  />
+                </div>
                 <button
+                  type="button"
                   onClick={onAddTcgId}
                   disabled={savingTcgId || !selectedGameId || !newTcgUserId.trim()}
-                  className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  className={BTN_PRIMARY}
                 >
-                  {savingTcgId ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <Plus size={12} />
-                  )}
-                  Agregar
+                  {savingTcgId && <Loader2 size={16} aria-hidden="true" className="animate-spin" />}
+                  {savingTcgId ? "Agregando…" : "Agregar ID"}
                 </button>
               </div>
-              <p className="text-[10px] text-amber-400">
-                ⚠️ Una vez guardado, este ID no podrá modificarse. Verifica que sea correcto antes
-                de agregar.
+              <p id="set-id-hint" className="text-sm text-warning">
+                Revisa el ID antes de agregarlo: después no se puede cambiar.
               </p>
             </div>
           ) : tcgIds.length > 0 ? (
-            <p className="text-xs text-gray-500">
-              Ya tienes IDs registrados para todos los TCGs disponibles.
+            <p className={`mt-3 ${HINT}`}>
+              Ya tienes IDs registrados para todos los TCG disponibles.
             </p>
           ) : null}
         </section>
@@ -653,21 +618,96 @@ function SettingsPage() {
 
       <PushNotificationsToggle />
 
-      {/* Zona de cuenta */}
-      <section className="mt-8 border-t border-border pt-6">
-        <p className="mb-3 text-[10px] uppercase tracking-widest text-muted-foreground">Cuenta</p>
-        <button
-          type="button"
-          onClick={async () => {
-            await nexus.auth.signOut();
-            window.location.href = "/login";
-          }}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-500/20 active:scale-95"
-        >
-          <LogOut size={16} />
-          Cerrar sesión
-        </button>
+      {/* Cuenta: email, contraseña y salida */}
+      <section aria-labelledby="s-cuenta" className={SECTION}>
+        <h2 id="s-cuenta" className={H2}>
+          Cuenta
+        </h2>
+        <div className="mt-2 divide-y divide-border">
+          <div className="py-4">
+            <p className={LABEL}>Email</p>
+            {currentEmail && <p className="mt-1 break-words text-foreground">{currentEmail}</p>}
+            {/* ponytail: cambio de email apagado hasta tener SMTP propio; después va con
+                nexus.auth.updateUser({ email }) aquí y se borra updateMyEmail. */}
+            <p className={`mt-1 ${HINT}`}>Pronto podrás cambiar tu email desde aquí.</p>
+          </div>
+
+          <div className="space-y-4 py-4">
+            <h3 className="text-sm font-semibold text-foreground">Cambiar contraseña</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label htmlFor="set-pass" className={LABEL}>
+                  Nueva contraseña
+                </label>
+                <input
+                  id="set-pass"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 8 caracteres"
+                  autoComplete="new-password"
+                  className={INPUT}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="set-pass2" className={LABEL}>
+                  Confirmar contraseña
+                </label>
+                <input
+                  id="set-pass2"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repite la contraseña"
+                  autoComplete="new-password"
+                  aria-invalid={confirmMismatch}
+                  aria-describedby="set-pass2-hint"
+                  className={`${INPUT} ${confirmMismatch ? "border-destructive" : ""}`}
+                />
+                <p id="set-pass2-hint" aria-live="polite" className="text-xs">
+                  {confirmMismatch ? (
+                    <span className="text-destructive">Las contraseñas no coinciden</span>
+                  ) : confirmPassword.length > 0 && newPassword.length >= 8 ? (
+                    <span className="inline-flex items-center gap-1 text-foreground-secondary">
+                      <Check size={14} aria-hidden="true" />
+                      Las contraseñas coinciden
+                    </span>
+                  ) : null}
+                </p>
+              </div>
+            </div>
+
+            <PasswordStrength password={newPassword} />
+
+            <button
+              type="button"
+              onClick={onUpdatePassword}
+              disabled={savingPassword || !passwordReady}
+              className={BTN_PRIMARY}
+            >
+              {savingPassword && <Loader2 size={16} aria-hidden="true" className="animate-spin" />}
+              {savingPassword ? "Cambiando…" : "Cambiar contraseña"}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
+            <p className="text-sm text-foreground-secondary">
+              Sal de tu cuenta en este dispositivo.
+            </p>
+            <ConfirmLogout
+              onConfirm={async () => {
+                await nexus.auth.signOut();
+                window.location.href = "/login";
+              }}
+              trigger={
+                <button type="button" className={BTN_OUTLINE}>
+                  Cerrar sesión
+                </button>
+              }
+            />
+          </div>
+        </div>
       </section>
-    </div>
+    </>,
   );
 }

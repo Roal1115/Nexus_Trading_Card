@@ -1,12 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { nexus, type Game } from "@/integrations/nexus/client";
 import { signupPlayer } from "@/lib/nexus-auth.functions";
 import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
 import { TAG_RE, TAG_RULE_MESSAGE } from "@/lib/nexus-tag";
+import { BTN_OUTLINE, BTN_PRIMARY, ChipGroup, FOCUS_RING } from "@/components/stores/store-ui";
+import {
+  AuthShell,
+  Field,
+  PasswordInput,
+  TEXT_LINK,
+  authInput,
+  fieldProps,
+} from "@/components/auth/auth-ui";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Únete al Circuito — Nexus" }] }),
@@ -19,18 +28,15 @@ type TagStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 type Step = 1 | 2 | 3 | 4;
 type Gender = "hombre" | "mujer" | "no_especificado";
 
-const TCG_ID_CONFIG: Record<
-  string,
-  { label: string; placeholder: string; disclaimer?: string }
-> = {
+const TCG_ID_CONFIG: Record<string, { label: string; placeholder: string; disclaimer?: string }> = {
   "one-piece": { label: "Bandai ID", placeholder: "Ej: 0000198276" },
   "dragon-ball": { label: "Bandai ID", placeholder: "Ej: 0000198276" },
-  "gundam": { label: "Bandai ID", placeholder: "Ej: 0000198276" },
-  "riftbound": {
+  gundam: { label: "Bandai ID", placeholder: "Ej: 0000198276" },
+  riftbound: {
     label: "User ID de Limitless",
     placeholder: "Ej: user_abc123",
   },
-  "pokemon": {
+  pokemon: {
     label: "Player ID de Pokémon TCG Live",
     placeholder: "Ej: Trainer12345",
   },
@@ -38,7 +44,7 @@ const TCG_ID_CONFIG: Record<
     label: "Username de MTG Companion",
     placeholder: "Ej: WizardPlayer99",
     disclaimer:
-      "⚠️ Aviso importante: Debido a las políticas de privacidad de Wizards of the Coast, no se comparten IDs ni correos electrónicos. El Username de Companion que ingreses aquí será tu identificador permanente en todo el circuito y no podrá cambiarse.",
+      "Debido a las políticas de privacidad de Wizards of the Coast, no se comparten IDs ni correos electrónicos. El Username de Companion que ingreses aquí será tu identificador permanente en todo el circuito y no podrá cambiarse.",
   },
 };
 
@@ -48,8 +54,7 @@ function translateAuthError(msg: string): string {
     return "Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?";
   if (m.includes("email address") && m.includes("invalid"))
     return "Ese correo fue rechazado por el servidor. Usa un correo real (Gmail, Outlook, etc.) — no funciona test@…";
-  if (m.includes("invalid email"))
-    return "Ingresa un correo electrónico válido";
+  if (m.includes("invalid email")) return "Ingresa un correo electrónico válido";
   if (m.includes("email rate limit") || m.includes("over_email_send_rate_limit"))
     return "Se enviaron demasiados correos. Espera ~1 hora antes de intentar de nuevo.";
   if (m.includes("rate limit") || m.includes("too many"))
@@ -163,15 +168,12 @@ function SignupPage() {
 
   const step1Errors = useMemo(() => {
     const e: Record<string, string> = {};
-    if (email && !/^\S+@\S+\.\S+$/.test(email))
-      e.email = "Ingresa un correo electrónico válido";
-    if (tag && !TAG_RE.test(tag))
-      e.tag = TAG_RULE_MESSAGE;
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) e.email = "Ingresa un correo electrónico válido";
+    if (tag && !TAG_RE.test(tag)) e.tag = TAG_RULE_MESSAGE;
     if (password && !passwordIsValid(password))
       e.password =
         "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número";
-    if (confirm && confirm !== password)
-      e.confirm = "Las contraseñas no coinciden";
+    if (confirm && confirm !== password) e.confirm = "Las contraseñas no coinciden";
     return e;
   }, [email, tag, password, confirm]);
 
@@ -186,9 +188,7 @@ function SignupPage() {
 
   const step2Valid =
     selected.size > 0 &&
-    Array.from(selected).every(
-      (gameId) => (tcgIds[gameId] ?? "").trim().length > 0,
-    );
+    Array.from(selected).every((gameId) => (tcgIds[gameId] ?? "").trim().length > 0);
 
   const step3Valid = gender !== "" && birthDate !== "";
 
@@ -260,24 +260,44 @@ function SignupPage() {
   };
 
   const canContinue =
-    (step === 1 && step1Valid) ||
-    (step === 2 && step2Valid) ||
-    (step === 3 && step3Valid);
+    (step === 1 && step1Valid) || (step === 2 && step2Valid) || (step === 3 && step3Valid);
+
+  // Al cambiar de paso, el foco va al título del paso para que el lector de pantalla lo anuncie.
+  const stepTitleRef = useRef<HTMLHeadingElement>(null);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    stepTitleRef.current?.focus();
+  }, [step]);
 
   return (
-    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
-      <div className="glass w-full max-w-2xl rounded-2xl p-8 shadow-2xl">
-        <div className="mb-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Únete al Circuito
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-white">
-            Reclama tu Nexus Tag
-          </h1>
-        </div>
+    <AuthShell
+      wide
+      title="Reclama tu Nexus Tag"
+      description="Crea tu cuenta del circuito en cuatro pasos."
+      footer={
+        <p className="text-foreground-secondary">
+          ¿Ya tienes cuenta?{" "}
+          <Link to="/login" className={`${TEXT_LINK} text-foreground`}>
+            Inicia sesión
+          </Link>
+        </p>
+      }
+    >
+      <Stepper step={step} />
 
-        <Stepper step={step} />
+      <h2
+        ref={stepTitleRef}
+        tabIndex={-1}
+        className="mt-6 text-xl font-semibold text-foreground outline-none"
+      >
+        {STEP_TITLES[step - 1]}
+      </h2>
 
+      <div className="mt-4">
         {step === 1 && (
           <Step1
             {...{
@@ -328,108 +348,88 @@ function SignupPage() {
             setAgreed={setAgreed}
           />
         )}
-
-        <div className="mt-8 flex items-center justify-between">
-          {step > 1 ? (
-            <button
-              onClick={() => setStep((s) => (s - 1) as Step)}
-              className="text-xs uppercase tracking-wider text-gray-500 transition hover:text-white"
-            >
-              ← Atrás
-            </button>
-          ) : (
-            <Link
-              to="/login"
-              className="text-xs uppercase tracking-wider text-gray-500 transition hover:text-primary"
-            >
-              ¿Ya tienes cuenta? Inicia sesión
-            </Link>
-          )}
-
-          {step < 4 ? (
-            <button
-              onClick={() => setStep((s) => (s + 1) as Step)}
-              disabled={!canContinue}
-              className="rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Continuar →
-            </button>
-          ) : (
-            <button
-              onClick={handleCreate}
-              disabled={!agreed || submitting || cooldown}
-              className="flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {submitting && <Loader2 size={14} className="animate-spin" />}
-              Crear mi cuenta
-            </button>
-          )}
-        </div>
       </div>
 
-      <style>{`
-        .input-base {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(15,17,23,0.6);
-          padding: 0.75rem 1rem;
-          color: white;
-          font-size: 0.875rem;
-          outline: none;
-          transition: all 0.15s;
-        }
-        .input-base:focus {
-          border-color: #E86A22;
-          box-shadow: 0 0 0 3px rgba(232,106,34,0.25);
-        }
-        .hp-field {
-          position: absolute !important;
-          left: -10000px !important;
-          top: auto;
-          width: 1px;
-          height: 1px;
-          overflow: hidden;
-        }
-      `}</style>
-    </main>
+      <div className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-5">
+        {step > 1 ? (
+          <button
+            type="button"
+            onClick={() => setStep((s) => (s - 1) as Step)}
+            className={BTN_OUTLINE}
+          >
+            Atrás
+          </button>
+        ) : (
+          <span />
+        )}
+
+        {step < 4 ? (
+          <button
+            type="button"
+            onClick={() => setStep((s) => (s + 1) as Step)}
+            disabled={!canContinue}
+            className={BTN_PRIMARY}
+          >
+            Continuar
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={!agreed || submitting || cooldown}
+            className={BTN_PRIMARY}
+          >
+            {submitting && <Loader2 size={16} aria-hidden="true" className="animate-spin" />}
+            {submitting ? "Creando…" : "Crear mi cuenta"}
+          </button>
+        )}
+      </div>
+    </AuthShell>
   );
 }
 
+const STEP_LABELS = ["Tu cuenta", "Tu ID", "Tus datos", "Confirmar"];
+const STEP_TITLES = ["Tu cuenta", "Tu Bandai ID", "Datos demográficos", "Revisa tu información"];
+
+/** Pasos: cian solo en el actual (dónde estás); los hechos van neutros con palomita. */
 function Stepper({ step }: { step: Step }) {
-  const labels = ["Identidad", "Tu ID", "Datos", "Confirmación"];
   return (
-    <div className="mb-8 flex items-center gap-3">
-      {labels.map((label, i) => {
-        const n = (i + 1) as Step;
-        const active = step === n;
-        const done = step > n;
-        return (
-          <div key={label} className="flex flex-1 items-center gap-3">
-            <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition ${
-                done
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : active
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-white/10 bg-white/5 text-gray-500"
-              }`}
+    <div>
+      <p className="font-mono-stat text-sm text-foreground-subtle sm:hidden">Paso {step} de 4</p>
+      <ol aria-label="Pasos del registro" className="hidden items-center gap-2 sm:flex">
+        {STEP_LABELS.map((label, i) => {
+          const n = (i + 1) as Step;
+          const active = step === n;
+          const done = step > n;
+          return (
+            <li
+              key={label}
+              aria-current={active ? "step" : undefined}
+              className="flex flex-1 items-center gap-2"
             >
-              {done ? <Check size={14} /> : n}
-            </div>
-            <div className="hidden text-xs uppercase tracking-wider sm:block">
-              <span className={active || done ? "text-white" : "text-gray-500"}>
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-mono-stat text-xs ${
+                  active
+                    ? "border-primary bg-primary/15 text-primary"
+                    : done
+                      ? "border-border bg-secondary text-foreground"
+                      : "border-border text-foreground-subtle"
+                }`}
+              >
+                {done ? <Check size={14} aria-label="Hecho" /> : n}
+              </span>
+              <span
+                className={`text-sm ${active ? "font-medium text-foreground" : "text-foreground-subtle"}`}
+              >
                 {label}
               </span>
-            </div>
-            {i < labels.length - 1 && (
-              <div
-                className={`h-px flex-1 ${done ? "bg-primary" : "bg-white/10"}`}
-              />
-            )}
-          </div>
-        );
-      })}
+              {i < STEP_LABELS.length - 1 && (
+                <span aria-hidden="true" className="h-px flex-1 bg-border" />
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
@@ -466,19 +466,23 @@ function Step1(props: {
     hp,
     setHp,
   } = props;
+  const tagHint = "Tu nombre único en Nexus. Letras, números y guiones bajos.";
   return (
     <div className="space-y-4">
-      <Field label="Correo electrónico" error={step1Errors.email}>
+      <Field id="su-email" label="Correo electrónico" error={step1Errors.email}>
         <input
+          {...fieldProps("su-email", { error: step1Errors.email })}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="jugador@nexus.gg"
-          className="input-base"
+          autoComplete="email"
+          placeholder="jugador@correo.com"
+          className={authInput(step1Errors.email)}
         />
       </Field>
 
-      <div className="hp-field" aria-hidden="true">
+      {/* Honeypot: fuera de pantalla para personas, visible para bots. */}
+      <div className="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
         <label>
           Sitio web
           <input
@@ -492,48 +496,47 @@ function Step1(props: {
       </div>
 
       <Field
+        id="su-tag"
         label="Tu Nexus Tag"
-        hint="Tu nombre único en Nexus. Letras, números y guiones bajos."
+        hint={tagHint}
         error={step1Errors.tag}
-        rightHint={<TagBadge status={tagStatus} />}
+        aside={<TagBadge status={tagStatus} />}
       >
         <input
+          {...fieldProps("su-tag", { error: step1Errors.tag, hint: tagHint })}
           value={tag}
           onChange={(e) => setTag(e.target.value.trim())}
           maxLength={30}
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           placeholder="VoidStriker"
-          className="input-base"
+          className={authInput(step1Errors.tag)}
         />
       </Field>
 
-      <Field label="Contraseña" error={step1Errors.password}>
-        <div className="relative">
-          <input
-            type={showPass ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="input-base pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPass((s) => !s)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-            aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
-          >
-            {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-        </div>
+      <Field id="su-pass" label="Contraseña" error={step1Errors.password}>
+        <PasswordInput
+          {...fieldProps("su-pass", { error: step1Errors.password })}
+          show={showPass}
+          onToggle={() => setShowPass((s) => !s)}
+          error={step1Errors.password}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
+        />
         <PasswordStrength password={password} />
       </Field>
 
-      <Field label="Confirmar contraseña" error={step1Errors.confirm}>
-        <input
-          type={showPass ? "text" : "password"}
+      <Field id="su-pass2" label="Confirmar contraseña" error={step1Errors.confirm}>
+        <PasswordInput
+          {...fieldProps("su-pass2", { error: step1Errors.confirm })}
+          show={showPass}
+          onToggle={() => setShowPass((s) => !s)}
+          error={step1Errors.confirm}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          placeholder="••••••••"
-          className="input-base"
+          autoComplete="new-password"
         />
       </Field>
     </div>
@@ -542,23 +545,24 @@ function Step1(props: {
 
 function TagBadge({ status }: { status: TagStatus }) {
   if (status === "idle") return null;
-  if (status === "checking")
-    return (
-      <span className="flex items-center gap-1 text-[10px] text-gray-500">
-        <Loader2 size={10} className="animate-spin" /> Verificando
-      </span>
-    );
-  if (status === "invalid")
-    return <span className="text-[10px] text-red-400">Formato inválido</span>;
-  if (status === "available")
-    return (
-      <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-        <Check size={10} /> Disponible
-      </span>
-    );
+  const base = "flex items-center gap-1 text-xs";
   return (
-    <span className="flex items-center gap-1 text-[10px] text-red-400">
-      <X size={10} /> Ya está en uso
+    <span aria-live="polite" className={base}>
+      {status === "checking" ? (
+        <span className="flex items-center gap-1 text-foreground-subtle">
+          <Loader2 size={14} aria-hidden="true" className="animate-spin" /> Verificando
+        </span>
+      ) : status === "invalid" ? (
+        <span className="text-destructive">Formato inválido</span>
+      ) : status === "available" ? (
+        <span className="flex items-center gap-1 text-success">
+          <Check size={14} aria-hidden="true" /> Disponible
+        </span>
+      ) : (
+        <span className="flex items-center gap-1 text-destructive">
+          <X size={14} aria-hidden="true" /> Ya está en uso
+        </span>
+      )}
     </span>
   );
 }
@@ -580,88 +584,86 @@ function Step2({
 }) {
   return (
     <div>
-      <h2 className="mb-1 text-xl font-semibold text-white">
-        Tu Bandai ID
-      </h2>
-      <p className="mb-5 text-sm text-gray-400">
-        Las tiendas registran tus torneos con este ID. Si no coincide, tus resultados no llegarán a tu perfil. Revísalo bien: no se puede cambiar después.
+      <p className="text-sm text-foreground-secondary">
+        Las tiendas registran tus torneos con este ID. Si no coincide, tus resultados no llegarán a
+        tu perfil. Revísalo bien: no se puede cambiar después.
       </p>
 
       {loading ? (
-        <div className="flex justify-center py-10">
-          <Loader2 className="animate-spin text-primary" />
-        </div>
-      ) : games.length === 0 ? (
-        <p className="rounded-md border border-white/10 bg-white/5 p-4 text-center text-sm text-gray-400">
-          Aún no hay juegos disponibles.
+        <p role="status" className="mt-5 flex items-center gap-2 text-sm text-foreground-secondary">
+          <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+          Cargando juegos…
         </p>
+      ) : games.length === 0 ? (
+        <p className="mt-5 text-sm text-foreground-secondary">Aún no hay juegos disponibles.</p>
       ) : (
-        <div className="space-y-3">
+        <ul className="mt-5 divide-y divide-border border-t border-border">
           {games.map((g) => {
             const on = selected.has(g.id);
-            const config =
-              TCG_ID_CONFIG[g.slug ?? ""] ?? {
-                label: "ID de jugador",
-                placeholder: "Tu ID",
-              };
+            const config = TCG_ID_CONFIG[g.slug ?? ""] ?? {
+              label: "ID de jugador",
+              placeholder: "Tu ID",
+            };
+            const inputId = `su-tcg-${g.id}`;
             return (
-              <div
-                key={g.id}
-                className="overflow-hidden rounded-xl border border-white/10"
-              >
-                <button
-                  type="button"
-                  onClick={() => toggle(g.id)}
-                  className={`flex w-full items-center justify-between px-4 py-3 transition ${
-                    on
-                      ? "border-primary bg-primary/10"
-                      : "bg-white/[0.03] hover:bg-white/5"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex h-5 w-5 items-center justify-center rounded border transition ${
-                        on ? "border-primary bg-primary" : "border-white/20"
+              <li key={g.id} className="py-3">
+                {/* Con un solo juego no hay nada que elegir: se muestra como dato, no como casilla. */}
+                {games.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => toggle(g.id)}
+                    aria-pressed={on}
+                    className={`flex min-h-11 w-full items-center gap-3 rounded-md text-left ${FOCUS_RING}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-5 w-5 items-center justify-center rounded border ${
+                        on ? "border-foreground bg-foreground text-background" : "border-border"
                       }`}
                     >
-                      {on && <Check size={12} className="text-white" />}
-                    </div>
-                    <span className="text-sm font-semibold text-white">
-                      {g.name}
+                      {on && <Check size={14} />}
                     </span>
-                  </div>
-                  {g.publisher && (
-                    <span className="text-[10px] uppercase tracking-wider text-gray-500">
-                      {g.publisher}
-                    </span>
-                  )}
-                </button>
+                    <span className="font-medium text-foreground">{g.name}</span>
+                    {g.publisher && (
+                      <span className="ml-auto text-xs text-foreground-subtle">{g.publisher}</span>
+                    )}
+                  </button>
+                ) : (
+                  <p className="flex items-baseline justify-between gap-3">
+                    <span className="font-medium text-foreground">{g.name}</span>
+                    {g.publisher && (
+                      <span className="text-xs text-foreground-subtle">{g.publisher}</span>
+                    )}
+                  </p>
+                )}
 
                 {on && (
-                  <div className="space-y-2 border-t border-white/10 bg-black/20 px-4 py-3">
+                  <div className="mt-3 space-y-3">
                     {config.disclaimer && (
-                      <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-300">
-                        {config.disclaimer}
-                      </div>
+                      <p className="text-sm text-warning">{config.disclaimer}</p>
                     )}
                     <Field
+                      id={inputId}
                       label={config.label}
                       hint="Requerido para participar en el circuito"
                     >
                       <input
+                        {...fieldProps(inputId, { hint: true })}
                         type="text"
                         value={tcgIds[g.id] ?? ""}
                         onChange={(e) => setTcgId(g.id, e.target.value)}
+                        autoComplete="off"
+                        spellCheck={false}
                         placeholder={config.placeholder}
-                        className="input-base"
+                        className={`${authInput()} font-mono-stat`}
                       />
                     </Field>
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
@@ -678,54 +680,40 @@ function Step3Demographics({
   birthDate: string;
   setBirthDate: (d: string) => void;
 }) {
-  const maxDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000 * 5)
-    .toISOString()
-    .split("T")[0];
+  const maxDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000 * 5).toISOString().split("T")[0];
 
   return (
     <div className="space-y-5">
-      <h2 className="text-xl font-semibold text-white">Datos demográficos</h2>
-      <p className="text-sm text-gray-400">
-        Esta información es de uso interno del circuito y no será visible
-        públicamente.
+      <p className="text-sm text-foreground-secondary">
+        Esta información es de uso interno del circuito y no será visible públicamente.
       </p>
 
-      <Field label="Género *">
-        <div className="grid grid-cols-3 gap-2">
-          {(
-            [
-              { value: "hombre", label: "Hombre" },
-              { value: "mujer", label: "Mujer" },
-              { value: "no_especificado", label: "No especificado" },
-            ] as { value: Gender; label: string }[]
-          ).map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setGender(opt.value)}
-              className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
-                gender === opt.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/30"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </Field>
+      <div className="space-y-1.5">
+        <p id="su-gender-label" className="text-sm font-medium text-foreground-secondary">
+          Género
+        </p>
+        <ChipGroup
+          label="Género"
+          value={gender || null}
+          onChange={(k) => k && setGender(k as Gender)}
+          options={[
+            { key: "hombre", label: "Hombre" },
+            { key: "mujer", label: "Mujer" },
+            { key: "no_especificado", label: "No especificado" },
+          ]}
+        />
+      </div>
 
-      <Field label="Fecha de nacimiento *">
+      <Field id="su-birth" label="Fecha de nacimiento">
         <input
+          {...fieldProps("su-birth")}
           type="date"
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
           max={maxDate}
-          className="input-base"
+          autoComplete="bday"
+          className={authInput()}
         />
-        <p className="mt-1 text-[11px] text-gray-600">
-          Tu fecha de nacimiento no será visible para otros usuarios.
-        </p>
       </Field>
     </div>
   );
@@ -746,38 +734,25 @@ function Step4Confirm({
 }) {
   return (
     <div className="space-y-5">
-      <h2 className="text-xl font-semibold text-white">Revisa tu información</h2>
-
-      <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
+      <dl className="divide-y divide-border border-y border-border text-sm">
         <Row label="Correo" value={email} />
         <Row label="Nexus Tag" value={tag} />
-        <div>
-          <div className="mb-1 text-[10px] uppercase tracking-widest text-gray-500">
-            Juegos
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {games.map((g) => (
-              <span
-                key={g.id}
-                className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary/80"
-              >
-                {g.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+        <Row
+          label={games.length === 1 ? "Juego" : "Juegos"}
+          value={games.map((g) => g.name).join(", ")}
+        />
+      </dl>
 
-      <label className="flex cursor-pointer items-start gap-3 text-sm text-gray-300">
+      <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-foreground-secondary">
         <input
           type="checkbox"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
-          className="mt-1 h-4 w-4 accent-primary"
+          className="mt-0.5 h-5 w-5 flex-shrink-0 accent-primary"
         />
         <span>
           Acepto los{" "}
-          <a href="#" className="text-primary hover:underline">
+          <a href="#" className="text-foreground underline underline-offset-4">
             Términos y Condiciones
           </a>{" "}
           y confirmo que soy una persona real.
@@ -789,42 +764,9 @@ function Step4Confirm({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-[10px] uppercase tracking-widest text-gray-500">
-        {label}
-      </span>
-      <span className="text-white">{value}</span>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-  hint,
-  error,
-  rightHint,
-}: {
-  label: string;
-  children: React.ReactNode;
-  hint?: string;
-  error?: string;
-  rightHint?: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <label className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-          {label}
-        </label>
-        {rightHint}
-      </div>
-      {children}
-      {error ? (
-        <p className="mt-1 text-[11px] text-red-400">{error}</p>
-      ) : hint ? (
-        <p className="mt-1 text-[11px] text-gray-600">{hint}</p>
-      ) : null}
+    <div className="flex items-baseline justify-between gap-4 py-3">
+      <dt className="text-foreground-subtle">{label}</dt>
+      <dd className="min-w-0 break-words text-right text-foreground">{value}</dd>
     </div>
   );
 }

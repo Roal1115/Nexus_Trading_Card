@@ -9,6 +9,15 @@ export const BTN_OUTLINE =
 export const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50";
 
+/** Campo de texto del sistema: 44px de toque en móvil; el texto de 16px lo fuerza el CSS global. */
+export const INPUT =
+  "min-h-11 w-full rounded-md border border-border bg-transparent px-3 text-sm text-foreground placeholder:text-foreground-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:min-h-9";
+
+export const LABEL = "text-sm font-medium text-foreground-secondary";
+
+/** La acción principal de la vista (la única en cian). Deshabilitada pasa a neutra, no a cian apagado. */
+export const BTN_PRIMARY = `inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-secondary disabled:text-foreground-subtle sm:min-h-9 ${FOCUS_RING}`;
+
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**

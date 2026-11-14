@@ -1,20 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
-import {
-  Plus,
-  Trash2,
-  ChevronRight,
-  ChevronDown,
-  ShieldQuestion,
-  X,
-  Search,
-  Loader2,
-  Images,
-} from "lucide-react";
+import { Plus, Trash2, ChevronRight, ChevronDown, X, Search, Loader2, Images } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import {
   getStandaloneSessions,
@@ -31,9 +22,12 @@ import { ColorDots } from "@/components/tournament-tracker/color-dots";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import {
   BTN_OUTLINE,
+  BTN_PRIMARY,
   ChipGroup,
   FOCUS_RING,
+  INPUT,
   InlineError,
+  LABEL,
   SECTION,
 } from "@/components/stores/store-ui";
 import { sessionsPageQuery } from "@/lib/sessions-queries";
@@ -78,10 +72,6 @@ function formatShortDate(date: string | null): string {
   });
 }
 
-const INPUT =
-  "min-h-11 w-full rounded-md border border-border bg-transparent px-3 text-sm text-foreground placeholder:text-foreground-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50";
-const LABEL = "text-sm font-medium text-foreground-secondary";
-const BTN_PRIMARY = `inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-9 ${FOCUS_RING}`;
 
 /** Récord V–D en mono; en Casual va neutro porque no cuenta para el ranking. */
 function RecordCell({ wins, losses, muted }: { wins: number; losses: number; muted?: boolean }) {
@@ -581,14 +571,18 @@ function LeaderArtSwitcher({
 }) {
   const fetchLeaders = useServerFn(getDeckIdentifiers);
   const [open, setOpen] = useState(false);
-  const [variants, setVariants] = useState<DeckIdentifier[]>([]);
+  const [variants, setVariants] = useState<DeckIdentifier[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!open || !value.card_set_id) return;
+    setVariants(null);
+    setFailed(false);
     fetchLeaders({ data: { game_id: gameId, card_set_id: value.card_set_id } })
       .then((rows) => setVariants(rows as DeckIdentifier[]))
-      .catch(() => setVariants([]));
-  }, [open, value.card_set_id, gameId, fetchLeaders]);
+      .catch(() => setFailed(true));
+  }, [open, value.card_set_id, gameId, fetchLeaders, retryKey]);
 
   return (
     <div className="mt-2">
@@ -620,8 +614,16 @@ function LeaderArtSwitcher({
             className="overflow-hidden"
           >
             <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
-              {variants.length === 0 ? (
-                <p className="text-xs text-foreground-subtle">Buscando artes…</p>
+              {failed ? (
+                <InlineError onRetry={() => setRetryKey((k) => k + 1)}>
+                  No pudimos cargar las artes.
+                </InlineError>
+              ) : variants === null ? (
+                <p role="status" className="text-xs text-foreground-subtle">
+                  Buscando artes…
+                </p>
+              ) : variants.length === 0 ? (
+                <p className="text-xs text-foreground-subtle">Esta carta no tiene otras artes.</p>
               ) : (
                 variants.map((v) => (
                   <button
@@ -677,19 +679,23 @@ function LeaderSelect({
   const fetchLeaders = useServerFn(getDeckIdentifiers);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<DeckIdentifier[]>([]);
+  const [options, setOptions] = useState<DeckIdentifier[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!open || !gameId) return;
+    setOptions(null);
+    setFailed(false);
     const t = setTimeout(() => {
       fetchLeaders({
         data: { game_id: gameId, search: search || undefined, basic_only: true },
       })
         .then((rows) => setOptions(rows as DeckIdentifier[]))
-        .catch(() => setOptions([]));
+        .catch(() => setFailed(true));
     }, 200);
     return () => clearTimeout(t);
-  }, [open, search, gameId, fetchLeaders]);
+  }, [open, search, gameId, fetchLeaders, retryKey]);
 
   return (
     <div className="relative">
@@ -715,7 +721,10 @@ function LeaderSelect({
       </button>
 
       {open && (
-        <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-20 mt-1 w-full rounded-md border border-border bg-popover shadow-2xl">
+        <div
+          ref={(el) => el?.scrollIntoView({ block: "nearest", behavior: "smooth" })}
+          className="mt-1 rounded-md border border-border bg-secondary"
+        >
           <div className="relative p-2">
             <Search
               size={16}
@@ -732,8 +741,20 @@ function LeaderSelect({
             />
           </div>
           <div className="max-h-64 overflow-y-auto">
-            {options.length === 0 ? (
-              <p className="px-3 py-3 text-sm text-foreground-subtle">Sin resultados.</p>
+            {failed ? (
+              <div className="px-3 py-3">
+                <InlineError onRetry={() => setRetryKey((k) => k + 1)}>
+                  No pudimos cargar los leaders.
+                </InlineError>
+              </div>
+            ) : options === null ? (
+              <p role="status" className="px-3 py-3 text-sm text-foreground-subtle">
+                Buscando leaders…
+              </p>
+            ) : options.length === 0 ? (
+              <p className="px-3 py-3 text-sm text-foreground-subtle">
+                {search.trim() ? `Sin leaders para “${search.trim()}”.` : "Sin leaders."}
+              </p>
             ) : (
               options.map((opt) => (
                 <button
@@ -761,11 +782,6 @@ function LeaderSelect({
       {value?.card_image && gameId && (
         <LeaderArtSwitcher gameId={gameId} value={value} onChange={onChange} />
       )}
-      {!value && (
-        <div className="mt-2 flex h-20 w-14 items-center justify-center rounded-md border border-border bg-muted">
-          <ShieldQuestion size={18} aria-hidden="true" className="text-foreground-subtle" />
-        </div>
-      )}
     </div>
   );
 }
@@ -775,6 +791,12 @@ function LeaderSelect({
 // ============================================================
 type Game = { id: string; name: string; slug: string };
 type StoreRow = { id: string; name: string; city: string | null; zone: string | null };
+
+/** "Torneo del martes — Guarida Gamer": el mismo nombre que usa el prellenado desde un RSVP. */
+function suggestTournamentName(date: string, storeName: string): string {
+  const weekday = new Date(`${date}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long" });
+  return `Torneo del ${weekday} — ${storeName}`.slice(0, 100);
+}
 
 function CreateSessionSheet({
   open,
@@ -795,8 +817,12 @@ function CreateSessionSheet({
   const [sessionType, setSessionType] = useState<"competitive" | "casual" | null>(null);
   const [games, setGames] = useState<Game[]>([]);
   const [gamesLoading, setGamesLoading] = useState(false);
+  const [gamesFailed, setGamesFailed] = useState(false);
+  const [gamesRetry, setGamesRetry] = useState(0);
 
   const [name, setName] = useState("");
+  // Mientras el jugador no escriba un nombre, se sugiere uno con la tienda y la fecha.
+  const [nameTouched, setNameTouched] = useState(false);
   const [gameId, setGameId] = useState<string | null>(null);
   const [leader, setLeader] = useState<DeckIdentifier | null>(null);
   const [date, setDate] = useState("");
@@ -806,9 +832,36 @@ function CreateSessionSheet({
   const [selectedStore, setSelectedStore] = useState<StoreRow | null>(null);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
   const [storeSearching, setStoreSearching] = useState(false);
+  const [storeFailed, setStoreFailed] = useState(false);
+  const [storeRetry, setStoreRetry] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  // El diálogo se monta en document.body (The Portal Rule).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Foco: entra al diálogo al abrir y regresa al botón que lo abrió al cerrar. Escape cierra.
+  // onClose va en ref: el padre lo pasa inline y no debe reiniciar este efecto en cada render.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => panelRef.current?.focus(), 50);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCloseRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+      returnFocusRef.current?.focus();
+    };
+  }, [open]);
 
   // Reset on close
   useEffect(() => {
@@ -817,6 +870,7 @@ function CreateSessionSheet({
         setStep(1);
         setSessionType(null);
         setName("");
+        setNameTouched(false);
         setGameId(null);
         setLeader(null);
         setDate("");
@@ -825,6 +879,7 @@ function CreateSessionSheet({
         setStoreResults([]);
         setSelectedStore(null);
         setStoreDropdownOpen(false);
+        setStoreFailed(false);
         setSubmitting(false);
       }, 250);
       return () => clearTimeout(t);
@@ -833,12 +888,9 @@ function CreateSessionSheet({
 
   useEffect(() => {
     if (!open || !prefill) return;
-    const weekday = new Date(`${prefill.date}T12:00:00`).toLocaleDateString("es-MX", {
-      weekday: "long",
-    });
     setSessionType("competitive");
     setStep(2);
-    setName(`Torneo del ${weekday} — ${prefill.store_name}`.slice(0, 100));
+    setName(suggestTournamentName(prefill.date, prefill.store_name));
     setGameId(prefill.game_id);
     setDate(prefill.date);
     setTime(prefill.time);
@@ -850,11 +902,18 @@ function CreateSessionSheet({
     });
   }, [open, prefill]);
 
+  // Nombre sugerido para un torneo oficial, hasta que el jugador lo edite.
+  useEffect(() => {
+    if (sessionType !== "competitive" || nameTouched || prefill) return;
+    setName(date && selectedStore ? suggestTournamentName(date, selectedStore.name) : "");
+  }, [sessionType, nameTouched, prefill, date, selectedStore]);
+
   // Load games when opening
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setGamesLoading(true);
+    setGamesFailed(false);
     (async () => {
       try {
         const res = await fetchGames();
@@ -862,8 +921,8 @@ function CreateSessionSheet({
         const list = (res.games ?? []) as Game[];
         setGames(list);
         setGameId((prev) => prev ?? list[0]?.id ?? null);
-      } catch (e: any) {
-        if (!cancelled) toast.error(e?.message ?? "No se pudo cargar los TCG");
+      } catch {
+        if (!cancelled) setGamesFailed(true);
       } finally {
         if (!cancelled) setGamesLoading(false);
       }
@@ -871,13 +930,15 @@ function CreateSessionSheet({
     return () => {
       cancelled = true;
     };
-  }, [open, fetchGames]);
+  }, [open, fetchGames, gamesRetry]);
 
   // Store search debounce
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    setStoreFailed(false);
     if (!storeQuery.trim() || sessionType !== "competitive") {
       setStoreResults([]);
+      setStoreSearching(false);
       return;
     }
     setStoreSearching(true);
@@ -887,6 +948,7 @@ function CreateSessionSheet({
         setStoreResults(res.stores);
       } catch {
         setStoreResults([]);
+        setStoreFailed(true);
       } finally {
         setStoreSearching(false);
       }
@@ -894,15 +956,21 @@ function CreateSessionSheet({
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
-  }, [storeQuery, sessionType, searchStoresFn]);
+  }, [storeQuery, sessionType, searchStoresFn, storeRetry]);
 
-  const canSubmit = useMemo(() => {
-    if (!sessionType || !name.trim() || !gameId) return false;
+  // Lo que falta, en el orden del formulario; vacío = se puede crear.
+  const missing = useMemo(() => {
+    const out: string[] = [];
     if (sessionType === "competitive") {
-      if (!date || !time || !selectedStore) return false;
+      if (!selectedStore) out.push("tienda");
+      if (!date) out.push("fecha");
+      if (!time) out.push("hora");
     }
-    return true;
+    if (!name.trim()) out.push("nombre");
+    if (!gameId) out.push("TCG");
+    return out;
   }, [sessionType, name, gameId, date, time, selectedStore]);
+  const canSubmit = !!sessionType && missing.length === 0;
 
   const handleSubmit = async () => {
     if (!canSubmit || !sessionType || !gameId) return;
@@ -939,12 +1007,173 @@ function CreateSessionSheet({
     }
   };
 
-  return (
+  const isCompetitive = sessionType === "competitive";
+  const storeQueryTrimmed = storeQuery.trim();
+
+  const storeField = (
+    <div className="relative">
+      <label htmlFor="session-store" className={LABEL}>
+        Tienda
+      </label>
+      {selectedStore ? (
+        <div className="mt-1.5 flex min-h-11 items-center justify-between gap-2 rounded-md border border-border bg-secondary pl-3 text-sm">
+          <div className="min-w-0 py-2">
+            <div className="truncate font-medium text-foreground">{selectedStore.name}</div>
+            {selectedStore.city && (
+              <div className="text-xs text-foreground-secondary">{selectedStore.city}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedStore(null);
+              setStoreQuery("");
+            }}
+            className={`inline-flex min-h-11 flex-shrink-0 items-center rounded-md px-3 text-sm text-foreground-secondary transition hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+          >
+            Cambiar
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="relative mt-1.5">
+            <Search
+              size={16}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
+            />
+            <input
+              id="session-store"
+              type="text"
+              autoComplete="off"
+              value={storeQuery}
+              onChange={(e) => {
+                setStoreQuery(e.target.value);
+                setStoreDropdownOpen(true);
+              }}
+              onFocus={() => setStoreDropdownOpen(true)}
+              placeholder="Nombre o ciudad de la tienda"
+              aria-expanded={storeDropdownOpen && !!storeQueryTrimmed}
+              aria-controls="session-store-results"
+              className={`${INPUT} pl-9`}
+            />
+            {storeSearching && (
+              <Loader2
+                size={16}
+                aria-hidden="true"
+                className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-foreground-subtle"
+              />
+            )}
+          </div>
+          {storeDropdownOpen && storeQueryTrimmed && !storeSearching && (
+            <div
+              id="session-store-results"
+              className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-2xl"
+            >
+              {storeFailed ? (
+                <div className="p-3">
+                  <InlineError onRetry={() => setStoreRetry((k) => k + 1)}>
+                    No pudimos buscar tiendas.
+                  </InlineError>
+                </div>
+              ) : storeResults.length === 0 ? (
+                <p className="p-3 text-sm text-foreground-secondary">
+                  Sin tiendas para “{storeQueryTrimmed}”.
+                </p>
+              ) : (
+                storeResults.map((s) => (
+                  <button
+                    type="button"
+                    key={s.id}
+                    onClick={() => {
+                      setSelectedStore(s);
+                      setStoreDropdownOpen(false);
+                      setStoreQuery("");
+                    }}
+                    className="flex min-h-11 w-full flex-col items-start justify-center px-3 py-2 text-left text-sm text-foreground transition hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-none"
+                  >
+                    <span className="font-medium">{s.name}</span>
+                    {s.city && <span className="text-xs text-foreground-subtle">{s.city}</span>}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  const nameField = (
+    <div>
+      <label htmlFor="session-name" className={LABEL}>
+        Nombre
+      </label>
+      <input
+        id="session-name"
+        type="text"
+        value={name}
+        onChange={(e) => {
+          setName(e.target.value);
+          setNameTouched(true);
+        }}
+        placeholder={
+          isCompetitive ? "Se llena con la tienda y la fecha" : "Ej. Práctica del miércoles"
+        }
+        maxLength={100}
+        className={`${INPUT} mt-1.5`}
+      />
+    </div>
+  );
+
+  // Con un solo TCG no hay nada que elegir: se asigna solo y no se muestra (no repetir el juego).
+  const gameField = gamesFailed ? (
+    <InlineError onRetry={() => setGamesRetry((k) => k + 1)}>
+      No pudimos cargar tus TCG.
+    </InlineError>
+  ) : gamesLoading && games.length === 0 ? (
+    <p role="status" className="text-sm text-foreground-subtle">
+      Cargando TCG…
+    </p>
+  ) : !gamesLoading && games.length === 0 ? (
+    <p className="text-sm text-foreground-secondary">No hay TCG disponibles.</p>
+  ) : games.length > 1 ? (
+    <div>
+      <span className={LABEL}>TCG</span>
+      <div className="mt-1.5">
+        <ChipGroup
+          label="TCG"
+          options={games.map((g) => ({ key: g.id, label: g.name }))}
+          value={gameId}
+          onChange={(key) => {
+            if (!key) return;
+            setGameId(key);
+            setLeader(null);
+          }}
+        />
+      </div>
+    </div>
+  ) : null;
+
+  const leaderField = (
+    <div>
+      <span className={LABEL}>
+        Tu leader <span className="font-normal text-foreground-subtle">(opcional)</span>
+      </span>
+      <div className="mt-1.5">
+        <LeaderSelect gameId={gameId} value={leader} onChange={setLeader} />
+      </div>
+    </div>
+  );
+
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
+            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -953,253 +1182,164 @@ function CreateSessionSheet({
             className="fixed inset-0 z-50 bg-black/70"
           />
 
-          {/* Container: bottom-sheet on mobile, centered modal on desktop */}
-          <div className="fixed inset-0 z-50 flex items-end justify-center pb-[calc(4rem+env(safe-area-inset-bottom))] sm:items-center sm:p-4 pointer-events-none">
+          {/* Hoja inferior en móvil, diálogo centrado en escritorio */}
+          <div className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
             <motion.div
-              initial={{ y: "100%", opacity: 1, scale: 1 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: "100%", opacity: 1 }}
+              key="sheet"
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="create-session-title"
+              tabIndex={-1}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="pointer-events-auto w-full max-w-lg rounded-t-2xl border border-border bg-popover shadow-2xl sm:rounded-2xl"
-              style={{ maxHeight: "85vh" }}
+              className="pointer-events-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col rounded-t-2xl border border-border bg-popover shadow-2xl outline-none sm:max-h-[85dvh] sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <h2 className="text-base font-semibold text-foreground">
-                  {step === 1 ? "Nueva partida" : "Detalles de la partida"}
+              <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-border py-2 pl-5 pr-2">
+                <h2 id="create-session-title" className="text-lg font-semibold text-foreground">
+                  {step === 1
+                    ? "Nueva partida"
+                    : isCompetitive
+                      ? "Torneo oficial"
+                      : "Partida casual"}
                 </h2>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={`flex h-11 w-11 items-center justify-center rounded-md text-foreground-secondary transition hover:bg-white/5 hover:text-foreground ${FOCUS_RING}`}
-                  aria-label="Cerrar"
-                >
-                  <X size={18} aria-hidden="true" />
-                </button>
-              </div>
-
-              <div className="overflow-y-auto px-5 py-5" style={{ maxHeight: "calc(85vh - 60px)" }}>
-                {step === 1 && (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSessionType("competitive");
-                        setStep(2);
-                      }}
-                      className={`flex flex-col items-start gap-1 rounded-xl border border-border p-4 text-left transition hover:bg-white/5 ${FOCUS_RING}`}
-                    >
-                      <span className="text-base font-semibold text-foreground">
-                        Torneo oficial
-                      </span>
-                      <span className="text-sm text-foreground-secondary">
-                        Registra un torneo oficial. Se vinculará automáticamente cuando el
-                        organizador suba los resultados.
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSessionType("casual");
-                        setStep(2);
-                      }}
-                      className={`flex flex-col items-start gap-1 rounded-xl border border-border p-4 text-left transition hover:bg-white/5 ${FOCUS_RING}`}
-                    >
-                      <span className="text-base font-semibold text-foreground">
-                        Partida casual
-                      </span>
-                      <span className="text-sm text-foreground-secondary">
-                        Prácticas o partidas fuera de un torneo oficial. No cuentan para tu ranking.
-                      </span>
-                    </button>
-                  </div>
-                )}
-
-                {step === 2 && sessionType && (
-                  <div className="space-y-4">
+                <div className="flex items-center">
+                  {step === 2 && !prefill && (
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className={`inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-foreground-secondary transition hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+                      className={`inline-flex min-h-11 items-center rounded-md px-3 text-sm text-foreground-secondary transition hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
                     >
-                      {sessionType === "competitive" ? "Torneo oficial" : "Partida casual"}
-                      <span className="text-foreground-subtle">· Cambiar</span>
+                      Cambiar tipo
                     </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className={`flex h-11 w-11 items-center justify-center rounded-md text-foreground-secondary transition hover:bg-white/5 hover:text-foreground ${FOCUS_RING}`}
+                    aria-label="Cerrar"
+                  >
+                    <X size={18} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
 
-                    {/* Nombre */}
-                    <div>
-                      <label htmlFor="session-name" className={LABEL}>
-                        Nombre *
-                      </label>
-                      <input
-                        id="session-name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ej. Torneo lunes, Práctica miércoles"
-                        maxLength={100}
-                        className={`${INPUT} mt-1.5`}
-                      />
-                    </div>
+              {step === 1 && (
+                <div className="overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                  <p className="text-sm text-foreground-secondary">¿Qué vas a registrar?</p>
+                  <div className="mt-3 divide-y divide-border rounded-xl border border-border">
+                    {(
+                      [
+                        {
+                          type: "competitive",
+                          title: "Torneo oficial",
+                          body: "Cuenta para tu ranking. Se vincula sola cuando la tienda suba los resultados.",
+                        },
+                        {
+                          type: "casual",
+                          title: "Partida casual",
+                          body: "Prácticas o partidas fuera de torneo. No cuentan para tu ranking.",
+                        },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.type}
+                        type="button"
+                        onClick={() => {
+                          setSessionType(opt.type);
+                          setStep(2);
+                        }}
+                        className={`flex w-full items-center gap-3 p-4 text-left transition first:rounded-t-xl last:rounded-b-xl hover:bg-white/5 ${FOCUS_RING}`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-base font-semibold text-foreground">
+                            {opt.title}
+                          </span>
+                          <span className="mt-0.5 block text-sm text-foreground-secondary">
+                            {opt.body}
+                          </span>
+                        </span>
+                        <ChevronRight
+                          size={16}
+                          aria-hidden="true"
+                          className="flex-shrink-0 text-foreground-subtle"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                    {/* TCG */}
-                    <div>
-                      <span className={LABEL}>TCG *</span>
-                      {gamesLoading ? (
-                        <div className="mt-1.5 text-sm text-foreground-subtle">Cargando…</div>
-                      ) : games.length === 0 ? (
-                        <div className="mt-1.5 text-sm text-foreground-subtle">
-                          No hay TCGs disponibles.
-                        </div>
-                      ) : (
-                        <div className="mt-1.5">
-                          <ChipGroup
-                            label="TCG"
-                            options={games.map((g) => ({ key: g.id, label: g.name }))}
-                            value={gameId}
-                            onChange={(key) => {
-                              if (!key) return;
-                              setGameId(key);
-                              setLeader(null);
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Leader / deck propio */}
-                    <div>
-                      <span className={LABEL}>Tu leader / deck (opcional)</span>
-                      <div className="mt-1.5">
-                        <LeaderSelect gameId={gameId} value={leader} onChange={setLeader} />
-                      </div>
-                    </div>
-
-                    {/* Fecha */}
-                    <div>
-                      <label htmlFor="session-date" className={LABEL}>
-                        {sessionType === "competitive" ? "Fecha del torneo *" : "Fecha (opcional)"}
-                      </label>
-                      <input
-                        id="session-date"
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className={`${INPUT} mt-1.5`}
-                      />
-                    </div>
-
-                    {sessionType === "competitive" && (
+              {step === 2 && sessionType && (
+                <>
+                  <div className="flex-1 space-y-5 overflow-y-auto p-5">
+                    {isCompetitive ? (
                       <>
-                        {/* Hora */}
+                        {storeField}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label htmlFor="session-date" className={LABEL}>
+                              Fecha
+                            </label>
+                            <input
+                              id="session-date"
+                              type="date"
+                              value={date}
+                              onChange={(e) => setDate(e.target.value)}
+                              className={`${INPUT} mt-1.5`}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="session-time" className={LABEL}>
+                              Hora de inicio
+                            </label>
+                            <input
+                              id="session-time"
+                              type="time"
+                              value={time}
+                              onChange={(e) => setTime(e.target.value)}
+                              className={`${INPUT} mt-1.5`}
+                            />
+                          </div>
+                        </div>
+                        <p className="-mt-2 text-sm text-foreground-subtle">
+                          Con la tienda, fecha y hora correctas tu partida se vincula sola al
+                          torneo. Si no coinciden, la vinculas a mano después.
+                        </p>
+                        {nameField}
+                        {gameField}
+                        {leaderField}
+                      </>
+                    ) : (
+                      <>
+                        {nameField}
+                        {gameField}
                         <div>
-                          <label htmlFor="session-time" className={LABEL}>
-                            Hora de inicio *
+                          <label htmlFor="session-date" className={LABEL}>
+                            Fecha{" "}
+                            <span className="font-normal text-foreground-subtle">(opcional)</span>
                           </label>
                           <input
-                            id="session-time"
-                            type="time"
-                            value={time}
-                            onChange={(e) => setTime(e.target.value)}
+                            id="session-date"
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
                             className={`${INPUT} mt-1.5`}
                           />
                         </div>
-
-                        {/* Tienda */}
-                        <div className="relative">
-                          <label htmlFor="session-store" className={LABEL}>
-                            Tienda *
-                          </label>
-                          {selectedStore ? (
-                            <div className="mt-1.5 flex items-center justify-between rounded-md border border-primary/40 bg-primary/15 px-3 py-2 text-sm">
-                              <div>
-                                <div className="font-medium text-foreground">
-                                  {selectedStore.name}
-                                </div>
-                                {selectedStore.city && (
-                                  <div className="text-xs text-foreground-secondary">
-                                    {selectedStore.city}
-                                  </div>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedStore(null);
-                                  setStoreQuery("");
-                                }}
-                                className={`flex h-11 w-11 items-center justify-center rounded-md text-foreground-secondary transition hover:text-foreground sm:h-9 sm:w-9 ${FOCUS_RING}`}
-                                aria-label="Quitar tienda"
-                              >
-                                <X size={16} aria-hidden="true" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="relative mt-1.5">
-                                <Search
-                                  size={16}
-                                  aria-hidden="true"
-                                  className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
-                                />
-                                <input
-                                  id="session-store"
-                                  type="text"
-                                  value={storeQuery}
-                                  onChange={(e) => {
-                                    setStoreQuery(e.target.value);
-                                    setStoreDropdownOpen(true);
-                                  }}
-                                  onFocus={() => setStoreDropdownOpen(true)}
-                                  placeholder="Buscar tienda…"
-                                  className={`${INPUT} pl-9`}
-                                />
-                                {storeSearching && (
-                                  <Loader2
-                                    size={16}
-                                    aria-hidden="true"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-foreground-subtle"
-                                  />
-                                )}
-                              </div>
-                              {storeDropdownOpen && storeResults.length > 0 && (
-                                <div className="animate-in fade-in-0 zoom-in-95 duration-150 absolute z-10 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-border bg-popover shadow-2xl">
-                                  {storeResults.map((s) => (
-                                    <button
-                                      type="button"
-                                      key={s.id}
-                                      onClick={() => {
-                                        setSelectedStore(s);
-                                        setStoreDropdownOpen(false);
-                                        setStoreQuery("");
-                                      }}
-                                      className="flex min-h-11 w-full flex-col items-start justify-center px-3 py-2 text-left text-sm text-foreground transition hover:bg-white/5"
-                                    >
-                                      <span className="font-medium">{s.name}</span>
-                                      {s.city && (
-                                        <span className="text-xs text-foreground-subtle">
-                                          {s.city}
-                                        </span>
-                                      )}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-
-                        <p className="text-sm text-warning">
-                          Si ingresas datos incorrectos de fecha, hora o tienda, tendrás que
-                          vincular manualmente tu partida al torneo correcto después.
-                        </p>
+                        {leaderField}
                       </>
                     )}
+                  </div>
 
+                  <div className="flex-shrink-0 border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                     <button
                       type="button"
                       onClick={handleSubmit}
                       disabled={!canSubmit || submitting}
+                      aria-describedby={missing.length > 0 ? "create-session-missing" : undefined}
                       className={`${BTN_PRIMARY} w-full`}
                     >
                       {submitting ? (
@@ -1211,13 +1351,22 @@ function CreateSessionSheet({
                         "Crear partida"
                       )}
                     </button>
+                    {missing.length > 0 && (
+                      <p
+                        id="create-session-missing"
+                        className="mt-2 text-center text-xs text-foreground-subtle"
+                      >
+                        Falta: {missing.join(", ")}
+                      </p>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </motion.div>
           </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

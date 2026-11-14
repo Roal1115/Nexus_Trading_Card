@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { nexus } from "@/integrations/nexus/client";
 import { PasswordStrength, passwordIsValid } from "@/components/ui/PasswordStrength";
+import { BTN_OUTLINE, BTN_PRIMARY } from "@/components/stores/store-ui";
+import { AuthShell, Field, FormError, PasswordInput, fieldProps } from "@/components/auth/auth-ui";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Restablecer contraseña — Nexus" }] }),
@@ -32,6 +34,7 @@ function ResetPasswordPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     // Supabase establece la sesión de recuperación automáticamente al detectar
@@ -55,12 +58,15 @@ function ResetPasswordPage() {
     e.preventDefault();
     if (loading) return;
 
+    setFormError(null);
     if (!passwordIsValid(password)) {
-      toast.error("La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número");
+      setFormError(
+        "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número.",
+      );
       return;
     }
     if (password !== confirmPassword) {
-      toast.error("Las contraseñas no coinciden");
+      setFormError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -69,7 +75,7 @@ function ResetPasswordPage() {
     setLoading(false);
 
     if (error) {
-      toast.error(translateAuthError(error.message));
+      setFormError(translateAuthError(error.message));
       return;
     }
     setDone(true);
@@ -77,120 +83,74 @@ function ResetPasswordPage() {
     setTimeout(() => navigate({ to: "/login" }), 2000);
   };
 
+  const mismatch =
+    confirmPassword.length > 0 && confirmPassword !== password
+      ? "Las contraseñas no coinciden"
+      : undefined;
+
   return (
-    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
-      <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
-        <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Nexus
+    <AuthShell title="Nueva contraseña" description="Elige una contraseña nueva para tu cuenta.">
+      {checking ? (
+        <p role="status" className="flex items-center gap-2 text-sm text-foreground-secondary">
+          <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+          Verificando enlace…
+        </p>
+      ) : !validSession ? (
+        <div className="space-y-4">
+          <p className="text-foreground">Este enlace expiró o ya se usó.</p>
+          <p className="text-sm text-foreground-secondary">
+            Pide uno nuevo desde "¿La olvidaste?" en la pantalla de inicio de sesión.
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-white">Nueva contraseña</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Elige una contraseña nueva para tu cuenta.
-          </p>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/login" })}
+            className={`${BTN_OUTLINE} w-full`}
+          >
+            Ir a iniciar sesión
+          </button>
         </div>
+      ) : done ? (
+        <p role="status" className="text-foreground">
+          Listo, tu contraseña cambió. Te llevamos a iniciar sesión…
+        </p>
+      ) : (
+        <form onSubmit={submit} className="space-y-4">
+          <Field id="reset-pass" label="Nueva contraseña">
+            <PasswordInput
+              {...fieldProps("reset-pass")}
+              show={showPass}
+              onToggle={() => setShowPass((v) => !v)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+            <PasswordStrength password={password} />
+          </Field>
 
-        {checking ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-400">
-            <Loader2 size={16} className="animate-spin" />
-            Verificando enlace…
-          </div>
-        ) : !validSession ? (
-          <div className="space-y-4 text-center">
-            <p className="text-sm text-gray-300">
-              Este enlace expiró o no es válido. Solicita uno nuevo desde la pantalla de inicio
-              de sesión.
-            </p>
-            <button
-              onClick={() => navigate({ to: "/login" })}
-              className="w-full rounded-md border border-primary/40 bg-primary/10 py-3 text-sm font-bold uppercase tracking-widest text-primary transition hover:bg-primary/20"
-            >
-              Volver a iniciar sesión
-            </button>
-          </div>
-        ) : done ? (
-          <div className="space-y-4 text-center">
-            <p className="text-sm text-gray-300">
-              Tu contraseña fue actualizada. Redirigiendo…
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="space-y-4">
-            <Field label="Nueva contraseña">
-              <div className="relative">
-                <input
-                  type={showPass ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  placeholder="••••••••"
-                  className="input-base pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-                  aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              <PasswordStrength password={password} />
-            </Field>
+          <Field id="reset-pass2" label="Confirmar contraseña" error={mismatch}>
+            <PasswordInput
+              {...fieldProps("reset-pass2", { error: mismatch })}
+              show={showPass}
+              onToggle={() => setShowPass((v) => !v)}
+              error={mismatch}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+          </Field>
 
-            <Field label="Confirmar contraseña">
-              <input
-                type={showPass ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={8}
-                placeholder="••••••••"
-                className="input-base"
-              />
-            </Field>
+          {formError && <FormError>{formError}</FormError>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading && <Loader2 size={14} className="animate-spin" />}
-              Guardar nueva contraseña
-            </button>
-          </form>
-        )}
-      </div>
-
-      <style>{`
-        .input-base {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(15,17,23,0.6);
-          padding: 0.75rem 1rem;
-          color: white;
-          font-size: 0.875rem;
-          outline: none;
-          transition: all 0.15s;
-        }
-        .input-base:focus {
-          border-color: #E86A22;
-          box-shadow: 0 0 0 3px rgba(232,106,34,0.25);
-        }
-      `}</style>
-    </main>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-        {label}
-      </label>
-      {children}
-    </div>
+          <button type="submit" disabled={loading} className={`${BTN_PRIMARY} w-full`}>
+            {loading && <Loader2 size={16} aria-hidden="true" className="animate-spin" />}
+            {loading ? "Guardando…" : "Guardar contraseña"}
+          </button>
+        </form>
+      )}
+    </AuthShell>
   );
 }
