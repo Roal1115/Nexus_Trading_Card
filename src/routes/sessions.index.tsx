@@ -72,7 +72,6 @@ function formatShortDate(date: string | null): string {
   });
 }
 
-
 /** Récord V–D en mono; en Casual va neutro porque no cuenta para el ranking. */
 function RecordCell({ wins, losses, muted }: { wins: number; losses: number; muted?: boolean }) {
   const decided = wins + losses;
@@ -546,11 +545,21 @@ function SessionsPage() {
           setShowCreateSheet(false);
           setPrefill(null);
         }}
-        onCreated={(id) => {
+        onCreated={(created) => {
           setShowCreateSheet(false);
           setPrefill(null);
           queryClient.invalidateQueries({ queryKey: slotsKey });
-          navigate({ to: "/sessions/$sessionId", params: { sessionId: id } });
+          // Vinculada a un torneo ya publicado: las rondas (y el rival de cada una) se
+          // registran en el torneo oficial, como en el dashboard.
+          if (created.status === "matched" && created.tournament_id) {
+            navigate({
+              to: "/sessions/tournament/$tournamentId",
+              params: { tournamentId: created.tournament_id },
+              search: { editar: true },
+            });
+          } else {
+            navigate({ to: "/sessions/$sessionId", params: { sessionId: created.id } });
+          }
         }}
       />
     </main>
@@ -790,6 +799,7 @@ function LeaderSelect({
 // CreateSessionSheet
 // ============================================================
 type Game = { id: string; name: string; slug: string };
+type CreatedSession = { id: string; status: string; tournament_id: string | null };
 type StoreRow = { id: string; name: string; city: string | null; zone: string | null };
 
 /** "Torneo del martes — Guarida Gamer": el mismo nombre que usa el prellenado desde un RSVP. */
@@ -807,7 +817,7 @@ function CreateSessionSheet({
   open: boolean;
   prefill: SlotToLog | null;
   onClose: () => void;
-  onCreated: (sessionId: string) => void;
+  onCreated: (session: CreatedSession) => void;
 }) {
   const fetchGames = useServerFn(getMySessionGames);
   const searchStoresFn = useServerFn(searchStores);
@@ -998,8 +1008,13 @@ function CreateSessionSheet({
         if (date) payload.session_date = date;
       }
       const res = await createSession({ data: payload });
-      toast.success("Partida creada");
-      onCreated((res.session as { id: string }).id);
+      const created = res.session as CreatedSession;
+      toast.success(
+        created.status === "matched"
+          ? "Partida vinculada al torneo. Registra tus rondas y rivales."
+          : "Partida creada",
+      );
+      onCreated(created);
     } catch (e: any) {
       toast.error(e?.message ?? "No se pudo crear la partida");
     } finally {

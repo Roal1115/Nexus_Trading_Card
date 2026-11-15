@@ -1,14 +1,27 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronRight, ShieldQuestion } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ArrowLeft, ChevronRight, Pencil, ShieldQuestion } from "lucide-react";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { getTournamentSessionDetail } from "@/lib/nexus-standalone.functions";
 import { cleanLeaderName, type DeckIdentifier } from "@/components/tournament-tracker/round-ui";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
-import { BTN_OUTLINE, FOCUS_RING, InlineError, SECTION } from "@/components/stores/store-ui";
+import { PerformanceTrackerModal } from "@/components/tournament-tracker/PerformanceTrackerModal";
+import {
+  BTN_OUTLINE,
+  BTN_PRIMARY,
+  FOCUS_RING,
+  InlineError,
+  SECTION,
+} from "@/components/stores/store-ui";
 
 export const Route = createFileRoute("/sessions/tournament/$tournamentId")({
+  // ?editar=1 abre el editor de rondas al llegar (p. ej. tras crear una partida que se vinculó sola).
+  validateSearch: (s: Record<string, unknown>): { editar?: boolean } => ({
+    editar:
+      s.editar === true || s.editar === "true" || s.editar === 1 || s.editar === "1" || undefined,
+  }),
   head: () => ({ meta: [{ title: "Torneo — Nexus" }] }),
   component: SessionDetailPage,
 });
@@ -113,6 +126,10 @@ function SessionDetailPage() {
   const { player, loading: roleLoading } = useNexusRole();
 
   const fetchDetail = useServerFn(getTournamentSessionDetail);
+  const { editar } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  // El editor de rondas del dashboard (rival, leader, dado y turno por ronda).
+  const [editing, setEditing] = useState(false);
 
   const [detail, setDetail] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -134,6 +151,19 @@ function SessionDetailPage() {
     loadDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId, player, roleLoading]);
+
+  // El editor exige que el jugador aparezca en los resultados del torneo.
+  const canEdit = !!detail?.result && !!detail?.session;
+
+  useEffect(() => {
+    if (editar && canEdit) setEditing(true);
+  }, [editar, canEdit]);
+
+  const closeEditor = () => {
+    setEditing(false);
+    if (editar) navigate({ search: {}, replace: true });
+    loadDetail();
+  };
 
   if (!roleLoading && !player) {
     return (
@@ -246,11 +276,20 @@ function SessionDetailPage() {
             </div>
           </header>
 
-          {/* Tira de rondas (solo lectura) */}
+          {/* Tira de rondas (solo lectura); se editan con el mismo editor del dashboard */}
           {rounds.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-foreground-secondary">
-              Sin rondas registradas aún.
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-6">
+              <p className="text-sm text-foreground-secondary">
+                {canEdit
+                  ? "Registra tus rondas: leader, rival y resultado de cada una."
+                  : "Sin rondas registradas aún."}
+              </p>
+              {canEdit && (
+                <button type="button" onClick={() => setEditing(true)} className={BTN_PRIMARY}>
+                  Registrar rondas
+                </button>
+              )}
+            </div>
           ) : (
             <ol className="divide-y divide-border">
               {rounds.map((r) => (
@@ -260,16 +299,36 @@ function SessionDetailPage() {
           )}
 
           {/* Salida al torneo completo (posiciones y campeón), solo cuando ya es público */}
-          {isPublished && (
-            <footer className="flex justify-end border-t border-border px-5 py-3">
-              <Link to="/tournaments/$id" params={{ id: tournamentId }} className={BTN_OUTLINE}>
-                Ver torneo completo
-                <ChevronRight size={16} aria-hidden="true" />
-              </Link>
+          {((canEdit && rounds.length > 0) || isPublished) && (
+            <footer className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-3">
+              {canEdit && rounds.length > 0 && (
+                <button type="button" onClick={() => setEditing(true)} className={BTN_OUTLINE}>
+                  <Pencil size={16} aria-hidden="true" />
+                  Editar rondas
+                </button>
+              )}
+              {isPublished && (
+                <Link to="/tournaments/$id" params={{ id: tournamentId }} className={BTN_OUTLINE}>
+                  Ver torneo completo
+                  <ChevronRight size={16} aria-hidden="true" />
+                </Link>
+              )}
             </footer>
           )}
         </section>
       ) : null}
+
+      {/* En document.body: el @container de <main> recortaría un modal fixed (The Portal Rule). */}
+      {editing &&
+        session &&
+        createPortal(
+          <PerformanceTrackerModal
+            tournamentId={tournamentId}
+            gameId={session.game_id}
+            onClose={closeEditor}
+          />,
+          document.body,
+        )}
     </main>
   );
 }

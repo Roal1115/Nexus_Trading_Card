@@ -80,10 +80,39 @@ export const createStandaloneSession = createServerFn({ method: "POST" })
         player_leader_id: data.player_leader_id ?? null,
         status: data.session_type === "casual" ? "casual" : "unlinked",
       })
-      .select("id, name, session_type, status, created_at")
+      .select("id, name, session_type, status, tournament_id, created_at")
       .single();
 
     if (error) failDb(error);
+
+    // El autolink de la BD solo corre cuando un torneo pasa a PUBLISHED. Un torneo que ya
+    // estaba publicado (ayer o hace un año) se enlaza aquí con las mismas reglas.
+    // Si falla, la partida queda "Pendiente" y se puede vincular a mano: no se aborta.
+    if (data.session_type === "competitive") {
+      const { data: published } = await admin
+        .from("tournaments")
+        .select("id")
+        .eq("status", "PUBLISHED")
+        .eq("game_id", data.game_id)
+        .eq("store_id", data.store_id!)
+        .eq("tournament_date", data.session_date!);
+      for (const t of published ?? []) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: linkError } = await (admin as any).rpc("link_standalone_sessions", {
+          p_tournament_id: t.id,
+        });
+        if (linkError) console.error("[createStandaloneSession] autolink", linkError.message);
+      }
+      if ((published ?? []).length > 0) {
+        const { data: fresh } = await admin
+          .from("standalone_sessions")
+          .select("id, name, session_type, status, tournament_id, created_at")
+          .eq("id", session.id)
+          .single();
+        if (fresh) return { session: fresh };
+      }
+    }
+
     return { session };
   });
 

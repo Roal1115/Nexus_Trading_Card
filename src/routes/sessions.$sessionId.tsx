@@ -1006,13 +1006,27 @@ function StandaloneRoundTracker({
         {/* Status banners */}
         {session?.status === "matched" && (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
-            <p className="text-sm text-foreground-secondary">
-              Vinculada al torneo de{" "}
-              <strong className="font-semibold text-foreground">
-                {session.tournament_store_name ?? "—"}
-              </strong>
-              {session.tournament_date && <> · {formatDate(session.tournament_date)}</>}
-            </p>
+            <div className="min-w-0 space-y-2">
+              <p className="text-sm text-foreground-secondary">
+                Vinculada al torneo de{" "}
+                <strong className="font-semibold text-foreground">
+                  {session.tournament_store_name ?? "—"}
+                </strong>
+                {session.tournament_date && <> · {formatDate(session.tournament_date)}</>}
+              </p>
+              {/* Ya es oficial: sus rondas (con el rival de cada una) se editan en el torneo,
+                  con el mismo editor del dashboard. */}
+              {session.tournament_id && (
+                <Link
+                  to="/sessions/tournament/$tournamentId"
+                  params={{ tournamentId: session.tournament_id }}
+                  search={{ editar: true }}
+                  className={BTN_OUTLINE}
+                >
+                  Editar rondas y rivales
+                </Link>
+              )}
+            </div>
             <AnimatePresence mode="wait" initial={false}>
               {header.undoConfirming ? (
                 <motion.div

@@ -1,25 +1,59 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { TrendingUp, Shield, Calendar, Swords, X, Search } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { ArrowLeft, ChevronDown, Loader2, Search, Shield, X } from "lucide-react";
 import { useTCG } from "@/context/tcg.context";
+import { useNexusRole } from "@/hooks/use-nexus-role";
+import { myDashboardQuery } from "@/lib/dashboard-queries";
 import { getMetaMatchups, getMetaStats } from "@/lib/nexus-meta.functions";
 import { metaFilterOptionsQuery, metaQuery, type MetaFilters } from "@/lib/meta-queries";
 import { SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { BlockSelect } from "@/components/ui/block-select";
 import { shortLeaderName, setBadge } from "@/lib/leader-display";
+import {
+  BTN_OUTLINE,
+  ChipGroup,
+  FOCUS_RING,
+  INPUT,
+  InlineError,
+  SECTION,
+  plural,
+} from "@/components/stores/store-ui";
 
 const DEFAULT_GAME_ID = "5b608762-d0a3-4a93-9739-e5cd150b01cd";
-const DEFAULT_FILTERS: MetaFilters = {
-  game_id: DEFAULT_GAME_ID,
-  zone: null,
-  store_id: null,
-  date_from: null,
-  date_to: null,
+
+type Period = "temporada" | "30d" | "90d" | "todo";
+type MetaSearch = {
+  zona?: string;
+  tienda?: string;
+  desde?: string;
+  hasta?: string;
+  /** Sin valor = temporada actual. Fechas propias (desde/hasta) mandan sobre el periodo. */
+  periodo?: Exclude<Period, "temporada">;
+  /** Columna de orden de la tabla; sin valor = uso. */
+  orden?: SortKey;
+  dir?: "asc";
 };
+// "30d" y no "30": un valor numérico se serializa como JSON en la URL (?periodo=%2230%22).
+const PERIODS = ["30d", "90d", "todo"] as const;
+
+type SortKey = "wr" | "1t" | "2t" | "partidas";
+const SORT_KEYS: SortKey[] = ["wr", "1t", "2t", "partidas"];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const Route = createFileRoute("/meta")({
+  // Los filtros viven en la URL: "meta de Monterrey de los últimos 30 días" se comparte y
+  // sobrevive atrás/adelante. Un valor inválido se ignora.
+  validateSearch: (s: Record<string, unknown>): MetaSearch => ({
+    zona: typeof s.zona === "string" && s.zona ? s.zona : undefined,
+    tienda: typeof s.tienda === "string" && s.tienda ? s.tienda : undefined,
+    desde: typeof s.desde === "string" && ISO_DATE.test(s.desde) ? s.desde : undefined,
+    hasta: typeof s.hasta === "string" && ISO_DATE.test(s.hasta) ? s.hasta : undefined,
+    periodo: PERIODS.find((p) => p === s.periodo),
+    orden: SORT_KEYS.find((k) => k === s.orden),
+    dir: s.dir === "asc" ? "asc" : undefined,
+  }),
   // Best effort (no relanza): calienta la caché para cuando el usuario
   // llega por hover/intent desde la nav. Usa los filtros por default —
   // si el TCG activo global difiere, el efecto de sync del componente
@@ -33,11 +67,12 @@ export const Route = createFileRoute("/meta")({
   // (se detectó así, con Playwright, antes de dar el fix por terminado).
   loader: async ({ context }) => {
     try {
-      const [options, meta] = await Promise.all([
-        context.queryClient.ensureQueryData(metaFilterOptionsQuery(DEFAULT_GAME_ID)),
-        context.queryClient.ensureQueryData(metaQuery(DEFAULT_FILTERS)),
-      ]);
-      return { options, meta };
+      // Solo las opciones: el meta por defecto depende de la temporada actual, que sale de
+      // aquí mismo. Precargar "todo el historial" leía ~9,600 rondas para tirarlas.
+      const options = await context.queryClient.ensureQueryData(
+        metaFilterOptionsQuery(DEFAULT_GAME_ID),
+      );
+      return { options };
     } catch {
       return undefined;
     }
@@ -49,43 +84,119 @@ export const Route = createFileRoute("/meta")({
 type MatchupData = Awaited<ReturnType<typeof getMetaMatchups>>;
 type StatsLeader = Awaited<ReturnType<typeof getMetaStats>>["leaders"][number];
 
-const COLOR_MAP: Record<string, string> = {
-  Red: "bg-red-500",
-  Blue: "bg-blue-500",
-  Green: "bg-green-500",
-  Yellow: "bg-yellow-400",
-  Purple: "bg-purple-500",
-  Black: "bg-gray-900 border border-white/20",
+const COLOR_MAP: Record<string, { dot: string; name: string }> = {
+  Red: { dot: "bg-red-500", name: "rojo" },
+  Blue: { dot: "bg-blue-500", name: "azul" },
+  Green: { dot: "bg-green-500", name: "verde" },
+  Yellow: { dot: "bg-yellow-400", name: "amarillo" },
+  Purple: { dot: "bg-purple-500", name: "morado" },
+  Black: { dot: "bg-zinc-950 ring-1 ring-foreground-subtle", name: "negro" },
 };
 
+/** Colores de la carta: puntos visuales + el nombre para lectores de pantalla (no solo color). */
 function ColorDots({ colors }: { colors: string[] }) {
+  if (!colors.length) return null;
   return (
-    <div className="flex items-center gap-1">
+    <span className="inline-flex items-center gap-1">
       {colors.map((c) => (
         <span
           key={c}
-          title={c}
-          className={`h-2.5 w-2.5 rounded-full ${COLOR_MAP[c] ?? "bg-gray-600"}`}
+          aria-hidden="true"
+          className={`h-2.5 w-2.5 rounded-full ${COLOR_MAP[c]?.dot ?? "bg-secondary"}`}
         />
       ))}
-    </div>
+      <span className="sr-only">
+        Colores: {colors.map((c) => COLOR_MAP[c]?.name ?? c).join(", ")}
+      </span>
+    </span>
   );
 }
 
-function wrColor(wr: number | null): string {
-  if (wr === null) return "text-gray-500";
-  if (wr >= 55) return "text-emerald-400";
-  if (wr >= 45) return "text-white";
-  return "text-red-400";
+/** Código de set del leader ("ST29"): mono de 12px, chip neutro. */
+function SetBadge({ code }: { code: string | null | undefined }) {
+  const badge = setBadge(code);
+  if (!badge) return null;
+  return (
+    <span className="flex-shrink-0 rounded border border-border px-1 font-mono text-xs text-foreground-secondary">
+      {badge}
+    </span>
+  );
 }
 
-function sameFilters(a: MetaFilters, b: MetaFilters): boolean {
+/**
+ * Debajo de este número de rondas un porcentaje es ruido: 2 de 2 no es "100% favorable".
+ * Se muestra neutro y marcado como muestra chica, y no encabeza los ordenamientos.
+ */
+const SMALL_SAMPLE = 8;
+const isSmall = (n: number) => n < SMALL_SAMPLE;
+
+/** Verde/rojo solo con muestra suficiente (Result Colors Rule + honestidad estadística). */
+function wrTone(wr: number | null, n: number): string {
+  if (wr === null) return "text-foreground-subtle";
+  if (isSmall(n)) return "text-foreground-secondary";
+  if (wr >= 55) return "text-success";
+  if (wr < 45) return "text-danger";
+  return "text-foreground";
+}
+
+/** Primero lo confiable, luego por WR: tres rondas de suerte no encabezan la lista. */
+function byReliableWinRate(a: { cell: MetaCell }, b: { cell: MetaCell }): number {
   return (
-    a.game_id === b.game_id &&
-    a.zone === b.zone &&
-    a.store_id === b.store_id &&
-    a.date_from === b.date_from &&
-    a.date_to === b.date_to
+    Number(!isSmall(b.cell.total)) - Number(!isSmall(a.cell.total)) ||
+    b.cell.win_rate - a.cell.win_rate
+  );
+}
+
+/** Fecha local de hoy menos n días, en ISO (aaaa-mm-dd). */
+function isoDaysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toLocaleDateString("en-CA");
+}
+
+/** "1 ago"; el año solo si no es el actual. */
+function shortDate(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
+
+type Season = {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+};
+
+/**
+ * Temporada actual: la activa que contiene hoy. Si conviven una mensual y una semestral, la
+ * más larga, porque "la temporada" para el jugador es la que define el ranking del semestre.
+ */
+function currentSeason(seasons: Season[]): Season | null {
+  const today = isoDaysAgo(0);
+  const span = (x: Season) => Date.parse(x.end_date) - Date.parse(x.start_date);
+  return (
+    seasons
+      .filter((x) => x.is_active && x.start_date <= today && today <= x.end_date)
+      .sort((a, b) => span(b) - span(a))[0] ?? null
+  );
+}
+
+/** Líderes visibles en ancho angosto antes de "Ver los N". */
+const NARROW_TOP = 8;
+
+/**
+ * Lleva el foco (y la vista) al título del explorador: el botón que lo abrió desaparece o
+ * queda lejos, y el lector de pantalla anuncia a qué líder se cambió.
+ */
+function focusExplorer() {
+  requestAnimationFrame(() =>
+    document.querySelector<HTMLElement>("[data-explorer-title]")?.focus(),
   );
 }
 
@@ -93,276 +204,551 @@ function MetaPage() {
   const { activeTcg } = useTCG();
   const loaderData = Route.useLoaderData();
 
-  // `filters` = draft (lo que el usuario está editando); `appliedFilters` =
-  // lo que realmente dispara la query — reproduce el patrón "Aplicar/Limpiar
-  // filtros" que ya existía (zona/tienda/fechas no auto-aplican). game_id es
-  // la excepción: lo fija el juego de la temporada, no un select de esta
-  // página, así que sí aplica de inmediato (igual que antes).
-  const [filters, setFilters] = useState<MetaFilters>(DEFAULT_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<MetaFilters>(DEFAULT_FILTERS);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { player } = useNexusRole();
+
+  // El juego lo fija el TCG activo; zona, tienda y fechas vienen de la URL y se aplican solos.
+  const [gameId, setGameId] = useState(DEFAULT_GAME_ID);
+  useEffect(() => {
+    if (activeTcg?.id && activeTcg.id !== gameId) setGameId(activeTcg.id);
+  }, [activeTcg?.id, gameId]);
 
   const optionsQuery = useQuery({
-    ...metaFilterOptionsQuery(filters.game_id),
-    initialData: filters.game_id === DEFAULT_GAME_ID ? loaderData?.options : undefined,
+    ...metaFilterOptionsQuery(gameId),
+    initialData: gameId === DEFAULT_GAME_ID ? loaderData?.options : undefined,
   });
-  const metaQ = useQuery({
-    ...metaQuery(appliedFilters),
-    initialData: sameFilters(appliedFilters, DEFAULT_FILTERS) ? loaderData?.meta : undefined,
-  });
+  const season = currentSeason((optionsQuery.data?.seasons ?? []) as Season[]);
+
+  // Periodo: fechas propias > periodo de la URL > temporada actual (si no hay, todo).
+  const customDates = !!(search.desde || search.hasta);
+  const period: Period = customDates ? "todo" : (search.periodo ?? (season ? "temporada" : "todo"));
+  const range = customDates
+    ? { from: search.desde ?? null, to: search.hasta ?? null }
+    : period === "temporada" && season
+      ? { from: season.start_date, to: season.end_date }
+      : period === "30d" || period === "90d"
+        ? { from: isoDaysAgo(parseInt(period, 10)), to: null }
+        : { from: null, to: null };
+  const periodLabel = customDates
+    ? search.desde && search.hasta
+      ? `${shortDate(search.desde)}–${shortDate(search.hasta)}`
+      : search.desde
+        ? `desde el ${shortDate(search.desde)}`
+        : `hasta el ${shortDate(search.hasta!)}`
+    : period === "temporada" && season
+      ? `${season.name} (${shortDate(season.start_date)}–${shortDate(season.end_date)})`
+      : period === "30d" || period === "90d"
+        ? `últimos ${parseInt(period, 10)} días`
+        : "todo el historial";
+
+  const appliedFilters: MetaFilters = {
+    game_id: gameId,
+    zone: search.zona ?? null,
+    store_id: search.tienda ?? null,
+    date_from: range.from,
+    date_to: range.to,
+  };
+  const filters = {
+    ...appliedFilters,
+    date_from: search.desde ?? null,
+    date_to: search.hasta ?? null,
+  };
+  const setSearch = (patch: Partial<MetaSearch>) =>
+    navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
+
+  // La temporada sale de las opciones: sin ellas no se pide el meta, para no cargar
+  // "todo el historial" y tirarlo un segundo después.
+  const metaQ = useQuery({ ...metaQuery(appliedFilters), enabled: !!optionsQuery.data });
   const filterOptions = optionsQuery.data;
-  // isPending (no isFetching): con keepPreviousData, cambiar un filtro no
-  // vuelve a mostrar el skeleton — la tabla anterior queda visible mientras
-  // llegan los datos nuevos, igual que el leaderboard desde P0-04.
-  const loading = metaQ.isPending;
+  // isPending (no isFetching): con keepPreviousData, cambiar zona o fechas no vuelve a
+  // mostrar el esqueleto. Pero los datos de OTRO juego no se muestran nunca como si fueran
+  // de este: mientras el TCG activo no coincide con lo cargado, es "cargando", no "sin datos".
+  const loadedGameId = metaQ.data?.stats.filters.game_id;
+  const loading =
+    metaQ.isPending ||
+    (!!activeTcg?.id && activeTcg.id !== appliedFilters.game_id) ||
+    (!!loadedGameId && loadedGameId !== appliedFilters.game_id);
+  const failed = metaQ.isError && !metaQ.data;
+  // keepPreviousData deja los números del filtro anterior mientras llegan los nuevos (~8 s con
+  // el meta completo). Sin aviso, "Zona Monterrey" mostraría cifras nacionales: se atenúan y
+  // se dice que se están actualizando.
+  const refreshing = !loading && metaQ.isFetching && metaQ.isPlaceholderData;
+  const hasFilters = !!search.zona || !!search.tienda || customDates || !!search.periodo;
 
-  const handleGameChange = (gameId: string) => {
-    setFilters((f) => ({ ...f, game_id: gameId }));
-    setAppliedFilters((f) => ({ ...f, game_id: gameId }));
-  };
+  const clearFilters = () => navigate({ search: {}, replace: true });
 
-  useEffect(() => {
-    if (!activeTcg?.id || activeTcg.id === filters.game_id) return;
-    handleGameChange(activeTcg.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTcg?.id]);
-
-  const applyFilters = () => setAppliedFilters(filters);
-  const clearFilters = () => {
-    const reset: MetaFilters = { ...DEFAULT_FILTERS, game_id: filters.game_id };
-    setFilters(reset);
-    setAppliedFilters(reset);
-  };
+  // Con sesión, el explorador abre con el leader que más usa el jugador en este juego
+  // (mismo cálculo y caché que el dashboard).
+  const dashboardQ = useQuery({ ...myDashboardQuery(), enabled: !!player });
+  const myLeaderId =
+    (dashboardQ.data as { top3DecksByGame?: Record<string, Array<{ id: string }>> } | undefined)
+      ?.top3DecksByGame?.[gameId]?.[0]?.id ?? null;
 
   const metaData = metaQ.data?.stats;
   const matchupData = metaQ.data?.matchups;
   const leaders = metaData?.leaders ?? [];
 
+  // Orden de la tabla (la lista original, por uso, sigue alimentando al explorador). En
+  // cualquier orden, un líder con muestra chica no encabeza: sus porcentajes aún son ruido.
+  const sortKey = search.orden ?? "uso";
+  const sortDir = search.dir === "asc" ? 1 : -1;
+  const sortValue = (l: StatsLeader): [number, number | null] =>
+    sortKey === "wr"
+      ? [l.total_rounds, l.win_rate]
+      : sortKey === "1t"
+        ? [l.first_rounds, l.first_win_rate]
+        : sortKey === "2t"
+          ? [l.second_rounds, l.second_win_rate]
+          : sortKey === "partidas"
+            ? [Infinity, l.total_rounds]
+            : [Infinity, l.play_rate];
+  const sortedLeaders = [...leaders].sort((a, b) => {
+    const [na, va] = sortValue(a);
+    const [nb, vb] = sortValue(b);
+    return (
+      Number(!isSmall(nb)) - Number(!isSmall(na)) ||
+      Number(vb != null) - Number(va != null) ||
+      sortDir * ((va ?? 0) - (vb ?? 0))
+    );
+  });
+  const setSort = (key: SortKey | "uso") =>
+    setSearch(
+      key === sortKey
+        ? { dir: search.dir === "asc" ? undefined : "asc" }
+        : { orden: key === "uso" ? undefined : key, dir: undefined },
+    );
+  const sortHeader = (key: SortKey | "uso", label: string, cls: string) => (
+    <th
+      scope="col"
+      aria-sort={sortKey === key ? (sortDir === 1 ? "ascending" : "descending") : undefined}
+      className={`hidden py-1 pr-2 text-right font-medium ${cls}`}
+    >
+      <button
+        type="button"
+        onClick={() => setSort(key)}
+        className={`inline-flex min-h-9 items-center gap-1 rounded-md px-1 ${
+          sortKey === key ? "text-foreground" : "text-foreground-subtle hover:text-foreground"
+        } ${FOCUS_RING}`}
+      >
+        {label}
+        {sortKey === key && (
+          <ChevronDown size={14} aria-hidden="true" className={sortDir === 1 ? "rotate-180" : ""} />
+        )}
+      </button>
+    </th>
+  );
+
   // Click en una fila del leaderboard: perfil completo del líder — sus stats
   // agregados (ya vienen en la fila) + su fila de matchups contra TODOS los
   // líderes con datos, no solo el Top 10 de la matriz.
-  const [leaderDetailId, setLeaderDetailId] = useState<string | null>(null);
-  const leaderDetail = leaders.find((l) => l.leader_id === leaderDetailId) ?? null;
+  // Un solo camino a los enfrentamientos de un líder: la fila del ranking y la búsqueda
+  // abren el mismo explorador (antes la fila abría un panel aparte con la misma lista).
+  const [exploringId, setExploringId] = useState<string | null>(null);
+  const exploreLeader = (id: string) => {
+    setExploringId(id);
+    focusExplorer();
+  };
+  // En ancho angosto el ranking muestra 8 y el resto bajo "Ver los N": el explorador, que es
+  // la herramienta para preparar mazo, queda ~1,300px más arriba en el teléfono.
+  const [showAllLeaders, setShowAllLeaders] = useState(false);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 pb-20">
-      <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary inline-flex items-center gap-2">
-          <TrendingUp size={12} /> Meta
-        </p>
-        <h1 className="mt-1 text-3xl font-bold text-white">Meta Leaderboard</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Win rates y play rates calculados desde torneos oficiales publicados.
+    <main className="mx-auto max-w-6xl px-4 py-8 pb-20 sm:px-6">
+      <header className="mb-5">
+        <h1 className="text-3xl font-bold text-foreground">Meta del circuito</h1>
+        <p className="mt-1 max-w-[65ch] text-foreground-secondary">
+          Qué se juega y qué gana, por líder, en los torneos oficiales publicados.
         </p>
       </header>
 
-      {/* Filters */}
-      <div className="glass mb-6 rounded-2xl p-4 space-y-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="min-w-0 w-full max-w-full">
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              Zona
-            </label>
-            <BlockSelect
-              value={filters.zone}
-              onChange={(v) => setFilters((f) => ({ ...f, zone: v }))}
-              options={(filterOptions?.zones ?? []).map((z: string) => ({ value: z, label: z }))}
-              placeholder="Todas las zonas"
-            />
-          </div>
-          <div className="min-w-0 w-full max-w-full">
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              Tienda
-            </label>
-            <BlockSelect
-              value={filters.store_id}
-              onChange={(v) => setFilters((f) => ({ ...f, store_id: v }))}
-              options={(filterOptions?.stores ?? [])
-                .filter((s: any) => !filters.zone || s.zone === filters.zone)
-                .map((s: any) => ({ value: s.id, label: s.name }))}
-              placeholder="Todas las tiendas"
-            />
-          </div>
-          <div className="min-w-0 w-full max-w-full">
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              Desde
-            </label>
-            <div className="relative min-w-0 w-full max-w-full">
-              <Calendar
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-              />
-              <input
-                type="date"
-                value={filters.date_from ?? ""}
-                onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value || null }))}
-                placeholder="mm/dd/yy"
-                style={{ colorScheme: "dark", minWidth: 0 }}
-                className="block w-full min-w-0 max-w-full appearance-none rounded-lg border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white focus:border-primary focus:outline-none"
-              />
-            </div>
-          </div>
-          <div className="min-w-0 w-full max-w-full">
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-gray-500">
-              Hasta
-            </label>
-            <div className="relative min-w-0 w-full max-w-full">
-              <Calendar
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-              />
-              <input
-                type="date"
-                value={filters.date_to ?? ""}
-                onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value || null }))}
-                placeholder="mm/dd/yy"
-                style={{ colorScheme: "dark", minWidth: 0 }}
-                className="block w-full min-w-0 max-w-full appearance-none rounded-lg border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white focus:border-primary focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={clearFilters}
-            className="rounded-md border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-300 hover:bg-white/[0.05] transition"
-          >
-            Limpiar filtros
-          </button>
-          <button
-            onClick={applyFilters}
-            className="rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 transition"
-          >
-            Aplicar filtros
-          </button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="glass rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="min-w-[900px]">
-            <div className="grid grid-cols-[32px_1fr_80px_80px_90px_90px_70px_70px_70px] gap-2 px-4 py-2 text-[10px] uppercase tracking-widest text-gray-500 border-b border-white/10">
-              <div>#</div>
-              <div>Leader</div>
-              <div>Set</div>
-              <div>Colores</div>
-              <div className="text-right">Play Rate</div>
-              <div className="text-right">Win Rate</div>
-              <div className="text-right">1st WR</div>
-              <div className="text-right">2nd WR</div>
-              <div className="text-right">Rondas</div>
-            </div>
-
-            {loading ? (
-              <div className="space-y-2 p-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <SkeletonBlock key={i} className="h-12 rounded-lg" />
-                ))}
-              </div>
-            ) : leaders.length === 0 ? (
-              <div className="sticky left-0 max-w-[calc(100vw-2rem)] p-8 text-center">
-                <p className="text-sm text-gray-400">Sin datos suficientes para mostrar el meta.</p>
-                <p className="mt-2 text-xs text-gray-600">
-                  Se requieren mínimo 5 rondas por leader.
-                </p>
-              </div>
-            ) : (
-              leaders.map((leader, index) => (
-                <div
-                  key={leader.leader_id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setLeaderDetailId(leader.leader_id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setLeaderDetailId(leader.leader_id);
-                    }
-                  }}
-                  className="grid cursor-pointer grid-cols-[32px_1fr_80px_80px_90px_90px_70px_70px_70px] gap-2 px-4 py-3 items-center border-b border-white/[0.05] hover:bg-white/[0.04] transition focus:outline-none focus:ring-1 focus:ring-primary/50"
-                >
-                  <div
-                    className={`font-mono text-sm ${
-                      index < 3 ? "text-primary font-bold" : "text-gray-400"
-                    }`}
-                  >
-                    #{index + 1}
-                  </div>
-                  <div className="flex items-center gap-2 min-w-0">
-                    {leader.leader_image ? (
-                      <img
-                        src={leader.leader_image}
-                        alt={leader.leader_name}
-                        className="h-10 w-7 rounded-md border border-white/10 object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-7 items-center justify-center rounded-md border border-white/10 bg-black/30 flex-shrink-0">
-                        <Shield size={12} className="text-gray-600" />
-                      </div>
-                    )}
-                    <span className="text-sm font-semibold text-white truncate">
-                      {leader.leader_name}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-500 truncate">{leader.card_set_id ?? "—"}</div>
-                  <ColorDots colors={leader.colors} />
-                  <div className="text-right font-mono text-sm font-bold text-primary">
-                    {leader.play_rate}%
-                  </div>
-                  <div
-                    className={`text-right font-mono text-sm font-bold ${wrColor(leader.win_rate)}`}
-                  >
-                    {leader.win_rate}%
-                  </div>
-                  <div className={`text-right font-mono text-xs ${wrColor(leader.first_win_rate)}`}>
-                    {leader.first_win_rate != null ? `${leader.first_win_rate}%` : "—"}
-                  </div>
-                  <div
-                    className={`text-right font-mono text-xs ${wrColor(leader.second_win_rate)}`}
-                  >
-                    {leader.second_win_rate != null ? `${leader.second_win_rate}%` : "—"}
-                  </div>
-                  <div className="text-right font-mono text-xs text-gray-400">
-                    {leader.total_rounds}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      <p className="mt-4 text-center text-[11px] text-gray-600">
-        Solo se muestran leaders con mínimo 5 rondas registradas (torneos oficiales + sessions).
-        {" · "}
-        {metaData?.total_rounds ?? 0} rondas totales en el meta.
-      </p>
-
-      {/* Matchups heatmap */}
-      {!loading && matchupData && matchupData.leaders.length >= 2 && (
-        <MatchupHeatmap data={matchupData} allLeaders={leaders} />
-      )}
-
-      <AnimatePresence>
-        {leaderDetail && matchupData && (
-          <LeaderDetailDrawer
-            leader={leaderDetail}
-            matchups={matchupData.matchups}
-            allLeaders={leaders}
-            onClose={() => setLeaderDetailId(null)}
+      {/* Filtros: zona a un toque; tienda y fechas plegadas. Se aplican solos y viven en la URL. */}
+      <section aria-label="Filtrar el meta" className="mb-6 space-y-3">
+        {(filterOptions?.zones ?? []).length > 1 && (
+          <ChipGroup
+            label="Filtrar por zona"
+            value={filters.zone}
+            onChange={(z) => setSearch({ zona: z ?? undefined, tienda: undefined })}
+            options={[
+              { key: null, label: "Todas las zonas" },
+              ...(filterOptions?.zones ?? []).map((z: string) => ({ key: z, label: z })),
+            ]}
           />
         )}
-      </AnimatePresence>
-    </div>
+        <ChipGroup
+          label="Periodo"
+          value={customDates ? null : period}
+          onChange={(k) =>
+            k &&
+            setSearch({
+              periodo: k === "temporada" ? undefined : (k as MetaSearch["periodo"]),
+              desde: undefined,
+              hasta: undefined,
+            })
+          }
+          options={[
+            ...(season ? [{ key: "temporada", label: season.name }] : []),
+            { key: "30d", label: "30 días" },
+            { key: "90d", label: "90 días" },
+            { key: "todo", label: "Todo" },
+          ]}
+        />
+        <details
+          className="group"
+          open={!!(filters.store_id || filters.date_from || filters.date_to) || undefined}
+        >
+          <summary
+            className={`inline-flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded-md text-sm font-medium text-foreground-secondary hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+          >
+            <ChevronDown
+              size={16}
+              aria-hidden="true"
+              className="transition-transform group-open:rotate-180"
+            />
+            Tienda y fechas
+          </summary>
+          <div className="@container mt-2">
+            <div className="grid gap-3 @lg:grid-cols-3">
+              <div className="min-w-0 space-y-1.5">
+                <label
+                  htmlFor="meta-store"
+                  className="text-sm font-medium text-foreground-secondary"
+                >
+                  Tienda
+                </label>
+                <BlockSelect
+                  id="meta-store"
+                  value={filters.store_id}
+                  onChange={(v) => setSearch({ tienda: v ?? undefined })}
+                  options={(filterOptions?.stores ?? [])
+                    .filter((st: any) => !filters.zone || st.zone === filters.zone)
+                    .map((st: any) => ({ value: st.id, label: st.name }))}
+                  placeholder="Todas las tiendas"
+                />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <label
+                  htmlFor="meta-from"
+                  className="text-sm font-medium text-foreground-secondary"
+                >
+                  Desde
+                </label>
+                <input
+                  id="meta-from"
+                  type="date"
+                  value={filters.date_from ?? ""}
+                  max={filters.date_to ?? undefined}
+                  onChange={(e) => setSearch({ desde: e.target.value || undefined })}
+                  style={{ colorScheme: "dark" }}
+                  className={INPUT}
+                />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <label htmlFor="meta-to" className="text-sm font-medium text-foreground-secondary">
+                  Hasta
+                </label>
+                <input
+                  id="meta-to"
+                  type="date"
+                  value={filters.date_to ?? ""}
+                  min={filters.date_from ?? undefined}
+                  onChange={(e) => setSearch({ hasta: e.target.value || undefined })}
+                  style={{ colorScheme: "dark" }}
+                  className={INPUT}
+                />
+              </div>
+            </div>
+          </div>
+        </details>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className={`min-h-11 rounded-md px-1 text-sm font-medium text-foreground-secondary transition hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+          >
+            Restablecer filtros
+          </button>
+        )}
+      </section>
+
+      {/* Líderes del meta: tabla real; en contenedor angosto las cifras pasan a 2.ª línea */}
+      <section aria-labelledby="meta-leaders" className="@container">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="meta-leaders" className="text-lg font-semibold text-foreground">
+            Líderes del meta
+          </h2>
+          {!loading && !failed && metaData && (
+            <p role="status" className="font-mono-stat text-sm text-foreground-subtle">
+              {refreshing ? (
+                <span className="inline-flex items-center gap-1.5 text-foreground-secondary">
+                  <Loader2 size={14} aria-hidden="true" className="animate-spin" />
+                  Actualizando el meta · {periodLabel}
+                </span>
+              ) : (
+                <>
+                  {plural(leaders.length, "líder", "líderes")} ·{" "}
+                  {metaData.total_rounds.toLocaleString("es-MX")}{" "}
+                  {metaData.total_rounds === 1 ? "partida" : "partidas"} · {periodLabel}
+                </>
+              )}
+            </p>
+          )}
+        </div>
+
+        {metaQ.isError && metaQ.data && (
+          <div className="mb-3">
+            <InlineError onRetry={() => metaQ.refetch()}>
+              No pudimos actualizar el meta; ves los datos anteriores.
+            </InlineError>
+          </div>
+        )}
+
+        {failed ? (
+          <div className={SECTION}>
+            <InlineError onRetry={() => metaQ.refetch()}>No pudimos cargar el meta.</InlineError>
+          </div>
+        ) : loading ? (
+          <div className={`${SECTION} space-y-2`} aria-busy="true" aria-label="Cargando el meta">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SkeletonBlock key={i} className="h-14 rounded-lg" />
+            ))}
+          </div>
+        ) : leaders.length === 0 ? (
+          <div className={`${SECTION} space-y-3`}>
+            <p className="text-foreground">
+              {hasFilters
+                ? "Ningún líder llega a 5 partidas con estos filtros."
+                : "Todavía no hay líderes con 5 partidas en este periodo."}
+            </p>
+            <p className="text-sm text-foreground-secondary">
+              {hasFilters
+                ? "Prueba con otra zona, otra tienda o un periodo más amplio, o restablece los filtros."
+                : "El meta se arma con los torneos oficiales publicados de este juego."}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Angosto: sin columnas numéricas no hay encabezados que ordenar */}
+            <div className="mb-3 @2xl:hidden">
+              <ChipGroup
+                label="Ordenar líderes"
+                value={sortKey === "1t" || sortKey === "2t" ? null : sortKey}
+                onChange={(k) =>
+                  k &&
+                  setSearch({ orden: k === "uso" ? undefined : (k as SortKey), dir: undefined })
+                }
+                options={[
+                  { key: "uso", label: "Más jugados" },
+                  { key: "wr", label: "Mejor win rate" },
+                  { key: "partidas", label: "Más partidas" },
+                ]}
+              />
+            </div>
+            <div
+              aria-busy={refreshing || undefined}
+              className={`overflow-hidden rounded-xl border border-border bg-card transition-opacity duration-200 ${refreshing ? "opacity-50" : ""}`}
+            >
+              <table className="w-full text-sm">
+                <caption className="sr-only">
+                  Líderes con al menos 5 partidas. Ordena con los encabezados de columna; selecciona
+                  un líder para ver sus enfrentamientos.
+                </caption>
+                <thead className="border-b border-border text-left text-xs text-foreground-subtle">
+                  <tr>
+                    <th scope="col" className="w-10 py-2 pl-4 font-medium">
+                      #
+                    </th>
+                    <th scope="col" className="py-2 pr-2 font-medium">
+                      Líder
+                    </th>
+                    {sortHeader("uso", "Uso", "@2xl:table-cell")}
+                    {sortHeader("wr", "Win rate", "@2xl:table-cell")}
+                    {sortHeader("1t", "1.er turno", "@3xl:table-cell")}
+                    {sortHeader("2t", "2.º turno", "@3xl:table-cell")}
+                    {sortHeader("partidas", "Partidas", "pr-4 @2xl:table-cell")}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {sortedLeaders.map((leader, index) => (
+                    <LeaderRow
+                      key={leader.leader_id}
+                      leader={leader}
+                      rank={index + 1}
+                      onOpen={() => exploreLeader(leader.leader_id)}
+                      collapsed={!showAllLeaders && index >= NARROW_TOP}
+                    />
+                  ))}
+                </tbody>
+              </table>
+              {!showAllLeaders && leaders.length > NARROW_TOP && (
+                <div className="border-t border-border p-2 @2xl:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllLeaders(true)}
+                    className={`${BTN_OUTLINE} w-full`}
+                  >
+                    Ver los {leaders.length} líderes
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {leaders.length > 0 && !loading && !failed && (
+          <details className="group mt-3 text-sm text-foreground-secondary">
+            <summary
+              className={`inline-flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded-md font-medium text-foreground-secondary hover:text-foreground sm:min-h-9 ${FOCUS_RING}`}
+            >
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                className="transition-transform group-open:rotate-180"
+              />
+              Cómo leer la tabla
+            </summary>
+            <dl className="mt-2 max-w-[65ch] space-y-2 pb-2">
+              <div>
+                <dt className="font-medium text-foreground">Uso</dt>
+                <dd>Porcentaje de las partidas del periodo que se jugaron con ese líder.</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-foreground">Win rate</dt>
+                <dd>Partidas ganadas entre partidas jugadas con ese líder.</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-foreground">1.er y 2.º turno</dt>
+                <dd>El win rate separado según si el líder jugó primero o segundo.</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-foreground">Muestra</dt>
+                <dd>
+                  Una partida es una ronda de torneo. Solo aparecen líderes con 5 partidas o más, y
+                  con menos de {SMALL_SAMPLE} el porcentaje va en gris, sin verde ni rojo: todavía
+                  es ruido.
+                </dd>
+              </div>
+            </dl>
+          </details>
+        )}
+
+        <p className="mt-1 text-xs text-foreground-subtle">
+          Datos de torneos oficiales publicados. Las partidas casuales no cuentan.
+        </p>
+      </section>
+
+      {!loading && !failed && matchupData && matchupData.leaders.length >= 2 && (
+        <div
+          aria-busy={refreshing || undefined}
+          className={`transition-opacity duration-200 ${refreshing ? "opacity-50" : ""}`}
+        >
+          <MatchupHeatmap
+            data={matchupData}
+            allLeaders={leaders}
+            preferredLeaderId={myLeaderId}
+            exploringId={exploringId}
+            onExplore={(id) => (id ? exploreLeader(id) : setExploringId(null))}
+          />
+        </div>
+      )}
+    </main>
   );
 }
 
-function heatColor(wr: number): string {
-  // rojo (0%) → gris (50%) → verde (100%), con alpha según distancia al 50
+/**
+ * Una fila del ranking de líderes. El nombre es un botón estirado sobre la fila: toda la
+ * fila abre el detalle, con teclado y con nombre accesible. En contenedor angosto las cifras
+ * bajan a una segunda línea en vez de esconderse detrás de un scroll horizontal.
+ */
+function LeaderRow({
+  leader,
+  rank,
+  onOpen,
+  collapsed,
+}: {
+  leader: StatsLeader;
+  rank: number;
+  onOpen: () => void;
+  /** Más allá del top en ancho angosto: oculta hasta "Ver los N" (en ancho, siempre visible). */
+  collapsed?: boolean;
+}) {
+  const wr = (v: number | null, n: number) => <span className={wrTone(v, n)}>{pct(v)}</span>;
+  return (
+    <tr
+      className={`relative align-top transition-colors hover:bg-white/5 ${collapsed ? "hidden @2xl:table-row" : ""}`}
+    >
+      <td className="py-3 pl-4 font-mono-stat text-foreground-secondary">{rank}</td>
+      <td className="py-3 pr-2">
+        <div className="flex items-start gap-3">
+          {leader.leader_image ? (
+            <img
+              src={leader.leader_image}
+              alt=""
+              loading="lazy"
+              className="h-10 w-7 flex-shrink-0 rounded border border-border object-cover"
+            />
+          ) : (
+            <span className="flex h-10 w-7 flex-shrink-0 items-center justify-center rounded border border-border">
+              <Shield size={14} aria-hidden="true" className="text-foreground-subtle" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={onOpen}
+              className={`text-left font-semibold text-foreground after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-primary/50`}
+            >
+              {leader.leader_name}
+            </button>
+            <div className="mt-0.5 flex items-center gap-2">
+              <SetBadge code={leader.card_set_id} />
+              <ColorDots colors={leader.colors} />
+            </div>
+            {/* Contenedor angosto: las columnas numéricas viven aquí, no fuera de pantalla */}
+            <p className="mt-1 font-mono-stat text-xs text-foreground-secondary @2xl:hidden">
+              WR {wr(leader.win_rate, leader.total_rounds)} · uso {pct(leader.play_rate)} ·{" "}
+              {leader.total_rounds} partidas
+            </p>
+            <p className="mt-0.5 font-mono-stat text-xs text-foreground-subtle @3xl:hidden">
+              1.er turno {wr(leader.first_win_rate, leader.first_rounds)} · 2.º turno{" "}
+              {wr(leader.second_win_rate, leader.second_rounds)}
+            </p>
+          </div>
+        </div>
+      </td>
+      <td className="hidden py-3 pr-3 text-right font-mono-stat text-foreground @2xl:table-cell">
+        {pct(leader.play_rate)}
+      </td>
+      <td className="hidden py-3 pr-3 text-right font-mono-stat font-semibold @2xl:table-cell">
+        {wr(leader.win_rate, leader.total_rounds)}
+      </td>
+      <td className="hidden py-3 pr-3 text-right font-mono-stat @3xl:table-cell">
+        {wr(leader.first_win_rate, leader.first_rounds)}
+        <span className="block text-xs text-foreground-subtle">{leader.first_rounds} partidas</span>
+      </td>
+      <td className="hidden py-3 pr-3 text-right font-mono-stat @3xl:table-cell">
+        {wr(leader.second_win_rate, leader.second_rounds)}
+        <span className="block text-xs text-foreground-subtle">
+          {leader.second_rounds} partidas
+        </span>
+      </td>
+      <td className="hidden py-3 pr-4 text-right font-mono-stat text-foreground-secondary @2xl:table-cell">
+        {leader.total_rounds}
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * Fondo de la celda: verde/rojo según distancia al 50%, escalado por confianza (rondas).
+ * Con muestra chica, neutro: 0% o 100% sobre 3 rondas no debe ser la celda más intensa.
+ */
+function heatColor(wr: number, n: number): string {
+  if (isSmall(n)) return "rgba(255,255,255,0.04)";
   const dist = Math.abs(wr - 50) / 50;
-  const alpha = 0.12 + dist * 0.55;
-  return wr >= 50 ? `rgba(52,211,153,${alpha})` : `rgba(248,113,113,${alpha})`;
+  const confidence = Math.min(1, n / 20);
+  const alpha = 0.08 + dist * 0.42 * confidence;
+  return wr >= 50 ? `rgba(78,240,162,${alpha})` : `rgba(255,95,109,${alpha})`;
 }
 
 type MetaLeader = MatchupData["leaders"][number];
@@ -392,10 +778,30 @@ function bySetBadgeDesc(a: MetaLeader, b: MetaLeader): number {
   return numOf(b) - numOf(a);
 }
 
-// Mismo layout que la card de matchup de /my-stats: portrait grande, nombre +
-// badge + colores, y las tres filas WR/1st/2nd — reutilizamos el patrón que
-// el usuario ya conoce de esa página en vez de inventar uno nuevo.
-function MatchupCard({
+/**
+ * Nombre para espacios chicos. Los líderes dobles ("Luffy & Ace", "Ace & Newgate") no se
+ * abrevian: el apellido solo ("Ace") choca con otros líderes y cambia de identidad.
+ */
+const shortName = (name: string) => (name.includes("&") ? name : shortLeaderName(name));
+
+/** Nombre corto + set: "Luffy ST29", para celdas y etiquetas accesibles. */
+const leaderLabel = (l: MetaLeader) =>
+  [shortName(l.leader_name), setBadge(l.card_set_id)].filter(Boolean).join(" ");
+
+/**
+ * Nombres sin espacios ("Eustass"Captain"Kid", "Monkey.D.Luffy") se partían a media palabra.
+ * Un espacio de ancho cero tras comillas y puntos les da un corte natural. Solo para mostrar.
+ */
+const breakable = (name: string) => name.replace(/(["."'])(?=\S)/g, "$1\u200B");
+
+/** Porcentaje con un decimal fijo, para que las columnas se alineen ("7.0%" junto a "7.2%"). */
+const pct = (v: number | null) => (v == null ? "—" : `${v.toFixed(1)}%`);
+
+/**
+ * Un enfrentamiento como fila: carta del rival, nombre y set, y WR general con 1.er/2.º turno.
+ * Reemplaza a las tarjetas de 237px: 15 rivales caben en dos pantallas, no en nueve.
+ */
+function MatchupRow({
   opp,
   cell,
   onClick,
@@ -404,494 +810,619 @@ function MatchupCard({
   cell: MetaCell;
   onClick: () => void;
 }) {
-  const bucketBorder =
-    cell.win_rate >= 55
-      ? "border-t-emerald-400"
-      : cell.win_rate >= 45
-        ? "border-t-white/30"
-        : "border-t-red-400";
+  const small = isSmall(cell.total);
   return (
-    <button
-      onClick={onClick}
-      className={`rounded-b-lg rounded-t-sm border-t-2 ${bucketBorder} bg-white/[0.02] p-2 text-left transition hover:bg-white/5`}
-    >
-      {opp.leader_image ? (
-        <img
-          src={opp.leader_image}
-          alt={opp.leader_name}
-          className="mx-auto h-24 w-auto rounded-md border border-white/10 object-cover"
-        />
-      ) : (
-        <div className="mx-auto flex h-24 w-16 items-center justify-center rounded-md border border-white/10 bg-black/30">
-          <Shield size={18} className="text-gray-600" />
-        </div>
-      )}
-      <p className="mt-1.5 flex items-center justify-center gap-1.5 truncate text-center text-xs font-semibold text-white">
-        <span className="truncate">{shortLeaderName(opp.leader_name)}</span>
-        {setBadge(opp.card_set_id) && (
-          <span className="flex-shrink-0 rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
-            {setBadge(opp.card_set_id)}
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`${opp.leader_name} ${setBadge(opp.card_set_id) ?? ""}: ${pct(cell.win_rate)} en ${cell.total} partidas${small ? ", muestra chica" : ""}`}
+        className={`flex min-h-14 w-full items-center gap-3 py-2 text-left transition hover:bg-white/5 ${FOCUS_RING}`}
+      >
+        {opp.leader_image ? (
+          <img
+            src={opp.leader_image}
+            alt=""
+            loading="lazy"
+            className="h-14 w-10 flex-shrink-0 rounded border border-border object-cover"
+          />
+        ) : (
+          <span className="flex h-14 w-10 flex-shrink-0 items-center justify-center rounded border border-border">
+            <Shield size={14} aria-hidden="true" className="text-foreground-subtle" />
           </span>
         )}
-      </p>
-      {opp.colors && opp.colors.length > 0 && (
-        <div className="mt-1 flex justify-center">
-          <ColorDots colors={opp.colors} />
-        </div>
-      )}
+        <span className="min-w-0 flex-1">
+          <span className="line-clamp-2 break-words font-medium leading-snug text-foreground">
+            {breakable(opp.leader_name)}
+          </span>
+          <span className="mt-0.5 flex items-center gap-2">
+            <SetBadge code={opp.card_set_id} />
+            <ColorDots colors={opp.colors ?? []} />
+          </span>
+        </span>
+        <span className="flex-shrink-0 text-right font-mono-stat">
+          <span className={`block text-base font-semibold ${wrTone(cell.win_rate, cell.total)}`}>
+            {pct(cell.win_rate)}
+          </span>
+          <span className="block text-xs text-foreground-subtle">
+            {cell.total} partidas{small ? " · muestra chica" : ""}
+          </span>
+          <span className="block text-xs text-foreground-secondary">
+            1.er{" "}
+            <span className={wrTone(cell.first_win_rate, cell.first_total)}>
+              {pct(cell.first_win_rate)}
+            </span>
+            {" · "}2.º{" "}
+            <span className={wrTone(cell.second_win_rate, cell.second_total)}>
+              {pct(cell.second_win_rate)}
+            </span>
+          </span>
+        </span>
+      </button>
+    </li>
+  );
+}
 
-      <div className="mt-2 space-y-1 border-t border-white/5 pt-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-gray-500">WR</span>
-          <span className="font-mono text-xs">
-            <span className={`font-bold ${matchupWrColor(cell.win_rate)}`}>{cell.win_rate}%</span>{" "}
-            <span className="text-[10px] text-gray-600">{cell.total}p</span>
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-gray-500">1st</span>
-          <span className="font-mono text-xs">
-            <span className={`font-bold ${matchupWrColor(cell.first_win_rate)}`}>
-              {cell.first_win_rate != null ? `${cell.first_win_rate}%` : "—"}
-            </span>{" "}
-            <span className="text-[10px] text-gray-600">{cell.first_total}p</span>
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-gray-500">2nd</span>
-          <span className="font-mono text-xs">
-            <span className={`font-bold ${matchupWrColor(cell.second_win_rate)}`}>
-              {cell.second_win_rate != null ? `${cell.second_win_rate}%` : "—"}
-            </span>{" "}
-            <span className="text-[10px] text-gray-600">{cell.second_total}p</span>
-          </span>
-        </div>
-      </div>
-    </button>
+type MatchupItem = { opp: MetaLeader; cell: MetaCell };
+
+/**
+ * Lista de enfrentamientos de un líder con orden elegible. Para preparar un mazo importa más
+ * "contra qué pierdo" que "contra qué gano", así que se puede ver primero lo peor. Ambos
+ * órdenes ponen primero la muestra suficiente.
+ */
+function MatchupList({
+  items,
+  onSelect,
+}: {
+  items: MatchupItem[];
+  onSelect: (item: MatchupItem) => void;
+}) {
+  const [order, setOrder] = useState<string | null>("best");
+  const sorted = [...items].sort((a, b) =>
+    order === "worst"
+      ? Number(!isSmall(b.cell.total)) - Number(!isSmall(a.cell.total)) ||
+        a.cell.win_rate - b.cell.win_rate
+      : byReliableWinRate(a, b),
+  );
+  if (items.length === 0) {
+    return (
+      <p className="py-6 text-sm text-foreground-secondary">
+        Todavía no hay enfrentamientos con 3 partidas o más para este líder.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <ChipGroup
+        label="Ordenar enfrentamientos"
+        value={order}
+        onChange={(k) => k && setOrder(k)}
+        options={[
+          { key: "best", label: "Mejores primero" },
+          { key: "worst", label: "Peores primero" },
+        ]}
+      />
+      <ul className="divide-y divide-border">
+        {sorted.map((item) => (
+          <MatchupRow
+            key={item.opp.leader_id}
+            opp={item.opp}
+            cell={item.cell}
+            onClick={() => onSelect(item)}
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
 
 function LeaderSearchResult({ l, onSelect }: { l: MetaLeader; onSelect: () => void }) {
   return (
     <button
+      type="button"
       onClick={onSelect}
-      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-white/5"
+      className={`flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-left text-sm transition hover:bg-white/5 ${FOCUS_RING}`}
     >
       {l.leader_image ? (
         <img
           src={l.leader_image}
-          alt={l.leader_name}
-          className="h-9 w-6 flex-shrink-0 rounded border border-white/10 object-cover"
+          alt=""
+          className="h-9 w-6 flex-shrink-0 rounded border border-border object-cover"
         />
       ) : (
-        <div className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded border border-white/10 bg-black/30">
-          <Shield size={10} className="text-gray-600" />
-        </div>
+        <span className="flex h-9 w-6 flex-shrink-0 items-center justify-center rounded border border-border">
+          <Shield size={12} aria-hidden="true" className="text-foreground-subtle" />
+        </span>
       )}
-      <span className="inline-flex min-w-0 items-center gap-1.5">
-        <span className="truncate text-white">{shortLeaderName(l.leader_name)}</span>
-        {setBadge(l.card_set_id) && (
-          <span className="flex-shrink-0 rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
-            {setBadge(l.card_set_id)}
-          </span>
-        )}
-        {l.colors && l.colors.length > 0 && <ColorDots colors={l.colors} />}
-      </span>
+      <span className="min-w-0 truncate text-foreground">{l.leader_name}</span>
+      <SetBadge code={l.card_set_id} />
+      <ColorDots colors={l.colors ?? []} />
     </button>
   );
 }
 
-function MatchupHeatmap({ data, allLeaders }: { data: MatchupData; allLeaders: MetaLeader[] }) {
+/** Buscador de líderes con su lista y el estado "sin resultados" anunciado. */
+function LeaderSearch({
+  id,
+  query,
+  setQuery,
+  results,
+  onSelect,
+}: {
+  id: string;
+  query: string;
+  setQuery: (q: string) => void;
+  results: MetaLeader[];
+  onSelect: (l: MetaLeader) => void;
+}) {
+  return (
+    <div className="relative">
+      <label htmlFor={id} className="text-sm font-medium text-foreground-secondary">
+        Ver los enfrentamientos de un líder
+      </label>
+      <div className="relative mt-1.5 max-w-md">
+        <Search
+          size={16}
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
+        />
+        <input
+          id={id}
+          type="text"
+          autoComplete="off"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Nombre o set, ej. Luffy, ST29"
+          className={`${INPUT} pl-9 pr-11`}
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Borrar búsqueda"
+            className={`absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-foreground-subtle hover:text-foreground sm:h-9 ${FOCUS_RING}`}
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      {query.trim() && (
+        <div className="mt-1 max-w-md rounded-md border border-border bg-popover p-1 shadow-2xl">
+          {results.length === 0 ? (
+            <p role="status" className="px-3 py-2 text-sm text-foreground-secondary">
+              Sin líderes para “{query.trim()}”.
+            </p>
+          ) : (
+            results.map((l) => (
+              <LeaderSearchResult key={l.leader_id} l={l} onSelect={() => onSelect(l)} />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MatchupHeatmap({
+  data,
+  allLeaders,
+  preferredLeaderId,
+  exploringId,
+  onExplore,
+}: {
+  data: MatchupData;
+  allLeaders: StatsLeader[];
+  /** Leader más usado por el jugador con sesión: el explorador abre con él. */
+  preferredLeaderId: string | null;
+  /** Líder elegido (desde la tabla o la búsqueda); vive en la página para un solo camino. */
+  exploringId: string | null;
+  onExplore: (id: string | null) => void;
+}) {
   const { leaders, matchups } = data;
-  // Foco desktop: click en una fila/columna "pinea" ese líder — resalta su
-  // fila+columna y atenúa el resto, así el ojo no tiene que sostener dos
-  // posiciones en memoria mientras traza la intersección.
+  // Fijar un líder (fila o columna) resalta su fila y su columna y atenúa el resto, para no
+  // sostener dos posiciones en la memoria al trazar el cruce.
   const [activeId, setActiveId] = useState<string | null>(null);
   const toggleActive = (id: string) => setActiveId((cur) => (cur === id ? null : id));
 
-  // Click en una celda (desktop) o en una card de matchup abre el detalle
-  // del enfrentamiento — el matchup exacto, no solo el líder.
   const [selectedMatchup, setSelectedMatchup] = useState<{
     a: MetaLeader;
     b: MetaLeader;
     cell: MetaCell;
   } | null>(null);
 
-  // Explorador: buscar CUALQUIER líder elegible (no solo el Top 10 de la
-  // matriz) y ver su fila de matchups. Los datos ya están en `matchups`
-  // (el backend ya no los limita al Top 10), así que esto es 100% client-side.
-  const [exploreQuery, setExploreQuery] = useState("");
-  const [exploringId, setExploringId] = useState<string | null>(null);
+  // Explorador: CUALQUIER líder elegible (no solo el Top 10 de la matriz). Los datos ya
+  // están en `matchups`, así que es 100% del lado del cliente. Una sola búsqueda para
+  // escritorio y móvil; en móvil el explorador es la vista principal.
+  const [query, setQuery] = useState("");
   const exploringLeader = exploringId
     ? (allLeaders.find((l) => l.leader_id === exploringId) ?? null)
     : null;
-  const exploreResults = exploreQuery.trim()
+  const results = query.trim()
     ? allLeaders
-        .filter((l) => leaderMatches(l, exploreQuery))
+        .filter((l) => leaderMatches(l, query))
         .sort(bySetBadgeDesc)
         .slice(0, 8)
     : [];
-
-  const [mobileQuery, setMobileQuery] = useState("");
-  const [mobileLeaderId, setMobileLeaderId] = useState<string>(leaders[0]?.leader_id ?? "");
-  const mobileLeader =
-    allLeaders.find((l) => l.leader_id === mobileLeaderId) ?? allLeaders[0] ?? null;
-  const mobileResults = mobileQuery.trim()
-    ? allLeaders
-        .filter((l) => leaderMatches(l, mobileQuery))
-        .sort(bySetBadgeDesc)
-        .slice(0, 8)
-    : [];
+  // En contenedor angosto no hay matriz: se explora el leader del jugador (si tiene sesión y
+  // un leader con datos) o el más jugado.
+  const myLeader = preferredLeaderId
+    ? (allLeaders.find((l) => l.leader_id === preferredLeaderId) ?? null)
+    : null;
+  // El líder que muestra el explorador: el elegido, o por defecto el del jugador o el más jugado.
+  const currentLeader = exploringLeader ?? myLeader ?? allLeaders[0] ?? null;
 
   const matchupRow = (leaderId: string) =>
     allLeaders
       .filter((l) => l.leader_id !== leaderId)
       .map((opp) => ({ opp, cell: matchups[`${leaderId}|${opp.leader_id}`] }))
-      .filter((r): r is { opp: MetaLeader; cell: MetaCell } => Boolean(r.cell))
-      .sort((a, b) => b.cell.win_rate - a.cell.win_rate);
+      .filter((r): r is { opp: StatsLeader; cell: MetaCell } => Boolean(r.cell));
+
+  const explorer = (leader: StatsLeader) => {
+    const row = matchupRow(leader.leader_id);
+    return (
+      <div>
+        <div className="flex items-center gap-3 border-b border-border pb-3">
+          {leader.leader_image && (
+            <img
+              src={leader.leader_image}
+              alt=""
+              className="h-14 w-10 flex-shrink-0 rounded-md border border-border object-cover"
+            />
+          )}
+          <div className="min-w-0">
+            <h3
+              data-explorer-title
+              tabIndex={-1}
+              className="font-semibold text-foreground outline-none"
+            >
+              Enfrentamientos de {leader.leader_name}
+              {leader.leader_id === preferredLeaderId && (
+                <span className="ml-2 text-sm font-normal text-foreground-subtle">· tu leader</span>
+              )}
+            </h3>
+            <div className="mt-0.5 flex items-center gap-2">
+              <SetBadge code={leader.card_set_id} />
+              <ColorDots colors={leader.colors ?? []} />
+            </div>
+          </div>
+        </div>
+        {/* Las cifras del líder, antes solo en el panel de la fila */}
+        <dl className="flex flex-wrap gap-x-6 gap-y-3 border-b border-border py-3">
+          <Stat label="Win rate" sub={`${leader.total_rounds} partidas`}>
+            <span className={wrTone(leader.win_rate, leader.total_rounds)}>
+              {pct(leader.win_rate)}
+            </span>
+          </Stat>
+          <Stat label="1.er turno" sub={`${leader.first_rounds} partidas`}>
+            <span className={wrTone(leader.first_win_rate, leader.first_rounds)}>
+              {pct(leader.first_win_rate)}
+            </span>
+          </Stat>
+          <Stat label="2.º turno" sub={`${leader.second_rounds} partidas`}>
+            <span className={wrTone(leader.second_win_rate, leader.second_rounds)}>
+              {pct(leader.second_win_rate)}
+            </span>
+          </Stat>
+          <Stat label="Uso">
+            <span className="text-foreground">{pct(leader.play_rate)}</span>
+          </Stat>
+          {leader.tournaments_won > 0 && (
+            <Stat label="Torneos ganados">
+              <span className="text-foreground">{leader.tournaments_won}</span>
+            </Stat>
+          )}
+        </dl>
+        <div className="mt-2">
+          <MatchupList
+            items={row}
+            onSelect={({ opp, cell }) => setSelectedMatchup({ a: leader, b: opp, cell })}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const dim = (ids: string[]) => (activeId && !ids.includes(activeId) ? "opacity-35" : "");
 
   return (
-    <section className="mt-10">
+    <section aria-labelledby="meta-matchups" className="@container mt-10">
       <header className="mb-4">
-        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          <Swords size={12} /> Matchups
-        </p>
-        <h2 className="mt-1 text-xl font-bold text-white">Matriz de enfrentamientos</h2>
-        <p className="mt-1 text-sm text-gray-400">
-          Win rate del líder de la fila contra el líder de la columna. Mínimo 3 rondas por matchup ·
-          Top 10 líderes por popularidad.
+        <h2 id="meta-matchups" className="text-lg font-semibold text-foreground">
+          Enfrentamientos
+        </h2>
+        <p className="mt-1 max-w-[65ch] text-sm text-foreground-secondary">
+          <span className="hidden @4xl:inline">
+            Win rate del líder de la fila contra el de la columna, entre los 10 más jugados.{" "}
+          </span>
+          <span className="@4xl:hidden">Elige un líder para ver contra quién gana y pierde. </span>
+          Cada cruce necesita al menos 3 partidas.
         </p>
       </header>
 
-      {/* Desktop */}
-      <div className="glass hidden rounded-2xl p-4 md:block">
-        <div className="relative mb-4 max-w-xs">
-          <Search
-            size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-          />
-          <input
-            type="search"
-            value={exploreQuery}
-            onChange={(e) => setExploreQuery(e.target.value)}
-            placeholder="Explorar un líder..."
-            aria-label="Explorar un líder"
-            className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2 pl-9 pr-8 text-sm text-white placeholder:text-gray-600 focus:border-primary/50 focus:outline-none"
-          />
-          {exploreQuery && (
-            <button
-              onClick={() => setExploreQuery("")}
-              aria-label="Limpiar búsqueda"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-            >
-              <X size={14} />
-            </button>
-          )}
-          {exploreResults.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full max-w-xs rounded-lg border border-white/10 bg-[#0B1220] p-1 shadow-xl">
-              {exploreResults.map((l) => (
-                <LeaderSearchResult
-                  key={l.leader_id}
-                  l={l}
-                  onSelect={() => {
-                    setExploringId(l.leader_id);
-                    setExploreQuery("");
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+      <div className={`${SECTION} space-y-4`}>
+        <LeaderSearch
+          id="meta-explore"
+          query={query}
+          setQuery={setQuery}
+          results={results}
+          onSelect={(l) => {
+            setQuery("");
+            onExplore(l.leader_id);
+          }}
+        />
 
-        {exploringLeader ? (
-          <div>
-            <button
-              onClick={() => setExploringId(null)}
-              className="mb-4 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-            >
-              ← Volver al Top 10
-            </button>
-            <div className="flex flex-col items-center gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center">
-              {exploringLeader.leader_image ? (
-                <img
-                  src={exploringLeader.leader_image}
-                  alt={exploringLeader.leader_name}
-                  className="h-20 w-14 flex-shrink-0 rounded-md border border-white/10 object-cover"
-                />
-              ) : (
-                <div className="flex h-20 w-14 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-                  <Shield size={16} className="text-gray-600" />
-                </div>
-              )}
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-primary">
-                  Explorando líder
-                </p>
-                <div className="mt-0.5 inline-flex items-center gap-1.5">
-                  <span className="text-lg font-bold text-white">
-                    {shortLeaderName(exploringLeader.leader_name)}
-                  </span>
-                  {setBadge(exploringLeader.card_set_id) && (
-                    <span className="rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
-                      {setBadge(exploringLeader.card_set_id)}
-                    </span>
-                  )}
-                  {exploringLeader.colors && exploringLeader.colors.length > 0 && (
-                    <ColorDots colors={exploringLeader.colors} />
-                  )}
-                </div>
-              </div>
-            </div>
-            <div
-              className="mt-4 grid gap-2.5"
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))" }}
-            >
-              {matchupRow(exploringLeader.leader_id).length === 0 ? (
-                <p className="col-span-full py-8 text-center text-xs text-gray-500">
-                  Sin matchups con datos suficientes para {exploringLeader.leader_name}.
-                </p>
-              ) : (
-                matchupRow(exploringLeader.leader_id).map(({ opp, cell }) => (
-                  <MatchupCard
-                    key={opp.leader_id}
-                    opp={opp}
-                    cell={cell}
-                    onClick={() => setSelectedMatchup({ a: exploringLeader, b: opp, cell })}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-1.5">
-              <thead>
-                <tr>
-                  <th />
-                  {leaders.map((l) => (
-                    <th
-                      key={l.leader_id}
-                      className={`cursor-pointer pb-1 align-bottom transition-opacity ${
-                        activeId && activeId !== l.leader_id ? "opacity-35" : "opacity-100"
-                      }`}
-                      title={l.leader_name}
-                      onClick={() => toggleActive(l.leader_id)}
-                    >
-                      {l.leader_image ? (
-                        <img
-                          src={l.leader_image}
-                          alt={l.leader_name}
-                          className="mx-auto h-16 w-11 rounded-md border border-white/10 object-cover"
-                        />
-                      ) : (
-                        <div className="mx-auto flex h-16 w-11 items-center justify-center rounded-md border border-white/10 bg-black/30">
-                          <Shield size={14} className="text-gray-600" />
-                        </div>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {leaders.map((row) => (
-                  <tr key={row.leader_id}>
-                    <th
-                      className={`cursor-pointer pr-2 text-right text-xs font-semibold whitespace-nowrap transition-opacity ${
-                        activeId && activeId !== row.leader_id ? "opacity-35" : "opacity-100"
-                      } ${activeId === row.leader_id ? "text-primary" : "text-white"}`}
-                      title={row.leader_name}
-                      onClick={() => toggleActive(row.leader_id)}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <span className="max-w-[130px] truncate">
-                          {shortLeaderName(row.leader_name)}
-                        </span>
-                        {setBadge(row.card_set_id) && (
-                          <span className="flex-shrink-0 rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
-                            {setBadge(row.card_set_id)}
-                          </span>
-                        )}
-                        {row.colors && row.colors.length > 0 && <ColorDots colors={row.colors} />}
-                        {row.leader_image ? (
-                          <img
-                            src={row.leader_image}
-                            alt=""
-                            className="h-12 w-8 rounded-md border border-white/10 object-cover"
-                          />
-                        ) : null}
-                      </span>
-                    </th>
-                    {leaders.map((col) => {
-                      const dimmed =
-                        !!activeId && activeId !== row.leader_id && activeId !== col.leader_id;
-                      if (row.leader_id === col.leader_id) {
-                        return (
-                          <td
-                            key={col.leader_id}
-                            className={`h-16 w-20 rounded-md bg-white/[0.03] text-center text-xs text-gray-700 transition-opacity ${dimmed ? "opacity-35" : ""}`}
-                          >
-                            —
-                          </td>
-                        );
-                      }
-                      const cell = matchups[`${row.leader_id}|${col.leader_id}`];
-                      if (!cell) {
-                        return (
-                          <td
-                            key={col.leader_id}
-                            className={`h-16 w-20 rounded-md bg-white/[0.02] text-center text-xs text-gray-700 transition-opacity ${dimmed ? "opacity-35" : ""}`}
-                            title={`${row.leader_name} vs ${col.leader_name}: sin datos suficientes`}
-                          >
-                            ·
-                          </td>
-                        );
-                      }
-                      return (
-                        <td
-                          key={col.leader_id}
-                          className={`h-16 w-20 cursor-pointer rounded-md text-center align-middle transition-opacity hover:ring-1 hover:ring-white/30 ${dimmed ? "opacity-35" : ""}`}
-                          style={{ backgroundColor: heatColor(cell.win_rate) }}
-                          title={`${row.leader_name} vs ${col.leader_name}: ${cell.win_rate}% (${cell.wins}-${cell.total - cell.wins}, ${cell.total} rondas) — click para detalle`}
-                          onClick={() => setSelectedMatchup({ a: row, b: col, cell })}
+        {/* Ancho sin líder elegido: la matriz. Elegir un líder la reemplaza por el explorador. */}
+        <div className={exploringLeader ? "hidden" : "hidden @4xl:block"}>
+          {
+            <>
+              <table className="w-full table-fixed border-separate border-spacing-1">
+                <caption className="sr-only">
+                  Win rate de cada líder de la fila contra cada líder de la columna.
+                </caption>
+                <thead>
+                  <tr>
+                    <td className="w-32" />
+                    {leaders.map((l) => (
+                      <th
+                        key={l.leader_id}
+                        scope="col"
+                        className={`align-bottom transition-opacity ${dim([l.leader_id])}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleActive(l.leader_id)}
+                          aria-pressed={activeId === l.leader_id}
+                          aria-label={`Resaltar ${leaderLabel(l)}`}
+                          title={l.leader_name}
+                          className={`flex w-full flex-col items-center gap-1 rounded-md p-1 text-xs font-medium ${
+                            activeId === l.leader_id
+                              ? "text-foreground"
+                              : "text-foreground-secondary"
+                          } hover:text-foreground ${FOCUS_RING}`}
                         >
-                          <div className="font-mono text-sm font-bold text-white">
-                            {cell.win_rate}%
-                          </div>
-                          <div className="text-[10px] text-white/60">{cell.total} rondas</div>
-                        </td>
-                      );
-                    })}
+                          {l.leader_image ? (
+                            <img
+                              src={l.leader_image}
+                              alt=""
+                              className="h-12 w-9 rounded border border-border object-cover"
+                            />
+                          ) : null}
+                          <span className="w-full truncate">{shortName(l.leader_name)}</span>
+                          <SetBadge code={l.card_set_id} />
+                        </button>
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-3 text-center text-[11px] text-gray-600">
-              Click en un líder para resaltar su fila y columna · click en una celda para ver el
-              detalle del matchup · verde: favorable para la fila · rojo: desfavorable.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Mobile: siempre explorador por líder — una fila de matchups como lista */}
-      <div className="glass rounded-2xl p-4 md:hidden">
-        <label className="mb-2 block text-[10px] uppercase tracking-widest text-gray-500">
-          Buscar líder
-        </label>
-        <div className="relative">
-          <Search
-            size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-          />
-          <input
-            type="search"
-            value={mobileQuery}
-            onChange={(e) => setMobileQuery(e.target.value)}
-            placeholder="Buscar líder..."
-            aria-label="Buscar líder"
-            className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white placeholder:text-gray-600 focus:border-primary/50 focus:outline-none"
-          />
-        </div>
-        {mobileResults.length > 0 && (
-          <div className="mt-1 rounded-lg border border-white/10 bg-black/20 p-1">
-            {mobileResults.map((l) => (
-              <LeaderSearchResult
-                key={l.leader_id}
-                l={l}
-                onSelect={() => {
-                  setMobileLeaderId(l.leader_id);
-                  setMobileQuery("");
-                }}
-              />
-            ))}
-          </div>
-        )}
-        {mobileLeader && (
-          <div className="mt-4">
-            <div className="mb-3 flex items-center gap-2">
-              {mobileLeader.leader_image ? (
-                <img
-                  src={mobileLeader.leader_image}
-                  alt={mobileLeader.leader_name}
-                  className="h-10 w-7 flex-shrink-0 rounded border border-white/10 object-cover"
-                />
-              ) : null}
-              <div>
-                <p className="text-[9px] uppercase tracking-widest text-primary">
-                  Explorando líder
-                </p>
-                <p className="text-sm font-bold text-white">
-                  {shortLeaderName(mobileLeader.leader_name)}
-                </p>
-              </div>
-            </div>
-            <div
-              className="grid gap-2.5"
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))" }}
-            >
-              {matchupRow(mobileLeader.leader_id).length === 0 ? (
-                <p className="col-span-full py-6 text-center text-xs text-gray-500">
-                  Sin matchups con datos suficientes para {mobileLeader.leader_name}.
-                </p>
-              ) : (
-                matchupRow(mobileLeader.leader_id).map(({ opp, cell }) => (
-                  <MatchupCard
-                    key={opp.leader_id}
-                    opp={opp}
-                    cell={cell}
-                    onClick={() => setSelectedMatchup({ a: mobileLeader, b: opp, cell })}
+                </thead>
+                <tbody>
+                  {leaders.map((row) => (
+                    <tr key={row.leader_id}>
+                      <th
+                        scope="row"
+                        className={`text-right transition-opacity ${dim([row.leader_id])}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleActive(row.leader_id)}
+                          aria-pressed={activeId === row.leader_id}
+                          aria-label={`Resaltar ${leaderLabel(row)}`}
+                          title={row.leader_name}
+                          className={`ml-auto flex max-w-full flex-col items-end rounded-md px-1 py-0.5 text-sm font-semibold ${
+                            activeId === row.leader_id
+                              ? "text-foreground"
+                              : "text-foreground-secondary"
+                          } hover:text-foreground ${FOCUS_RING}`}
+                        >
+                          <span className="max-w-full truncate">{shortName(row.leader_name)}</span>
+                          <SetBadge code={row.card_set_id} />
+                        </button>
+                      </th>
+                      {leaders.map((col) => {
+                        const fade = dim([row.leader_id, col.leader_id]);
+                        if (row.leader_id === col.leader_id) {
+                          return (
+                            <td
+                              key={col.leader_id}
+                              className={`h-14 rounded-md bg-white/[0.03] text-center text-foreground-subtle ${fade}`}
+                            >
+                              <span aria-label="Mismo líder">—</span>
+                            </td>
+                          );
+                        }
+                        const cell = matchups[`${row.leader_id}|${col.leader_id}`];
+                        if (!cell) {
+                          return (
+                            <td
+                              key={col.leader_id}
+                              className={`h-14 rounded-md text-center text-xs text-foreground-subtle ${fade}`}
+                            >
+                              <span className="sr-only">
+                                {leaderLabel(row)} contra {leaderLabel(col)}: menos de 3 partidas
+                              </span>
+                              <span aria-hidden="true">·</span>
+                            </td>
+                          );
+                        }
+                        const small = isSmall(cell.total);
+                        return (
+                          <td key={col.leader_id} className={`h-14 p-0 transition-opacity ${fade}`}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMatchup({ a: row, b: col, cell })}
+                              aria-label={`${leaderLabel(row)} contra ${leaderLabel(col)}: ${pct(cell.win_rate)}, ${cell.wins}–${cell.total - cell.wins} en ${cell.total} partidas${small ? ", muestra chica" : ""}`}
+                              style={{ backgroundColor: heatColor(cell.win_rate, cell.total) }}
+                              className={`flex h-full w-full flex-col items-center justify-center rounded-md hover:ring-1 hover:ring-foreground-subtle ${FOCUS_RING}`}
+                            >
+                              <span
+                                className={`font-mono-stat text-sm font-semibold ${small ? "text-foreground-secondary" : "text-foreground"}`}
+                              >
+                                {pct(cell.win_rate)}
+                              </span>
+                              {/* Sobre el tinte, texto principal: el secundario bajaba a 4:1 */}
+                              <span
+                                className={`font-mono-stat text-xs ${small ? "text-foreground-subtle" : "text-foreground"}`}
+                              >
+                                {cell.total}
+                              </span>
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground-secondary">
+                <li className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className="h-3 w-3 rounded-sm"
+                    style={{ backgroundColor: heatColor(80, 40) }}
                   />
-                ))
-              )}
-            </div>
+                  Favorable para la fila
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className="h-3 w-3 rounded-sm"
+                    style={{ backgroundColor: heatColor(20, 40) }}
+                  />
+                  Desfavorable
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className="h-3 w-3 rounded-sm border border-border"
+                    style={{ backgroundColor: heatColor(50, 1) }}
+                  />
+                  Menos de {SMALL_SAMPLE} partidas: muestra chica
+                </li>
+                <li>
+                  El número bajo el porcentaje son las partidas. Selecciona un líder para resaltar
+                  su fila y columna, o una celda para el detalle.
+                </li>
+              </ul>
+            </>
+          }
+        </div>
+
+        {/* El explorador se monta una sola vez: siempre en angosto; en ancho, solo con un líder
+            elegido (si no, se ve la matriz). */}
+        {currentLeader && (
+          <div className={exploringLeader ? "space-y-3" : "@4xl:hidden"}>
+            {exploringLeader && (
+              // Envuelto: BTN_OUTLINE trae inline-flex, que le gana a "hidden" en el mismo botón.
+              <div className="hidden @4xl:block">
+                <button type="button" onClick={() => onExplore(null)} className={BTN_OUTLINE}>
+                  <ArrowLeft size={16} aria-hidden="true" />
+                  Volver a la matriz
+                </button>
+              </div>
+            )}
+            {explorer(currentLeader)}
           </div>
         )}
       </div>
 
-      <AnimatePresence>
-        {selectedMatchup && (
-          <MatchupDrawer
-            a={selectedMatchup.a}
-            b={selectedMatchup.b}
-            cell={selectedMatchup.cell}
-            onClose={() => setSelectedMatchup(null)}
-          />
-        )}
-      </AnimatePresence>
+      {selectedMatchup && (
+        <MatchupDrawer
+          a={selectedMatchup.a}
+          b={selectedMatchup.b}
+          cell={selectedMatchup.cell}
+          onClose={() => setSelectedMatchup(null)}
+        />
+      )}
     </section>
   );
 }
 
-function matchupWrColor(wr: number | null): string {
-  if (wr === null) return "text-gray-600";
-  if (wr >= 55) return "text-emerald-400";
-  if (wr >= 45) return "text-white";
-  return "text-red-400";
+/**
+ * Panel lateral del meta sobre Radix Dialog: se monta en document.body (The Portal Rule),
+ * atrapa y devuelve el foco, bloquea el scroll de fondo y, con paneles anidados, Escape
+ * cierra solo el de arriba. Superficie popover sólida, sin desenfoque.
+ */
+function MetaSheet({
+  title,
+  header,
+  onClose,
+  wide,
+  children,
+}: {
+  title: string;
+  header: ReactNode;
+  onClose: () => void;
+  wide?: boolean;
+  children: ReactNode;
+}) {
+  // Se abre desde una fila o celda, no desde un Dialog.Trigger: Radix no sabría a quién
+  // devolver el foco. Se guarda quién lo tenía al abrir y se le devuelve al cerrar.
+  const [returnTo] = useState(() =>
+    typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null,
+  );
+  return (
+    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/70 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            returnTo?.focus();
+          }}
+          className={`fixed inset-y-0 right-0 z-[71] flex w-full ${wide ? "max-w-xl" : "max-w-md"} flex-col border-l border-border bg-popover shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=open]:duration-200`}
+        >
+          <div className="flex flex-shrink-0 items-center gap-3 border-b border-border py-2 pl-4 pr-2">
+            <div className="min-w-0 flex-1">{header}</div>
+            <Dialog.Title className="sr-only">{title}</Dialog.Title>
+            <Dialog.Close
+              aria-label="Cerrar"
+              className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-foreground-secondary transition hover:bg-white/5 hover:text-foreground ${FOCUS_RING}`}
+            >
+              <X size={18} aria-hidden="true" />
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {children}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
 }
 
+/** Carta + nombre + set + colores, para el encabezado de un enfrentamiento. */
 function LeaderIdentity({ leader }: { leader: MetaLeader }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 text-center">
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
       {leader.leader_image ? (
         <img
           src={leader.leader_image}
-          alt={leader.leader_name}
-          className="h-24 w-16 rounded-md border border-white/10 object-cover"
+          alt=""
+          className="h-24 w-16 rounded-md border border-border object-cover"
         />
       ) : (
-        <div className="flex h-24 w-16 items-center justify-center rounded-md border border-white/10 bg-black/30">
-          <Shield size={18} className="text-gray-600" />
-        </div>
+        <span className="flex h-24 w-16 items-center justify-center rounded-md border border-border">
+          <Shield size={18} aria-hidden="true" className="text-foreground-subtle" />
+        </span>
       )}
-      <div className="flex items-center gap-1.5">
-        <span className="text-sm font-bold text-white">{shortLeaderName(leader.leader_name)}</span>
-        {setBadge(leader.card_set_id) && (
-          <span className="flex-shrink-0 rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
-            {setBadge(leader.card_set_id)}
-          </span>
-        )}
-      </div>
-      {leader.colors && leader.colors.length > 0 && <ColorDots colors={leader.colors} />}
+      <span className="text-balance text-sm font-semibold leading-snug text-foreground">
+        {breakable(leader.leader_name)}
+      </span>
+      <span className="flex items-center gap-2">
+        <SetBadge code={leader.card_set_id} />
+        <ColorDots colors={leader.colors ?? []} />
+      </span>
+    </div>
+  );
+}
+
+/** Fila de datos (Stat Row): label de 12px sobre la cifra en mono, sin cajas. */
+function Stat({ label, children, sub }: { label: string; children: ReactNode; sub?: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-foreground-subtle">{label}</dt>
+      <dd className="mt-0.5 font-mono-stat text-lg font-semibold">{children}</dd>
+      {sub && <dd className="font-mono-stat text-xs text-foreground-subtle">{sub}</dd>}
     </div>
   );
 }
@@ -907,259 +1438,53 @@ function MatchupDrawer({
   cell: MetaCell;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const rows: Array<{ label: string; wr: number | null; total: number }> = [
-    { label: "Win rate", wr: cell.win_rate, total: cell.total },
-    { label: "Yendo primero", wr: cell.first_win_rate, total: cell.first_total },
-    { label: "Yendo segundo", wr: cell.second_win_rate, total: cell.second_total },
+  const rows: Array<{
+    label: string;
+    wr: number | null;
+    total: number;
+    record?: { wins: number; total: number };
+  }> = [
+    { label: "En total", wr: cell.win_rate, total: cell.total, record: cell },
+    { label: "1.er turno", wr: cell.first_win_rate, total: cell.first_total },
+    { label: "2.º turno", wr: cell.second_win_rate, total: cell.second_total },
   ];
-
   return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <motion.aside
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${a.leader_name} vs ${b.leader_name}`}
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
-        className="fixed right-0 top-0 bottom-0 z-[71] flex w-full max-w-md flex-col overflow-y-auto border-l border-white/10 bg-[#0B1220]/95 backdrop-blur-xl"
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-end border-b border-white/10 bg-[#0B1220]/95 p-3 backdrop-blur-xl">
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-400 transition hover:text-white"
-          >
-            <X size={14} />
-          </button>
-        </div>
+    <MetaSheet
+      title={`${a.leader_name} contra ${b.leader_name}`}
+      onClose={onClose}
+      header={<p className="font-semibold text-foreground">Enfrentamiento</p>}
+    >
+      <div className="flex items-start justify-center gap-3">
+        <LeaderIdentity leader={a} />
+        <span className="mt-10 flex-shrink-0 text-sm text-foreground-subtle">contra</span>
+        <LeaderIdentity leader={b} />
+      </div>
 
-        <div className="space-y-5 p-5">
-          <div className="flex items-center justify-center gap-4">
-            <LeaderIdentity leader={a} />
-            <span className="flex-shrink-0 font-mono text-xs uppercase tracking-widest text-gray-500">
-              vs
-            </span>
-            <LeaderIdentity leader={b} />
-          </div>
-
-          <div className="space-y-2">
-            {rows.map((r) => (
-              <div
-                key={r.label}
-                className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2.5"
-              >
-                <span className="text-xs text-gray-400">{r.label}</span>
-                <span className="font-mono text-sm">
-                  <span className={`font-bold ${matchupWrColor(r.wr)}`}>
-                    {r.wr != null ? `${r.wr}%` : "—"}
-                  </span>{" "}
-                  <span className="text-[11px] text-gray-600">{r.total} rondas</span>
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-center text-[11px] text-gray-600">
-            Mínimo 3 rondas por matchup para mostrar datos.
-          </p>
-        </div>
-      </motion.aside>
-    </>
-  );
-}
-
-function StatTile({
-  label,
-  wr,
-  value,
-  sub,
-}: {
-  label: string;
-  wr?: number | null;
-  value?: string;
-  sub: string;
-}) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-center">
-      <p className="text-[10px] uppercase tracking-widest text-gray-500">{label}</p>
-      <p
-        className={`mt-1 font-mono text-lg font-bold ${value != null ? "text-white" : wrColor(wr ?? null)}`}
-      >
-        {value ?? (wr != null ? `${wr}%` : "—")}
+      <p className="mt-5 text-sm text-foreground-secondary">
+        Win rate de {leaderLabel(a)} contra {leaderLabel(b)}
+        {a.leader_id !== b.leader_id ? "" : " (mismo líder)"}:
       </p>
-      <p className="text-[10px] text-gray-600">{sub}</p>
-    </div>
-  );
-}
-
-// Perfil completo de un líder desde el leaderboard: sus stats agregados (ya
-// vienen en la fila del leaderboard) + su fila de matchups contra TODOS los
-// líderes con datos suficientes, no solo el Top 10 de la matriz.
-function LeaderDetailDrawer({
-  leader,
-  matchups,
-  allLeaders,
-  onClose,
-}: {
-  leader: StatsLeader;
-  matchups: MatchupData["matchups"];
-  allLeaders: StatsLeader[];
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const [selectedMatchup, setSelectedMatchup] = useState<{
-    a: StatsLeader;
-    b: StatsLeader;
-    cell: MetaCell;
-  } | null>(null);
-
-  const rows = allLeaders
-    .filter((l) => l.leader_id !== leader.leader_id)
-    .map((opp) => ({ opp, cell: matchups[`${leader.leader_id}|${opp.leader_id}`] }))
-    .filter((r): r is { opp: StatsLeader; cell: MetaCell } => Boolean(r.cell))
-    .sort((a, b) => b.cell.win_rate - a.cell.win_rate);
-
-  return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <motion.aside
-        role="dialog"
-        aria-modal="true"
-        aria-label={leader.leader_name}
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
-        className="fixed right-0 top-0 bottom-0 z-[71] flex w-full max-w-xl flex-col overflow-y-auto border-l border-white/10 bg-[#0B1220]/95 backdrop-blur-xl"
-      >
-        <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 bg-[#0B1220]/95 p-4 backdrop-blur-xl">
-          {leader.leader_image ? (
-            <img
-              src={leader.leader_image}
-              alt={leader.leader_name}
-              className="h-14 w-10 flex-shrink-0 rounded-md border border-white/10 object-cover"
-            />
-          ) : (
-            <div className="flex h-14 w-10 flex-shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/30">
-              <Shield size={16} className="text-gray-600" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <h2 className="truncate text-lg font-bold text-white">
-                {shortLeaderName(leader.leader_name)}
-              </h2>
-              {setBadge(leader.card_set_id) && (
-                <span className="flex-shrink-0 rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-gray-400">
-                  {setBadge(leader.card_set_id)}
-                </span>
-              )}
-              {leader.colors && leader.colors.length > 0 && <ColorDots colors={leader.colors} />}
-            </div>
+      <dl className="mt-2 divide-y divide-border border-y border-border">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-baseline justify-between gap-3 py-3">
+            <dt className="text-sm text-foreground-secondary">{r.label}</dt>
+            <dd className="text-right font-mono-stat">
+              <span className={`text-lg font-semibold ${wrTone(r.wr, r.total)}`}>{pct(r.wr)}</span>
+              <span className="block text-xs text-foreground-subtle">
+                {r.record && (
+                  <span className="text-foreground-secondary">
+                    {r.record.wins}V–{r.record.total - r.record.wins}D ·{" "}
+                  </span>
+                )}
+                {r.total} partidas{isSmall(r.total) && r.total > 0 ? " · muestra chica" : ""}
+              </span>
+            </dd>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-400 transition hover:text-white"
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        <div className="space-y-5 p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <StatTile
-              label="Win Rate"
-              wr={leader.win_rate}
-              sub={`${leader.total_rounds} partidas`}
-            />
-            <StatTile
-              label="Yendo primero"
-              wr={leader.first_win_rate}
-              sub={`${leader.first_rounds} partidas`}
-            />
-            <StatTile
-              label="Yendo segundo"
-              wr={leader.second_win_rate}
-              sub={`${leader.second_rounds} partidas`}
-            />
-            <StatTile
-              label="Torneos Ganados"
-              value={`${leader.tournaments_won}`}
-              sub={leader.tournaments_won > 0 ? "🏆 campeonatos" : "sin torneos ganados"}
-            />
-            <StatTile
-              label="Total de Partidas"
-              value={`${leader.total_rounds}`}
-              sub="registradas"
-            />
-          </div>
-
-          <div>
-            <p className="mb-2 text-[10px] uppercase tracking-widest text-gray-500">
-              Matchups contra todos los líderes registrados
-            </p>
-            {rows.length === 0 ? (
-              <p className="py-8 text-center text-xs text-gray-500">
-                Sin matchups con datos suficientes para {leader.leader_name}.
-              </p>
-            ) : (
-              <div
-                className="grid gap-2.5"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))" }}
-              >
-                {rows.map(({ opp, cell }) => (
-                  <MatchupCard
-                    key={opp.leader_id}
-                    opp={opp}
-                    cell={cell}
-                    onClick={() => setSelectedMatchup({ a: leader, b: opp, cell })}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.aside>
-
-      <AnimatePresence>
-        {selectedMatchup && (
-          <MatchupDrawer
-            a={selectedMatchup.a}
-            b={selectedMatchup.b}
-            cell={selectedMatchup.cell}
-            onClose={() => setSelectedMatchup(null)}
-          />
-        )}
-      </AnimatePresence>
-    </>
+        ))}
+      </dl>
+      <p className="mt-3 text-xs text-foreground-subtle">
+        Cada cruce necesita 3 partidas o más. Con menos de {SMALL_SAMPLE} el porcentaje va en gris.
+      </p>
+    </MetaSheet>
   );
 }

@@ -6,6 +6,18 @@ import { z } from "zod";
 import { getNexusAdmin } from "./nexus-admin.server";
 
 const MIN_ROUNDS = 5;
+
+/**
+ * Un error de Supabase no es "sin datos": si se tragara, el meta público mostraría
+ * "Sin datos suficientes" ante una falla y el jugador no sabría que debe reintentar.
+ */
+function must<T>(res: { data: T | null; error: { message: string } | null }, what: string): T {
+  if (res.error) {
+    console.error(`[meta] ${what}:`, res.error.message);
+    throw new Error("No pudimos cargar el meta");
+  }
+  return (res.data ?? []) as T;
+}
 const MIN_MATCHUP_ROUNDS = 3;
 
 const filtersSchema = z.object({
@@ -19,6 +31,10 @@ const filtersSchema = z.object({
 type MetaFilters = z.infer<typeof filtersSchema>;
 
 type Round = {
+  tournament_id: string;
+  round_number: number;
+  player_id: string;
+  opponent_player_id: string | null;
   player_leader_id: string | null;
   opponent_leader_id: string | null;
   won_match: boolean | null;
@@ -29,6 +45,27 @@ type Round = {
 // límite de headers de undici (16KB, ver fix en getMyCasualStats /
 // getStandaloneSessions) — se trocea antes de mandarla.
 const ID_BATCH_SIZE = 150;
+
+/**
+ * PostgREST corta cada respuesta en 1,000 filas sin avisar: sin paginar, el meta se
+ * calculaba con 1,000 de ~9,600 rondas. Pide páginas (con orden estable) hasta una corta.
+ */
+const PAGE_SIZE = 1000;
+async function fetchAllPages<T>(
+  page: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  what: string,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const rows = must(await page(from, from + PAGE_SIZE - 1), what) as T[];
+    out.push(...rows);
+    if (rows.length < PAGE_SIZE) return out;
+  }
+}
+
 async function fetchTournamentRounds(
   admin: ReturnType<typeof getNexusAdmin>,
   ids: string[],
@@ -38,33 +75,45 @@ async function fetchTournamentRounds(
 
   const results = await Promise.all(
     batches.map((batch) =>
-      admin
-        .from("tournament_round_results")
-        .select("player_leader_id, opponent_leader_id, won_match, turn_order")
-        .in("tournament_id", batch)
-        .eq("is_bye", false)
-        .not("won_match", "is", null),
+      fetchAllPages<Round>(
+        (from, to) =>
+          admin
+            .from("tournament_round_results")
+            .select(
+              "tournament_id, round_number, player_id, opponent_player_id, player_leader_id, opponent_leader_id, won_match, turn_order",
+            )
+            .in("tournament_id", batch)
+            .eq("is_bye", false)
+            .not("won_match", "is", null)
+            .order("id")
+            .range(from, to) as any,
+        "rondas de torneo",
+      ),
     ),
   );
-  return results.flatMap((r) => (r.data ?? []) as Round[]);
+  return results.flat();
 }
 
 async function fetchMetaRounds(
   admin: ReturnType<typeof getNexusAdmin>,
   data: MetaFilters,
 ): Promise<{ rounds: Round[]; tournamentIds: string[] }> {
-  // Rondas de torneos publicados
-  let tournamentQuery = admin
-    .from("tournaments")
-    .select("id, stores!inner(zone)")
-    .eq("game_id", data.game_id)
-    .eq("status", "PUBLISHED");
-  if (data.date_from) tournamentQuery = tournamentQuery.gte("tournament_date", data.date_from);
-  if (data.date_to) tournamentQuery = tournamentQuery.lte("tournament_date", data.date_to);
-  if (data.store_id) tournamentQuery = tournamentQuery.eq("store_id", data.store_id);
-  if (data.zone) tournamentQuery = tournamentQuery.eq("stores.zone", data.zone);
-  const { data: tournaments } = await tournamentQuery;
-  const tournamentIds = (tournaments ?? []).map((t: any) => t.id);
+  // Rondas de torneos publicados. El builder se arma de nuevo por página: es mutable y
+  // reusarlo acumularía el order y el range de la página anterior.
+  const tournamentPage = (from: number, to: number) => {
+    let q = admin
+      .from("tournaments")
+      .select("id, stores!inner(zone)")
+      .eq("game_id", data.game_id)
+      .eq("status", "PUBLISHED");
+    if (data.date_from) q = q.gte("tournament_date", data.date_from);
+    if (data.date_to) q = q.lte("tournament_date", data.date_to);
+    if (data.store_id) q = q.eq("store_id", data.store_id);
+    if (data.zone) q = q.eq("stores.zone", data.zone);
+    return q.order("id").range(from, to) as any;
+  };
+  const tournaments = await fetchAllPages<{ id: string }>(tournamentPage, "torneos publicados");
+  const tournamentIds = tournaments.map((t) => t.id);
 
   // Solo torneos oficiales: esta función es pública, y las partidas casuales son
   // personales y sin verificar. Las vinculadas ya entran como rondas del torneo.
@@ -74,12 +123,20 @@ async function fetchMetaRounds(
 
 async function fetchInBatches<T>(
   ids: string[],
-  fetcher: (batch: string[]) => PromiseLike<{ data: T[] | null }>,
+  fetcher: (
+    batch: string[],
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
 ): Promise<T[]> {
   const batches: string[][] = [];
   for (let i = 0; i < ids.length; i += ID_BATCH_SIZE) batches.push(ids.slice(i, i + ID_BATCH_SIZE));
-  const results = await Promise.all(batches.map(fetcher));
-  return results.flatMap((r) => r.data ?? []);
+  const results = await Promise.all(
+    batches.map((batch) =>
+      fetchAllPages<T>((from, to) => fetcher(batch, from, to), "lote de resultados"),
+    ),
+  );
+  return results.flat();
 }
 
 // Torneos ganados (rank=1) por líder canónico — el campeón de un torneo pudo
@@ -94,12 +151,14 @@ async function computeTournamentWinsByLeader(
 
   const champions = await fetchInBatches<{ tournament_id: string; player_id: string }>(
     tournamentIds,
-    (batch) =>
+    (batch, from, to) =>
       admin
         .from("tournament_results")
         .select("tournament_id, player_id")
         .in("tournament_id", batch)
-        .eq("rank", 1),
+        .eq("rank", 1)
+        .order("id")
+        .range(from, to) as any,
   );
   if (champions.length === 0) return new Map();
 
@@ -108,13 +167,17 @@ async function computeTournamentWinsByLeader(
     tournament_id: string;
     player_id: string;
     player_leader_id: string;
-  }>(wonTournamentIds, (batch) =>
-    admin
-      .from("tournament_round_results")
-      .select("tournament_id, player_id, player_leader_id")
-      .in("tournament_id", batch)
-      .eq("is_bye", false)
-      .not("player_leader_id", "is", null),
+  }>(
+    wonTournamentIds,
+    (batch, from, to) =>
+      admin
+        .from("tournament_round_results")
+        .select("tournament_id, player_id, player_leader_id")
+        .in("tournament_id", batch)
+        .eq("is_bye", false)
+        .not("player_leader_id", "is", null)
+        .order("id")
+        .range(from, to) as any,
   );
 
   const leaderCountsByTournamentPlayer = new Map<string, Map<string, number>>();
@@ -138,12 +201,15 @@ async function computeTournamentWinsByLeader(
 
 // Resuelve arte alternativo → líder canónico y regresa info de cada líder
 export async function resolveLeaders(admin: ReturnType<typeof getNexusAdmin>, ids: string[]) {
-  const { data: rawLeaders } = ids.length
-    ? await admin
-        .from("deck_identifiers")
-        .select("id, base_name, card_image, card_set_id, colors, canonical_leader_id")
-        .in("id", ids)
-    : { data: [] as any[] };
+  const rawLeaders = ids.length
+    ? (must(
+        await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, colors, canonical_leader_id")
+          .in("id", ids),
+        "líderes",
+      ) as any[])
+    : [];
 
   const variantToCanonical = new Map<string, string>();
   for (const l of rawLeaders ?? []) {
@@ -153,12 +219,15 @@ export async function resolveLeaders(admin: ReturnType<typeof getNexusAdmin>, id
   const missingCanonicalIds = Array.from(new Set(Array.from(variantToCanonical.values()))).filter(
     (id) => !(rawLeaders ?? []).find((l: any) => l.id === id),
   );
-  const { data: canonicalLeaders } = missingCanonicalIds.length
-    ? await admin
-        .from("deck_identifiers")
-        .select("id, base_name, card_image, card_set_id, colors, canonical_leader_id")
-        .in("id", missingCanonicalIds)
-    : { data: [] as any[] };
+  const canonicalLeaders = missingCanonicalIds.length
+    ? (must(
+        await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, card_set_id, colors, canonical_leader_id")
+          .in("id", missingCanonicalIds),
+        "líderes canónicos",
+      ) as any[])
+    : [];
 
   const info = new Map(
     [...(rawLeaders ?? []), ...(canonicalLeaders ?? [])].map((l: any) => [l.id, l]),
@@ -290,6 +359,17 @@ export const getMetaMatchups = createServerFn({ method: "POST" })
     });
     const cells = new Map<string, Cell>();
     const totals = new Map<string, number>();
+    // Cada partida suele estar dos veces: la fila de cada jugador. Sumar la fila (a|b) y además
+    // su espejo (b|a) contaba cada partida doble. El espejo solo se suma cuando el rival NO
+    // registró su propia fila (reporte de un solo lado).
+    const rowKeys = new Set(
+      allRounds.map(
+        (r) => `${r.tournament_id}|${r.round_number}|${r.player_id}|${r.opponent_player_id}`,
+      ),
+    );
+    const hasRivalRow = (r: Round) =>
+      !!r.opponent_player_id &&
+      rowKeys.has(`${r.tournament_id}|${r.round_number}|${r.opponent_player_id}|${r.player_id}`);
     for (const r of allRounds) {
       if (!r.player_leader_id || !r.opponent_leader_id || r.won_match === null) continue;
       const a = resolve(r.player_leader_id);
@@ -307,8 +387,9 @@ export const getMetaMatchups = createServerFn({ method: "POST" })
       }
       cells.set(key, cell);
       totals.set(a, (totals.get(a) ?? 0) + 1);
-      // La perspectiva del rival también cuenta como dato del matchup inverso
-      // (si a jugó primero, b jugó segundo en esa misma ronda, y viceversa)
+      if (hasRivalRow(r)) continue;
+      // Sin la fila del rival, su perspectiva se deduce de esta: el matchup inverso
+      // (si a jugó primero, b jugó segundo en esa misma ronda, y viceversa).
       const invKey = `${b}|${a}`;
       const inv = cells.get(invKey) ?? emptyCell();
       inv.total++;

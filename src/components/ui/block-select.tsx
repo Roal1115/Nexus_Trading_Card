@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Sentinel para "sin filtro": Radix Select no permite value="" en un Item,
 // así que la opción de limpiar se modela como un ítem real seleccionable.
@@ -14,7 +20,10 @@ export function BlockSelect({
   onChange,
   options,
   placeholder,
+  id,
 }: {
+  /** Para ligar un <label htmlFor>; el trigger de Radix es un botón. */
+  id?: string;
   value: string | null;
   onChange: (v: string | null) => void;
   options: Array<{ value: string; label: string }>;
@@ -22,7 +31,10 @@ export function BlockSelect({
 }) {
   return (
     <Select value={value ?? NONE} onValueChange={(v) => onChange(v === NONE ? null : v)}>
-      <SelectTrigger className="h-auto w-full rounded-lg border-white/10 bg-white/[0.03] py-2 pl-3 pr-3 text-sm shadow-none focus:border-primary focus:ring-0">
+      <SelectTrigger
+        id={id}
+        className="h-auto w-full rounded-lg border-white/10 bg-white/[0.03] py-2 pl-3 pr-3 text-sm shadow-none focus:border-primary focus:ring-0"
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
