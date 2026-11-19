@@ -29,7 +29,7 @@ export type Section<T> =
   { state: "loading" } | { state: "error"; message: string } | { state: "ok"; data: T };
 export const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export const footerLink =
-  "inline-flex min-h-8 items-center gap-1 rounded py-1 text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+  "inline-flex min-h-8 items-center gap-1 rounded py-1 text-foreground-secondary hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 export const rowLink =
   "flex min-h-11 items-center gap-3 px-5 py-3 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary";
 

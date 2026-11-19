@@ -19,10 +19,12 @@ export const PLAYER_STATUS_LABELS: Record<PlayerStatus, string> = {
 };
 
 export const PLAYER_STATUS_COLORS: Record<PlayerStatus, string> = {
-  frecuente: "#22c55e",
-  ocasional: "#eab308",
-  nuevo: "#60a5fa",
-  por_recuperar: "#f87171",
+  // Verde y rojo son solo resultados de match (The Result Colors Rule): escala azul neutra y
+  // amarillo de aviso para quien hay que recuperar.
+  frecuente: "#8fb4ff",
+  ocasional: "#aab6d1",
+  nuevo: "#f2f5fb",
+  por_recuperar: "#ffd54a",
 };
 
 export const PLAYER_STATUS_HELP: Record<PlayerStatus, string> = {

@@ -19,6 +19,18 @@ type Insights = {
   trend: Array<{ week_start: string; players: number }>;
 };
 
+const playersText = (n: number) => (n === 1 ? "1 jugador" : `${n} jugadores`);
+
+// Resumen en texto de la gráfica: es lo que lee un lector de pantalla y lo que se ve sin ejes.
+function trendSummary(trend: Insights["trend"]) {
+  const last = trend.at(-1);
+  if (!last) return "Sin asistencia en las últimas semanas";
+  const prev = trend.at(-2);
+  return prev
+    ? `${playersText(last.players)} esta semana · ${prev.players} la anterior`
+    : `${playersText(last.players)} esta semana`;
+}
+
 // Estado de jugadores + asistencia: reutiliza getStoreAnalytics (rango por defecto).
 export function HomeInsights({ enabled }: { enabled: boolean }) {
   const fetchAnalytics = useServerFn(getStoreAnalytics);
@@ -44,71 +56,62 @@ export function HomeInsights({ enabled }: { enabled: boolean }) {
   }, [enabled, load]);
 
   const busy = s.state === "loading";
-  const body = (empty: React.ReactNode, ok: (d: Insights) => React.ReactNode) =>
+  const body = (empty: string, ok: (d: Insights) => React.ReactNode) =>
     s.state === "loading" ? (
       <Loading />
     ) : s.state === "error" ? (
       <LoadError message={s.message} onRetry={load} />
     ) : PLAYER_STATUSES.every((k) => !s.data.summary[k]) ? (
-      empty
+      <p className="px-5 py-6 text-sm text-foreground-secondary">{empty}</p>
     ) : (
       ok(s.data)
     );
-  const empty = <p className="px-5 py-6 text-sm text-gray-400">Aún no hay jugadores registrados</p>;
-
-  const attendance = (
-    <Panel id="attendance" title="Asistencia" busy={busy}>
-      {body(empty, (d) => (
-        <div aria-hidden className="px-2 py-3">
-          <ResponsiveContainer width="100%" height={120}>
-            <AreaChart data={d.trend}>
-              {attendanceArea("homeAttendance", { isAnimationActive: false })}
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      ))}
-    </Panel>
+  const footer = (
+    <Link to="/organizer/analytics" className={footerLink}>
+      Ver estadísticas <ArrowRight size={14} aria-hidden />
+    </Link>
   );
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <Panel
-        id="player-status"
-        title="Estado de jugadores"
-        busy={busy}
-        footer={
-          <Link to="/organizer/analytics" className={footerLink}>
-            Ver estadísticas <ArrowRight size={14} aria-hidden />
-          </Link>
-        }
-      >
-        {body(empty, (d) => (
-          <ul className="divide-y divide-white/5">
+      <Panel id="player-status" title="Estado de jugadores" busy={busy} footer={footer}>
+        {body("Aún no hay jugadores registrados.", (d) => (
+          <ul className="divide-y divide-border">
             {PLAYER_STATUSES.map((k) => (
-              <li key={k} className="flex min-h-11 items-center gap-3 px-5 py-3">
+              <li key={k} className="flex items-center gap-3 px-5 py-2.5">
                 <span
                   className="size-2.5 shrink-0 rounded-full"
                   style={{ background: PLAYER_STATUS_COLORS[k] }}
                   aria-hidden
                 />
-                <span className="flex-1 text-sm text-white">{PLAYER_STATUS_LABELS[k]}</span>
-                <span className="text-sm font-semibold text-white">{d.summary[k] ?? 0}</span>
+                <span className="flex-1 text-sm text-foreground-secondary">
+                  {PLAYER_STATUS_LABELS[k]}
+                </span>
+                <span className="font-mono-stat text-sm font-semibold text-foreground">
+                  {d.summary[k] ?? 0}
+                </span>
               </li>
             ))}
           </ul>
         ))}
       </Panel>
-      {s.state === "ok" && PLAYER_STATUSES.some((k) => s.data.summary[k]) ? (
-        <Link
-          to="/organizer/analytics"
-          aria-label="Ver estadísticas de asistencia"
-          className="block rounded-2xl transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          {attendance}
-        </Link>
-      ) : (
-        attendance
-      )}
+      <Panel id="attendance" title="Asistencia por semana" busy={busy} footer={footer}>
+        {body("Aún no hay asistencia registrada.", (d) => (
+          <Link
+            to="/organizer/analytics"
+            className="block px-5 py-3 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+          >
+            <span className="block text-sm text-foreground-secondary">{trendSummary(d.trend)}</span>
+            <span aria-hidden className="mt-2 block">
+              <ResponsiveContainer width="100%" height={96}>
+                <AreaChart data={d.trend} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+                  {attendanceArea({ isAnimationActive: false })}
+                </AreaChart>
+              </ResponsiveContainer>
+            </span>
+          </Link>
+        ))}
+      </Panel>
     </div>
   );
 }

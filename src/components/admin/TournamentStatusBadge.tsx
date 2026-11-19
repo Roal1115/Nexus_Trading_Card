@@ -29,7 +29,7 @@ export function TournamentStatusBadge({
 }) {
   const p = statusPresentation(status, rejectionReason, audience);
   const cls = `inline-flex items-center gap-1 whitespace-nowrap rounded-full border font-semibold ${
-    size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-3 py-1 text-xs"
+    size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-xs"
   } ${TONE_CLASSES[p.tone]}`;
 
   if (!rejectionReason || status !== "DRAFT") return <span className={cls}>{p.label}</span>;
