@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
+import { assertManagerOwnsStore } from "./nexus-manager-shared";
 import { getNexusAdmin, failDb } from "./nexus-admin.server";
 
 const storeIdSchema = z.object({ store_id: z.string().uuid() });
@@ -42,6 +43,7 @@ export const setStoreTcgs = createServerFn({ method: "POST" })
     // Organizador: siempre su tienda; admin y Manager deben indicarla.
     const store_id = player.role === "organizer" ? player.home_store_id : data.store_id;
     if (!store_id) throw new Error("Falta la tienda");
+    if (player.role === "tcg_manager") await assertManagerOwnsStore(admin, player, store_id);
     const tcg_ids = [...new Set(data.tcg_ids)];
 
     if (tcg_ids.length) {
