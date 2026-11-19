@@ -1,8 +1,9 @@
 import { failDb } from "./nexus-admin.server";
+import { assertEditWindow } from "./edit-window.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser } from "./nexus-auth.middleware";
-import { maxWinsFor, roundLeadersProblem } from "./round-rules";
+import { editWindow, maxWinsFor, roundLeadersProblem } from "./round-rules";
 
 const EXCLUDED_EVENT_LEADER_IDS = ["P-900", "P-800", "P-700"];
 
@@ -120,7 +121,7 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
 
     const { data: tournament } = await admin
       .from("tournaments")
-      .select("id, game_id, tournament_date, store_id")
+      .select("id, game_id, tournament_date, store_id, approved_at, published_at")
       .eq("id", data.tournament_id)
       .single();
     if (!tournament) throw new Error("Torneo no encontrado");
@@ -250,6 +251,7 @@ export const getTournamentRoundsForPlayer = createServerFn({ method: "POST" })
       rounds: roundsWithLeaders,
       my_tournament_leader: myTournamentLeader,
       summary,
+      edit_window: editWindow(tournament, new Date()),
     };
   });
 
@@ -339,6 +341,7 @@ export const saveRoundResult = createServerFn({ method: "POST" })
     const problem = roundLeadersProblem(data);
     if (problem) throw new Error(problem);
 
+    await assertEditWindow(admin, data.tournament_id);
     await assertPlayedTournament(admin, data.tournament_id, player.id);
     if (!data.is_bye) {
       const { data: opponentResult, error: opponentError } = await admin
@@ -480,6 +483,7 @@ export const updateMyTournamentLeader = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
+    await assertEditWindow(admin, data.tournament_id);
     await assertPlayedTournament(admin, data.tournament_id, player.id);
 
     const { data: tournament, error: tournamentError } = await admin
@@ -529,6 +533,7 @@ export const clearTournamentRounds = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
+    await assertEditWindow(admin, data.tournament_id);
 
     const { error } = await admin
       .from("tournament_round_results")
@@ -557,6 +562,7 @@ export const deleteRoundResult = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
+    await assertEditWindow(admin, data.tournament_id);
 
     const { error } = await admin
       .from("tournament_round_results")

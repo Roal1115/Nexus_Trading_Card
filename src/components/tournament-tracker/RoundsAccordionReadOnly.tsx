@@ -397,6 +397,10 @@ export function RoundsAccordionReadOnly({
     toughest_opponent_tag: string | null;
     toughest_opponent_rank: number | null;
   } | null>(null);
+  const [editWindow, setEditWindow] = useState<{ open: boolean; daysLeft: number | null }>({
+    open: true,
+    daysLeft: null,
+  });
   const [leader, setLeader] = useState<{ base_name: string; card_image: string | null } | null>(
     null,
   );
@@ -410,6 +414,7 @@ export function RoundsAccordionReadOnly({
         setRounds(res.rounds ?? []);
         setSummary(res.summary ?? null);
         setLeader(res.my_tournament_leader ?? null);
+        setEditWindow(res.edit_window ?? { open: true, daysLeft: null });
         const map: Record<string, string> = {};
         for (const o of res.opponents ?? []) map[o.id] = o.geek_tag;
         setOpponentMap(map);
@@ -433,7 +438,7 @@ export function RoundsAccordionReadOnly({
         <p className="text-sm text-foreground-secondary">
           Aún no has registrado rondas para este torneo.
         </p>
-        {onAddTracker && (
+        {onAddTracker && editWindow.open && (
           <button
             type="button"
             onClick={onAddTracker}
@@ -451,11 +456,11 @@ export function RoundsAccordionReadOnly({
       {summary && (
         <div className="relative">
           <SummaryCard summary={summary} leader={leader} />
-          {onAddTracker && (
+          {onAddTracker && editWindow.open && (
             <button
               type="button"
               onClick={onAddTracker}
-              title="Editar rondas de este torneo"
+              title={`Editar rondas de este torneo${editWindow.daysLeft !== null ? ` · quedan ${editWindow.daysLeft} días` : ""}`}
               className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs font-semibold text-foreground-secondary transition hover:border-primary/40 hover:text-primary"
             >
               <Pencil size={11} /> Editar

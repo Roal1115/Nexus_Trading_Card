@@ -1,4 +1,5 @@
 import { failDb } from "./nexus-admin.server";
+import { assertEditWindow } from "./edit-window.server";
 import type { TablesUpdate } from "./database.types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -45,6 +46,7 @@ export const createAppeal = createServerFn({ method: "POST" })
     if (!round) throw new Error("Ronda no encontrada");
     if (round.player_id !== player.id) throw new Error("No puedes apelar una ronda que no es tuya");
     if (!round.is_auto_populated) throw new Error("Solo se pueden apelar rondas autopobladas por tu oponente");
+    await assertEditWindow(admin, round.tournament_id);
 
     // Cooldown: 24h desde el último intento de apelación sobre esta misma ronda
     const { data: lastAppeal } = await admin

@@ -47,4 +47,16 @@ assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: L, opponent_
 assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: null, opponent_leader_id: L }), "Selecciona tu leader para guardar la ronda");
 assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: L, opponent_leader_id: undefined }), "Selecciona el leader del oponente para guardar la ronda");
 assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: null, opponent_leader_id: null }), "Selecciona tu leader para guardar la ronda");
+import { editWindow, EDIT_WINDOW_DAYS } from "../src/lib/round-rules.ts";
+const t0 = "2026-11-01T18:00:00.000Z";
+const at = (ms: number) => new Date(Date.parse(t0) + ms);
+const DAY = 86_400_000;
+assert.equal(EDIT_WINDOW_DAYS, 7);
+assert.deepEqual(editWindow({ approved_at: null, published_at: null }, new Date()), { open: true, daysLeft: null });
+assert.deepEqual(editWindow({ approved_at: t0, published_at: null }, at(0)), { open: true, daysLeft: 7 });
+assert.equal(editWindow({ approved_at: t0, published_at: null }, at(7 * DAY - 1)).open, true);
+assert.equal(editWindow({ approved_at: t0, published_at: null }, at(7 * DAY)).open, false);
+assert.equal(editWindow({ approved_at: null, published_at: t0 }, at(8 * DAY)).open, false);
+assert.equal(editWindow({ approved_at: t0, published_at: null }, at(6.5 * DAY)).daysLeft, 1);
+assert.deepEqual(editWindow({ approved_at: t0, published_at: "2026-10-01T00:00:00.000Z" }, at(8 * DAY)), { open: false, daysLeft: 0 });
 console.log("round-rules: ok");
