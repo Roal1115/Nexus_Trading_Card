@@ -459,7 +459,7 @@ export const deleteStandaloneRound = createServerFn({ method: "POST" })
 
     const { data: session } = await admin
       .from("standalone_sessions")
-      .select("id, status, player_leader_id")
+      .select("id, status")
       .eq("id", data.session_id)
       .eq("player_id", player.id)
       .maybeSingle();
@@ -492,7 +492,7 @@ export const deleteStandaloneSession = createServerFn({ method: "POST" })
 
     const { data: session } = await admin
       .from("standalone_sessions")
-      .select("id, status, player_leader_id")
+      .select("id, status")
       .eq("id", data.session_id)
       .eq("player_id", player.id)
       .maybeSingle();
