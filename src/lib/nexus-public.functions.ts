@@ -569,8 +569,9 @@ async function computeLeagueStandings(
   if (!tournamentIds.length) return [];
   const { data: results } = await admin
     .from("tournament_results")
-    .select("player_id, points_earned, rank, omw_percentage")
-    .in("tournament_id", tournamentIds);
+    .select("player_id, points_earned, rank, omw_percentage, tournaments!inner(status)")
+    .in("tournament_id", tournamentIds)
+    .in("tournaments.status", ["APPROVED", "PUBLISHED"]);
 
   type Agg = { points: number; played: number; won: number; omw_sum: number; omw_count: number };
   const agg = new Map<string, Agg>();
