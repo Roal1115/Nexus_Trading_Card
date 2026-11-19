@@ -749,6 +749,7 @@ export type Database = {
           original_opponent_leader_id: string | null;
           original_player_leader_id: string | null;
           original_round_id: string;
+          original_round_status: string | null;
           original_turn_order: string | null;
           original_won_die_roll: boolean | null;
           original_won_match: boolean | null;
@@ -772,6 +773,7 @@ export type Database = {
           original_opponent_leader_id?: string | null;
           original_player_leader_id?: string | null;
           original_round_id: string;
+          original_round_status?: string | null;
           original_turn_order?: string | null;
           original_won_die_roll?: boolean | null;
           original_won_match?: boolean | null;
@@ -795,6 +797,7 @@ export type Database = {
           original_opponent_leader_id?: string | null;
           original_player_leader_id?: string | null;
           original_round_id?: string;
+          original_round_status?: string | null;
           original_turn_order?: string | null;
           original_won_die_roll?: boolean | null;
           original_won_match?: boolean | null;
@@ -1890,6 +1893,36 @@ export type Database = {
           },
         ];
       };
+      store_tcgs: {
+        Row: {
+          store_id: string;
+          tcg_id: string;
+        };
+        Insert: {
+          store_id: string;
+          tcg_id: string;
+        };
+        Update: {
+          store_id?: string;
+          tcg_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "store_tcgs_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "store_tcgs_tcg_id_fkey";
+            columns: ["tcg_id"];
+            isOneToOne: false;
+            referencedRelation: "tcg_catalog";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stores: {
         Row: {
           address: string | null;
@@ -1983,6 +2016,24 @@ export type Database = {
         Row: { name: string; description: string; created_at: string };
         Insert: { name: string; description?: string; created_at?: string };
         Update: { name?: string; description?: string; created_at?: string };
+        Relationships: [];
+      };
+      tcg_catalog: {
+        Row: {
+          id: string;
+          name: string;
+          sort_order: number;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          sort_order?: number;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          sort_order?: number;
+        };
         Relationships: [];
       };
       tournament_results: {

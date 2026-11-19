@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MapPin, Clock, Instagram, Globe, Twitter, Twitch, Phone } from "lucide-react";
 import { storeProfileQuery, storeTournamentHistoryQuery } from "@/lib/stores-queries";
 import { FOCUS_RING, BTN_OUTLINE, InlineError, SECTION } from "@/components/stores/store-ui";
+import { Badge } from "@/components/ui/badge";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 import { safeHref } from "@/lib/utils";
 
@@ -147,6 +148,19 @@ function StoreOverviewPage() {
           </div>
         )}
       </section>
+
+      {store.tcgs.length > 0 && (
+        <section className={`${SECTION} space-y-3`}>
+          <h2 className="text-lg font-bold text-foreground">Juegos</h2>
+          <ul className="flex flex-wrap gap-2">
+            {store.tcgs.map((t) => (
+              <li key={t.id}>
+                <Badge variant="secondary">{t.name}</Badge>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Actividad reciente: señal rápida de "esta tienda está activa" sin obligar a ir hasta el
           historial completo (que sigue existiendo, paginado, en la pestaña de Torneos y Liga). */}

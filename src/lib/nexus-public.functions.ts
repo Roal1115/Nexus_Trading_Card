@@ -108,7 +108,16 @@ export const getStoreProfile = createServerFn({ method: "POST" })
       if (g && !games.some((x) => x.id === g.id)) games.push(g);
     }
 
-    return { store: { ...store, games } };
+    const { data: tcgRows } = await admin
+      .from("store_tcgs")
+      .select("tcg_catalog(id, name, sort_order)")
+      .eq("store_id", store.id);
+    const tcgs = ((tcgRows ?? []) as any[])
+      .map((r) => (Array.isArray(r.tcg_catalog) ? r.tcg_catalog[0] : r.tcg_catalog))
+      .filter(Boolean)
+      .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+
+    return { store: { ...store, games, tcgs: tcgs as Array<{ id: string; name: string }> } };
   });
 
 // Historial público de torneos de una tienda — mismo criterio de status que
@@ -560,8 +569,9 @@ async function computeLeagueStandings(
   if (!tournamentIds.length) return [];
   const { data: results } = await admin
     .from("tournament_results")
-    .select("player_id, points_earned, rank, omw_percentage")
-    .in("tournament_id", tournamentIds);
+    .select("player_id, points_earned, rank, omw_percentage, tournaments!inner(status)")
+    .in("tournament_id", tournamentIds)
+    .in("tournaments.status", ["APPROVED", "PUBLISHED"]);
 
   type Agg = { points: number; played: number; won: number; omw_sum: number; omw_count: number };
   const agg = new Map<string, Agg>();

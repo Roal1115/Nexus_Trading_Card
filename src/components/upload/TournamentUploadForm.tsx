@@ -26,11 +26,12 @@ import {
   getActiveLeaguesForStore,
 } from "@/lib/nexus-organizer.functions";
 
-const NATIONAL_LEAGUE_VALUE = "__national__";
 import { getManagerResponsibleStores } from "@/lib/nexus-manager.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { assignLeagues } from "@/lib/league-assignment";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -371,7 +372,8 @@ export function TournamentUploadForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeLeagues, setActiveLeagues] = useState<{ id: string; name: string }[]>([]);
-  const [leagueChoice, setLeagueChoice] = useState<string>(NATIONAL_LEAGUE_VALUE);
+  const [countsForCircuit, setCountsForCircuit] = useState(true);
+  const [leagueIds, setLeagueIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!player) return;
@@ -423,7 +425,8 @@ export function TournamentUploadForm({
     (homeStore?.id === storeId ? homeStore : null);
 
   useEffect(() => {
-    setLeagueChoice(NATIONAL_LEAGUE_VALUE);
+    setCountsForCircuit(true);
+    setLeagueIds([]);
     // Sin gameId todavía no sabemos qué ligas mostrar — una liga es de UN
     // TCG, así que el dropdown solo tiene sentido una vez elegido el juego.
     if (!storeId || !gameId || isManager) {
@@ -449,7 +452,13 @@ export function TournamentUploadForm({
     return { month: m, semester: m <= 6 ? 1 : 2, year: d.getFullYear() };
   }, [date]);
 
-  const canContinue = Boolean(storeId && gameId && date && tcgSupported);
+  // Managers no ven ligas: siempre suben al circuito.
+  const leagueInput = isManager
+    ? { counts_for_circuit: true, league_ids: [] }
+    : { counts_for_circuit: countsForCircuit, league_ids: leagueIds };
+  const assigned = assignLeagues(leagueInput);
+  const leagueError = "error" in assigned ? assigned.error : null;
+  const canContinue = Boolean(storeId && gameId && date && tcgSupported && !leagueError);
   const totalErrors = rows.filter((r) => r.error).length;
   const newPlayers = rows.filter((r) => !r.error && !registeredTags.has(r.geek_tag)).length;
   const canSubmit = rows.length > 0 && totalErrors === 0 && !saving;
@@ -538,7 +547,7 @@ export function TournamentUploadForm({
           rows: cleanRows,
           tournament_id: tournamentId,
           csv_url: csvUrl,
-          league_id: isManager || leagueChoice === NATIONAL_LEAGUE_VALUE ? null : leagueChoice,
+          ...leagueInput,
         },
       });
       if (result && (result as { ok?: boolean }).ok === false) {
@@ -679,25 +688,42 @@ export function TournamentUploadForm({
           )}
 
           {!isManager && (
-            <div className="space-y-2">
-              <Label className="text-xs text-gray-400">Liga a la que pertenece este torneo *</Label>
-              <Select value={leagueChoice} onValueChange={setLeagueChoice}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NATIONAL_LEAGUE_VALUE}>Liga Semestral (Circuito Nacional)</SelectItem>
-                  {activeLeagues.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500">
-                Puedes subir varios torneos del mismo TCG el mismo día si pertenecen a ligas distintas.
-              </p>
-            </div>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-gray-300">Dónde cuenta este torneo</legend>
+              <label className="flex min-h-11 items-center gap-2 text-sm text-white">
+                <Checkbox
+                  checked={countsForCircuit}
+                  onCheckedChange={(v) => setCountsForCircuit(v === true)}
+                />
+                Cuenta para el Circuito Nacional
+              </label>
+              {activeLeagues.map((l) => (
+                <label key={l.id} className="flex min-h-11 items-center gap-2 text-sm text-white">
+                  <Checkbox
+                    checked={leagueIds.includes(l.id)}
+                    onCheckedChange={(v) =>
+                      setLeagueIds((prev) =>
+                        v === true ? [...prev, l.id] : prev.filter((id) => id !== l.id),
+                      )
+                    }
+                  />
+                  {l.name}
+                </label>
+              ))}
+              {leagueError ? (
+                <p role="alert" className="text-xs text-red-300">
+                  {leagueError}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  {!countsForCircuit
+                    ? "Solo ligas: se publica directo."
+                    : leagueIds.length
+                      ? "Pasa por revisión; los puntos de liga aparecen cuando se publica."
+                      : "Pasa por revisión antes de publicarse."}
+                </p>
+              )}
+            </fieldset>
           )}
 
           <div className="flex justify-end gap-2">

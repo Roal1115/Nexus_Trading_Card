@@ -10,7 +10,11 @@ import {
   type TournamentStatus,
 } from "./nexus-admin.functions";
 import { mondayOfWeek, toLocalDateStr } from "./utils";
-import { getManagerGameIds, assertManagerOwnsGame } from "./nexus-manager-shared";
+import {
+  getManagerGameIds,
+  assertManagerOwnsGame,
+  assertManagerOwnsStore,
+} from "./nexus-manager-shared";
 import { httpUrlSchema } from "./nexus-admin-shared";
 
 export const getStoreSchedulesForManager = createServerFn({ method: "POST" })
@@ -266,30 +270,7 @@ export const updateStoreData = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
 
-    if (player.role !== "admin") {
-      const gameIds = await getManagerGameIds(admin, player);
-      const { data: schedule } = await admin
-        .from("store_schedules")
-        .select("id")
-        .eq("store_id", data.store_id)
-        .in("game_id", gameIds)
-        .limit(1)
-        .maybeSingle();
-      // Una tienda recién aprobada aún no tiene torneos: se valida por su solicitud.
-      const { data: approved } = schedule
-        ? { data: true }
-        : await admin
-            .from("store_signup_requests")
-            .select("id")
-            .eq("store_id", data.store_id)
-            .eq("status", "approved")
-            .in("game_id", gameIds)
-            .limit(1)
-            .maybeSingle();
-      if (!approved) {
-        throw new Error("No tienes permisos sobre esta tienda");
-      }
-    }
+    await assertManagerOwnsStore(admin, player, data.store_id);
 
     const { store_id, ...fields } = data;
     const { error } = await admin

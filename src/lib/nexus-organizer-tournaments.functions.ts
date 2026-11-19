@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
 import { getNexusAdmin, failDb, removeTournamentFile } from "./nexus-admin.server";
 import { tournamentFilePath, tournamentIdOfFile } from "./tournament-file";
+import { assignLeagues } from "./league-assignment";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import { resolvePlayer, ONE_PIECE_SLUG } from "./player-identity.server";
 import type { TablesInsert } from "./database.types";
@@ -211,7 +212,8 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       rows: Array<z.infer<typeof ResultRowSchema>>;
       tournament_id?: string;
       csv_url?: string | null;
-      league_id: string | null;
+      counts_for_circuit: boolean;
+      league_ids: string[];
     }) =>
       z
         .object({
@@ -221,8 +223,8 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
           rows: z.array(ResultRowSchema).min(1).max(2000),
           tournament_id: z.string().uuid().optional(),
           csv_url: csvPathSchema.nullable().optional(),
-          // null = Liga Semestral / Circuito Nacional (default), uuid = liga interna
-          league_id: z.string().uuid().nullable(),
+          counts_for_circuit: z.boolean(),
+          league_ids: z.array(z.string().uuid()).max(20),
         })
         .parse(d),
   )
@@ -241,6 +243,9 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
 
     // Validar que el manager tiene autoridad sobre este TCG
     if (player.role === "tcg_manager") {
+      if (!data.counts_for_circuit || data.league_ids.length) {
+        throw new Error("Los managers solo suben torneos al Circuito Nacional");
+      }
       const { data: mg } = await admin
         .from("manager_games")
         .select("id")
@@ -285,17 +290,25 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       }
     }
 
-    // Si se eligió una liga interna, debe existir, estar activa y ser de esta tienda.
-    if (data.league_id) {
-      const { data: league, error: lge } = await admin
+    // Circuito → league_id null; solo ligas → la primera elegida.
+    const assigned = assignLeagues(data);
+    if ("error" in assigned) throw new Error(assigned.error);
+    const { league_id: leagueId, link_ids: linkIds } = assigned;
+
+    // Cada liga debe ser de esta tienda, estar activa y ser del mismo TCG
+    // (las legacy sin game_id se aceptan, igual que getActiveLeaguesForStore).
+    if (linkIds.length) {
+      const { data: leagues, error: lge } = await admin
         .from("store_leagues")
         .select("id")
-        .eq("id", data.league_id)
+        .in("id", linkIds)
         .eq("store_id", data.store_id)
         .eq("status", "active")
-        .maybeSingle();
+        .or(`game_id.eq.${data.game_id},game_id.is.null`);
       if (lge) failDb(lge);
-      if (!league) throw new Error("La liga interna seleccionada ya no está disponible.");
+      if ((leagues ?? []).length !== linkIds.length) {
+        throw new Error("Una de las ligas seleccionadas ya no está disponible.");
+      }
     }
 
     // Duplicado se checa por liga: el mismo TCG/día puede tener un torneo
@@ -306,9 +319,7 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       .eq("store_id", data.store_id)
       .eq("game_id", data.game_id)
       .eq("tournament_date", data.tournament_date);
-    dupQuery = data.league_id
-      ? dupQuery.eq("league_id", data.league_id)
-      : dupQuery.is("league_id", null);
+    dupQuery = leagueId ? dupQuery.eq("league_id", leagueId) : dupQuery.is("league_id", null);
     const { data: existing, error: dupErr } = await dupQuery.maybeSingle();
     if (dupErr) failDb(dupErr);
     if (existing) {
@@ -328,12 +339,12 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       game_id: data.game_id,
       tournament_date: data.tournament_date,
       ...q,
-      status: data.league_id ? "PUBLISHED" : "DRAFT",
+      status: leagueId ? "PUBLISHED" : "DRAFT",
       csv_url: data.csv_url ?? null,
-      league_id: data.league_id,
+      league_id: leagueId,
       // Quién lo subió realmente (independiente de la tienda/organizador).
       uploaded_by: player.id,
-      ...(data.league_id ? { approved_at: now, approved_by: player.id, published_at: now } : {}),
+      ...(leagueId ? { approved_at: now, approved_by: player.id, published_at: now } : {}),
     };
     if (data.tournament_id) insertPayload.id = data.tournament_id;
     const { data: tournament, error: te } = await admin
@@ -344,13 +355,11 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
     if (te) failDb(te);
     const tournamentId = tournament.id;
 
-    if (data.league_id) {
-      const { error: lte } = await admin
-        .from("store_league_tournaments")
-        .upsert(
-          { league_id: data.league_id, tournament_id: tournamentId },
-          { onConflict: "league_id,tournament_id" },
-        );
+    if (linkIds.length) {
+      const { error: lte } = await admin.from("store_league_tournaments").upsert(
+        linkIds.map((league_id) => ({ league_id, tournament_id: tournamentId })),
+        { onConflict: "league_id,tournament_id" },
+      );
       if (lte) failDb(lte);
     }
 
@@ -414,8 +423,9 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       await tournamentAuditLabel(admin, tournamentId),
       {
         uploaded_by: player.id,
-        league_id: data.league_id,
-        published_directly: !!data.league_id,
+        league_id: leagueId,
+        league_ids: linkIds,
+        published_directly: !!leagueId,
         results: baseRows.length,
       },
     );
@@ -427,8 +437,8 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
       .eq("store_id", data.store_id)
       .eq("game_id", data.game_id)
       .eq("occurrence_date", data.tournament_date);
-    cancelledQuery = data.league_id
-      ? cancelledQuery.eq("league_id", data.league_id)
+    cancelledQuery = leagueId
+      ? cancelledQuery.eq("league_id", leagueId)
       : cancelledQuery.is("league_id", null);
     const { data: cancelled } = await cancelledQuery.maybeSingle();
 

@@ -1,13 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import {
-  Loader2,
-  Users,
-  HelpCircle,
-  Trophy,
-  Eye,
-} from "lucide-react";
+import { Loader2, Users, HelpCircle, Trophy, Eye } from "lucide-react";
 import { toast } from "sonner";
 import {
   PLAYER_STATUS_COLORS,
@@ -30,16 +24,13 @@ import {
   ReferenceLine,
 } from "recharts";
 import { Link } from "@tanstack/react-router";
+import { attendanceArea } from "@/components/organizer/attendance-area";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { getStoreAnalytics, getStorePageViewAnalytics } from "@/lib/nexus-organizer.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScopeFilters } from "@/components/organizer/scope-filters";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
@@ -96,8 +87,21 @@ function StorePageViewsCard() {
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={data.by_section} layout="vertical" margin={{ left: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" horizontal={false} />
-              <XAxis type="number" stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
-              <YAxis type="category" dataKey="label" stroke="#d1d5db" fontSize={11} width={150} tick={{ fill: "#d1d5db" }} />
+              <XAxis
+                type="number"
+                stroke="#d1d5db"
+                fontSize={11}
+                allowDecimals={false}
+                tick={{ fill: "#d1d5db" }}
+              />
+              <YAxis
+                type="category"
+                dataKey="label"
+                stroke="#d1d5db"
+                fontSize={11}
+                width={150}
+                tick={{ fill: "#d1d5db" }}
+              />
               <Tooltip
                 contentStyle={{
                   background: "#1f2937",
@@ -111,7 +115,14 @@ function StorePageViewsCard() {
                 itemStyle={{ color: "#e5e7eb" }}
                 cursor={{ fill: "rgba(255,255,255,0.04)" }}
               />
-              <Bar dataKey="views" name="Vistas" fill="#60a5fa" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={800} />
+              <Bar
+                dataKey="views"
+                name="Vistas"
+                fill="#60a5fa"
+                radius={[0, 4, 4, 0]}
+                isAnimationActive
+                animationDuration={800}
+              />
             </BarChart>
           </ResponsiveContainer>
         </>
@@ -131,7 +142,12 @@ function OrganizerAnalytics() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
 
-  const refresh = async (df?: string, dt?: string, gameId?: string | null, leagueId?: string | null) => {
+  const refresh = async (
+    df?: string,
+    dt?: string,
+    gameId?: string | null,
+    leagueId?: string | null,
+  ) => {
     setLoading(true);
     try {
       const res = await fetchAnalytics({
@@ -236,17 +252,12 @@ function OrganizerAnalytics() {
     );
   }
 
-
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wider text-primary font-semibold">
-            Analytics
-          </p>
-          <h1 className="text-2xl md:text-3xl font-bold">
-            Estadísticas de tu tienda
-          </h1>
+          <p className="text-xs uppercase tracking-wider text-primary font-semibold">Analytics</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Estadísticas de tu tienda</h1>
           <p className="text-sm text-muted-foreground">
             Visualiza la actividad y retención de tus jugadores.
           </p>
@@ -260,7 +271,9 @@ function OrganizerAnalytics() {
 
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="date-from" className="text-xs">Desde</Label>
+            <Label htmlFor="date-from" className="text-xs">
+              Desde
+            </Label>
             <Input
               id="date-from"
               type="date"
@@ -270,7 +283,9 @@ function OrganizerAnalytics() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="date-to" className="text-xs">Hasta</Label>
+            <Label htmlFor="date-to" className="text-xs">
+              Hasta
+            </Label>
             <Input
               id="date-to"
               type="date"
@@ -333,7 +348,10 @@ function OrganizerAnalytics() {
             <h2 className="text-sm font-semibold">Estado de tus jugadores</h2>
             <Popover>
               <PopoverTrigger asChild>
-                <button className="text-muted-foreground hover:text-foreground" aria-label="Cómo se calculan">
+                <button
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Cómo se calculan"
+                >
                   <HelpCircle className="h-4 w-4" />
                 </button>
               </PopoverTrigger>
@@ -376,20 +394,19 @@ function OrganizerAnalytics() {
       <div className="rounded-lg border bg-card p-4">
         <h2 className="text-sm font-semibold mb-1">Tendencia de Asistencia</h2>
         <p className="text-xs text-muted-foreground mb-3">
-          Total de jugadores únicos por semana — si hubo más de un torneo esa semana, suma los de ambos sin
-          duplicar jugadores repetidos.
+          Total de jugadores únicos por semana — si hubo más de un torneo esa semana, suma los de
+          ambos sin duplicar jugadores repetidos.
         </p>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={data.attendance_trend}>
-            <defs>
-              <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
             <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
-            <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+            <YAxis
+              stroke="#d1d5db"
+              fontSize={11}
+              allowDecimals={false}
+              tick={{ fill: "#d1d5db" }}
+            />
             <Tooltip
               contentStyle={{
                 background: "#1f2937",
@@ -401,27 +418,23 @@ function OrganizerAnalytics() {
               }}
               labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
               itemStyle={{ color: "#e5e7eb" }}
-              cursor={{ stroke: "#f97316", strokeWidth: 1, strokeOpacity: 0.35 }}
+              cursor={{ stroke: "#8fb4ff", strokeWidth: 1, strokeOpacity: 0.35 }}
               animationDuration={150}
               animationEasing="ease-out"
               labelFormatter={(label, payload) => {
                 const count = payload?.[0]?.payload?.tournament_count ?? 0;
-                const suffix = count > 1 ? ` · ${count} torneos esa semana` : count === 1 ? " · 1 torneo" : "";
+                const suffix =
+                  count > 1 ? ` · ${count} torneos esa semana` : count === 1 ? " · 1 torneo" : "";
                 return `${label}${suffix}`;
               }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area
-              type="monotone"
-              dataKey="players"
-              name="Jugadores únicos"
-              stroke="#f97316"
-              strokeWidth={2}
-              fill="url(#attendanceGradient)"
-              isAnimationActive
-              animationDuration={1000}
-              activeDot={{ r: 6, style: { transition: "cx 150ms ease-out, cy 150ms ease-out" } }}
-            />
+            {attendanceArea({
+              name: "Jugadores únicos",
+              isAnimationActive: true,
+              animationDuration: 1000,
+              activeDot: { r: 6, style: { transition: "cx 150ms ease-out, cy 150ms ease-out" } },
+            })}
             <Area
               type="monotone"
               dataKey="total_entries"
@@ -441,14 +454,19 @@ function OrganizerAnalytics() {
       <div className="rounded-lg border bg-card p-4">
         <h2 className="text-sm font-semibold mb-1">Nuevos y los que regresan</h2>
         <p className="text-xs text-muted-foreground mb-3">
-          Nuevo = primera vez que juega en esta tienda. Bajas (en negativo) = jugadores que cruzan el umbral de
-          inactivo ({data.settings.inactive_threshold_days} días sin venir) esa semana.
+          Nuevo = primera vez que juega en esta tienda. Bajas (en negativo) = jugadores que cruzan
+          el umbral de inactivo ({data.settings.inactive_threshold_days} días sin venir) esa semana.
         </p>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data.attendance_trend} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" vertical={false} />
             <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
-            <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+            <YAxis
+              stroke="#d1d5db"
+              fontSize={11}
+              allowDecimals={false}
+              tick={{ fill: "#d1d5db" }}
+            />
             <ReferenceLine y={0} stroke="#ffffff70" strokeWidth={1.5} />
             <Tooltip
               cursor={{ fill: "rgba(255,255,255,0.04)" }}
@@ -463,14 +481,23 @@ function OrganizerAnalytics() {
               labelStyle={{ color: "#f9fafb", fontWeight: 600, marginBottom: 4 }}
               itemStyle={{ color: "#e5e7eb" }}
               formatter={(value, name) => {
-                const label = name === "new_players" ? "Nuevos" : name === "returning_players" ? "Recurrentes" : "Bajas";
+                const label =
+                  name === "new_players"
+                    ? "Nuevos"
+                    : name === "returning_players"
+                      ? "Recurrentes"
+                      : "Bajas";
                 return [name === "churned_players" ? Math.abs(Number(value)) : value, label];
               }}
             />
             <Legend
               wrapperStyle={{ fontSize: 11 }}
               formatter={(value) =>
-                value === "new_players" ? "Nuevos" : value === "returning_players" ? "Recurrentes" : "Bajas"
+                value === "new_players"
+                  ? "Nuevos"
+                  : value === "returning_players"
+                    ? "Recurrentes"
+                    : "Bajas"
               }
             />
             <Bar
@@ -517,8 +544,18 @@ function OrganizerAnalytics() {
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={data.game_breakdown}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
-                <XAxis dataKey="game_name" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
-                <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
+                <XAxis
+                  dataKey="game_name"
+                  stroke="#d1d5db"
+                  fontSize={11}
+                  tick={{ fill: "#d1d5db" }}
+                />
+                <YAxis
+                  stroke="#d1d5db"
+                  fontSize={11}
+                  allowDecimals={false}
+                  tick={{ fill: "#d1d5db" }}
+                />
                 <Tooltip
                   contentStyle={{
                     background: "#1f2937",

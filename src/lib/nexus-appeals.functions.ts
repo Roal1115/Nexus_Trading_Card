@@ -1,4 +1,5 @@
 import { failDb } from "./nexus-admin.server";
+import { assertEditWindow } from "./edit-window.server";
 import type { TablesUpdate } from "./database.types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -37,7 +38,7 @@ export const createAppeal = createServerFn({ method: "POST" })
     const { data: round } = await admin
       .from("tournament_round_results")
       .select(
-        "id, tournament_id, player_id, round_number, is_auto_populated, player_leader_id, opponent_leader_id, won_match, won_die_roll, turn_order",
+        "id, tournament_id, player_id, round_number, is_auto_populated, player_leader_id, opponent_leader_id, won_match, won_die_roll, turn_order, status",
       )
       .eq("id", data.round_id)
       .single();
@@ -45,6 +46,7 @@ export const createAppeal = createServerFn({ method: "POST" })
     if (!round) throw new Error("Ronda no encontrada");
     if (round.player_id !== player.id) throw new Error("No puedes apelar una ronda que no es tuya");
     if (!round.is_auto_populated) throw new Error("Solo se pueden apelar rondas autopobladas por tu oponente");
+    await assertEditWindow(admin, round.tournament_id);
 
     // Cooldown: 24h desde el último intento de apelación sobre esta misma ronda
     const { data: lastAppeal } = await admin
@@ -81,6 +83,7 @@ export const createAppeal = createServerFn({ method: "POST" })
       original_won_match: round.won_match,
       original_won_die_roll: round.won_die_roll,
       original_turn_order: round.turn_order,
+      original_round_status: round.status,
       proposed_player_leader_id: data.proposed_player_leader_id ?? null,
       proposed_opponent_leader_id: data.proposed_opponent_leader_id ?? null,
       proposed_won_match: data.proposed_won_match ?? null,
@@ -272,4 +275,52 @@ export const resolveAppeal = createServerFn({ method: "POST" })
     if (resolveError) failDb(resolveError);
 
     return { success: true };
+  });
+
+// ============================================================
+// deleteAppeal — organizador elimina una apelación y la ronda vuelve a su estado previo
+// ============================================================
+export const deleteAppeal = createServerFn({ method: "POST" })
+  .middleware([requireNexusUser])
+  .inputValidator((d: { appeal_id: string }) => z.object({ appeal_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { admin, player } = context;
+
+    if (player.role !== "organizer" && player.role !== "admin") {
+      throw new Error("No tienes permiso para eliminar apelaciones");
+    }
+
+    const { data: appeal } = await admin
+      .from("round_appeals")
+      .select("id, tournament_id, store_id, round_number, original_round_id, original_round_status")
+      .eq("id", data.appeal_id)
+      .single();
+    if (!appeal) throw new Error("Apelación no encontrada");
+
+    if (player.role === "organizer" && player.home_store_id !== appeal.store_id) {
+      throw new Error("Esta apelación no corresponde a tu tienda");
+    }
+
+    // Solo se restaura si la ronda sigue en apelación; no se toca ninguna otra columna.
+    const { error: restoreError } = await admin
+      .from("tournament_round_results")
+      .update({ status: appeal.original_round_status ?? "pending_confirmation" })
+      .eq("id", appeal.original_round_id)
+      .eq("status", "under_appeal");
+    if (restoreError) failDb(restoreError);
+
+    const { error: deleteError } = await admin.from("round_appeals").delete().eq("id", appeal.id);
+    if (deleteError) failDb(deleteError);
+
+    await logAction(
+      admin,
+      player,
+      "APPEAL_DELETED",
+      "tournament",
+      appeal.tournament_id,
+      await tournamentAuditLabel(admin, appeal.tournament_id),
+      { round_number: appeal.round_number },
+    );
+
+    return { ok: true as const };
   });

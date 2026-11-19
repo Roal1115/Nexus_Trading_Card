@@ -59,6 +59,8 @@ Ranking mensual: Suma de tus puntos en el mes actual.
 Ranking Nacional: Suma acumulada durante la temporada completa.`;
 
 import { toast } from "sonner";
+import { PillSelect } from "@/components/ui/pill-select";
+import { filterRecentEvents, type RecentFilters } from "@/lib/recent-events-filter";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { dismissOnboarding, toggleProfilePrivacy } from "@/lib/nexus-player.functions";
 import { myDashboardQuery, tournamentDetailQuery, tournamentRoundsQuery } from "@/lib/dashboard-queries";
@@ -105,7 +107,16 @@ function DashboardPage() {
   const [selectedTcg, setSelectedTcg] = useState<string | null>(null);
   const [sponsor, setSponsor] = useState<any>(null);
   const [page, setPage] = useState(1);
-  const [historyTcg, setHistoryTcg] = useState<string | null>(null);
+  const [filters, setFilters] = useState<RecentFilters>({
+    tcg: null,
+    store: null,
+    range: "all",
+    result: "all",
+  });
+  const setFilter = (patch: Partial<RecentFilters>) => {
+    setFilters((f) => ({ ...f, ...patch }));
+    setPage(1);
+  };
   const PAGE_SIZE = 10;
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [trackerTournament, setTrackerTournament] = useState<{
@@ -268,7 +279,12 @@ function DashboardPage() {
   const storeCity = data?.storeCity ?? null;
   const semesterLabel = data?.semesterLabel ?? "";
   const events = data?.events ?? [];
-  const filteredEvents = historyTcg ? events.filter((e: any) => e.game_id === historyTcg) : events;
+  const today = new Date().toLocaleDateString("sv"); // YYYY-MM-DD local
+  const filteredEvents = filterRecentEvents(events, filters, {
+    today,
+    seasonStart: (data as any)?.season_start ?? null,
+  });
+  const storeNames = [...new Set(events.map((e: any) => e.store as string))].sort();
   const paginatedEvents = filteredEvents.slice(0, page * PAGE_SIZE);
   const hasMore = filteredEvents.length > page * PAGE_SIZE;
 
@@ -635,19 +651,16 @@ function DashboardPage() {
             <h2 className="text-lg font-semibold text-foreground">Torneos recientes</h2>
             {!loading && (
               <span className="whitespace-nowrap text-xs text-foreground-subtle">
-                {filteredEvents.length} {historyTcg ? "torneos" : "torneos jugados"}
+                {`${filteredEvents.length} ${filteredEvents.length === events.length ? "torneos jugados" : "torneos"}`}
               </span>
             )}
           </header>
           {tcgStats.length > 1 && (
             <div className="flex overflow-x-auto border-b border-border px-2">
               <button
-                onClick={() => {
-                  setHistoryTcg(null);
-                  setPage(1);
-                }}
+                onClick={() => setFilter({ tcg: null })}
                 className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
-                  historyTcg === null
+                  filters.tcg === null
                     ? "border-primary text-foreground"
                     : "border-transparent text-foreground-secondary hover:text-foreground-secondary"
                 }`}
@@ -660,12 +673,9 @@ function DashboardPage() {
                 return (
                   <button
                     key={tcg.game_id}
-                    onClick={() => {
-                      setHistoryTcg(tcg.game_id);
-                      setPage(1);
-                    }}
+                    onClick={() => setFilter({ tcg: tcg.game_id })}
                     className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition flex-shrink-0 ${
-                      historyTcg === tcg.game_id
+                      filters.tcg === tcg.game_id
                         ? "border-primary text-foreground"
                         : "border-transparent text-foreground-secondary hover:text-foreground-secondary"
                     }`}
@@ -674,6 +684,39 @@ function DashboardPage() {
                   </button>
                 );
               })}
+            </div>
+          )}
+          {events.length > 1 && (
+            <div className="flex flex-wrap gap-2 border-b border-border px-4 py-3">
+              <PillSelect
+                label="Tienda"
+                value={filters.store ?? "all"}
+                onChange={(v) => setFilter({ store: v === "all" ? null : v })}
+                options={[
+                  { value: "all", label: "Todas" },
+                  ...storeNames.map((n) => ({ value: n, label: n })),
+                ]}
+              />
+              <PillSelect
+                label="Fechas"
+                value={filters.range}
+                onChange={(v) => setFilter({ range: v as RecentFilters["range"] })}
+                options={[
+                  { value: "all", label: "Todo" },
+                  { value: "month", label: "Este mes" },
+                  { value: "season", label: "Esta temporada" },
+                ]}
+              />
+              <PillSelect
+                label="Resultado"
+                value={filters.result}
+                onChange={(v) => setFilter({ result: v as RecentFilters["result"] })}
+                options={[
+                  { value: "all", label: "Todos" },
+                  { value: "top4", label: "Top 4" },
+                  { value: "positive", label: "Récord positivo" },
+                ]}
+              />
             </div>
           )}
           <div className="overflow-x-auto hidden sm:block">
@@ -700,6 +743,12 @@ function DashboardPage() {
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-foreground-subtle">
                       Aún no has participado en ningún torneo.
+                    </td>
+                  </tr>
+                ) : filteredEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-foreground-subtle">
+                      Sin torneos con estos filtros
                     </td>
                   </tr>
                 ) : (
@@ -811,6 +860,10 @@ function DashboardPage() {
             ) : events.length === 0 ? (
               <div className="px-4 py-12 text-center text-foreground-subtle">
                 Aún no has participado en ningún torneo.
+              </div>
+            ) : filteredEvents.length === 0 ? (
+              <div className="px-4 py-12 text-center text-foreground-subtle">
+                Sin torneos con estos filtros
               </div>
             ) : (
               <div className="divide-y divide-border">

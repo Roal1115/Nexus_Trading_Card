@@ -32,3 +32,30 @@ export function sessionLinkProblem({
   }
   return null;
 }
+
+// Una ronda jugada (no Bye) necesita el leader propio y el del rival.
+export function roundLeadersProblem(r: {
+  is_bye: boolean;
+  player_leader_id?: string | null;
+  opponent_leader_id?: string | null;
+}): string | null {
+  if (r.is_bye) return null;
+  if (!r.player_leader_id) return "Selecciona tu leader para guardar la ronda";
+  if (!r.opponent_leader_id) return "Selecciona el leader del oponente para guardar la ronda";
+  return null;
+}
+
+export const EDIT_WINDOW_DAYS = 7;
+export const EDIT_WINDOW_CLOSED_MESSAGE = "Este torneo ya no se puede editar (pasaron 7 días)";
+
+// Plazo para editar rondas: 7 días desde la aprobación (o la publicación). Sin fechas, abierto.
+export function editWindow(
+  t: { approved_at: string | null; published_at: string | null },
+  now: Date,
+): { open: boolean; daysLeft: number | null } {
+  const start = t.approved_at ?? t.published_at;
+  if (!start) return { open: true, daysLeft: null };
+  const DAY = 86_400_000;
+  const left = Date.parse(start) + EDIT_WINDOW_DAYS * DAY - now.getTime();
+  return left > 0 ? { open: true, daysLeft: Math.ceil(left / DAY) } : { open: false, daysLeft: 0 };
+}

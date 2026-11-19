@@ -4,12 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
-  CalendarDays,
   CheckCircle2,
   Clock,
   RefreshCw,
   Scale,
-  Upload,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +26,7 @@ import {
   rowLink,
   type Section,
 } from "@/components/panel/dashboard-format";
+import { HomeInsights } from "@/components/organizer/HomeInsights";
 import { tournamentsByTab, weekOutlook } from "@/components/organizer/organizer-home";
 
 export const Route = createFileRoute("/organizer/")({
@@ -112,25 +111,23 @@ function OrganizerHome() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Mi tienda</p>
-          <h1 className="mt-2 text-3xl font-bold text-white">Inicio</h1>
-          <p className="mt-1 text-sm text-gray-400">
+      {/* "Subir torneo" vive en el sidebar y en la BottomNav: aquí no se repite (Scarce Cyan). */}
+      <header className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold text-foreground">Inicio</h1>
+          <p className="mt-1 text-sm text-foreground-secondary">
             {storeName ? `${storeName}: ` : ""}lo que necesita tu acción y el estado de tus torneos.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => void load()} aria-label="Actualizar Inicio">
-            <RefreshCw size={14} aria-hidden />
-          </Button>
-          <Button asChild>
-            <Link to="/organizer/new">
-              <Upload size={14} className="mr-1" aria-hidden />
-              Subir torneo
-            </Link>
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          className="size-11 shrink-0 sm:size-9"
+          onClick={() => void load()}
+          aria-label="Actualizar Inicio"
+        >
+          <RefreshCw size={14} aria-hidden />
+        </Button>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -147,6 +144,7 @@ function OrganizerHome() {
           <WeekSection week={week} onRetry={load} />
         </div>
       </div>
+      <HomeInsights enabled={!!player} />
     </div>
   );
 }
@@ -176,63 +174,66 @@ function AttentionSection({
   const { rejected } = tournaments.data;
   const overdue = week.state === "ok" ? week.data.overdue : [];
   const pendingAppeals = appeals.state === "ok" ? appeals.data : 0;
-  const total = rejected.length + overdue.length + (pendingAppeals > 0 ? 1 : 0);
+  // Cada apelación cuenta: el badge debe coincidir con "N apelaciones" y con el sidebar.
+  const total = rejected.length + overdue.length + pendingAppeals;
 
   return (
     <Panel id="attention" title="Necesita atención" count={total}>
       {total === 0 ? (
-        <p className="flex items-center gap-2 px-5 py-6 text-sm text-emerald-200">
-          <CheckCircle2 size={16} aria-hidden /> Todo al día: no hay nada que requiera tu acción.
+        <p className="flex items-center gap-2 px-5 py-6 text-sm text-foreground-secondary">
+          <CheckCircle2 size={16} className="text-success" aria-hidden /> Todo al día: no hay nada
+          que requiera tu acción.
         </p>
       ) : (
-        <ul className="divide-y divide-white/5">
-          {rejected.map((t) => (
-            <li key={t.id}>
-              <Link to="/organizer/tournaments/$id" params={{ id: t.id }} className={rowLink}>
-                <XCircle size={16} className="shrink-0 text-red-300" aria-hidden />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-white">
-                    Rechazado: {t.game_name} · {fmtTournamentDate(t.tournament_date)}
-                  </span>
-                  <span className="block text-xs text-gray-400">
-                    Motivo: {t.rejection_reason}. Elimínalo y vuelve a subir el archivo corregido.
-                  </span>
-                </span>
-                <span className="text-xs font-semibold text-primary">Ver</span>
-              </Link>
-            </li>
-          ))}
+        // Por gravedad: resultados atrasados, rechazados y apelaciones.
+        <ul className="divide-y divide-border">
           {overdue.map((e) => (
             <li key={e.id + e.date}>
               <Link to="/organizer/new" className={rowLink}>
-                <AlertTriangle size={16} className="shrink-0 text-orange-300" aria-hidden />
+                <AlertTriangle size={16} className="shrink-0 text-warning" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-white">
+                  <span className="block text-sm font-medium text-foreground">
                     Sube los resultados: {e.game_name} · {fmtTournamentDate(e.date)}
                   </span>
-                  <span className="block text-xs text-gray-400">
+                  <span className="block text-xs text-foreground-subtle">
                     El torneo de las {e.start_time} ya se jugó y aún no tiene resultados.
                   </span>
                 </span>
-                <span className="text-xs font-semibold text-primary">Subir</span>
+                <span className={rowAction}>Subir</span>
+              </Link>
+            </li>
+          ))}
+          {rejected.map((t) => (
+            <li key={t.id}>
+              <Link to="/organizer/tournaments/$id" params={{ id: t.id }} className={rowLink}>
+                <XCircle size={16} className="shrink-0 text-danger" aria-hidden />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-foreground">
+                    Rechazado: {t.game_name} · {fmtTournamentDate(t.tournament_date)}
+                  </span>
+                  <span className="block text-xs text-foreground-subtle">
+                    Motivo: {t.rejection_reason}. Elimínalo y vuelve a subir el archivo corregido.
+                  </span>
+                </span>
+                <span className={rowAction}>Ver</span>
               </Link>
             </li>
           ))}
           {pendingAppeals > 0 && (
             <li>
               <Link to="/organizer/appeals" className={rowLink}>
-                <Scale size={16} className="shrink-0 text-yellow-300" aria-hidden />
+                <Scale size={16} className="shrink-0 text-warning" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-white">
+                  <span className="block text-sm font-medium text-foreground">
                     {pendingAppeals === 1
                       ? "1 apelación pendiente"
                       : `${pendingAppeals} apelaciones pendientes`}
                   </span>
-                  <span className="block text-xs text-gray-400">
+                  <span className="block text-xs text-foreground-subtle">
                     Jugadores que disputan un resultado de tu tienda.
                   </span>
                 </span>
-                <span className="text-xs font-semibold text-primary">Resolver</span>
+                <span className={rowAction}>Resolver</span>
               </Link>
             </li>
           )}
@@ -241,6 +242,9 @@ function AttentionSection({
     </Panel>
   );
 }
+
+// Acción de fila: neutra, nunca cian (se repite en cada fila y competiría con lo urgente).
+const rowAction = "shrink-0 text-xs font-semibold text-foreground-secondary";
 
 function SentSection({
   tournaments,
@@ -267,11 +271,11 @@ function SentSection({
       ) : tournaments.state === "error" ? (
         <LoadError message={tournaments.message} onRetry={onRetry} />
       ) : tournaments.data.sent.length === 0 ? (
-        <p className="px-5 py-6 text-sm text-gray-400">
+        <p className="px-5 py-6 text-sm text-foreground-secondary">
           No tienes torneos en revisión ni esperando publicación.
         </p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-border">
           {tournaments.data.sent.map((t) => (
             <li key={t.id}>
               <Link
@@ -279,14 +283,14 @@ function SentSection({
                 params={{ id: t.id }}
                 className={`${rowLink} flex-wrap sm:flex-nowrap`}
               >
-                <Clock size={16} className="shrink-0 text-sky-300" aria-hidden />
+                <Clock size={16} className="shrink-0 text-foreground-subtle" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-white">
+                  <span className="block text-sm font-medium text-foreground">
                     {t.game_name} · {fmtTournamentDate(t.tournament_date)}
                   </span>
-                  <span className="block text-xs text-gray-400">
+                  <span className="block text-xs text-foreground-subtle">
                     {t.status === "APPROVED"
-                      ? "Aprobado; se hará público cuando se publique."
+                      ? "Aprobado: entra al ranking con la próxima publicación del circuito."
                       : "Esperando revisión de un administrador o TCG Manager."}
                   </span>
                 </span>
@@ -330,23 +334,22 @@ function WeekSection({
       ) : week.state === "error" ? (
         <LoadError message={week.message} onRetry={onRetry} />
       ) : week.data.upcoming.length === 0 ? (
-        <p className="px-5 py-6 text-sm text-gray-400">
+        <p className="px-5 py-6 text-sm text-foreground-secondary">
           No hay más torneos programados esta semana en tu tienda.
         </p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-border">
           {week.data.upcoming.map((e) => (
             <li key={e.id + e.date} className="flex min-h-11 items-center gap-3 px-5 py-3">
-              <CalendarDays size={16} className="shrink-0 text-gray-400" aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-white">{e.game_name}</span>
+                <span className="block text-sm font-medium text-foreground">{e.game_name}</span>
                 {e.league_name && (
-                  <span className="block text-xs text-gray-400">{e.league_name}</span>
+                  <span className="block text-xs text-foreground-subtle">{e.league_name}</span>
                 )}
               </span>
-              <span className="shrink-0 text-right text-xs text-gray-300">
+              <span className="shrink-0 text-right text-xs text-foreground-secondary">
                 {e.is_today ? "Hoy" : fmtTournamentDate(e.date)}
-                <span className="block text-gray-500">{e.start_time}</span>
+                <span className="font-mono-stat block text-foreground-subtle">{e.start_time}</span>
               </span>
             </li>
           ))}

@@ -19,27 +19,31 @@ export function Panel({
   busy?: boolean;
 }) {
   return (
-    <section aria-labelledby={id} aria-busy={busy} className="glass overflow-hidden rounded-2xl">
+    <section
+      aria-labelledby={id}
+      aria-busy={busy}
+      className="overflow-hidden rounded-xl border border-border bg-card"
+    >
       <h2
         id={id}
-        className="flex items-center gap-2 border-b border-white/10 px-5 py-3 text-sm font-semibold text-white"
+        className="flex items-center gap-2 border-b border-border px-5 py-3 text-sm font-semibold text-foreground"
       >
         {title}
         {!!count && (
-          <span className="rounded-full bg-primary/20 px-2 text-xs font-bold text-primary">
+          <span className="font-mono-stat rounded-md bg-primary px-1.5 text-xs font-bold text-primary-foreground">
             {count}
           </span>
         )}
       </h2>
       <div>{children}</div>
-      {footer && <div className="border-t border-white/10 px-5 py-3 text-sm">{footer}</div>}
+      {footer && <div className="border-t border-border px-5 py-3 text-sm">{footer}</div>}
     </section>
   );
 }
 
 export function Loading({ className = "px-5 py-6" }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-2 text-sm text-gray-400 ${className}`}>
+    <div className={`flex items-center gap-2 text-sm text-foreground-subtle ${className}`}>
       <Loader2 size={14} className="animate-spin" aria-hidden /> Cargando…
     </div>
   );
@@ -57,13 +61,13 @@ export function LoadError({
   return (
     <div
       role="alert"
-      className={`flex flex-wrap items-center gap-3 text-sm text-red-200 ${className}`}
+      className={`flex flex-wrap items-center gap-3 text-sm text-foreground-secondary ${className}`}
     >
-      <AlertTriangle size={14} aria-hidden /> No se pudo cargar: {message}
+      <AlertTriangle size={14} className="text-danger" aria-hidden /> No se pudo cargar: {message}
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-md border border-white/15 px-2 py-1 text-xs text-white hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="min-h-11 rounded-md border border-border px-3 text-xs text-foreground hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-8"
       >
         Reintentar
       </button>
