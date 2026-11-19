@@ -304,7 +304,7 @@ export const deleteAppeal = createServerFn({ method: "POST" })
     // Solo se restaura si la ronda sigue en apelación; no se toca ninguna otra columna.
     const { error: restoreError } = await admin
       .from("tournament_round_results")
-      .update({ status: appeal.original_round_status ?? "pending" })
+      .update({ status: appeal.original_round_status ?? "pending_confirmation" })
       .eq("id", appeal.original_round_id)
       .eq("status", "under_appeal");
     if (restoreError) failDb(restoreError);
