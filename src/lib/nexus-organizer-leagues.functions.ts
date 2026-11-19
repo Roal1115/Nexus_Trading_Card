@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusOrganizer } from "./nexus-auth.middleware";
 import { failDb } from "./nexus-admin.server";
+import { nextPrimaryLeague } from "./league-assignment";
 
 // Épica 4: los tcg_manager NO tienen jurisdicción sobre ligas internas —
 // requireNexusOrganizer permite organizer/tcg_manager/admin, así que se
@@ -211,6 +212,49 @@ export const setLeagueTournaments = createServerFn({ method: "POST" })
       }
     }
 
+    // Torneos que salen de esta liga: si era su liga principal (league_id),
+    // pasa a otra vinculada; si no queda ninguna, se bloquea todo antes de
+    // escribir (league_id null lo volvería de circuito sin revisión).
+    const { data: current, error: ce } = await admin
+      .from("store_league_tournaments")
+      .select("tournament_id")
+      .eq("league_id", data.league_id);
+    if (ce) failDb(ce);
+    const removedIds = (current ?? [])
+      .map((r) => r.tournament_id)
+      .filter((id) => !data.tournament_ids.includes(id));
+    const primaryChanges: Array<{ id: string; league_id: string | null }> = [];
+    if (removedIds.length) {
+      const { data: removed, error: re } = await admin
+        .from("tournaments")
+        .select("id, league_id")
+        .in("id", removedIds)
+        .not("league_id", "is", null);
+      if (re) failDb(re);
+      if (removed?.length) {
+        const { data: links, error: le } = await admin
+          .from("store_league_tournaments")
+          .select("tournament_id, league_id")
+          .in(
+            "tournament_id",
+            removed.map((t) => t.id),
+          )
+          .neq("league_id", data.league_id);
+        if (le) failDb(le);
+        for (const t of removed) {
+          const remaining = (links ?? [])
+            .filter((l) => l.tournament_id === t.id)
+            .map((l) => l.league_id);
+          const next = nextPrimaryLeague(t.league_id, remaining);
+          if ("blocked" in next) {
+            throw new Error("Este torneo solo pertenece a esta liga; no se puede quitar");
+          }
+          if (next.league_id !== t.league_id)
+            primaryChanges.push({ id: t.id, league_id: next.league_id });
+        }
+      }
+    }
+
     const { error: de } = await admin
       .from("store_league_tournaments")
       .delete()
@@ -227,6 +271,13 @@ export const setLeagueTournaments = createServerFn({ method: "POST" })
           })),
         );
       if (ie) failDb(ie);
+    }
+    for (const c of primaryChanges) {
+      const { error: ue } = await admin
+        .from("tournaments")
+        .update({ league_id: c.league_id })
+        .eq("id", c.id);
+      if (ue) failDb(ue);
     }
     return { ok: true };
   });
