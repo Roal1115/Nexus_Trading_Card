@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LocationSelects, OpeningHoursField } from "@/components/stores/StoreFormFields";
+import { StoreTcgsField } from "@/components/stores/StoreTcgsField";
 import { listZones } from "@/lib/nexus-zones.functions";
 
 /** Lo que Admin y Manager saben de una tienda al editarla. */
@@ -362,6 +363,8 @@ export function StoreEditDialog({
               </div>
             </div>
           </section>
+
+          {store && <StoreTcgsField key={store.id} storeId={store.id} />}
         </div>
 
         <DialogFooter>

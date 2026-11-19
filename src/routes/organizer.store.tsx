@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { LocationSelects, OpeningHoursField } from "@/components/stores/StoreFormFields";
+import { StoreTcgsField } from "@/components/stores/StoreTcgsField";
 import { useEffect, useState } from "react";
 import { Store, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -313,6 +314,12 @@ function OrganizerHome() {
               </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {homeStore && (
+        <section className="glass rounded-2xl p-6">
+          <StoreTcgsField storeId={homeStore.id} />
         </section>
       )}
     </div>
