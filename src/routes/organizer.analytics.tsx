@@ -30,6 +30,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { Link } from "@tanstack/react-router";
+import { attendanceArea } from "@/components/organizer/attendance-area";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { getStoreAnalytics, getStorePageViewAnalytics } from "@/lib/nexus-organizer.functions";
 import { Input } from "@/components/ui/input";
@@ -381,12 +382,6 @@ function OrganizerAnalytics() {
         </p>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={data.attendance_trend}>
-            <defs>
-              <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
             <XAxis dataKey="week_start" stroke="#d1d5db" fontSize={11} tick={{ fill: "#d1d5db" }} />
             <YAxis stroke="#d1d5db" fontSize={11} allowDecimals={false} tick={{ fill: "#d1d5db" }} />
@@ -411,17 +406,12 @@ function OrganizerAnalytics() {
               }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area
-              type="monotone"
-              dataKey="players"
-              name="Jugadores únicos"
-              stroke="#f97316"
-              strokeWidth={2}
-              fill="url(#attendanceGradient)"
-              isAnimationActive
-              animationDuration={1000}
-              activeDot={{ r: 6, style: { transition: "cx 150ms ease-out, cy 150ms ease-out" } }}
-            />
+            {attendanceArea("attendanceGradient", {
+              name: "Jugadores únicos",
+              isAnimationActive: true,
+              animationDuration: 1000,
+              activeDot: { r: 6, style: { transition: "cx 150ms ease-out, cy 150ms ease-out" } },
+            })}
             <Area
               type="monotone"
               dataKey="total_entries"
