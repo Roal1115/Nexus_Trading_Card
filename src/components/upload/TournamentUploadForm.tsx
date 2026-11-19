@@ -716,9 +716,11 @@ export function TournamentUploadForm({
                 </p>
               ) : (
                 <p className="text-xs text-gray-500">
-                  {countsForCircuit
-                    ? "Pasa por revisión; los puntos de liga aparecen cuando se publica."
-                    : "Solo ligas: se publica directo."}
+                  {!countsForCircuit
+                    ? "Solo ligas: se publica directo."
+                    : leagueIds.length
+                      ? "Pasa por revisión; los puntos de liga aparecen cuando se publica."
+                      : "Pasa por revisión antes de publicarse."}
                 </p>
               )}
             </fieldset>

@@ -255,6 +255,16 @@ export const setLeagueTournaments = createServerFn({ method: "POST" })
       }
     }
 
+    // Primero la liga principal: si falla después, el torneo ya apunta a una
+    // liga que sigue vinculada.
+    for (const c of primaryChanges) {
+      const { error: ue } = await admin
+        .from("tournaments")
+        .update({ league_id: c.league_id })
+        .eq("id", c.id);
+      if (ue) failDb(ue);
+    }
+
     const { error: de } = await admin
       .from("store_league_tournaments")
       .delete()
@@ -271,13 +281,6 @@ export const setLeagueTournaments = createServerFn({ method: "POST" })
           })),
         );
       if (ie) failDb(ie);
-    }
-    for (const c of primaryChanges) {
-      const { error: ue } = await admin
-        .from("tournaments")
-        .update({ league_id: c.league_id })
-        .eq("id", c.id);
-      if (ue) failDb(ue);
     }
     return { ok: true };
   });
