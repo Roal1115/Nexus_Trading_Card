@@ -132,12 +132,15 @@ function RoundAccordionItem({
   gameId,
   onAppealSubmitted,
   onConfirmed,
+  canAppeal,
 }: {
   round: RoundWithLeaders;
   opponentTag: string;
   gameId: string;
   onAppealSubmitted: () => void;
   onConfirmed: () => void;
+  /** Plazo de edición abierto: apelar solo dentro de los 7 días. */
+  canAppeal: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [showAppealForm, setShowAppealForm] = useState(false);
@@ -244,18 +247,23 @@ function RoundAccordionItem({
       </button>
 
       {/* Appeal visible cuando está colapsado — FUERA del button */}
-      {!open && !round.is_bye && round.is_auto_populated && !underAppeal && !isConfirmed && (
-        <div className="px-3 pb-2.5">
-          <button
-            type="button"
-            onClick={() => setShowAppealForm(true)}
-            className="flex items-center gap-1 text-xs text-amber-400 hover:underline"
-          >
-            <Scale size={12} />
-            ¿No estás de acuerdo con el resultado? Apela aquí
-          </button>
-        </div>
-      )}
+      {!open &&
+        !round.is_bye &&
+        round.is_auto_populated &&
+        !underAppeal &&
+        !isConfirmed &&
+        canAppeal && (
+          <div className="px-3 pb-2.5">
+            <button
+              type="button"
+              onClick={() => setShowAppealForm(true)}
+              className="flex items-center gap-1 text-xs text-amber-400 hover:underline"
+            >
+              <Scale size={12} />
+              ¿No estás de acuerdo con el resultado? Apela aquí
+            </button>
+          </div>
+        )}
 
       {/* Contenido expandido */}
       {open && (
@@ -338,14 +346,16 @@ function RoundAccordionItem({
                 {confirming ? "Confirmando…" : "Aceptar Resultados"}
               </button>
               {/* Apelar */}
-              <button
-                type="button"
-                onClick={() => setShowAppealForm(true)}
-                className="flex items-center justify-center gap-1 text-xs text-amber-400 hover:underline"
-              >
-                <Scale size={12} />
-                ¿No estás de acuerdo? Apela aquí
-              </button>
+              {canAppeal && (
+                <button
+                  type="button"
+                  onClick={() => setShowAppealForm(true)}
+                  className="flex items-center justify-center gap-1 text-xs text-amber-400 hover:underline"
+                >
+                  <Scale size={12} />
+                  ¿No estás de acuerdo? Apela aquí
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -460,10 +470,16 @@ export function RoundsAccordionReadOnly({
             <button
               type="button"
               onClick={onAddTracker}
-              title={`Editar rondas de este torneo${editWindow.daysLeft !== null ? ` · ${editWindow.daysLeft === 1 ? "queda 1 día" : `quedan ${editWindow.daysLeft} días`}` : ""}`}
+              title="Editar rondas de este torneo"
               className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs font-semibold text-foreground-secondary transition hover:border-primary/40 hover:text-primary"
             >
               <Pencil size={11} /> Editar
+              {editWindow.daysLeft !== null && (
+                <span className="font-normal text-foreground-subtle">
+                  ·{" "}
+                  {editWindow.daysLeft === 1 ? "queda 1 día" : `quedan ${editWindow.daysLeft} días`}
+                </span>
+              )}
             </button>
           )}
         </div>
@@ -476,7 +492,8 @@ export function RoundsAccordionReadOnly({
             opponentTag={r.opponent_player_id ? (opponentMap[r.opponent_player_id] ?? "—") : "—"}
             gameId={gameId}
             onAppealSubmitted={() => reload(true)}
-            onConfirmed={() => reload(true)} // ← agrega esto
+            onConfirmed={() => reload(true)}
+            canAppeal={editWindow.open}
           />
         ))}
       </div>

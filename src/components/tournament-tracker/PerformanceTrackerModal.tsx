@@ -13,7 +13,7 @@ import {
   updateMyTournamentLeader,
   deleteRoundResult,
 } from "@/lib/nexus-tournament-tracker.functions";
-import { roundLeadersProblem } from "@/lib/round-rules";
+import { EDIT_WINDOW_CLOSED_MESSAGE, roundLeadersProblem } from "@/lib/round-rules";
 import {
   cleanLeaderName,
   LeaderSearchSelect,
@@ -179,6 +179,7 @@ function RoundCard({
   onDelete,
   saving,
   deleting,
+  locked,
 }: {
   round: RoundRow;
   opponents: Array<{ id: string; geek_tag: string }>;
@@ -188,6 +189,8 @@ function RoundCard({
   onDelete: () => void;
   saving: boolean;
   deleting: boolean;
+  /** Plazo de edición cerrado: la ronda se ve pero no se cambia. */
+  locked: boolean;
 }) {
   return (
     <RoundCardFrame
@@ -197,11 +200,11 @@ function RoundCard({
           ? "Bye"
           : (opponents.find((o) => o.id === round.opponent_player_id)?.geek_tag ?? "—")
       }
-      onDelete={onDelete}
+      onDelete={locked ? undefined : onDelete}
       deleting={deleting}
     >
       {(close) => (
-        <>
+        <fieldset disabled={locked} className="min-w-0 space-y-5">
           <label className="flex items-center gap-2 text-xs text-foreground-secondary">
             <input
               type="checkbox"
@@ -249,14 +252,16 @@ function RoundCard({
           )}
 
           <RoundNotesField value={round.notes} onChange={(notes) => onChange({ notes })} />
-          <RoundSaveButton
-            saving={saving}
-            onClick={async () => {
-              await onSave();
-              close();
-            }}
-          />
-        </>
+          {!locked && (
+            <RoundSaveButton
+              saving={saving}
+              onClick={async () => {
+                await onSave();
+                close();
+              }}
+            />
+          )}
+        </fieldset>
       )}
     </RoundCardFrame>
   );
@@ -290,6 +295,7 @@ export function PerformanceTrackerModal({
   const [deletingRound, setDeletingRound] = useState<number | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [locked, setLocked] = useState(false);
 
   const handleClearAll = async () => {
     setClearing(true);
@@ -311,6 +317,7 @@ export function PerformanceTrackerModal({
     fetchRounds({ data: { tournament_id: tournamentId } })
       .then((res: any) => {
         setMaxRounds(res.max_rounds);
+        setLocked(res.edit_window?.open === false);
         setOpponents(res.opponents);
         setMyLeader(res.my_tournament_leader ?? null);
         setSavedLeaderId(res.my_tournament_leader?.id ?? null);
@@ -470,7 +477,7 @@ export function PerformanceTrackerModal({
             </p>
           </div>
         </div>
-        {rounds.length > 0 && (
+        {rounds.length > 0 && !locked && (
           <button
             type="button"
             onClick={() => setConfirmingClear(true)}
@@ -529,38 +536,42 @@ export function PerformanceTrackerModal({
             </div>
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs uppercase tracking-widest text-foreground-subtle">
-              Cambiar tu leader
-            </label>
-            <LeaderSelect
-              gameId={gameId}
-              value={myLeader}
-              onChange={setMyLeader}
-              placeholder="Selecciona tu leader…"
-            />
-            {leaderChanged &&
-              (savedOwnRounds.length > 0 ? (
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-amber-400">
-                    Sin guardar. Se aplicará a {savedOwnRounds.length}{" "}
-                    {savedOwnRounds.length === 1 ? "ronda capturada" : "rondas capturadas"}.
+          {locked ? (
+            <p className="text-xs text-foreground-secondary">{EDIT_WINDOW_CLOSED_MESSAGE}</p>
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-xs uppercase tracking-widest text-foreground-subtle">
+                Cambiar tu leader
+              </label>
+              <LeaderSelect
+                gameId={gameId}
+                value={myLeader}
+                onChange={setMyLeader}
+                placeholder="Selecciona tu leader…"
+              />
+              {leaderChanged &&
+                (savedOwnRounds.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-amber-400">
+                      Sin guardar. Se aplicará a {savedOwnRounds.length}{" "}
+                      {savedOwnRounds.length === 1 ? "ronda capturada" : "rondas capturadas"}.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleSaveLeader}
+                      disabled={savingLeader}
+                      className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                    >
+                      {savingLeader ? "Guardando…" : "Guardar leader"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-foreground-secondary">
+                    Se guardará con tu primera ronda.
                   </p>
-                  <button
-                    type="button"
-                    onClick={handleSaveLeader}
-                    disabled={savingLeader}
-                    className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
-                  >
-                    {savingLeader ? "Guardando…" : "Guardar leader"}
-                  </button>
-                </div>
-              ) : (
-                <p className="mt-2 text-xs text-foreground-secondary">
-                  Se guardará con tu primera ronda.
-                </p>
-              ))}
-          </div>
+                ))}
+            </div>
+          )}
 
           {/* Table header */}
           {rounds.length > 0 && (
@@ -609,12 +620,13 @@ export function PerformanceTrackerModal({
                   onDelete={() => handleDeleteRound(idx)}
                   saving={savingRound === idx}
                   deleting={deletingRound === idx}
+                  locked={locked}
                 />
               ),
             )}
           </div>
 
-          {availableRoundNumbers.length > 0 && (
+          {availableRoundNumbers.length > 0 && !locked && (
             <div className="flex flex-wrap gap-2">
               {availableRoundNumbers.map((n) => (
                 <button
