@@ -651,7 +651,7 @@ function DashboardPage() {
             <h2 className="text-lg font-semibold text-foreground">Torneos recientes</h2>
             {!loading && (
               <span className="whitespace-nowrap text-xs text-foreground-subtle">
-                {filteredEvents.length} {filteredEvents.length === events.length ? "torneos jugados" : "torneos"}
+                {`${filteredEvents.length} ${filteredEvents.length === events.length ? "torneos jugados" : "torneos"}`}
               </span>
             )}
           </header>
