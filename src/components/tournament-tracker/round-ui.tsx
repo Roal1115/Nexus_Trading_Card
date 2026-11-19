@@ -373,8 +373,8 @@ function ChoiceButton({
 }
 
 /**
- * Dado, turno y resultado. Con `compact` el Resultado va primero y Dado, Turno y `extra`
- * (p. ej. las notas) quedan plegados en "Más detalles": lo obligatorio no compite con lo opcional.
+ * Dado, turno y resultado. Con `compact` el Resultado va primero, luego Dado y Turno a la vista,
+ * y `extra` (p. ej. las notas) queda plegado en "Más detalles".
  */
 export function RoundOutcomeFields({
   round,
@@ -387,7 +387,6 @@ export function RoundOutcomeFields({
   compact?: boolean;
   extra?: ReactNode;
 }) {
-  const hasDetails = round.won_die_roll !== null || round.turn_order !== null;
   const result = (
     <div>
       <RoundFieldLabel>Resultado</RoundFieldLabel>
@@ -471,16 +470,16 @@ export function RoundOutcomeFields({
   return (
     <>
       {result}
-      <details open={hasDetails || undefined} className="group">
-        <summary className="flex min-h-11 cursor-pointer items-center gap-1 rounded-md text-sm font-medium text-gray-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-          Más detalles
-          <span className="text-xs font-normal text-gray-500">(dado, turno y notas)</span>
-        </summary>
-        <div className="space-y-5 pt-2">
-          {details}
-          {extra}
-        </div>
-      </details>
+      {details}
+      {extra && (
+        <details className="group">
+          <summary className="flex min-h-11 cursor-pointer items-center gap-1 rounded-md text-sm font-medium text-gray-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            Más detalles
+            <span className="text-xs font-normal text-gray-500">(notas)</span>
+          </summary>
+          <div className="space-y-5 pt-2">{extra}</div>
+        </details>
+      )}
     </>
   );
 }
