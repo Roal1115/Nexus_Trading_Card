@@ -6,8 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStoreTcgs, getTcgCatalog, setStoreTcgs } from "@/lib/nexus-store-tcgs.functions";
 
-/** "Juegos que se juegan aquí": guarda con su propio botón. Organizador, Admin y Manager. */
-export function StoreTcgsField({ storeId }: { storeId: string }) {
+/**
+ * "Juegos que se juegan aquí". Organizador, Admin y Manager. Solo guarda con su propio botón;
+ * con `onChange` (dentro de otro formulario) avisa la selección y guarda quien lo contiene.
+ */
+export function StoreTcgsField({
+  storeId,
+  onChange,
+}: {
+  storeId: string;
+  onChange?: (tcgIds: string[]) => void;
+}) {
   const fetchCatalog = useServerFn(getTcgCatalog);
   const fetchStoreTcgs = useServerFn(getStoreTcgs);
   const save = useServerFn(setStoreTcgs);
@@ -25,8 +34,11 @@ export function StoreTcgsField({ storeId }: { storeId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
-  const toggle = (id: string, on: boolean) =>
-    setSelected((s) => (on ? [...s, id] : s.filter((x) => x !== id)));
+  const toggle = (id: string, on: boolean) => {
+    const next = on ? [...selected, id] : selected.filter((x) => x !== id);
+    setSelected(next);
+    onChange?.(next);
+  };
 
   const submit = async () => {
     setSaving(true);
@@ -47,7 +59,7 @@ export function StoreTcgsField({ storeId }: { storeId: string }) {
         <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
           Juegos que se juegan aquí
         </h3>
-        {catalog.length > 0 && (
+        {catalog.length > 0 && !onChange && (
           <Button size="sm" onClick={submit} disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Guardar

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { LocationSelects, OpeningHoursField } from "@/components/stores/StoreFormFields";
 import { StoreTcgsField } from "@/components/stores/StoreTcgsField";
+import { setStoreTcgs } from "@/lib/nexus-store-tcgs.functions";
 import { listZones } from "@/lib/nexus-zones.functions";
 
 /** Lo que Admin y Manager saben de una tienda al editarla. */
@@ -125,10 +126,13 @@ export function StoreEditDialog({
   showCountry?: boolean;
 }) {
   const fetchZones = useServerFn(listZones);
+  const saveTcgs = useServerFn(setStoreTcgs);
   const [zones, setZones] = useState<Zone[]>([]);
   const [form, setForm] = useState(() => emptyForm(store));
   const [hoursValid, setHoursValid] = useState(true);
   const [saving, setSaving] = useState(false);
+  // null = no se tocaron los juegos; se guardan con el resto al pulsar "Guardar cambios".
+  const [tcgIds, setTcgIds] = useState<string[] | null>(null);
 
   useEffect(() => {
     fetchZones()
@@ -141,6 +145,7 @@ export function StoreEditDialog({
     if (store) {
       setForm(emptyForm(store));
       setHoursValid(true);
+      setTcgIds(null);
     }
   }, [store]);
 
@@ -158,6 +163,13 @@ export function StoreEditDialog({
     const opt = (v: string) => v.trim() || undefined;
     setSaving(true);
     try {
+      if (tcgIds) {
+        try {
+          await saveTcgs({ data: { store_id: store.id, tcg_ids: tcgIds } });
+        } catch (e) {
+          return toast.error(String((e as Error).message ?? e));
+        }
+      }
       await onSubmit({
         store_id: store.id,
         name: form.name.trim(),
@@ -364,7 +376,7 @@ export function StoreEditDialog({
             </div>
           </section>
 
-          {store && <StoreTcgsField key={store.id} storeId={store.id} />}
+          {store && <StoreTcgsField key={store.id} storeId={store.id} onChange={setTcgIds} />}
         </div>
 
         <DialogFooter>
