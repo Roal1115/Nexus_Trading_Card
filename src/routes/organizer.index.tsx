@@ -28,6 +28,7 @@ import {
   rowLink,
   type Section,
 } from "@/components/panel/dashboard-format";
+import { HomeInsights } from "@/components/organizer/HomeInsights";
 import { tournamentsByTab, weekOutlook } from "@/components/organizer/organizer-home";
 
 export const Route = createFileRoute("/organizer/")({
@@ -147,6 +148,7 @@ function OrganizerHome() {
           <WeekSection week={week} onRetry={load} />
         </div>
       </div>
+      <HomeInsights enabled={!!player} />
     </div>
   );
 }
