@@ -310,8 +310,9 @@ export const archiveStoreLeague = createServerFn({ method: "POST" })
     if (tournamentIds.length) {
       const { data: results, error: re } = await admin
         .from("tournament_results")
-        .select("player_id, points_earned")
-        .in("tournament_id", tournamentIds);
+        .select("player_id, points_earned, tournaments!inner(status)")
+        .in("tournament_id", tournamentIds)
+        .in("tournaments.status", ["APPROVED", "PUBLISHED"]);
       if (re) failDb(re);
 
       const totals = new Map<string, number>();
