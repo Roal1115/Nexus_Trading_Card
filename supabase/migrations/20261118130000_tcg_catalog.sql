@@ -14,10 +14,9 @@ create table public.store_tcgs (
 
 create index store_tcgs_tcg_id_idx on public.store_tcgs(tcg_id);
 
+-- Solo server functions: RLS activo, sin policies y sin acceso de anon/authenticated.
 alter table public.tcg_catalog enable row level security;
 alter table public.store_tcgs enable row level security;
-
--- lectura pública: la página de tienda muestra los juegos; escrituras solo por
--- server functions (admin client), sin políticas de escritura
-create policy "tcg_catalog_public_read" on public.tcg_catalog for select using (true);
-create policy "store_tcgs_public_read" on public.store_tcgs for select using (true);
+revoke all on public.tcg_catalog, public.store_tcgs from public, anon, authenticated;
+grant select on public.tcg_catalog to service_role;
+grant select, insert, delete on public.store_tcgs to service_role;
