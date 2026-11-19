@@ -749,6 +749,7 @@ export type Database = {
           original_opponent_leader_id: string | null;
           original_player_leader_id: string | null;
           original_round_id: string;
+          original_round_status: string | null;
           original_turn_order: string | null;
           original_won_die_roll: boolean | null;
           original_won_match: boolean | null;
@@ -772,6 +773,7 @@ export type Database = {
           original_opponent_leader_id?: string | null;
           original_player_leader_id?: string | null;
           original_round_id: string;
+          original_round_status?: string | null;
           original_turn_order?: string | null;
           original_won_die_roll?: boolean | null;
           original_won_match?: boolean | null;
@@ -795,6 +797,7 @@ export type Database = {
           original_opponent_leader_id?: string | null;
           original_player_leader_id?: string | null;
           original_round_id?: string;
+          original_round_status?: string | null;
           original_turn_order?: string | null;
           original_won_die_roll?: boolean | null;
           original_won_match?: boolean | null;

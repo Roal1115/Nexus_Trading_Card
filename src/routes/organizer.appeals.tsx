@@ -1,9 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Scale, ShieldQuestion, CheckCircle2 } from "lucide-react";
+import { Scale, ShieldQuestion, CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getStoreAppeals, resolveAppeal } from "@/lib/nexus-appeals.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteAppeal, getStoreAppeals, resolveAppeal } from "@/lib/nexus-appeals.functions";
 
 export const Route = createFileRoute("/organizer/appeals")({
   head: () => ({ meta: [{ title: "Apelaciones — Nexus" }] }),
@@ -126,6 +137,7 @@ function VersionColumn({
 
 function AppealCard({ appeal, onResolved }: { appeal: AppealRow; onResolved: () => void }) {
   const resolve = useServerFn(resolveAppeal);
+  const remove = useServerFn(deleteAppeal);
   const [resolving, setResolving] = useState(false);
 
   const handleResolve = async (resolution: "accepted_original" | "accepted_proposed") => {
@@ -137,6 +149,18 @@ function AppealCard({ appeal, onResolved }: { appeal: AppealRow; onResolved: () 
     } catch (e: any) {
       toast.error(e?.message ?? "Error al resolver la apelación");
     } finally {
+      setResolving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setResolving(true);
+    try {
+      await remove({ data: { appeal_id: appeal.id } });
+      toast.success("Apelación eliminada");
+      onResolved();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al eliminar la apelación");
       setResolving(false);
     }
   };
@@ -185,6 +209,38 @@ function AppealCard({ appeal, onResolved }: { appeal: AppealRow; onResolved: () 
         >
           <ShieldQuestion size={14} /> Aceptar propuesta
         </button>
+      </div>
+      <div className="mt-2 flex justify-end">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              disabled={resolving}
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            >
+              <Trash2 size={14} /> Eliminar
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-xl border-border bg-card">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">
+                ¿Eliminar esta apelación?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-foreground-secondary">
+                La ronda vuelve a como estaba antes de apelar. No se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={resolving}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={resolving}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDelete}
+              >
+                {resolving ? "Eliminando…" : "Eliminar apelación"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
