@@ -460,7 +460,7 @@ export function RoundsAccordionReadOnly({
             <button
               type="button"
               onClick={onAddTracker}
-              title={`Editar rondas de este torneo${editWindow.daysLeft !== null ? ` · quedan ${editWindow.daysLeft} días` : ""}`}
+              title={`Editar rondas de este torneo${editWindow.daysLeft !== null ? ` · ${editWindow.daysLeft === 1 ? "queda 1 día" : `quedan ${editWindow.daysLeft} días`}` : ""}`}
               className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs font-semibold text-foreground-secondary transition hover:border-primary/40 hover:text-primary"
             >
               <Pencil size={11} /> Editar
