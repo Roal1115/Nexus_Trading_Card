@@ -3,6 +3,7 @@ import type { TablesUpdate } from "./database.types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser } from "./nexus-auth.middleware";
+import { roundLeadersProblem } from "./round-rules";
 
 // ============================================================
 // searchStores — busca tiendas activas por nombre para autocompletar
@@ -383,7 +384,7 @@ export const saveStandaloneRound = createServerFn({ method: "POST" })
     // Verificar que la sesión pertenece al player y no está matched
     const { data: session } = await admin
       .from("standalone_sessions")
-      .select("id, status")
+      .select("id, status, player_leader_id")
       .eq("id", data.session_id)
       .eq("player_id", player.id)
       .maybeSingle();
@@ -392,8 +393,11 @@ export const saveStandaloneRound = createServerFn({ method: "POST" })
     if (session.status === "matched")
       throw new Error("No puedes editar una partida ya vinculada a un torneo oficial");
 
-    if (!data.is_bye && !data.opponent_leader_id)
-      throw new Error("Selecciona el leader del oponente para guardar la ronda");
+    const problem = roundLeadersProblem({
+      ...data,
+      player_leader_id: data.player_leader_id ?? session.player_leader_id,
+    });
+    if (problem) throw new Error(problem);
 
     const wonMatch = data.is_bye ? true : (data.won_match ?? null);
 
@@ -455,7 +459,7 @@ export const deleteStandaloneRound = createServerFn({ method: "POST" })
 
     const { data: session } = await admin
       .from("standalone_sessions")
-      .select("id, status")
+      .select("id, status, player_leader_id")
       .eq("id", data.session_id)
       .eq("player_id", player.id)
       .maybeSingle();
@@ -488,7 +492,7 @@ export const deleteStandaloneSession = createServerFn({ method: "POST" })
 
     const { data: session } = await admin
       .from("standalone_sessions")
-      .select("id, status")
+      .select("id, status, player_leader_id")
       .eq("id", data.session_id)
       .eq("player_id", player.id)
       .maybeSingle();

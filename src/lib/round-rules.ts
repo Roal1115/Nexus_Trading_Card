@@ -32,3 +32,15 @@ export function sessionLinkProblem({
   }
   return null;
 }
+
+// Una ronda jugada (no Bye) necesita el leader propio y el del rival.
+export function roundLeadersProblem(r: {
+  is_bye: boolean;
+  player_leader_id?: string | null;
+  opponent_leader_id?: string | null;
+}): string | null {
+  if (r.is_bye) return null;
+  if (!r.player_leader_id) return "Selecciona tu leader para guardar la ronda";
+  if (!r.opponent_leader_id) return "Selecciona el leader del oponente para guardar la ronda";
+  return null;
+}

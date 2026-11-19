@@ -1,6 +1,6 @@
 // Reglas puras de rondas: npx tsx scripts/round-rules.check.mts
 import assert from "node:assert/strict";
-import { maxWinsFor, sessionLinkProblem } from "../src/lib/round-rules.ts";
+import { maxWinsFor, roundLeadersProblem, sessionLinkProblem } from "../src/lib/round-rules.ts";
 
 const round = (round_number: number, won_match: boolean | null) => ({ round_number, won_match });
 
@@ -41,3 +41,10 @@ assert.equal(
 );
 
 console.log("round-rules: ok");
+
+const L = "00000000-0000-0000-0000-000000000001";
+assert.equal(roundLeadersProblem({ is_bye: true, player_leader_id: null, opponent_leader_id: null }), null);
+assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: L, opponent_leader_id: L }), null);
+assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: null, opponent_leader_id: L }), "Selecciona tu leader para guardar la ronda");
+assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: L, opponent_leader_id: undefined }), "Selecciona el leader del oponente para guardar la ronda");
+assert.equal(roundLeadersProblem({ is_bye: false, player_leader_id: null, opponent_leader_id: null }), "Selecciona tu leader para guardar la ronda");

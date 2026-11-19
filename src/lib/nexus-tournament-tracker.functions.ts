@@ -2,7 +2,7 @@ import { failDb } from "./nexus-admin.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNexusUser } from "./nexus-auth.middleware";
-import { maxWinsFor } from "./round-rules";
+import { maxWinsFor, roundLeadersProblem } from "./round-rules";
 
 const EXCLUDED_EVENT_LEADER_IDS = ["P-900", "P-800", "P-700"];
 
@@ -336,6 +336,8 @@ export const saveRoundResult = createServerFn({ method: "POST" })
     if (!data.is_bye && !data.opponent_player_id) {
       throw new Error("Debes seleccionar un oponente o marcar Bye");
     }
+    const problem = roundLeadersProblem(data);
+    if (problem) throw new Error(problem);
 
     await assertPlayedTournament(admin, data.tournament_id, player.id);
     if (!data.is_bye) {

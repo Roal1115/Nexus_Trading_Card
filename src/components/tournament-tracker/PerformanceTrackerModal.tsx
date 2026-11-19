@@ -13,6 +13,7 @@ import {
   updateMyTournamentLeader,
   deleteRoundResult,
 } from "@/lib/nexus-tournament-tracker.functions";
+import { roundLeadersProblem } from "@/lib/round-rules";
 import {
   cleanLeaderName,
   LeaderSearchSelect,
@@ -386,6 +387,12 @@ export function PerformanceTrackerModal({
       toast.error("Selecciona un oponente o marca Bye");
       return;
     }
+    const playerLeaderId = round.player_leader_id ?? myLeader?.id ?? null;
+    const problem = roundLeadersProblem({ ...round, player_leader_id: playerLeaderId });
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
     setSavingRound(idx);
     try {
       await saveRound({
@@ -394,7 +401,7 @@ export function PerformanceTrackerModal({
           round_number: round.round_number,
           is_bye: round.is_bye,
           opponent_player_id: round.opponent_player_id,
-          player_leader_id: round.player_leader_id ?? myLeader?.id ?? null,
+          player_leader_id: playerLeaderId,
           opponent_leader_id: round.opponent_leader_id,
           won_die_roll: round.won_die_roll,
           turn_order: round.turn_order,

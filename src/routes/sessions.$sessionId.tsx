@@ -28,6 +28,7 @@ import {
   deleteStandaloneRound,
   updateStandaloneSessionDetails,
 } from "@/lib/nexus-standalone.functions";
+import { roundLeadersProblem } from "@/lib/round-rules";
 import { getDeckIdentifiers } from "@/lib/nexus-tournament-tracker.functions";
 import {
   cleanLeaderName,
@@ -796,8 +797,10 @@ function StandaloneRoundTracker({
 
   const handleSave = async (idx: number): Promise<boolean> => {
     const r = rounds[idx];
-    if (!r.is_bye && !r.opponent_leader_id) {
-      toast.error("Selecciona el leader del oponente para guardar la ronda");
+    const playerLeaderId = r.player_leader_id ?? heroLeader?.id ?? null;
+    const problem = roundLeadersProblem({ ...r, player_leader_id: playerLeaderId });
+    if (problem) {
+      toast.error(problem);
       return false;
     }
     setSavingIdx(idx);
@@ -807,7 +810,7 @@ function StandaloneRoundTracker({
           session_id: sessionId,
           round_number: r.round_number,
           is_bye: r.is_bye,
-          player_leader_id: r.player_leader_id ?? heroLeader?.id ?? null,
+          player_leader_id: playerLeaderId,
           opponent_leader_id: r.opponent_leader_id,
           opponent_player_id: r.opponent_player_id,
           won_die_roll: r.won_die_roll,
