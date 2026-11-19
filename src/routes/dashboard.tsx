@@ -651,7 +651,7 @@ function DashboardPage() {
             <h2 className="text-lg font-semibold text-foreground">Torneos recientes</h2>
             {!loading && (
               <span className="whitespace-nowrap text-xs text-foreground-subtle">
-                {filteredEvents.length} {filters.tcg || filteredEvents.length !== events.length ? "torneos" : "torneos jugados"}
+                {filteredEvents.length} {filteredEvents.length === events.length ? "torneos jugados" : "torneos"}
               </span>
             )}
           </header>
@@ -692,7 +692,10 @@ function DashboardPage() {
                 label="Tienda"
                 value={filters.store ?? "all"}
                 onChange={(v) => setFilter({ store: v === "all" ? null : v })}
-                options={[{ value: "all", label: "Todas" }, ...storeNames.map((n) => ({ value: n, label: n }))]}
+                options={[
+                  { value: "all", label: "Todas" },
+                  ...storeNames.map((n) => ({ value: n, label: n })),
+                ]}
               />
               <PillSelect
                 label="Fechas"
