@@ -243,6 +243,9 @@ export const uploadTournamentResults = createServerFn({ method: "POST" })
 
     // Validar que el manager tiene autoridad sobre este TCG
     if (player.role === "tcg_manager") {
+      if (!data.counts_for_circuit || data.league_ids.length) {
+        throw new Error("Los managers solo suben torneos al Circuito Nacional");
+      }
       const { data: mg } = await admin
         .from("manager_games")
         .select("id")
