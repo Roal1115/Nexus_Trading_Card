@@ -16,6 +16,7 @@ colors:
   success: "#4ef0a2"
   warning: "#ffd54a"
   danger: "#ff5f6d"
+  chart-primary: "#8fb4ff"
 typography:
   display:
     fontFamily: "Space Grotesk, system-ui, sans-serif"
@@ -96,7 +97,9 @@ components:
 
 # Design System: Nexus
 
-<!-- Actualizado 2026-11-14 (refresco con /impeccable document; se agregó la hoja "Nueva partida"). Pantallas migradas a la
+<!-- Actualizado 2026-11-21 (fusión con /impeccable document; se agregó el panel del organizador: Estadísticas, Torneos
+     con su detalle y la subida, Datos de la tienda con su promo, Jugadores (lista), Apelaciones, Calendario y Ligas).
+     Actualizado 2026-11-14 (refresco con /impeccable document; se agregó la hoja "Nueva partida"). Pantallas migradas a la
      dirección "Tabla Oficial" y que sirven de referencia: /dashboard, el ranking público (/),
      el perfil público del jugador, el directorio de tiendas (/stores), la ficha de tienda
      (/stores/$slug), el resultado de un torneo (/tournaments/$id), el calendario (/calendar),
@@ -112,7 +115,7 @@ components:
 
 Nexus debería leerse como la tabla de posiciones de una liga oficial: el rango y los números son el héroe, la información se ordena en filas y la autoridad viene de la sobriedad, no de los efectos. La meta es que el jugador lo sienta como la referencia oficial del circuito mexicano.
 
-El sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (146 líneas con `.glass` en 50 archivos, sobre todo paneles de staff) y son deuda a migrar. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`), Mis stats (`/my-stats`), Mis partidas (`/sessions`) y los detalles de torneo y de partida (`/sessions/tournament/$tournamentId`, `/sessions/$sessionId`) son las referencias de cómo debe verse.
+El sistema vive en un **tema oscuro único** (nunca hay tema claro): un fondo navy profundo, superficies navy sólidas un poco más claras, un solo acento cian y tipografía de tres familias (Space Grotesk para títulos, Inter para texto, JetBrains Mono para cifras). La jerarquía sale de la tipografía, el tamaño de las cifras y las líneas divisorias, nunca de los efectos. Glass con desenfoque, gradientes, glows y destellos quedaron fuera del sistema. Todavía aparecen en otras pantallas (103 líneas con `.glass` en 35 archivos, sobre todo los paneles de Admin y TCG Manager) y son deuda a migrar. El panel del organizador (`/organizer`) ya está migrado, salvo la lista y el detalle de jugador, que comparte componente con el TCG Manager. `/dashboard`, el ranking público (`/`), el perfil público del jugador, el directorio y la ficha de tienda (`/stores`, `/stores/$slug`), el resultado de un torneo (`/tournaments/$id`), el calendario (`/calendar`), Mis stats (`/my-stats`), Mis partidas (`/sessions`) y los detalles de torneo y de partida (`/sessions/tournament/$tournamentId`, `/sessions/$sessionId`) son las referencias de cómo debe verse.
 
 La densidad es media: los paneles operativos (organizador, manager, admin) usan tablas que en móvil se convierten en tarjetas, y las superficies de jugador priorizan el rango y el historial reciente.
 
@@ -146,10 +149,19 @@ La paleta es un navy nocturno con un solo acento cian eléctrico y tres colores 
 ### Estado
 - **Verde Victoria** (`success`), **Amarillo Aviso** (`warning`) y **Rojo Derrota** (`danger`). Se usan en V/D, en validaciones y en alertas. El rojo es también el `destructive` de shadcn.
 
+### Gráficas
+Las series de las gráficas del organizador no usan los colores de estado. Viven en un solo módulo (`src/components/organizer/chart-theme.ts`: `CHART`, `AXIS`, `TOOLTIP`) para que todas las gráficas se vean igual.
+- **Azul Serie** (`chart-primary`, #8fb4ff): la medida principal (jugadores únicos, nuevos, vistas). Es el mismo azul de "Frecuente" en el estado de jugadores y del área de asistencia.
+- **Gris Azulado** (`text-secondary`, #aab6d1): la medida secundaria (asistencias totales, recurrentes). Es el mismo valor que el texto secundario, así que no introduce otro color; sobre `card-navy` pasa de 8:1.
+- **Amarillo Aviso** (`warning`): lo que requiere atención, como las bajas ("Por recuperar").
+- Rejilla en `border`, ejes y leyendas en `text-secondary` a 12px, tooltip en `popover` con borde de 1px. Cuando dos series son líneas, la secundaria va punteada, para no depender solo del tono.
+
 ### Named Rules
 **The Scarce Cyan Rule.** El cian marca solo tres cosas: la acción principal de la pantalla, dónde estás (navegación activa, foco) y lo tuyo (tu rango, tu fila). Si en una pantalla hay más de unos pocos elementos cian, el acento ya dejó de señalar.
 
 **The One Theme Rule.** No hay tema claro ni toggle `.dark`. Todo color se define para el fondo `night-navy`.
+
+**The Chart Palette Rule.** Verde y rojo no se usan en las gráficas: los datos de asistencia no son resultados de match. Las series van en azul, gris azulado y `warning`.
 
 **The Result Colors Rule.** Verde (`success`) y rojo (`danger`) significan el resultado de un match (V/D, victoria y derrota, movimiento de rango) y nada más. Datos que no son el resultado (quién ganó el dado, quién jugó primero) se marcan con una selección neutra (tinte blanco al 15% y aro fino), no con verde, rojo ni cian. En una vista solo hay un cian: la acción principal. En una partida casual, que no cuenta para el ranking, las cifras de victoria y derrota van neutras. Para fondos usa `.bg-success` y `.bg-danger` (definidas en `src/styles.css`, mismo valor que los tokens); para texto, `.text-success` y `.text-danger`.
 
@@ -198,7 +210,15 @@ El sistema es **plano, con capas tonales**. La profundidad sale de pasar de `nig
 **The One Surface Rule.** Una superficie nunca contiene otra superficie con fondo y borde propios. Dentro de una tarjeta se separa con líneas (`divide-border`) y espacio.
 
 ### Legado a migrar
-`.glass`, `.glow-primary`, `.glow-accent`, `.gradient-*` y el naranja `rgba(232,106,34,…)` (ese sigue en el thumb del scrollbar) siguen en `src/styles.css` y en 50 archivos de otras pantallas (146 líneas con `.glass`, 17 con `backdrop-blur`). Lo mismo pasa con las etiquetas `uppercase tracking-*` (245 usos en 64 archivos). No se usan en trabajo nuevo; se eliminan conforme se migre cada pantalla.
+`.glass`, `.glow-primary`, `.glow-accent`, `.gradient-*` y el naranja `rgba(232,106,34,…)` (ese sigue en el thumb del scrollbar) siguen en `src/styles.css` y en 35 archivos de otras pantallas (103 líneas con `.glass`, 11 con `backdrop-blur`), sobre todo en Admin (8 rutas), TCG Manager (5) y componentes compartidos con ellos. Lo mismo pasa con las etiquetas `uppercase tracking-*` (126 usos en 41 archivos). No se usan en trabajo nuevo; se eliminan conforme se migre cada pantalla.
+
+**Deuda conocida del panel del organizador** (de las críticas del 19 nov: Estadísticas 19/40 antes de migrar, Torneos 22/40 y Datos de la tienda 21/40, ambas antes de las correcciones):
+- La lista y el detalle de jugador (`PlayersBrowser`, `PlayerStaffView`) y el detalle de torneo de Admin y TCG Manager (`tournament-detail.tsx`, parte de revisor) siguen en el estilo anterior.
+- Los campos de `StoreFormFields` tienen borde casi invisible sobre la tarjeta y tres estilos distintos, y 9 campos de Datos de la tienda no tienen `<label htmlFor>`.
+- Los errores de validación de Datos de la tienda y de la promo salen solo como toasts, y el catálogo de TCG vacío no dice nada ni ofrece "Reintentar".
+- La promo todavía usa `confirm()` del navegador para retirar o borrar, y no muestra vista previa del banner.
+- El `Button` compartido mide 36px también en móvil (el sistema pide 44px).
+- El texto de "Overdue" en Calendario está en inglés.
 
 **The Portal Rule.** Un diálogo, hoja o menú con `position: fixed` nunca se renderiza dentro de un ancestro con `backdrop-filter`, `transform` o `filter`: ese ancestro se vuelve su bloque contenedor y lo recorta (la hoja del selector de leader quedó cortada dentro de una tarjeta `.glass`). Se monta en `document.body` con `createPortal`, cierra con Escape y devuelve el foco al elemento que lo abrió.
 
@@ -226,7 +246,7 @@ Las esquinas son moderadas y consistentes: 8px en los controles (botones, inputs
 - **Internal Padding:** 16–24px; 24–40px en el hero.
 
 ### Stat Row
-Para los datos secundarios (Mensual, Torneos, Puntos, Ganados, Tienda favorita) se usa una fila `<dl>`: label de 12px en `text-subtle` sobre la cifra en mono semibold, con un gap de 20px entre pares. No van tiles, íconos ni bordes.
+Para los datos secundarios (Mensual, Torneos, Puntos, Ganados, Tienda favorita) se usa una fila `<dl>`: label de 12px en `text-subtle` sobre la cifra en mono semibold, con un gap de 20px entre pares. No van tiles, íconos ni bordes. En los paneles operativos el label sube a 14px en `text-secondary` (en `text-subtle` de 12px se perdía sobre la tarjeta) y la cifra puede llevar un modificador de lead (30–36px, `warning`) para la que importa más, como "Por recuperar" en Estadísticas.
 
 ### Inputs / Fields
 - **Style:** fondo transparente, borde `raised-navy`, esquinas de 8px y 36px de alto en escritorio y 44px en móvil. El texto es de 16px en móvil para evitar el zoom.
@@ -373,6 +393,29 @@ Cerrar sesión (y cualquier acción que saque al usuario o borre algo) pasa por 
 - Los tiempos van cortos en 12px ("hace 9 h", "hace 3 d", "5 nov").
 - No leído = punto cian sin glow y fila con tinte `primary/6`.
 
+### Panel del organizador
+Patrones de `/organizer` (Operate: el usuario completa una tarea y sale). Siguen todas las reglas anteriores; esto es lo propio del panel.
+
+**Superficies.** `SURFACE` (`rounded-xl border border-border bg-card`, en `store-ui.tsx`) es la superficie plana sin padding, para listas que llevan el suyo; `SECTION` es `SURFACE` más relleno. En una página sin `@container`, el relleno responsivo va con `sm:` (`p-4 sm:p-6`), no con `@2xl:`. Los títulos de página son `h1` de 30px sin kicker y las secciones `h2` de 20px semibold en sentence case; los subtítulos de bloque, 16px semibold, nunca en mayúsculas espaciadas.
+
+**Fila de torneo (`TournamentListRow`).** Toda la fila es el enlace al detalle (`min-h-14`, hover blanco al 5%, foco en anillo interior). Izquierda: el juego en 16px medium, "15 oct · 26 jugadores" con la fecha en mono, y debajo la marca de alerta crítica y el motivo del rechazo si existen. Derecha: el badge de estado y una sola línea de qué pasó y cuándo ("Publicado el 15 oct", "Subido el 19 nov"), más un chevron. En móvil el estado baja bajo el nombre para que el nombre no se corte. Una acción propia (eliminar un borrador) va en `trailing`, **fuera** del enlace y con 44px de toque, con un nombre accesible que dice qué torneo es. Las mismas filas sirven a "Todos" y a las pestañas por estado; ninguna usa tabla de 8 o 12 columnas ni `<tr onClick>`.
+
+**Pestañas por estado.** Una sola fila con scroll horizontal (no se parte en dos), pestañas de 44px en móvil y 36px en `sm`, con conteo "(5)". La que está activa se lleva al centro al entrar por `?tab=`, y de nuevo cuando llegan los conteos, que las ensanchan. "Todos" es la de entrada y la URL es la fuente de verdad. Si hay torneos rechazados, un aviso de una superficie sobre las pestañas ("Tienes 1 torneo rechazado…" + "Ver rechazados") los pone a la vista aunque estés en otra pestaña.
+
+**Filtros plegados.** Un `<details>` con "Filtros", cuántos están activos y el conteo a la derecha en mono; se abre solo si ya hay filtros. Los campos de fecha llevan label visible ("Desde", "Hasta") y la tienda no se filtra si el organizador tiene una sola.
+
+**Alertas del sistema.** Una alerta nunca se oculta según el estado del torneo: un jugador duplicado o un torneo repetido siguen siendo ciertos aunque esté aprobado o publicado. Cada línea lleva el nivel en texto ("Crítica:" en `destructive`, "Aviso:" en `warning`) más un ícono, no solo color ni emoji. Sin alertas, el texto dice lo que hizo el sistema ("El sistema no detectó alertas en este torneo"), nunca que "todo se ve bien". En las listas, un torneo con alertas críticas lleva "1 alerta crítica" con ícono en `destructive`, calculada en la base de datos (`tournament_critical_alert_counts`) con las mismas reglas que el detalle.
+
+**Vacíos y errores.** Un vacío explica qué significa ese estado y qué sigue ("Cuando subas uno, aparece aquí mientras el equipo lo revisa") y, si procede, ofrece la acción ("Subir torneo", outline). Un error de carga usa `InlineError` y nunca se presenta como lista vacía. Una consulta que falla conserva su mensaje y "Reintentar"; una respuesta lenta de filtros viejos no pisa a la más nueva.
+
+**Detalle de torneo del organizador.** Encabezado compacto (breadcrumb "Torneos › Detalle" como único regreso, el juego en `h1` y "fecha · tienda" debajo). Los datos que el título no dice van en una sola superficie como `<dl>` (participantes en mono, quién subió, fecha de carga, semestre, archivo); los valores largos ocupan las dos columnas en móvil. Los resultados son una tabla plana con cifras en mono alineadas a la derecha, sin scroll dentro del scroll y con "Nuevo" como badge neutro (los ya registrados no llevan marca); sin resultados, una línea lo dice. Un `<th>` vacío lleva `aria-label`, no un `sr-only` (en un contenedor con scroll desborda la página en móvil). El motivo de un rechazo va en un bloque neutro con una salida, no en un recuadro rojo.
+
+**Subir un torneo.** Dos pasos; "Paso 1 de 2" es texto de apoyo bajo el título, no un kicker. Mientras "Continuar" esté deshabilitado dice "Falta: TCG, fecha." enlazado con `aria-describedby`. La fecha explica su rango legible ("16 nov al 19 nov") y la salida si el torneo es de otra semana. La zona del archivo no afirma nada antes de que haya archivo: dice de dónde exportarlo y los formatos ("Exportado desde Bandai TCG+ · CSV, XLS o XLSX · máx. 5 MB"), y un desplegable lista los encabezados exactos que ese TCG exige. Un error de fila se queda en la fila con su causa y bloquea el envío mientras exista.
+
+**Acción que cambia un resultado.** Cuando una acción en pareja cambia lo que se registró (apelaciones: "Aceptar propuesta" frente a "Aceptar original"), la consecuente va en contorno de `warning` y la otra neutra. Nunca un bloque sólido ámbar.
+
+**Promoción de la tienda (marketing).** Un banner propio de la tienda que se muestra en su ficha pública. El organizador sube una imagen (WebP, PNG o JPG, hasta 1 MB, 1280×400 recomendado), un título y un enlace `https`; Admin o TCG Manager la revisan (pestaña "Promos de tienda" en Sponsors y Ads, y `/tcg-manager/promos`) antes de mostrarse, y solo hay una en revisión a la vez. Su estado es un chip de contorno: "En revisión" en `warning`, "Aprobada" neutro, "Rechazada" en `destructive` con el motivo. El banner público (`StorePromo`, 16:5) cuenta una visualización cuando la mitad entra en pantalla y un clic al abrir el enlace. En Estadísticas, la sección "Marketing" muestra tres cifras (visitas al perfil, visualizaciones de marketing, clics) y las visitas por sección.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -400,6 +443,14 @@ Cerrar sesión (y cualquier acción que saque al usuario o borre algo) pasa por 
 - **Do** abrir sola la fila nueva, poner lo obligatorio primero y plegar lo opcional en "Más detalles".
 - **Do** decir junto a la acción principal deshabilitada qué falta ("Falta: tienda, fecha"), en vez de dejar un botón apagado sin explicación.
 - **Do** mantener intacta la gráfica de rate acumulado del detalle de partida: es firma del producto y viene de feedback de jugadores reales.
+- **Do** usar `SURFACE` para una lista que lleva su propio relleno y `SECTION` para un bloque con relleno, antes de escribir `border border-border bg-card` a mano.
+- **Do** hacer toda la fila de una lista del panel un enlace y dejar las acciones propias fuera de él, con 44px de toque y un nombre accesible que diga sobre qué objeto actúan.
+- **Do** mostrar siempre las alertas y errores de validación a la tienda, en cualquier estado del torneo, con el nivel escrito ("Crítica", "Aviso") y no solo en color.
+- **Do** contar en la base de datos lo que una lista necesita saber de cada fila (por ejemplo las alertas críticas), en vez de pedirlo fila por fila o limitarlo a las primeras 1000.
+- **Do** explicar en un estado vacío qué significa y qué sigue, y mostrar un error de carga como error con "Reintentar".
+- **Do** tomar los colores de las gráficas de `chart-theme.ts` y, si dos series son líneas, hacer la secundaria punteada.
+- **Do** llevar al centro la pestaña activa de una fila con scroll horizontal, también cuando cambian sus anchos.
+- **Do** poner el contorno de `warning` a la acción que cambia un resultado registrado.
 
 ### Don't:
 - **Don't** usar `.glass`, `backdrop-filter`, gradientes, glows ni destellos en el contenido.
@@ -423,4 +474,12 @@ Cerrar sesión (y cualquier acción que saque al usuario o borre algo) pasa por 
 - **Don't** renderizar un diálogo `fixed` dentro de una tarjeta con `.glass`, `backdrop-filter` o `transform`: queda recortado.
 - **Don't** usar `<div onClick>` para una fila expandible: usa un botón real (`aria-expanded`) o un enlace estirado.
 - **Don't** repetir en cada fila el nombre del juego cuando el jugador solo tiene uno.
+- **Don't** ocultar una alerta del sistema porque el torneo ya está aprobado o publicado, ni escribir que "todo se ve bien": el sistema solo puede decir lo que detectó.
+- **Don't** usar verde ni rojo en una gráfica de asistencia, ni el mismo gris azulado de la serie secundaria como único diferenciador entre dos líneas.
+- **Don't** afirmar algo en la interfaz antes de que sea cierto ("Formato detectado" sin archivo) ni prometer lo que no se verificó ("se publica solo").
+- **Don't** usar `sr-only` en una celda dentro de un contenedor con scroll horizontal: se posiciona fuera y desborda la página en móvil; usa `aria-label`.
+- **Don't** usar un `catch` que deje la lista anterior (o vacía) cuando la consulta falla: el organizador lo lee como "no tienes torneos".
+- **Don't** usar `text-gray-*` ni `text-white` en trabajo nuevo del panel: van los tokens (`text-foreground`, `text-foreground-secondary`).
+- **Don't** pintar con un bloque sólido ámbar una acción, ni usar `confirm()` del navegador para retirar o borrar: va un `AlertDialog`.
+- **Don't** dejar un campo de formulario sin `id` y su `<label htmlFor>`: sin eso no tiene nombre accesible.
 - **Don't** esconder un fallo de red detrás de "sin resultados" o "no encontramos": distingue el error y ofrece Reintentar.

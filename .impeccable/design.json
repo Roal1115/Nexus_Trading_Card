@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-14T21:14:08.023662Z",
+  "generatedAt": "2026-11-21T22:02:59.693Z",
   "title": "Design System: Nexus",
   "extensions": {
     "colorMeta": {
@@ -98,6 +98,21 @@
         "role": "status",
         "displayName": "Rojo Derrota",
         "canonical": "#ff5f6d"
+      },
+      "chart-primary": {
+        "role": "secondary",
+        "displayName": "Azul Serie",
+        "canonical": "#8fb4ff",
+        "tonalRamp": [
+          "#142a52",
+          "#1f407a",
+          "#2f5aa6",
+          "#4a78cf",
+          "#6a96ee",
+          "#8fb4ff",
+          "#bcd2ff",
+          "#e4eeff"
+        ]
       }
     },
     "typographyMeta": {
@@ -350,6 +365,30 @@
       "description": "Formulario corto en diálogo (Nueva partida): campos que deciden la vinculación primero, selección neutra y pie fijo con la única acción cian y lo que falta.",
       "html": "<div class=\"ds-sheet\" role=\"dialog\" aria-labelledby=\"ds-sheet-t\"><header><h2 id=\"ds-sheet-t\">Torneo oficial</h2><button class=\"ds-sheet-link\">Cambiar tipo</button></header><div class=\"ds-sheet-body\"><label>Tienda</label><div class=\"ds-sheet-pick\"><div><strong>Guarida Gamer</strong><span>Guadalupe</span></div><button class=\"ds-sheet-link\">Cambiar</button></div><div class=\"ds-sheet-row\"><div><label>Fecha</label><input value=\"17/11/2026\"></div><div><label>Hora de inicio</label><input value=\"7:00 p.m.\"></div></div><p class=\"ds-sheet-hint\">Con la tienda, fecha y hora correctas tu partida se vincula sola al torneo.</p><label>Tu leader <span>(opcional)</span></label><input placeholder=\"Selecciona tu leader…\"></div><footer><button class=\"ds-sheet-cta\" disabled>Crear partida</button><p>Falta: hora</p></footer></div>",
       "css": ".ds-sheet { width:420px; background:#111a2e; border:1px solid #2a3a57; border-radius:16px; color:#f5f7fa; font:400 14px Inter, system-ui, sans-serif; box-shadow:0 25px 50px -12px rgba(0,0,0,.25); overflow:hidden; } .ds-sheet header { display:flex; align-items:center; justify-content:space-between; padding:8px 8px 8px 20px; border-bottom:1px solid #2a3a57; } .ds-sheet h2 { margin:0; font:600 18px 'Space Grotesk', system-ui, sans-serif; letter-spacing:-0.02em; } .ds-sheet-link { background:none; border:none; color:#aab6d1; font:400 14px Inter, sans-serif; min-height:36px; padding:0 12px; border-radius:8px; cursor:pointer; } .ds-sheet-link:hover { color:#f5f7fa; } .ds-sheet-body { padding:20px; display:flex; flex-direction:column; gap:6px; } .ds-sheet label { color:#aab6d1; font-weight:500; margin-top:14px; } .ds-sheet label:first-child { margin-top:0; } .ds-sheet label span { color:#8a98b3; font-weight:400; } .ds-sheet input { height:36px; padding:0 12px; border-radius:8px; border:1px solid #2a3a57; background:transparent; color:#f5f7fa; font:400 14px Inter, sans-serif; width:100%; box-sizing:border-box; } .ds-sheet input:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; } .ds-sheet-pick { display:flex; align-items:center; justify-content:space-between; padding-left:12px; border:1px solid #2a3a57; border-radius:8px; background:#17233d; } .ds-sheet-pick div { display:flex; flex-direction:column; padding:8px 0; } .ds-sheet-pick span { color:#aab6d1; font-size:12px; } .ds-sheet-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; } .ds-sheet-row label { display:block; margin:0 0 6px; } .ds-sheet-hint { margin:6px 0 0; color:#8a98b3; } .ds-sheet footer { padding:16px; border-top:1px solid #2a3a57; text-align:center; } .ds-sheet-cta { width:100%; height:36px; border:none; border-radius:8px; background:#32d9ff; color:#08111f; font:600 14px Inter, sans-serif; cursor:pointer; } .ds-sheet-cta:hover { background:rgba(50,217,255,.9); } .ds-sheet-cta:disabled { opacity:.4; cursor:not-allowed; } .ds-sheet-cta:focus-visible { outline:2px solid #32d9ff; outline-offset:2px; } .ds-sheet footer p { margin:8px 0 0; color:#8a98b3; font-size:12px; }"
+    },
+    {
+      "name": "Tournament List Row",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Fila de torneo del organizador: toda la fila es el enlace; el estado y su fecha a la derecha; la marca de alerta crítica bajo la fecha.",
+      "html": "<ul class=\"ds-tl\"><li><a class=\"ds-tl-link\" href=\"#\"><div><p class=\"ds-tl-game\">One Piece Card Game</p><p class=\"ds-tl-meta\"><span class=\"ds-tl-mono\">15 oct</span> · 26 jugadores</p><p class=\"ds-tl-alert\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z\"/><path d=\"M12 9v4M12 17h.01\"/></svg> 1 alerta crítica</p></div><div class=\"ds-tl-state\"><span class=\"ds-tl-badge\">Publicado</span><span class=\"ds-tl-when\">Publicado el 15 oct</span></div><span class=\"ds-tl-chev\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></span></a></li><li><a class=\"ds-tl-link\" href=\"#\"><div><p class=\"ds-tl-game\">One Piece Card Game</p><p class=\"ds-tl-meta\"><span class=\"ds-tl-mono\">25 sep</span> · 26 jugadores</p></div><div class=\"ds-tl-state\"><span class=\"ds-tl-badge\">Publicado</span><span class=\"ds-tl-when\">Publicado el 25 sep</span></div><span class=\"ds-tl-chev\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></span></a></li></ul>",
+      "css": ".ds-tl { font-family: Inter, system-ui, sans-serif; list-style: none; margin: 0; padding: 0; background: #111a2e; border: 1px solid #2a3a57; border-radius: 12px; overflow: hidden; color: #f5f7fa; } .ds-tl li + li { border-top: 1px solid #2a3a57; } .ds-tl-link { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; min-height: 56px; padding: 12px 16px; color: inherit; text-decoration: none; transition: background 0.15s; } .ds-tl-link:hover { background: rgba(255,255,255,0.05); } .ds-tl-link:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgba(50,217,255,0.5); } .ds-tl-game { margin: 0; font-weight: 500; } .ds-tl-meta { margin: 2px 0 0; font-size: 14px; color: #aab6d1; } .ds-tl-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-feature-settings: 'tnum'; } .ds-tl-alert { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; font-size: 14px; font-weight: 500; color: #ff5f6d; } .ds-tl-state { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; } .ds-tl-badge { border: 1px solid #2a3a57; border-radius: 9999px; padding: 2px 8px; font-size: 12px; font-weight: 600; color: #f5f7fa; } .ds-tl-when { font-size: 12px; color: #aab6d1; } .ds-tl-chev { color: #8a98b3; display: inline-flex; }"
+    },
+    {
+      "name": "Alert Line",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Alerta del sistema en el detalle de un torneo: el nivel va escrito (Crítica / Aviso) más un ícono; nunca solo color ni emoji.",
+      "html": "<ul class=\"ds-al\"><li><span class=\"ds-al-ic ds-al-crit\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z\"/><path d=\"M12 9v4M12 17h.01\"/></svg></span><span><strong class=\"ds-al-crit\">Crítica: </strong>El jugador FenixNorte47 aparece en otro torneo del mismo juego el mismo día</span></li><li><span class=\"ds-al-ic ds-al-warn\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z\"/><path d=\"M12 9v4M12 17h.01\"/></svg></span><span><strong>Aviso: </strong>5 jugadores nuevos serán registrados automáticamente al aprobar</span></li></ul>",
+      "css": ".ds-al { font-family: Inter, system-ui, sans-serif; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; color: #f5f7fa; } .ds-al li { display: flex; align-items: flex-start; gap: 8px; } .ds-al-ic { margin-top: 3px; display: inline-flex; flex-shrink: 0; } .ds-al strong { font-weight: 600; } .ds-al-crit { color: #ff5f6d; } .ds-al-warn { color: #ffd54a; }"
+    },
+    {
+      "name": "Promo Status Chips",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Estado de una promo de tienda: contorno, no relleno. En revisión usa warning, Aprobada es neutra y Rechazada usa destructive.",
+      "html": "<div class=\"ds-pc\"><span class=\"ds-pc-chip ds-pc-pending\">En revisión</span><span class=\"ds-pc-chip\">Aprobada</span><span class=\"ds-pc-chip ds-pc-bad\">Rechazada</span></div>",
+      "css": ".ds-pc { font-family: Inter, system-ui, sans-serif; display: flex; gap: 8px; flex-wrap: wrap; } .ds-pc-chip { border: 1px solid #2a3a57; border-radius: 8px; padding: 2px 10px; font-size: 12px; font-weight: 600; color: #f5f7fa; } .ds-pc-pending { border-color: rgba(255,213,74,0.5); color: #ffd54a; } .ds-pc-bad { border-color: rgba(255,95,109,0.5); color: #ff5f6d; }"
     }
   ],
   "narrative": {
@@ -372,6 +411,11 @@
       {
         "name": "The One Theme Rule",
         "body": "No hay tema claro ni toggle `.dark`. Todo color se define para el fondo `night-navy`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Chart Palette Rule",
+        "body": "Verde y rojo no se usan en las gráficas: los datos de asistencia no son resultados de match. Las series van en azul, gris azulado y `warning`.",
         "section": "colors"
       },
       {
@@ -429,7 +473,15 @@
       "Do declarar siempre qué dataset se ve (Oficial, Casual, Pendientes, Todo) y si cuenta para el ranking.",
       "Do abrir sola la fila nueva, poner lo obligatorio primero y plegar lo opcional en \"Más detalles\".",
       "Do decir junto a la acción principal deshabilitada qué falta (\"Falta: tienda, fecha\"), en vez de dejar un botón apagado sin explicación.",
-      "Do mantener intacta la gráfica de rate acumulado del detalle de partida: es firma del producto y viene de feedback de jugadores reales."
+      "Do mantener intacta la gráfica de rate acumulado del detalle de partida: es firma del producto y viene de feedback de jugadores reales.",
+      "Do usar `SURFACE` para una lista que lleva su propio relleno y `SECTION` para un bloque con relleno, antes de escribir `border border-border bg-card` a mano.",
+      "Do hacer toda la fila de una lista del panel un enlace y dejar las acciones propias fuera de él, con 44px de toque y un nombre accesible que diga sobre qué objeto actúan.",
+      "Do mostrar siempre las alertas y errores de validación a la tienda, en cualquier estado del torneo, con el nivel escrito (\"Crítica\", \"Aviso\") y no solo en color.",
+      "Do contar en la base de datos lo que una lista necesita saber de cada fila (por ejemplo las alertas críticas), en vez de pedirlo fila por fila o limitarlo a las primeras 1000.",
+      "Do explicar en un estado vacío qué significa y qué sigue, y mostrar un error de carga como error con \"Reintentar\".",
+      "Do tomar los colores de las gráficas de `chart-theme.ts` y, si dos series son líneas, hacer la secundaria punteada.",
+      "Do llevar al centro la pestaña activa de una fila con scroll horizontal, también cuando cambian sus anchos.",
+      "Do poner el contorno de `warning` a la acción que cambia un resultado registrado."
     ],
     "donts": [
       "Don't usar `.glass`, `backdrop-filter`, gradientes, glows ni destellos en el contenido.",
@@ -453,6 +505,14 @@
       "Don't renderizar un diálogo `fixed` dentro de una tarjeta con `.glass`, `backdrop-filter` o `transform`: queda recortado.",
       "Don't usar `<div onClick>` para una fila expandible: usa un botón real (`aria-expanded`) o un enlace estirado.",
       "Don't repetir en cada fila el nombre del juego cuando el jugador solo tiene uno.",
+      "Don't ocultar una alerta del sistema porque el torneo ya está aprobado o publicado, ni escribir que \"todo se ve bien\": el sistema solo puede decir lo que detectó.",
+      "Don't usar verde ni rojo en una gráfica de asistencia, ni el mismo gris azulado de la serie secundaria como único diferenciador entre dos líneas.",
+      "Don't afirmar algo en la interfaz antes de que sea cierto (\"Formato detectado\" sin archivo) ni prometer lo que no se verificó (\"se publica solo\").",
+      "Don't usar `sr-only` en una celda dentro de un contenedor con scroll horizontal: se posiciona fuera y desborda la página en móvil; usa `aria-label`.",
+      "Don't usar un `catch` que deje la lista anterior (o vacía) cuando la consulta falla: el organizador lo lee como \"no tienes torneos\".",
+      "Don't usar `text-gray-*` ni `text-white` en trabajo nuevo del panel: van los tokens (`text-foreground`, `text-foreground-secondary`).",
+      "Don't pintar con un bloque sólido ámbar una acción, ni usar `confirm()` del navegador para retirar o borrar: va un `AlertDialog`.",
+      "Don't dejar un campo de formulario sin `id` y su `<label htmlFor>`: sin eso no tiene nombre accesible.",
       "Don't esconder un fallo de red detrás de \"sin resultados\" o \"no encontramos\": distingue el error y ofrece Reintentar."
     ]
   }
