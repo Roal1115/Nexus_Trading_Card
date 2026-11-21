@@ -1671,6 +1671,98 @@ export type Database = {
           },
         ];
       };
+      store_promo_events: {
+        Row: {
+          id: string;
+          kind: string;
+          occurred_at: string;
+          promo_id: string;
+          store_id: string;
+        };
+        Insert: {
+          id?: string;
+          kind: string;
+          occurred_at?: string;
+          promo_id: string;
+          store_id: string;
+        };
+        Update: {
+          id?: string;
+          kind?: string;
+          occurred_at?: string;
+          promo_id?: string;
+          store_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "store_promo_views_promo_id_fkey";
+            columns: ["promo_id"];
+            isOneToOne: false;
+            referencedRelation: "store_promos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "store_promo_views_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      store_promos: {
+        Row: {
+          created_at: string;
+          ends_at: string | null;
+          id: string;
+          image_url: string;
+          is_active: boolean;
+          link_url: string | null;
+          rejection_reason: string | null;
+          reviewed_at: string | null;
+          starts_at: string | null;
+          status: string;
+          store_id: string;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          ends_at?: string | null;
+          id?: string;
+          image_url: string;
+          is_active?: boolean;
+          link_url?: string | null;
+          rejection_reason?: string | null;
+          reviewed_at?: string | null;
+          starts_at?: string | null;
+          status?: string;
+          store_id: string;
+          title: string;
+        };
+        Update: {
+          created_at?: string;
+          ends_at?: string | null;
+          id?: string;
+          image_url?: string;
+          is_active?: boolean;
+          link_url?: string | null;
+          rejection_reason?: string | null;
+          reviewed_at?: string | null;
+          starts_at?: string | null;
+          status?: string;
+          store_id?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "store_promos_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       store_schedule_overrides: {
         Row: {
           created_at: string;
@@ -2598,6 +2690,10 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
+      tournament_critical_alert_counts: {
+        Args: { p_ids: string[] };
+        Returns: { tournament_id: string; critical_alerts: number }[];
+      };
     };
     Enums: {
       timeframe_type: "MONTH" | "SEMESTER" | "YEAR" | "ALL_TIME" | "MONTHLY" | "SEMESTRAL";
