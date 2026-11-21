@@ -1,7 +1,10 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
-/** Superficie única de la ficha de tienda: card plano con borde de 1px, sin glass ni sombra. */
-export const SECTION = "rounded-xl border border-border bg-card p-4 @2xl:p-6";
+/** Superficie plana del sistema (borde de 1px, sin glass ni sombra); para listas que llevan su propio padding. */
+export const SURFACE = "rounded-xl border border-border bg-card";
+
+/** Superficie única de la ficha de tienda: SURFACE con padding. */
+export const SECTION = `${SURFACE} p-4 @2xl:p-6`;
 
 export const BTN_OUTLINE =
   "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground-secondary transition hover:bg-white/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-9";

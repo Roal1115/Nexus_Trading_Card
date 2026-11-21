@@ -5,7 +5,7 @@ import { getNexusAdmin, failDb } from "./nexus-admin.server";
 import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
-
+import { criticalAlertCounts } from "./nexus-tournament-alerts.server";
 
 export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
@@ -39,14 +39,15 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
       return { total: 0, page, stats: {}, tournaments: [] };
     }
 
-    const baseCols = "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
+    const baseCols =
+      "id, tournament_date, status, csv_url, approved_at, published_at, created_at, game_id, store_id";
     const extraCols = ", rejection_reason, approved_by, season_id";
 
     const build = (cols: string) => {
       let q = admin
         .from("tournaments")
         .select(cols, { count: "exact" })
-.eq("store_id", player.home_store_id as string)
+        .eq("store_id", player.home_store_id as string)
         .order("tournament_date", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       if (data.status) q = q.eq("status", data.status as TournamentStatus);
@@ -66,9 +67,12 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
     const rows = (res.data ?? []) as any[];
     const count = res.count;
     const gameIds = Array.from(new Set(rows.map((r) => r.game_id)));
-    const approverIds = Array.from(new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)));
+    const approverIds = Array.from(
+      new Set(rows.filter((r) => r.approved_by).map((r) => r.approved_by as string)),
+    );
     const tournamentIds = rows.map((r) => r.id);
 
+    const criticalPromise = criticalAlertCounts(admin, tournamentIds);
     const [gmsRes, storeRes, approversRes, resultsRes, allStatsRes] = await Promise.all([
       gameIds.length
         ? admin.from("games").select("id, name").in("id", gameIds)
@@ -78,7 +82,10 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
         ? admin.from("players").select("id, geek_tag, role").in("id", approverIds)
         : Promise.resolve({ data: [] as any[] }),
       tournamentIds.length
-        ? admin.from("tournament_results").select("tournament_id").in("tournament_id", tournamentIds)
+        ? admin
+            .from("tournament_results")
+            .select("tournament_id")
+            .in("tournament_id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
       admin.from("tournaments").select("status").eq("store_id", player.home_store_id),
     ]);
@@ -94,6 +101,7 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
       acc[t.status] = (acc[t.status] ?? 0) + 1;
       return acc;
     }, {});
+    const critical = await criticalPromise;
 
     return {
       total: count ?? 0,
@@ -109,6 +117,7 @@ export const getOrganizerTournamentHistory = createServerFn({ method: "POST" })
           approved_by_tag: approver?.geek_tag ?? null,
           approved_by_role: approver?.role ?? null,
           participants: participantMap[r.id] ?? 0,
+          critical_alerts: critical[r.id] ?? 0,
         };
       }),
     };
@@ -124,8 +133,14 @@ export const getOrganizerFilterOptions = createServerFn({ method: "POST" })
     }
 
     const [schedulesRes, seasonsRes] = await Promise.all([
-      admin.from("store_schedules").select("game_id, games(id, name)").eq("store_id", player.home_store_id),
-      admin.from("seasons").select("id, name, slug, status").order("start_date", { ascending: false }),
+      admin
+        .from("store_schedules")
+        .select("game_id, games(id, name)")
+        .eq("store_id", player.home_store_id),
+      admin
+        .from("seasons")
+        .select("id, name, slug, status")
+        .order("start_date", { ascending: false }),
     ]);
 
     const gamesMap = new Map<string, string>();
@@ -176,7 +191,9 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
       (async () => {
         const full = await admin
           .from("tournament_results")
-          .select("player_id, rank, wins, losses, draws, points_earned, match_points, omw_percentage")
+          .select(
+            "player_id, rank, wins, losses, draws, points_earned, match_points, omw_percentage",
+          )
           .eq("tournament_id", t.id)
           .order("rank", { ascending: true });
         if (full.error && /column .* does not exist/i.test(full.error.message)) {
@@ -195,7 +212,10 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
 
     const playerIds = Array.from(new Set((resultsRes.data ?? []).map((r: any) => r.player_id)));
     const playersRes = playerIds.length
-      ? await admin.from("players").select("id, geek_tag, created_at, home_store_id").in("id", playerIds)
+      ? await admin
+          .from("players")
+          .select("id, geek_tag, created_at, home_store_id")
+          .in("id", playerIds)
       : { data: [] as any[], error: null };
     if ((playersRes as any).error) throw new Error((playersRes as any).error.message);
 
@@ -234,7 +254,8 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
       .eq("home_store_id", t.store_id)
       .in("role", ["organizer", "admin"])
       .limit(1);
-    const uploaded_by = orgs && orgs[0] ? { geek_tag: orgs[0].geek_tag, email: orgs[0].email } : null;
+    const uploaded_by =
+      orgs && orgs[0] ? { geek_tag: orgs[0].geek_tag, email: orgs[0].email } : null;
 
     const alerts: Alert[] = [];
 
@@ -268,7 +289,9 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
           .select("player_id, tournament_id")
           .in("tournament_id", sameDayIds)
           .in("player_id", playerIds);
-        const clashedPlayerIds = Array.from(new Set((clash ?? []).map((c: any) => c.player_id as string))) as string[];
+        const clashedPlayerIds = Array.from(
+          new Set((clash ?? []).map((c: any) => c.player_id as string)),
+        ) as string[];
         for (const pid of clashedPlayerIds) {
           const tag = pMap.get(pid)?.geek_tag ?? pid;
           alerts.push({
@@ -284,7 +307,10 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
     if (newCount > 0) {
       alerts.push({
         level: "WARNING",
-        message: `${newCount} jugadores nuevos serán registrados automáticamente al aprobar`,
+        message:
+          newCount === 1
+            ? "1 jugador nuevo será registrado automáticamente al aprobar"
+            : `${newCount} jugadores nuevos serán registrados automáticamente al aprobar`,
         link: null,
       });
     }
@@ -324,7 +350,9 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
     try {
       const r = await admin.from("tournaments").select("csv_url").eq("id", t.id).maybeSingle();
       csv_url = (r.data as any)?.csv_url ?? null;
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
 
     return {
       tournament: {
@@ -348,4 +376,3 @@ export const getOrganizerTournamentDetail = createServerFn({ method: "POST" })
       alerts,
     };
   });
-

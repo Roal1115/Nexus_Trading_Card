@@ -9,11 +9,13 @@ import {
   TournamentDetailError,
   TournamentDetailHeader,
   TournamentDetailSkeleton,
-  TournamentResults,
-  TournamentSummary,
+  UploaderResults,
+  UploaderSummary,
 } from "@/components/panel/tournament-detail";
+import { BTN_OUTLINE, SECTION } from "@/components/stores/store-ui";
 
 export const Route = createFileRoute("/organizer/tournaments/$id")({
+  head: () => ({ meta: [{ title: "Torneo — Organizador" }] }),
   component: OrganizerTournamentDetailPage,
 });
 
@@ -42,7 +44,9 @@ function OrganizerTournamentDetailPage() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, attempt]);
 
@@ -63,6 +67,7 @@ function OrganizerTournamentDetailPage() {
   return (
     <div className="space-y-6">
       <TournamentDetailHeader
+        compact
         backTo="/organizer/tournaments"
         game={game.name}
         store={store.name}
@@ -76,65 +81,64 @@ function OrganizerTournamentDetailPage() {
         }
       >
         {tournament.status === "DRAFT" && tournament.rejection_reason && (
-          <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
-            <p className="text-xs font-semibold uppercase tracking-wider text-red-300">
-              Motivo del rechazo
+          <div className={`${SECTION} text-sm`}>
+            <p className="font-medium text-foreground-secondary">Motivo del rechazo</p>
+            <p className="mt-1 break-words text-foreground">{tournament.rejection_reason}</p>
+            <p className="mt-3 text-foreground-secondary">
+              Elimina este torneo y vuelve a subir el archivo corregido.
             </p>
-            <p className="mt-1">{tournament.rejection_reason}</p>
-            <p className="mt-2 text-gray-300">
-              Elimina este torneo y vuelve a subir el archivo corregido.{" "}
-              <Link
-                to="/organizer/tournaments"
-                search={{ tab: "rejected" }}
-                className="text-primary hover:underline"
-              >
-                Ir a Rechazados
-              </Link>
-            </p>
+            <Link
+              to="/organizer/tournaments"
+              search={{ tab: "rejected" }}
+              className={`${BTN_OUTLINE} mt-3`}
+            >
+              Ir a Rechazados →
+            </Link>
           </div>
         )}
       </TournamentDetailHeader>
 
-      <TournamentSummary
+      <UploaderSummary
         tournament={tournament}
-        store={store}
-        game={game}
         results={results}
         uploader={uploaded_by?.geek_tag ?? "—"}
         uploaderDetail={uploaded_by?.email ?? ""}
         csvUrl={(tournament as any).csv_url}
       />
 
-      {/* Alertas (solo lectura) */}
-      <section className="glass rounded-2xl p-5">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-          <AlertTriangle size={16} className="text-primary" />
-          Alertas del sistema
-        </h2>
+      {/* Siempre visibles, en cualquier estado del torneo: un jugador duplicado o un torneo repetido
+          siguen siendo ciertos aunque ya esté aprobado o publicado, y la tienda debe verlos. */}
+      <section className={SECTION}>
+        <h2 className="text-xl font-semibold text-foreground">Alertas del sistema</h2>
         {alerts.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-            <CheckCircle2 size={14} /> Sin alertas — todo se ve bien
-          </div>
+          <p className="mt-3 flex items-center gap-2 text-sm text-foreground-secondary">
+            <CheckCircle2 size={14} aria-hidden /> El sistema no detectó alertas en este torneo.
+          </p>
         ) : (
-          <ul className="space-y-2">
-            {alerts.map((a, i) => (
-              <li
-                key={i}
-                className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm ${
-                  a.level === "CRITICAL"
-                    ? "border-red-500/40 bg-red-500/10 text-red-200"
-                    : "border-yellow-500/40 bg-yellow-500/10 text-yellow-200"
-                }`}
-              >
-                <span className="mt-0.5">{a.level === "CRITICAL" ? "🔴" : "🟡"}</span>
-                <span>{a.message}</span>
-              </li>
-            ))}
+          <ul className="mt-3 space-y-2">
+            {alerts.map((a, i) => {
+              const critical = a.level === "CRITICAL";
+              return (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <AlertTriangle
+                    size={14}
+                    aria-hidden
+                    className={`mt-0.5 shrink-0 ${critical ? "text-destructive" : "text-warning"}`}
+                  />
+                  <span className="text-foreground">
+                    <span className={`font-semibold ${critical ? "text-destructive" : ""}`}>
+                      {critical ? "Crítica: " : "Aviso: "}
+                    </span>
+                    {a.message}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
 
-      <TournamentResults results={results} />
+      <UploaderResults results={results} />
     </div>
   );
 }

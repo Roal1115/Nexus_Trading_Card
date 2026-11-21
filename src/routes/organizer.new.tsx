@@ -6,6 +6,7 @@ export const Route = createFileRoute("/organizer/new")({
     <TournamentUploadForm
       cancelTo="/organizer/tournaments"
       successTo="/organizer/tournaments"
+      successSearch={{ tab: "pending" }}
     />
   ),
 });

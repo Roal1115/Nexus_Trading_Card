@@ -19,6 +19,7 @@ import {
   SkeletonLine,
   TournamentRowSkeleton,
 } from "@/components/ui/skeleton-loader";
+import { SECTION, SURFACE, plural } from "@/components/stores/store-ui";
 import { LoadError } from "./dashboard";
 import { formatDate, formatDateTime } from "./dashboard-format";
 
@@ -50,6 +51,7 @@ export function TournamentDetailHeader({
   date,
   badge,
   children,
+  compact,
 }: {
   backTo: TournamentsPath;
   game: string;
@@ -57,7 +59,35 @@ export function TournamentDetailHeader({
   date: string;
   badge: React.ReactNode;
   children?: React.ReactNode;
+  /** Organizador: una tienda, así que la tienda va en el subtítulo y el breadcrumb ya es el "regresar". */
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <header className="space-y-3">
+        <nav
+          aria-label="Ruta"
+          className="flex items-center gap-2 text-sm text-foreground-secondary"
+        >
+          <Link to={backTo} className="underline-offset-2 hover:underline">
+            Torneos
+          </Link>
+          <ChevronRight size={12} aria-hidden />
+          <span className="text-foreground">Detalle</span>
+        </nav>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{game}</h1>
+            <p className="mt-1 text-sm text-foreground-secondary">
+              {formatDate(date)} · {store}
+            </p>
+          </div>
+          {badge}
+        </div>
+        {children}
+      </header>
+    );
+  }
   return (
     <header className="space-y-3">
       <nav aria-label="Ruta" className="flex items-center gap-2 text-xs text-gray-400">
@@ -224,6 +254,142 @@ export function TournamentResults({ results }: { results: ResultRow[] }) {
                   ) : (
                     <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40">
                       Registrado
+                    </Badge>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function Fact({
+  label,
+  children,
+  wide,
+}: {
+  label: string;
+  children: React.ReactNode;
+  /** Valores largos (nombre, correo): ocupan las dos columnas en móvil para no partirse a media palabra. */
+  wide?: boolean;
+}) {
+  return (
+    <div className={`min-w-0 ${wide ? "col-span-2 sm:col-span-1" : ""}`}>
+      <dt className="text-sm text-foreground-secondary">{label}</dt>
+      <dd className="mt-1 break-words font-medium text-foreground">{children}</dd>
+    </div>
+  );
+}
+
+/** Organizador: solo lo que el título (juego, fecha, tienda) no dice. Una fila de datos, sin tiles. */
+export function UploaderSummary({
+  tournament,
+  results,
+  uploader,
+  uploaderDetail,
+  csvUrl,
+}: {
+  tournament: {
+    qualifying_semester: number | null;
+    qualifying_year: number | null;
+    created_at: string | null;
+  };
+  results: ResultRow[];
+  uploader: string;
+  uploaderDetail: string;
+  csvUrl: string | null | undefined;
+}) {
+  const newPlayers = results.filter((r) => r.is_new_player).length;
+  return (
+    <section className={SECTION}>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
+        <Fact label="Participantes">
+          <span className="font-mono-stat text-2xl font-bold">{results.length}</span>
+          {newPlayers > 0 && (
+            <span className="ml-2 text-sm font-normal text-foreground-secondary">
+              {plural(newPlayers, "nuevo", "nuevos")}
+            </span>
+          )}
+        </Fact>
+        <Fact label="Subido por" wide>
+          {uploader}
+          {uploaderDetail && (
+            <span className="block text-sm font-normal text-foreground-secondary">
+              {uploaderDetail}
+            </span>
+          )}
+        </Fact>
+        <Fact label="Fecha de carga">
+          {tournament.created_at ? formatDateTime(tournament.created_at) : "—"}
+        </Fact>
+        <Fact label="Semestre">
+          {tournament.qualifying_semester != null && tournament.qualifying_year != null
+            ? `${tournament.qualifying_semester} · ${tournament.qualifying_year}`
+            : "—"}
+        </Fact>
+        <Fact label="Archivo de resultados" wide>
+          <FileLink url={csvUrl} label="Descargar archivo" size="md" />
+        </Fact>
+      </dl>
+    </section>
+  );
+}
+
+/** Organizador: resultados en superficie plana, cifras en mono, sin scroll dentro del scroll. */
+export function UploaderResults({ results }: { results: ResultRow[] }) {
+  return (
+    <section className={`${SURFACE} overflow-hidden`}>
+      <div className="px-4 py-4 sm:px-6">
+        <h2 className="text-xl font-semibold text-foreground">Resultados</h2>
+      </div>
+      {results.length === 0 && (
+        <p className="border-t border-border px-4 py-6 text-sm text-foreground-secondary sm:px-6">
+          Este torneo no tiene resultados cargados.
+        </p>
+      )}
+      <div className={`overflow-x-auto ${results.length === 0 ? "hidden" : ""}`}>
+        <table className="w-full text-sm">
+          <thead className="border-y border-border text-left text-foreground-secondary">
+            <tr>
+              <th scope="col" className="px-4 py-3 font-medium">
+                #
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                Nexus Tag
+              </th>
+              <th scope="col" className="whitespace-nowrap px-4 py-3 text-right font-medium">
+                Puntos de match
+              </th>
+              <th scope="col" className="whitespace-nowrap px-4 py-3 text-right font-medium">
+                OMW%
+              </th>
+              <th scope="col" className="whitespace-nowrap px-4 py-3 text-right font-medium">
+                Puntos
+              </th>
+              <th scope="col" className="px-4 py-3" aria-label="Jugador nuevo" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {results.map((r) => (
+              <tr key={`${r.rank}-${r.geek_tag}`}>
+                <td className="px-4 py-3 font-mono-stat font-semibold text-foreground">{r.rank}</td>
+                <td className="px-4 py-3 text-foreground">{r.geek_tag}</td>
+                <td className="px-4 py-3 text-right font-mono-stat text-foreground-secondary">
+                  {r.match_points ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-right font-mono-stat text-foreground-secondary">
+                  {typeof r.omw_percentage === "number" ? `${r.omw_percentage.toFixed(1)}%` : "—"}
+                </td>
+                <td className="px-4 py-3 text-right font-mono-stat font-semibold text-foreground">
+                  {r.points_earned}
+                </td>
+                <td className="px-4 py-3">
+                  {r.is_new_player && (
+                    <Badge variant="outline" className="text-xs text-foreground-secondary">
+                      Nuevo
                     </Badge>
                   )}
                 </td>

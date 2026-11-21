@@ -1,10 +1,19 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Filter, History, Eye } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { AlertTriangle, ChevronRight, Filter, History, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { FileLink } from "@/components/ui/FileLink";
 import { BlockSelect } from "@/components/ui/block-select";
 import { Badge } from "@/components/ui/badge";
+import { SkeletonBlock } from "@/components/ui/skeleton-loader";
+import {
+  BTN_OUTLINE,
+  FOCUS_RING,
+  INPUT,
+  InlineError,
+  SURFACE,
+  plural,
+} from "@/components/stores/store-ui";
 import { TournamentStatusBadge } from "@/components/admin/TournamentStatusBadge";
 import type { StatusAudience } from "@/components/admin/status-presentation";
 
@@ -86,6 +95,148 @@ function fmtDate(s?: string | null) {
   });
 }
 
+// "15 oct"; con año solo si no es el actual. Una fecha sola (YYYY-MM-DD) se ancla al mediodía
+// para que la zona horaria no la corra un día.
+export function fmtDay(s: string) {
+  const d = new Date(s.length === 10 ? `${s}T12:00:00` : s);
+  return d.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric",
+  });
+}
+
+/** Lo mínimo para dibujar un torneo en la lista del organizador (Todos y pestañas por estado). */
+export type TournamentListItem = {
+  id: string;
+  game_name: string;
+  tournament_date: string;
+  participants?: number;
+  status: string;
+  rejection_reason?: string | null;
+  approved_at?: string | null;
+  published_at?: string | null;
+  created_at?: string | null;
+  /** Duplicados o jugadores en otro torneo el mismo día; el detalle explica cada una. */
+  critical_alerts?: number;
+};
+
+// Qué pasó con el torneo y cuándo: una línea en vez de tres columnas de fechas.
+function stateLine(r: TournamentListItem) {
+  if (r.status === "PUBLISHED" && r.published_at) return `Publicado el ${fmtDay(r.published_at)}`;
+  if (r.status === "APPROVED" && r.approved_at) return `Aprobado el ${fmtDay(r.approved_at)}`;
+  if (r.status === "DRAFT" && r.created_at) return `Subido el ${fmtDay(r.created_at)}`;
+  return null;
+}
+
+/**
+ * Fila de torneo del organizador: toda la fila es el enlace al detalle. Una acción propia (p. ej.
+ * eliminar) va en `trailing`, fuera del enlace, para no anidar controles interactivos.
+ */
+export function TournamentListRow({
+  r,
+  detailTo,
+  audience,
+  trailing,
+}: {
+  r: TournamentListItem;
+  detailTo: "/organizer/tournaments/$id";
+  audience: StatusAudience;
+  trailing?: ReactNode;
+}) {
+  const line = stateLine(r);
+  return (
+    <li className="flex items-stretch">
+      <Link
+        to={detailTo}
+        params={{ id: r.id }}
+        className={`grid min-h-14 min-w-0 flex-1 grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 px-4 py-3 transition hover:bg-white/5 sm:grid-cols-[1fr_auto_auto] sm:gap-x-4 ${FOCUS_RING} focus-visible:ring-inset`}
+      >
+        <div className="min-w-0 break-words">
+          <p className="font-medium text-foreground">{r.game_name}</p>
+          <p className="text-sm text-foreground-secondary">
+            <span className="font-mono-stat">{fmtDay(r.tournament_date)}</span> ·{" "}
+            {plural(r.participants ?? 0, "jugador", "jugadores")}
+          </p>
+          {(r.critical_alerts ?? 0) > 0 && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-destructive">
+              <AlertTriangle size={14} aria-hidden className="shrink-0" />
+              {plural(r.critical_alerts ?? 0, "alerta crítica", "alertas críticas")}
+            </p>
+          )}
+          {r.rejection_reason && (
+            <p className="mt-1 text-sm text-foreground-secondary">Motivo: {r.rejection_reason}</p>
+          )}
+        </div>
+        <div className="col-span-2 flex flex-wrap items-center gap-x-2 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:flex-col sm:items-end sm:text-right">
+          <TournamentStatusBadge
+            status={r.status}
+            rejectionReason={r.rejection_reason}
+            size="sm"
+            audience={audience}
+          />
+          {line && <span className="text-xs text-foreground-secondary">{line}</span>}
+        </div>
+        <ChevronRight
+          size={16}
+          aria-hidden
+          className="col-start-2 row-start-1 text-foreground-subtle sm:col-start-3"
+        />
+      </Link>
+      {trailing && <div className="flex items-center pr-3">{trailing}</div>}
+    </li>
+  );
+}
+
+export function TournamentListSkeleton() {
+  return (
+    <div className="space-y-2 p-3" aria-busy="true">
+      {[0, 1, 2].map((i) => (
+        <SkeletonBlock key={i} className="h-14 rounded-md" />
+      ))}
+    </div>
+  );
+}
+
+function Pager({
+  page,
+  totalPages,
+  total,
+  loading,
+  onPage,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  loading: boolean;
+  onPage: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between border-t border-white/10 px-4 sm:px-5 py-3">
+      <div className="text-xs text-gray-400">
+        Página {page} de {totalPages} · {total.toLocaleString("es-MX")} registros
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onPage(page - 1)}
+          disabled={page <= 1 || loading}
+          className="min-h-11 text-xs px-3 py-1.5 border border-white/10 rounded-lg text-gray-400 hover:text-white disabled:opacity-30 sm:min-h-0"
+        >
+          ← Anterior
+        </button>
+        <button
+          onClick={() => onPage(page + 1)}
+          disabled={page >= totalPages || loading}
+          className="min-h-11 text-xs px-3 py-1.5 border border-white/10 rounded-lg text-gray-400 hover:text-white disabled:opacity-30 sm:min-h-0"
+        >
+          Siguiente →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export type HistoryResult = {
   total: number;
   stats?: Record<string, number>;
@@ -140,8 +291,14 @@ export function TournamentHistory({
   const [opts, setOpts] = useState<HistoryFilterOptions>({ games: [], stores: [], seasons: [] });
   const [republishing, setRepublishing] = useState<string | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+  // Cada consulta lleva su número: una respuesta lenta de filtros viejos no pisa a la más nueva.
+  const requestId = useRef(0);
+
   const reload = async () => {
+    const id = ++requestId.current;
     setLoading(true);
+    setError(null);
     try {
       const res = await fetchHistory({
         ...(filters.status && { status: filters.status }),
@@ -152,11 +309,18 @@ export function TournamentHistory({
         ...(filters.date_to && { date_to: filters.date_to }),
         page: filters.page,
       });
+      if (id !== requestId.current) return;
       setRows(res.tournaments as Row[]);
       setTotal(res.total);
       setStats(res.stats ?? {});
+    } catch (e) {
+      if (id !== requestId.current) return;
+      const msg = (e as Error)?.message || "Revisa tu conexión e inténtalo de nuevo.";
+      // El organizador ve el error en la lista (con "Reintentar"); el revisor, un aviso.
+      if (uploader) setError(msg);
+      else toast.error(`No se pudo cargar el historial: ${msg}`);
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
   };
 
@@ -207,6 +371,128 @@ export function TournamentHistory({
 
   const grandTotal =
     (stats.DRAFT ?? 0) + (stats.APPROVED ?? 0) + (stats.PUBLISHED ?? 0) + (stats.UNPUBLISHED ?? 0);
+
+  // Variante del organizador: una tienda, así que no hay tienda/ciudad/aprobador que repetir; las
+  // pestañas de arriba ya dan los conteos por estado; cada fila es un enlace al detalle.
+  if (uploader) {
+    return (
+      <div className="space-y-4">
+        <details open={activeFilters > 0} className={SURFACE}>
+          <summary
+            className={`flex min-h-11 cursor-pointer items-center gap-2 px-4 text-sm text-foreground-secondary ${FOCUS_RING}`}
+          >
+            <Filter size={14} aria-hidden />
+            Filtros
+            {activeFilters > 0 && (
+              <span className="text-foreground">
+                · {activeFilters} activo{activeFilters > 1 ? "s" : ""}
+              </span>
+            )}
+            <span className="ml-auto font-mono-stat text-foreground-subtle">
+              {loading ? "Cargando…" : plural(total, "torneo", "torneos")}
+            </span>
+          </summary>
+          <div className="grid grid-cols-2 gap-2 border-t border-border p-4 sm:grid-cols-3 lg:grid-cols-5">
+            <BlockSelect
+              value={filters.status || null}
+              onChange={(v) => load({ status: v ?? "", page: 1 })}
+              placeholder="Todos los estados"
+              options={[
+                { value: "DRAFT", label: "En revisión o rechazado" },
+                { value: "APPROVED", label: "Aprobado" },
+                { value: "PUBLISHED", label: "Publicado" },
+                { value: "UNPUBLISHED", label: "Despublicado" },
+              ]}
+            />
+            <BlockSelect
+              value={filters.game_id || null}
+              onChange={(v) => load({ game_id: v ?? "", page: 1 })}
+              placeholder="Todos los TCG"
+              options={opts.games.map((g) => ({ value: g.id, label: g.name }))}
+            />
+            <BlockSelect
+              value={filters.season_id || null}
+              onChange={(v) => load({ season_id: v ?? "", page: 1 })}
+              placeholder="Todas las temporadas"
+              options={opts.seasons.map((s) => ({ value: s.id, label: s.name }))}
+            />
+            <label className="text-xs text-foreground-secondary">
+              Desde
+              <input
+                type="date"
+                value={filters.date_from}
+                onChange={(e) => load({ date_from: e.target.value, page: 1 })}
+                className={`${INPUT} mt-1`}
+              />
+            </label>
+            <label className="text-xs text-foreground-secondary">
+              Hasta
+              <input
+                type="date"
+                value={filters.date_to}
+                onChange={(e) => load({ date_to: e.target.value, page: 1 })}
+                className={`${INPUT} mt-1`}
+              />
+            </label>
+          </div>
+          {activeFilters > 0 && (
+            <div className="px-4 pb-4">
+              <button onClick={() => load({ ...INITIAL })} className={BTN_OUTLINE}>
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+        </details>
+
+        <div className={`${SURFACE} overflow-hidden`}>
+          {loading ? (
+            <TournamentListSkeleton />
+          ) : error ? (
+            <div className="p-6">
+              <InlineError onRetry={() => void reload()}>
+                No se pudieron cargar tus torneos: {error}
+              </InlineError>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="space-y-3 p-6 text-sm text-foreground-secondary">
+              <p>
+                {activeFilters > 0
+                  ? "Ningún torneo coincide con estos filtros."
+                  : "Aún no has subido torneos."}
+              </p>
+              {activeFilters > 0 ? (
+                <button onClick={() => load({ ...INITIAL })} className={BTN_OUTLINE}>
+                  Limpiar filtros
+                </button>
+              ) : (
+                <Link to="/organizer/new" className={BTN_OUTLINE}>
+                  Subir torneo
+                </Link>
+              )}
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {rows.map((r) => (
+                <TournamentListRow
+                  key={r.id}
+                  r={r}
+                  detailTo="/organizer/tournaments/$id"
+                  audience={audience}
+                />
+              ))}
+            </ul>
+          )}
+          <Pager
+            page={filters.page}
+            totalPages={totalPages}
+            total={total}
+            loading={loading}
+            onPage={(page) => load({ page })}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -540,29 +826,13 @@ export function TournamentHistory({
           )}
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-white/10 px-4 sm:px-5 py-3">
-            <div className="text-xs text-gray-400">
-              Página {filters.page} de {totalPages} · {total.toLocaleString("es-MX")} registros
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => load({ page: filters.page - 1 })}
-                disabled={filters.page <= 1 || loading}
-                className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-gray-400 hover:text-white disabled:opacity-30"
-              >
-                ← Anterior
-              </button>
-              <button
-                onClick={() => load({ page: filters.page + 1 })}
-                disabled={filters.page >= totalPages || loading}
-                className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-gray-400 hover:text-white disabled:opacity-30"
-              >
-                Siguiente →
-              </button>
-            </div>
-          </div>
-        )}
+        <Pager
+          page={filters.page}
+          totalPages={totalPages}
+          total={total}
+          loading={loading}
+          onPage={(page) => load({ page })}
+        />
       </div>
     </div>
   );

@@ -32,10 +32,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { assignLeagues } from "@/lib/league-assignment";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { SURFACE } from "@/components/stores/store-ui";
 
 type Game = { id: string; slug: string; name: string };
 type Store = { id: string; name: string; city: string | null };
@@ -101,7 +115,11 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
 // "Copy Paste Magic" exporta V/D/E (Victorias/Derrotas/Empates) como texto "2/1/0".
 // Excel lo interpreta como una fecha mes/día/año y lo corrompe (ej. "2/1/0" -> 01/02/2000).
 // Esta función revierte esa corrupción reconstruyendo el triplete original.
-function parseVDE(raw: string): { wins: number | null; losses: number | null; draws: number | null } {
+function parseVDE(raw: string): {
+  wins: number | null;
+  losses: number | null;
+  draws: number | null;
+} {
   const val = raw.trim();
   if (!val) return { wins: null, losses: null, draws: null };
 
@@ -141,7 +159,9 @@ function normalizarPuntos(rows: ParsedRow[]): ParsedRow[] {
   return rows.map((r) => ({
     ...r,
     points_earned:
-      r.match_points != null && r.match_points > 0 ? Math.round((r.match_points / maxPoints) * 10000) / 100 : 0,
+      r.match_points != null && r.match_points > 0
+        ? Math.round((r.match_points / maxPoints) * 10000) / 100
+        : 0,
   }));
 }
 
@@ -192,7 +212,8 @@ function parsePct(raw: string | undefined, platform: Platform): number | null {
 function parseTable(rows: string[][], map: ColumnMap): ParsedRow[] {
   if (rows.length < 2) return [];
   const headers = (rows[0] ?? []).map((h) => String(h ?? "").trim());
-  const idx = (key: string | undefined) => (key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1);
+  const idx = (key: string | undefined) =>
+    key ? headers.findIndex((h) => h.toLowerCase() === key.toLowerCase()) : -1;
 
   const iRank = idx(map.rank);
   const iTag = idx(map.nexusTag);
@@ -325,6 +346,10 @@ async function uploadFileToStorage(file: File, tournamentId: string): Promise<st
   }
 }
 
+// "16 nov" a partir de YYYY-MM-DD (al mediodía, para que la zona horaria no la corra).
+const fmtShortDay = (iso: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+
 function getWeekDateRange(): { min: string; max: string } {
   const today = new Date();
   return { min: toLocalDateStr(mondayOfWeek(today)), max: toLocalDateStr(today) };
@@ -333,10 +358,12 @@ function getWeekDateRange(): { min: string; max: string } {
 export function TournamentUploadForm({
   cancelTo = "/organizer/tournaments",
   successTo = "/organizer/tournaments",
+  successSearch,
   gamesOverride,
 }: {
   cancelTo?: string;
   successTo?: string;
+  successSearch?: Record<string, string>;
   gamesOverride?: Game[];
 } = {}) {
   const navigate = useNavigate();
@@ -355,7 +382,9 @@ export function TournamentUploadForm({
   const [step, setStep] = useState<1 | 2>(1);
   const [games, setGames] = useState<Game[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
-  const [managerStores, setManagerStores] = useState<(Store & { available_game_ids: string[] })[]>([]);
+  const [managerStores, setManagerStores] = useState<(Store & { available_game_ids: string[] })[]>(
+    [],
+  );
   const [homeStore, setHomeStore] = useState<Store | null>(null);
 
   const [storeId, setStoreId] = useState<string>("");
@@ -459,6 +488,12 @@ export function TournamentUploadForm({
   const assigned = assignLeagues(leagueInput);
   const leagueError = "error" in assigned ? assigned.error : null;
   const canContinue = Boolean(storeId && gameId && date && tcgSupported && !leagueError);
+  // Por qué "Continuar" está deshabilitado: lo que falta por elegir (los demás bloqueos ya tienen su aviso).
+  const missing = [
+    (isAdmin || isManager) && !storeId && "tienda",
+    !gameId && "TCG",
+    !date && "fecha",
+  ].filter(Boolean) as string[];
   const totalErrors = rows.filter((r) => r.error).length;
   const newPlayers = rows.filter((r) => !r.error && !registeredTags.has(r.geek_tag)).length;
   const canSubmit = rows.length > 0 && totalErrors === 0 && !saving;
@@ -558,7 +593,7 @@ export function TournamentUploadForm({
       if ((result as { was_cancelled?: boolean }).was_cancelled) {
         toast.warning("Esta fecha estaba marcada como cancelada. Avisa a quien revise el torneo.");
       }
-      navigate({ to: successTo });
+      navigate({ to: successTo, search: successSearch });
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
       if (msg.toLowerCase().includes("ya existe")) toast.error(msg);
@@ -580,7 +615,7 @@ export function TournamentUploadForm({
 
   if (!isAdmin && !isManager && !homeStore) {
     return (
-      <div className="glass rounded-2xl p-8 text-sm text-gray-300">
+      <div className={`${SURFACE} p-6 text-sm text-foreground-secondary`}>
         No tienes una tienda asignada. Contacta al administrador.
       </div>
     );
@@ -589,19 +624,21 @@ export function TournamentUploadForm({
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Subir Torneo · Paso {step} de 2</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">
+        <h1 className="text-3xl font-bold text-foreground">
           {step === 1 ? "Detalles del torneo" : "Resultados del torneo"}
         </h1>
-        {step === 1 && (
-          <p className="mt-1 text-sm text-gray-400">Se creará como Borrador hasta que un administrador lo apruebe.</p>
-        )}
+        <p className="mt-1 text-sm text-foreground-secondary">
+          Paso {step} de 2
+          {step === 1 && " · Se creará como Borrador hasta que un administrador lo apruebe."}
+        </p>
       </header>
 
       {step === 1 && (
-        <section className="glass space-y-5 rounded-2xl p-6">
+        <section className={`${SURFACE} space-y-5 p-4 sm:p-6`}>
           <div className="space-y-2">
-            <Label className="text-xs text-gray-400">{isAdmin || isManager ? "Seleccionar tienda *" : "Tienda"}</Label>
+            <Label className="text-xs text-foreground-secondary">
+              {isAdmin || isManager ? "Seleccionar tienda *" : "Tienda"}
+            </Label>
             {isAdmin || isManager ? (
               <StoreCombobox
                 stores={isManager ? availableStoresForGame : stores}
@@ -609,18 +646,18 @@ export function TournamentUploadForm({
                 onChange={setStoreId}
               />
             ) : (
-              <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white">
-                Tienda: {homeStore?.name} — {homeStore?.city ?? "—"}
+              <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground">
+                {homeStore?.name} — {homeStore?.city ?? "—"}
               </div>
             )}
             {(isAdmin || isManager) && !storeId && (
-              <p className="text-xs text-amber-400">Debes seleccionar una tienda para continuar</p>
+              <p className="text-xs text-warning">Debes seleccionar una tienda para continuar</p>
             )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-xs text-gray-400">TCG (juego) *</Label>
+              <Label className="text-xs text-foreground-secondary">TCG (juego) *</Label>
               <Select value={gameId} onValueChange={setGameId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un TCG" />
@@ -635,7 +672,7 @@ export function TournamentUploadForm({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-gray-400">Fecha del torneo *</Label>
+              <Label className="text-xs text-foreground-secondary">Fecha del torneo *</Label>
               {(() => {
                 if (isAdmin) {
                   return (
@@ -646,7 +683,7 @@ export function TournamentUploadForm({
                         onChange={(e) => setDate(e.target.value)}
                         className="[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       />
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-foreground-secondary">
                         Como administrador, puedes subir torneos de cualquier fecha.
                       </p>
                     </>
@@ -663,8 +700,10 @@ export function TournamentUploadForm({
                       onChange={(e) => setDate(e.target.value)}
                       className="[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Solo se permiten torneos de la semana actual ({min} al {max}).
+                    <p className="mt-1 text-xs text-foreground-secondary">
+                      Solo se permiten torneos de la semana actual ({fmtShortDay(min)} al{" "}
+                      {fmtShortDay(max)}). ¿Es de otra semana? Contacta al administrador para
+                      subirlo.
                     </p>
                   </>
                 );
@@ -673,24 +712,27 @@ export function TournamentUploadForm({
           </div>
 
           {selectedGame && !tcgSupported && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-warning">
               <AlertCircle size={14} className="mt-0.5 shrink-0" />
-              Este TCG aún no tiene un formato de importación configurado. Contacta al administrador.
+              Este TCG aún no tiene un formato de importación configurado. Contacta al
+              administrador.
             </div>
           )}
 
           {qualifying && (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-gray-400">
-              Calificación: mes <strong className="text-white">{qualifying.month}</strong> · semestre{" "}
-              <strong className="text-white">{qualifying.semester}</strong> · año{" "}
-              <strong className="text-white">{qualifying.year}</strong>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-foreground-secondary">
+              Calificación: mes <strong className="text-foreground">{qualifying.month}</strong> ·
+              semestre <strong className="text-foreground">{qualifying.semester}</strong> · año{" "}
+              <strong className="text-foreground">{qualifying.year}</strong>
             </div>
           )}
 
           {!isManager && (
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-gray-300">Dónde cuenta este torneo</legend>
-              <label className="flex min-h-11 items-center gap-2 text-sm text-white">
+              <legend className="text-sm font-medium text-foreground-secondary">
+                Dónde cuenta este torneo
+              </legend>
+              <label className="flex min-h-11 items-center gap-2 text-sm text-foreground">
                 <Checkbox
                   checked={countsForCircuit}
                   onCheckedChange={(v) => setCountsForCircuit(v === true)}
@@ -698,7 +740,10 @@ export function TournamentUploadForm({
                 Cuenta para el Circuito Nacional
               </label>
               {activeLeagues.map((l) => (
-                <label key={l.id} className="flex min-h-11 items-center gap-2 text-sm text-white">
+                <label
+                  key={l.id}
+                  className="flex min-h-11 items-center gap-2 text-sm text-foreground"
+                >
                   <Checkbox
                     checked={leagueIds.includes(l.id)}
                     onCheckedChange={(v) =>
@@ -711,11 +756,11 @@ export function TournamentUploadForm({
                 </label>
               ))}
               {leagueError ? (
-                <p role="alert" className="text-xs text-red-300">
+                <p role="alert" className="text-xs text-destructive">
                   {leagueError}
                 </p>
               ) : (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-foreground-secondary">
                   {!countsForCircuit
                     ? "Solo ligas: se publica directo."
                     : leagueIds.length
@@ -726,11 +771,20 @@ export function TournamentUploadForm({
             </fieldset>
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+            {missing.length > 0 && (
+              <p id="continue-hint" className="mr-auto text-sm text-foreground-secondary">
+                Falta: {missing.join(", ")}.
+              </p>
+            )}
             <Button variant="ghost" onClick={() => navigate({ to: cancelTo })}>
               Cancelar
             </Button>
-            <Button onClick={() => setStep(2)} disabled={!canContinue}>
+            <Button
+              onClick={() => setStep(2)}
+              disabled={!canContinue}
+              aria-describedby={missing.length > 0 ? "continue-hint" : undefined}
+            >
               Continuar
             </Button>
           </div>
@@ -738,28 +792,28 @@ export function TournamentUploadForm({
       )}
 
       {step === 2 && (
-        <section className="glass space-y-5 rounded-2xl p-6">
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3 sm:p-4 mb-4">
+        <section className={`${SURFACE} space-y-5 p-4 sm:p-6`}>
+          <div className="border-b border-white/10 pb-4 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs">
                 <span>
-                  <span className="text-gray-500">Tienda: </span>
-                  <span className="text-white font-semibold">{selectedStore?.name}</span>
+                  <span className="text-foreground-secondary">Tienda: </span>
+                  <span className="text-foreground font-semibold">{selectedStore?.name}</span>
                 </span>
                 <span className="hidden sm:inline text-gray-600">·</span>
                 <span>
-                  <span className="text-gray-500">TCG: </span>
-                  <span className="text-white font-semibold">{selectedGame?.name}</span>
+                  <span className="text-foreground-secondary">TCG: </span>
+                  <span className="text-foreground font-semibold">{selectedGame?.name}</span>
                 </span>
                 <span className="hidden sm:inline text-gray-600">·</span>
                 <span>
-                  <span className="text-gray-500">Fecha: </span>
-                  <span className="text-white font-semibold">{date}</span>
+                  <span className="text-foreground-secondary">Fecha: </span>
+                  <span className="text-foreground font-semibold">{fmtShortDay(date)}</span>
                 </span>
               </div>
               <button
                 onClick={() => setStep(1)}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition self-start sm:self-auto"
+                className="flex items-center gap-1.5 text-xs text-foreground-secondary hover:text-foreground transition self-start sm:self-auto"
               >
                 <ArrowLeft size={12} />
                 Editar
@@ -768,69 +822,91 @@ export function TournamentUploadForm({
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-gray-400">
-              <UploadCloud size={13} className="text-primary" /> Resultados (CSV, XLS o XLSX)
+            <Label className="text-sm font-medium text-foreground-secondary">
+              Archivo de resultados
             </Label>
             {!fileName ? (
-              <label
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                  handleFile(e.dataTransfer.files?.[0] ?? null);
-                }}
-                className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition ${
-                  dragging
-                    ? "border-primary bg-primary/10"
-                    : "border-white/20 bg-white/[0.03] hover:border-primary/60 hover:bg-white/[0.05]"
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  className="hidden"
-                  onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-                />
-                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/30">
-                  <UploadCloud size={28} className="text-primary" />
-                </div>
-                <p className="text-sm font-semibold text-white">Arrastra tu archivo aquí, o haz clic para buscar</p>
-                <p className="mt-1 text-xs text-gray-500">
-                  Formato detectado:{" "}
-                  {colMap?.platform === "bandai"
-                    ? "Bandai TCG+"
-                    : colMap?.platform === "magic"
-                      ? "Copy Paste Magic"
-                      : "Limitless"}
-                </p>
-              </label>
+              <>
+                <label
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragging(true);
+                  }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragging(false);
+                    handleFile(e.dataTransfer.files?.[0] ?? null);
+                  }}
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition ${
+                    dragging
+                      ? "border-primary bg-primary/10"
+                      : "border-white/20 bg-white/[0.03] hover:border-primary/60 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    className="hidden"
+                    onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/30">
+                    <UploadCloud size={28} className="text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Arrastra tu archivo aquí, o haz clic para buscar
+                  </p>
+                  <p className="mt-1 text-xs text-foreground-secondary">
+                    Exportado desde{" "}
+                    {colMap?.platform === "bandai"
+                      ? "Bandai TCG+"
+                      : colMap?.platform === "magic"
+                        ? "Copy Paste Magic"
+                        : "Limitless"}
+                    · CSV, XLS o XLSX · máx. 5 MB
+                  </p>
+                </label>
+                {colMap && colMap.platform !== "unknown" && (
+                  <details className="text-sm text-foreground-secondary">
+                    <summary className="min-h-11 cursor-pointer py-2.5 underline-offset-2 hover:underline">
+                      ¿Qué columnas necesita el archivo?
+                    </summary>
+                    <p className="pb-2 text-xs text-foreground-secondary">
+                      La primera fila debe tener estos encabezados, tal cual:{" "}
+                      {[colMap.rank, colMap.nexusTag, colMap.matchPoints, colMap.omw, colMap.record]
+                        .filter(Boolean)
+                        .join(", ")}
+                      .
+                    </p>
+                  </details>
+                )}
+              </>
             ) : (
-              <div className="rounded-xl border border-white/10 bg-black/30">
+              <div className="border-y border-white/10">
                 <div className="flex items-start justify-between gap-3 border-b border-white/10 p-3">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
                     {parsing ? (
-                      <Loader2 size={16} className="animate-spin text-primary flex-shrink-0 mt-0.5" />
+                      <Loader2
+                        size={16}
+                        className="animate-spin text-primary flex-shrink-0 mt-0.5"
+                      />
                     ) : (
                       <FileText size={16} className="text-primary flex-shrink-0 mt-0.5" />
                     )}
                     <div className="flex flex-col min-w-0">
                       <span
-                        className="text-sm text-white font-medium truncate max-w-[180px] sm:max-w-none"
+                        className="text-sm text-foreground font-medium truncate max-w-[180px] sm:max-w-none"
                         title={fileName}
                       >
                         {fileName}
                       </span>
-                      <span className="text-xs text-gray-400 mt-0.5">
+                      <span className="text-xs text-foreground-secondary mt-0.5">
                         {parsing ? "Procesando…" : `${rows.length} participantes`}
                         {!parsing && newPlayers > 0 && (
                           <>
                             {" "}
-                            · <span className="text-orange-400">{newPlayers} nuevos</span>
+                            · <span className="text-foreground">{newPlayers} nuevos</span>
                           </>
                         )}
                       </span>
@@ -839,7 +915,7 @@ export function TournamentUploadForm({
                   <button
                     type="button"
                     onClick={clearFile}
-                    className="flex-shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-red-400 border border-white/10 hover:border-red-400/40 rounded px-2 py-1 transition"
+                    className="flex-shrink-0 flex items-center gap-1 text-xs text-foreground-secondary hover:text-red-400 border border-white/10 hover:border-red-400/40 rounded px-2 py-1 transition"
                   >
                     <X size={10} />
                     Quitar
@@ -849,7 +925,7 @@ export function TournamentUploadForm({
                 {!parsing && rows.length > 0 && (
                   <div className="max-h-[480px] overflow-auto">
                     <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-gray-500 backdrop-blur">
+                      <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-foreground-secondary backdrop-blur">
                         <tr>
                           <th className="w-10 px-3 py-2 text-left">#</th>
                           <th className="px-3 py-2 text-left">Nexus Tag</th>
@@ -875,12 +951,16 @@ export function TournamentUploadForm({
                                 <input
                                   value={r.geek_tag}
                                   onChange={(e) => updateRow(i, "geek_tag", e.target.value)}
-                                  className="w-full rounded bg-transparent px-2 py-1 font-medium text-white outline-none ring-inset focus:bg-white/10 focus:ring-1 focus:ring-primary"
+                                  className="w-full rounded bg-transparent px-2 py-1 font-medium text-foreground outline-none ring-inset focus:bg-white/10 focus:ring-1 focus:ring-primary"
                                 />
                               </td>
-                              <td className="px-3 py-2.5 text-xs text-gray-500 font-mono">{r.membership_id ?? "—"}</td>
-                              <td className="px-3 py-2 text-right font-mono text-white">{r.match_points ?? "—"}</td>
-                              <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">
+                              <td className="px-3 py-2.5 text-xs text-foreground-secondary font-mono">
+                                {r.membership_id ?? "—"}
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono text-foreground">
+                                {r.match_points ?? "—"}
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono text-xs text-foreground-secondary">
                                 {r.omw_percentage != null ? `${r.omw_percentage}%` : "—"}
                               </td>
                               <td className="px-3 py-2 text-right font-mono font-semibold text-primary">
@@ -888,19 +968,19 @@ export function TournamentUploadForm({
                               </td>
                               <td className="px-3 py-2">
                                 {r.error ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-300">
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-destructive/50 px-2 py-0.5 text-xs font-medium text-destructive">
                                     {r.error}
                                   </span>
                                 ) : r.dropped ? (
-                                  <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                                  <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs font-medium text-foreground-secondary">
                                     Retirado
                                   </span>
                                 ) : isNew ? (
-                                  <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                                  <span className="rounded-full border border-white/25 px-2 py-0.5 text-xs font-medium text-foreground">
                                     Nuevo
                                   </span>
                                 ) : (
-                                  <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                                  <span className="text-xs text-foreground-secondary">
                                     Registrado
                                   </span>
                                 )}
@@ -912,11 +992,11 @@ export function TournamentUploadForm({
                     </table>
                   </div>
                 )}
-                <p className="border-t border-white/5 px-4 py-2 text-[11px] text-gray-400">
+                <p className="border-t border-white/5 px-4 py-2 text-xs text-foreground-secondary">
                   Los Puntos se calculan como: (tus puntos / puntos del 1er lugar) × 100
                 </p>
                 {totalErrors > 0 && (
-                  <p className="border-t border-white/5 px-4 py-2 text-xs text-red-300">
+                  <p className="border-t border-white/5 px-4 py-2 text-xs text-destructive">
                     Hay {totalErrors} fila(s) con errores. Corrige el CSV antes de continuar.
                   </p>
                 )}
@@ -957,10 +1037,12 @@ function StoreCombobox({
           type="button"
           role="combobox"
           aria-expanded={open}
-          className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm text-white transition hover:border-primary/40"
+          className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm text-foreground transition hover:border-primary/40"
         >
-          <span className={selected ? "text-white" : "text-gray-400"}>
-            {selected ? `${selected.name} — ${selected.city ?? "—"}` : "Buscar y seleccionar tienda..."}
+          <span className={selected ? "text-foreground" : "text-foreground-secondary"}>
+            {selected
+              ? `${selected.name} — ${selected.city ?? "—"}`
+              : "Buscar y seleccionar tienda..."}
           </span>
           <ChevronsUpDown size={14} className="ml-2 shrink-0 opacity-50" />
         </button>
@@ -986,7 +1068,10 @@ function StoreCombobox({
                       setOpen(false);
                     }}
                   >
-                    <Check size={14} className={`mr-2 ${value === s.id ? "opacity-100" : "opacity-0"}`} />
+                    <Check
+                      size={14}
+                      className={`mr-2 ${value === s.id ? "opacity-100" : "opacity-0"}`}
+                    />
                     {label}
                   </CommandItem>
                 );

@@ -9,6 +9,7 @@ import { resolvePlayer, ONE_PIECE_SLUG } from "./player-identity.server";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
 import { logAction, tournamentAuditLabel } from "./nexus-admin-core";
+import { criticalAlertCounts } from "./nexus-tournament-alerts.server";
 
 const csvPathSchema = z.string().refine((v) => tournamentFilePath(v) === v, "Archivo inválido");
 
@@ -88,7 +89,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
       new Set((rows ?? []).filter((r) => r.approved_by).map((r) => r.approved_by as string)),
     );
 
-    const [gmsRes, approversRes, resultsRes] = await Promise.all([
+    const [gmsRes, approversRes, resultsRes, critical] = await Promise.all([
       gameIds.length
         ? admin.from("games").select("id, name").in("id", gameIds)
         : Promise.resolve({ data: [] as any[] }),
@@ -101,6 +102,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
             .select("tournament_id")
             .in("tournament_id", tournamentIds)
         : Promise.resolve({ data: [] as any[] }),
+      criticalAlertCounts(admin, tournamentIds),
     ]);
 
     const gamesMap = Object.fromEntries((gmsRes.data ?? []).map((g: any) => [g.id, g.name]));
@@ -126,6 +128,7 @@ export const getMyTournaments = createServerFn({ method: "POST" })
         game_name: gamesMap[r.game_id] ?? "—",
         approved_by_tag: r.approved_by ? (approversMap[r.approved_by] ?? "—") : null,
         participants: participantMap[r.id] ?? 0,
+        critical_alerts: critical[r.id] ?? 0,
       })),
     };
   });
