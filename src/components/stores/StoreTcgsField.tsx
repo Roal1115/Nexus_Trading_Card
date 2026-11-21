@@ -56,9 +56,7 @@ export function StoreTcgsField({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-          Juegos que se juegan aquí
-        </h3>
+        <h3 className="text-base font-semibold text-foreground">Juegos que se juegan aquí</h3>
         {catalog.length > 0 && !onChange && (
           <Button size="sm" onClick={submit} disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -67,11 +65,13 @@ export function StoreTcgsField({
         )}
       </div>
       {catalog.length === 0 ? (
-        <p className="text-sm text-gray-400">El catálogo de juegos aún no está disponible.</p>
+        <p className="text-sm text-foreground-secondary">
+          El catálogo de juegos aún no está disponible.
+        </p>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">
           {catalog.map((t) => (
-            <label key={t.id} className="flex items-center gap-2 text-sm text-white">
+            <label key={t.id} className="flex items-center gap-2 text-sm text-foreground">
               <Checkbox
                 checked={selected.includes(t.id)}
                 onCheckedChange={(v) => toggle(t.id, v === true)}

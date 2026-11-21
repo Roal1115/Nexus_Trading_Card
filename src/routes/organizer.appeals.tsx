@@ -46,7 +46,7 @@ type AppealRow = {
 function LeaderThumb({ leader }: { leader: LeaderRef }) {
   if (!leader) {
     return (
-      <span className="inline-flex items-center rounded bg-white/5 px-2 py-1 text-xs text-gray-400">
+      <span className="inline-flex items-center rounded bg-white/5 px-2 py-1 text-xs text-foreground-secondary">
         Sin líder
       </span>
     );
@@ -55,11 +55,11 @@ function LeaderThumb({ leader }: { leader: LeaderRef }) {
     <img
       src={leader.card_image}
       alt={leader.base_name}
-      className="h-8 w-auto rounded border border-white/10"
+      className="h-8 w-auto rounded border border-border"
       loading="lazy"
     />
   ) : (
-    <span className="inline-flex items-center rounded bg-white/5 px-2 py-1 text-xs text-gray-300">
+    <span className="inline-flex items-center rounded bg-white/5 px-2 py-1 text-xs text-foreground-secondary">
       {leader.base_name}
     </span>
   );
@@ -78,56 +78,62 @@ function VersionColumn({
   reporterTag: string;
 }) {
   const winnerTag =
-    version.appellant_won === true ? appellantTag : version.appellant_won === false ? reporterTag : null;
+    version.appellant_won === true
+      ? appellantTag
+      : version.appellant_won === false
+        ? reporterTag
+        : null;
   const winnerLeader =
     version.appellant_won === true
       ? version.appellant_leader
       : version.appellant_won === false
-      ? version.reporter_leader
-      : null;
+        ? version.reporter_leader
+        : null;
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</p>
+    <div className="rounded-lg border border-border bg-white/[0.02] p-3">
+      <p className="mb-2 text-sm font-semibold text-foreground-secondary">{label}</p>
 
       {winnerTag && (
-        <p className="mb-2 text-sm font-bold text-white">
+        <p className="mb-2 text-sm font-bold text-foreground">
           Ganador: <span className="text-emerald-400">{winnerTag}</span>
-          {winnerLeader && <span className="text-gray-400"> ({winnerLeader.base_name})</span>}
+          {winnerLeader && (
+            <span className="text-foreground-secondary"> ({winnerLeader.base_name})</span>
+          )}
         </p>
       )}
 
       <div className="flex items-center justify-center gap-2">
         <div className="text-center">
           <LeaderThumb leader={version.appellant_leader} />
-          <p className="mt-1 text-[10px] text-gray-400">{appellantTag}</p>
+          <p className="mt-1 text-xs text-foreground-secondary">{appellantTag}</p>
         </div>
-        <span className="text-xs text-gray-500">vs</span>
+        <span className="text-xs text-foreground-secondary">vs</span>
         <div className="text-center">
           <LeaderThumb leader={version.reporter_leader} />
-          <p className="mt-1 text-[10px] text-gray-400">{reporterTag}</p>
+          <p className="mt-1 text-xs text-foreground-secondary">{reporterTag}</p>
         </div>
       </div>
 
-      <div className="mt-2 space-y-1 border-t border-white/5 pt-2 text-xs text-gray-300">
+      <div className="mt-2 space-y-1 border-t border-white/5 pt-2 text-xs text-foreground-secondary">
         <p>
           Dado:{" "}
-          <span className="text-white">
+          <span className="text-foreground">
             {version.won_die_roll === null
               ? "—"
               : version.won_die_roll
-              ? `Ganó ${appellantTag}`
-              : `Ganó ${reporterTag}`}
+                ? `Ganó ${appellantTag}`
+                : `Ganó ${reporterTag}`}
           </span>
         </p>
         <p>
           Turno:{" "}
-          <span className="text-white">
+          <span className="text-foreground">
             {version.turn_order === "first"
               ? `${appellantTag} fue primero`
               : version.turn_order === "second"
-              ? `${appellantTag} fue segundo`
-              : "—"}
+                ? `${appellantTag} fue segundo`
+                : "—"}
           </span>
         </p>
       </div>
@@ -166,15 +172,18 @@ function AppealCard({ appeal, onResolved }: { appeal: AppealRow; onResolved: () 
   };
 
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5">
+    <div className="rounded-xl border border-warning/40 bg-warning/10 p-4 sm:p-5">
       <div className="mb-1 flex items-center gap-2">
-        <Scale size={16} className="text-amber-400" />
-        <p className="text-sm font-bold text-white">Ronda {appeal.round_number}</p>
-        <span className="ml-auto text-xs text-gray-500">{appeal.tournament_date ?? "—"}</span>
+        <Scale size={16} className="text-warning" />
+        <p className="text-sm font-bold text-foreground">Ronda {appeal.round_number}</p>
+        <span className="ml-auto text-xs text-foreground-secondary">
+          {appeal.tournament_date ?? "—"}
+        </span>
       </div>
-      <p className="mb-3 text-xs text-gray-400">
-        Esta apelación es de <span className="font-semibold text-white">{appeal.appellant_tag}</span> contra{" "}
-        <span className="font-semibold text-white">{appeal.reporter_tag}</span>
+      <p className="mb-3 text-xs text-foreground-secondary">
+        Esta apelación es de{" "}
+        <span className="font-semibold text-foreground">{appeal.appellant_tag}</span> contra{" "}
+        <span className="font-semibold text-foreground">{appeal.reporter_tag}</span>
       </p>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -198,14 +207,14 @@ function AppealCard({ appeal, onResolved }: { appeal: AppealRow; onResolved: () 
         <button
           onClick={() => handleResolve("accepted_original")}
           disabled={resolving}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-widest text-white hover:bg-white/10 disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-white/5 py-2 text-sm font-semibold text-foreground hover:bg-white/10 disabled:opacity-50"
         >
           <CheckCircle2 size={14} /> Aceptar original
         </button>
         <button
           onClick={() => handleResolve("accepted_proposed")}
           disabled={resolving}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-amber-500 py-2 text-xs font-bold uppercase tracking-widest text-black hover:bg-amber-400 disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 py-2 text-sm font-semibold text-warning hover:bg-warning/20 disabled:opacity-50"
         >
           <ShieldQuestion size={14} /> Aceptar propuesta
         </button>
@@ -215,7 +224,7 @@ function AppealCard({ appeal, onResolved }: { appeal: AppealRow; onResolved: () 
           <AlertDialogTrigger asChild>
             <button
               disabled={resolving}
-              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-destructive hover:bg-destructive/10 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50"
             >
               <Trash2 size={14} /> Eliminar
             </button>
@@ -267,17 +276,19 @@ function OrganizerAppealsPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Mi tienda</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Apelaciones</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Revisa las disputas de resultados reportados en tu tienda y decide cuál versión es correcta.
+        <h1 className="text-3xl font-bold text-foreground">Apelaciones</h1>
+        <p className="mt-1 text-sm text-foreground-secondary">
+          Revisa las disputas de resultados reportados en tu tienda y decide cuál versión es
+          correcta.
         </p>
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Cargando…</p>
+        <p className="text-sm text-foreground-secondary">Cargando…</p>
       ) : appeals.length === 0 ? (
-        <p className="text-sm text-gray-400">No hay apelaciones pendientes en tu tienda.</p>
+        <p className="text-sm text-foreground-secondary">
+          No hay apelaciones pendientes en tu tienda.
+        </p>
       ) : (
         <div className="space-y-4">
           {appeals.map((a) => (

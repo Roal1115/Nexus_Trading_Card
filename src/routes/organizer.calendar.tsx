@@ -200,9 +200,8 @@ function OrganizerCalendarPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-xs uppercase tracking-wider text-primary">Organizador</div>
-        <h1 className="text-2xl font-bold text-white mt-1">Calendario de mi tienda</h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Calendario de mi tienda</h1>
+        <p className="text-sm text-foreground-secondary mt-1">
           Vista de los torneos programados en tu tienda. Los eventos de ligas internas (en ámbar) se
           pueden editar por fecha.
         </p>
@@ -211,53 +210,55 @@ function OrganizerCalendarPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div
           className={`rounded-xl border bg-black/30 p-5 ${
-            (stats?.total_overdue ?? 0) > 0 ? "border-red-500/30" : "border-white/10"
+            (stats?.total_overdue ?? 0) > 0 ? "border-destructive/50" : "border-border"
           }`}
         >
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground-secondary">
             <AlertTriangle
               size={14}
-              className={(stats?.total_overdue ?? 0) > 0 ? "text-red-400" : "text-gray-500"}
+              className={
+                (stats?.total_overdue ?? 0) > 0 ? "text-destructive" : "text-foreground-secondary"
+              }
             />
             Overdue
           </div>
           <div
             className={`text-3xl font-bold mt-2 ${
-              (stats?.total_overdue ?? 0) > 0 ? "text-red-400" : "text-white"
+              (stats?.total_overdue ?? 0) > 0 ? "text-destructive" : "text-foreground"
             }`}
           >
             {stats?.total_overdue ?? 0}
           </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
+        <div className="rounded-xl border border-border bg-black/30 p-5">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground-secondary">
             <CheckCircle2 size={14} className="text-green-400" />
             Subidos esta semana
           </div>
-          <div className="text-3xl font-bold mt-2 text-white">
+          <div className="text-3xl font-bold mt-2 text-foreground">
             {stats?.uploaded_so_far ?? 0}
-            <span className="text-gray-500 text-lg"> / {stats?.days_elapsed ?? 0}</span>
+            <span className="text-foreground-secondary text-lg"> / {stats?.days_elapsed ?? 0}</span>
           </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-400">
+        <div className="rounded-xl border border-border bg-black/30 p-5">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground-secondary">
             <CalendarIcon size={14} className="text-primary" />
             Total semanal
           </div>
-          <div className="text-3xl font-bold mt-2 text-white">{filteredEntries.length}</div>
+          <div className="text-3xl font-bold mt-2 text-foreground">{filteredEntries.length}</div>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 bg-black/30 border border-border rounded-lg px-3 py-2">
           <button
             aria-label="Semana anterior"
             onClick={() => navigateWeek(-1)}
-            className="text-gray-400 hover:text-white"
+            className="text-foreground-secondary hover:text-foreground"
           >
             <ChevronLeft size={18} />
           </button>
-          <div className="text-sm text-white text-center sm:min-w-[180px]">
+          <div className="text-sm text-foreground text-center sm:min-w-[180px]">
             {weekDates[0]?.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} —{" "}
             {weekDates[6]?.toLocaleDateString("es-MX", {
               day: "numeric",
@@ -268,7 +269,7 @@ function OrganizerCalendarPage() {
           <button
             aria-label="Semana siguiente"
             onClick={() => navigateWeek(1)}
-            className="text-gray-400 hover:text-white"
+            className="text-foreground-secondary hover:text-foreground"
           >
             <ChevronRight size={18} />
           </button>
@@ -283,12 +284,12 @@ function OrganizerCalendarPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+      <div className="rounded-xl border border-border bg-black/30 overflow-hidden">
         <div className="overflow-x-auto">
           <div style={{ minWidth: "600px", width: "100%" }}>
             <div
               style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
-              className="border-b border-white/10"
+              className="border-b border-border"
             >
               <div className="border-r border-white/5" />
               {weekDates.map((d, i) => {
@@ -296,16 +297,16 @@ function OrganizerCalendarPage() {
                 return (
                   <div
                     key={i}
-                    className={`p-2 text-center border-l border-white/10 ${
+                    className={`p-2 text-center border-l border-border ${
                       isToday ? "bg-primary/10" : ""
                     }`}
                     style={{ minWidth: 0 }}
                   >
-                    <div className="text-[10px] uppercase text-gray-400">
+                    <div className="text-xs uppercase text-foreground-secondary">
                       {DAY_NAMES[d.getDay()]}
                     </div>
                     <div
-                      className={`text-sm font-semibold ${isToday ? "text-primary" : "text-white"}`}
+                      className={`text-sm font-semibold ${isToday ? "text-primary" : "text-foreground"}`}
                     >
                       {d.getDate()}
                     </div>
@@ -320,7 +321,7 @@ function OrganizerCalendarPage() {
                 style={{ display: "grid", gridTemplateColumns: "56px repeat(7, 1fr)" }}
                 className="border-b border-white/5"
               >
-                <div className="p-2 text-[10px] text-gray-500 text-right border-r border-white/5 flex items-start justify-end pt-2">
+                <div className="p-2 text-xs text-foreground-secondary text-right border-r border-white/5 flex items-start justify-end pt-2">
                   {hour}:00
                 </div>
                 {[0, 1, 2, 3, 4, 5, 6].map((colIdx) => {
@@ -328,7 +329,7 @@ function OrganizerCalendarPage() {
                   return (
                     <div
                       key={colIdx}
-                      className="min-h-[60px] p-1 border-l border-white/10"
+                      className="min-h-[60px] p-1 border-l border-border"
                       style={{ minWidth: 0, overflow: "hidden" }}
                     >
                       {cellEntries.map((e) => {
@@ -342,26 +343,26 @@ function OrganizerCalendarPage() {
                               e.cancellation_reason
                                 ? CANCELLED_TILE_CLASS
                                 : e.league_id
-                                  ? "bg-amber-500/10 border-amber-500/30"
+                                  ? "bg-warning/10 border-warning/40"
                                   : "bg-primary/10 border-primary/30"
                             }`}
                           >
                             {e.cancellation_reason && (
-                              <div className="text-[9px] font-bold uppercase text-red-300">
+                              <div className="text-xs font-semibold text-destructive">
                                 Cancelado
                               </div>
                             )}
                             <div
-                              className={`text-[10px] truncate ${e.cancellation_reason ? "text-red-200 line-through" : e.league_id ? "text-amber-300" : "text-primary"}`}
+                              className={`text-xs truncate ${e.cancellation_reason ? "text-destructive line-through" : e.league_id ? "text-warning" : "text-primary"}`}
                             >
                               {e.override_label || e.game_name}
                             </div>
-                            <div className="text-[9px] text-gray-400 truncate">
+                            <div className="text-xs text-foreground-secondary truncate">
                               {e.start_time}
                               {e.is_override && " · editado"}
                             </div>
                             {e.league_name && (
-                              <div className="text-[9px] text-amber-400/80 truncate">
+                              <div className="text-xs text-warning/80 truncate">
                                 {e.league_name}
                               </div>
                             )}
@@ -421,7 +422,7 @@ function OrganizerCalendarPage() {
                 }}
               />
               <FichaSection entry={editingEntry} />
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-foreground-secondary">
                 Este cambio aplica solo a esta fecha. El horario recurrente (
                 {editingEntry.game_name}, todos los {DAY_NAMES[editingEntry.day_of_week]}) no se
                 modifica.
@@ -449,7 +450,7 @@ function OrganizerCalendarPage() {
               <button
                 onClick={handleResetOverride}
                 disabled={savingOverride}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-300 hover:text-red-200"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-destructive hover:text-destructive"
               >
                 <Trash2 size={12} />
                 Restablecer al horario normal

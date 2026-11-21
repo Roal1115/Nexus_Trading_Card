@@ -67,9 +67,8 @@ function OrganizerPlayersPage() {
 
   const header = (
     <header>
-      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Mi tienda</p>
-      <h1 className="mt-2 text-3xl font-bold text-white">Jugadores</h1>
-      <p className="mt-1 text-sm text-gray-400">
+      <h1 className="text-3xl font-bold text-foreground">Jugadores</h1>
+      <p className="mt-1 text-sm text-foreground-secondary">
         Quién viene a tu tienda y a quién conviene recuperar.
       </p>
     </header>
@@ -79,7 +78,7 @@ function OrganizerPlayersPage() {
     return (
       <div className="space-y-6">
         {header}
-        <div className="glass rounded-2xl">
+        <div className="rounded-xl border border-border bg-card">
           <LoadError message={loadError} onRetry={() => void refresh()} />
         </div>
       </div>
@@ -145,7 +144,7 @@ function OrganizerPlayersPage() {
                 void refresh(dateFrom, dateTo, gameId, selectedLeagueId);
               }}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-foreground-secondary">
               Las fechas cambian los torneos y puntos que ves. El estado siempre es a fecha de hoy.
             </p>
           </>

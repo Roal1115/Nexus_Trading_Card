@@ -22,7 +22,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
   getOrganizerOverview,
@@ -52,8 +58,18 @@ const WEEKDAYS = [
 ];
 
 const MONTH_NAMES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 type Prize = { description: string; image_url: string | null };
@@ -69,10 +85,27 @@ type League = {
   winner_player_id: string | null;
   winner_points: number | null;
   store_league_tournaments: { tournament_id: string }[];
-  store_league_prizes: Array<{ id: string; description: string; image_url: string | null; sort_order: number }>;
+  store_league_prizes: Array<{
+    id: string;
+    description: string;
+    image_url: string | null;
+    sort_order: number;
+  }>;
 };
-type Tournament = { id: string; game_id: string; game_name: string; tournament_date: string; status: string };
-type NationalSchedule = { id: string; game_id: string; game_name: string; day_of_week: number; start_time: string };
+type Tournament = {
+  id: string;
+  game_id: string;
+  game_name: string;
+  tournament_date: string;
+  status: string;
+};
+type NationalSchedule = {
+  id: string;
+  game_id: string;
+  game_name: string;
+  day_of_week: number;
+  start_time: string;
+};
 type LeagueSchedule = {
   id: string;
   league_id: string;
@@ -163,7 +196,9 @@ function OrganizerLeagueDetailPage() {
         fetchTournaments({ data: { store_id: sid } }),
         fetchScheduleData({ data: { store_id: sid } }),
       ]);
-      const found: League | undefined = (leaguesRes.leagues ?? []).find((l: League) => l.id === leagueId);
+      const found: League | undefined = (leaguesRes.leagues ?? []).find(
+        (l: League) => l.id === leagueId,
+      );
       setLeague(found ?? null);
       const fetchedTournaments: Tournament[] = tournamentsRes.tournaments ?? [];
       if (found) {
@@ -178,7 +213,9 @@ function OrganizerLeagueDetailPage() {
         setSelectedTournamentIds(
           savedIds.size > 0
             ? savedIds
-            : new Set(fetchedTournaments.filter((t) => isWithinLeagueRange(t, found)).map((t) => t.id)),
+            : new Set(
+                fetchedTournaments.filter((t) => isWithinLeagueRange(t, found)).map((t) => t.id),
+              ),
         );
         setPrizes(
           [...found.store_league_prizes]
@@ -256,7 +293,9 @@ function OrganizerLeagueDetailPage() {
     if (!league || !storeId) return;
     setTournamentsSaving(true);
     try {
-      await setTournamentsFn({ data: { league_id: league.id, tournament_ids: Array.from(selectedTournamentIds) } });
+      await setTournamentsFn({
+        data: { league_id: league.id, tournament_ids: Array.from(selectedTournamentIds) },
+      });
       toast.success("Torneos actualizados.");
       await refresh(storeId);
     } catch (e) {
@@ -271,10 +310,14 @@ function OrganizerLeagueDetailPage() {
     setUploadingIdx(idx);
     try {
       const path = `${league.id}/${Date.now()}-${file.name}`;
-      const { error } = await nexus.storage.from("league-assets").upload(path, file, { upsert: true });
+      const { error } = await nexus.storage
+        .from("league-assets")
+        .upload(path, file, { upsert: true });
       if (error) throw new Error(error.message);
       const { data } = nexus.storage.from("league-assets").getPublicUrl(path);
-      setPrizes((prev) => prev.map((p, i) => (i === idx ? { ...p, image_url: data.publicUrl } : p)));
+      setPrizes((prev) =>
+        prev.map((p, i) => (i === idx ? { ...p, image_url: data.publicUrl } : p)),
+      );
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     } finally {
@@ -287,7 +330,10 @@ function OrganizerLeagueDetailPage() {
     setPrizesSaving(true);
     try {
       await setPrizesFn({
-        data: { league_id: league.id, prizes: prizes.filter((p) => p.description.trim().length > 0) },
+        data: {
+          league_id: league.id,
+          prizes: prizes.filter((p) => p.description.trim().length > 0),
+        },
       });
       toast.success("Premios actualizados.");
       await refresh(storeId);
@@ -299,7 +345,11 @@ function OrganizerLeagueDetailPage() {
   }
 
   function findNationalConflict(form: NewScheduleForm) {
-    return nationalSchedules.find((s) => s.game_id === form.game_id && s.day_of_week === form.day_of_week) ?? null;
+    return (
+      nationalSchedules.find(
+        (s) => s.game_id === form.game_id && s.day_of_week === form.day_of_week,
+      ) ?? null
+    );
   }
 
   async function submitSchedule(sharesNational: boolean, nationalScheduleId: string | null) {
@@ -396,10 +446,15 @@ function OrganizerLeagueDetailPage() {
   if (!league) {
     return (
       <div className="space-y-4">
-        <Link to="/organizer/leagues" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white">
+        <Link
+          to="/organizer/leagues"
+          className="inline-flex items-center gap-1.5 text-sm text-foreground-secondary hover:text-foreground"
+        >
           <ArrowLeft size={14} /> Volver a ligas
         </Link>
-        <div className="glass rounded-2xl p-8 text-sm text-gray-400">Liga no encontrada.</div>
+        <div className="border border-border bg-card rounded-xl p-8 text-sm text-foreground-secondary">
+          Liga no encontrada.
+        </div>
       </div>
     );
   }
@@ -410,25 +465,35 @@ function OrganizerLeagueDetailPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to="/organizer/leagues" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white">
+        <Link
+          to="/organizer/leagues"
+          className="inline-flex items-center gap-1.5 text-sm text-foreground-secondary hover:text-foreground"
+        >
           <ArrowLeft size={14} /> Volver a ligas
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-bold text-white">{league.name}</h1>
-          <Badge variant="outline" className={isArchived ? "border-gray-500/40 text-gray-400" : "border-primary/40 text-primary"}>
+          <h1 className="text-3xl font-bold text-foreground">{league.name}</h1>
+          <Badge
+            variant="outline"
+            className={
+              isArchived
+                ? "border-gray-500/40 text-foreground-secondary"
+                : "border-primary/40 text-primary"
+            }
+          >
             {isArchived ? "Archivada" : "Activa"}
           </Badge>
         </div>
-        <p className="mt-1 text-sm text-gray-400">
+        <p className="mt-1 text-sm text-foreground-secondary">
           {league.start_date} — {league.end_date}
         </p>
       </div>
 
       {isArchived && (
-        <div className="glass rounded-2xl p-4 text-sm text-gray-400">
+        <div className="border border-border bg-card rounded-xl p-4 text-sm text-foreground-secondary">
           Esta liga está archivada y no puede editarse. Ganador:{" "}
           {league.winner_player_id ? (
-            <Badge variant="outline" className="border-amber-500/40 text-amber-300">
+            <Badge variant="outline" className="border-warning/40 text-warning">
               {league.winner_player_id} — {league.winner_points ?? 0} pts
             </Badge>
           ) : (
@@ -451,17 +516,19 @@ function OrganizerLeagueDetailPage() {
                 onClick={() => setStep(s.id)}
                 className={cn(
                   "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition md:shrink",
-                  isActive ? "bg-primary/15 text-primary" : "text-gray-400 hover:bg-white/5 hover:text-white",
+                  isActive
+                    ? "bg-primary/15 text-primary"
+                    : "text-foreground-secondary hover:bg-white/5 hover:text-foreground",
                 )}
               >
                 <span
                   className={cn(
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                     isActive
                       ? "bg-primary text-black"
                       : isDone
                         ? "bg-primary/20 text-primary"
-                        : "bg-white/10 text-gray-400",
+                        : "bg-white/10 text-foreground-secondary",
                   )}
                 >
                   {isDone ? <Check size={12} /> : i + 1}
@@ -472,7 +539,7 @@ function OrganizerLeagueDetailPage() {
           })}
         </nav>
 
-        <div className="glass min-w-0 flex-1 space-y-4 rounded-2xl p-6">
+        <div className="border border-border bg-card min-w-0 flex-1 space-y-4 rounded-xl p-6">
           {/* General */}
           {step === "general" && (
             <div className="space-y-4">
@@ -503,7 +570,7 @@ function OrganizerLeagueDetailPage() {
                   </SelectContent>
                 </Select>
                 {generalForm.game_id !== (league.game_id ?? "") && (
-                  <p className="text-xs text-amber-400">
+                  <p className="text-xs text-warning">
                     Cambiar el TCG desmarca todos los torneos ya seleccionados para esta liga.
                   </p>
                 )}
@@ -532,12 +599,18 @@ function OrganizerLeagueDetailPage() {
                 <Label>Días activos</Label>
                 <div className="flex flex-wrap gap-3">
                   {WEEKDAYS.map((d) => (
-                    <label key={d.value} className="flex items-center gap-1.5 text-sm text-gray-300">
+                    <label
+                      key={d.value}
+                      className="flex items-center gap-1.5 text-sm text-foreground-secondary"
+                    >
                       <Checkbox
                         checked={generalForm.active_weekdays.includes(d.value)}
                         disabled={isArchived}
                         onCheckedChange={() =>
-                          setGeneralForm((f) => ({ ...f, active_weekdays: toggleWeekday(f.active_weekdays, d.value) }))
+                          setGeneralForm((f) => ({
+                            ...f,
+                            active_weekdays: toggleWeekday(f.active_weekdays, d.value),
+                          }))
                         }
                       />
                       {d.label}
@@ -545,22 +618,38 @@ function OrganizerLeagueDetailPage() {
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <button
                   onClick={handleArchive}
                   disabled={isArchived || archiving}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-red-500/50 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10 disabled:opacity-40 sm:w-auto sm:justify-start"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-destructive/50 px-3 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10 disabled:opacity-40 sm:w-auto sm:justify-start"
                 >
-                  {archiving ? <Loader2 size={12} className="animate-spin" /> : <Archive size={12} />}
+                  {archiving ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Archive size={12} />
+                  )}
                   Archivar liga
                 </button>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Button onClick={handleSaveGeneral} disabled={isArchived || generalSaving} className="w-full gap-2 sm:w-auto">
-                    {generalSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                  <Button
+                    onClick={handleSaveGeneral}
+                    disabled={isArchived || generalSaving}
+                    className="w-full gap-2 sm:w-auto"
+                  >
+                    {generalSaving ? (
+                      <Loader2 className="animate-spin" size={16} />
+                    ) : (
+                      <Save size={16} />
+                    )}
                     Guardar
                   </Button>
                   {nextStep && (
-                    <Button variant="outline" onClick={() => setStep(nextStep.id)} className="w-full gap-1 sm:w-auto">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep(nextStep.id)}
+                      className="w-full gap-1 sm:w-auto"
+                    >
                       Siguiente: {nextStep.label} <ChevronRight size={14} />
                     </Button>
                   )}
@@ -573,23 +662,29 @@ function OrganizerLeagueDetailPage() {
           {step === "horarios" && (
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label className="text-xs text-gray-400">Horarios actuales</Label>
+                <Label className="text-xs text-foreground-secondary">Horarios actuales</Label>
                 {scheduleLeagueList.length === 0 ? (
-                  <p className="text-xs text-gray-500">Aún no hay horarios para esta liga.</p>
+                  <p className="text-xs text-foreground-secondary">
+                    Aún no hay horarios para esta liga.
+                  </p>
                 ) : (
                   <div className="space-y-1.5">
                     {scheduleLeagueList.map((s) => (
                       <div
                         key={s.id}
-                        className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-sm"
+                        className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
                       >
                         <div>
-                          <span className="text-white">{s.game_name}</span>{" "}
-                          <span className="text-gray-400">
-                            · {WEEKDAYS.find((d) => d.value === s.day_of_week)?.label} {s.start_time}
+                          <span className="text-foreground">{s.game_name}</span>{" "}
+                          <span className="text-foreground-secondary">
+                            · {WEEKDAYS.find((d) => d.value === s.day_of_week)?.label}{" "}
+                            {s.start_time}
                           </span>
                           {s.shares_national_slot && (
-                            <Badge variant="outline" className="ml-2 border-primary/40 text-primary">
+                            <Badge
+                              variant="outline"
+                              className="ml-2 border-primary/40 text-primary"
+                            >
                               comparte con circuito nacional
                             </Badge>
                           )}
@@ -598,7 +693,7 @@ function OrganizerLeagueDetailPage() {
                           <button
                             aria-label="Eliminar horario"
                             onClick={() => handleDeleteSchedule(s.id)}
-                            className="text-gray-500 hover:text-red-400"
+                            className="text-foreground-secondary hover:text-destructive"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -610,10 +705,13 @@ function OrganizerLeagueDetailPage() {
               </div>
 
               {!isArchived && (
-                <div className="space-y-3 border-t border-white/10 pt-4">
-                  <Label className="text-xs text-gray-400">Agregar horario</Label>
+                <div className="space-y-3 border-t border-border pt-4">
+                  <Label className="text-xs text-foreground-secondary">Agregar horario</Label>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <Select value={scheduleForm.game_id} onValueChange={(v) => setScheduleForm((f) => ({ ...f, game_id: v }))}>
+                    <Select
+                      value={scheduleForm.game_id}
+                      onValueChange={(v) => setScheduleForm((f) => ({ ...f, game_id: v }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Juego" />
                       </SelectTrigger>
@@ -627,7 +725,9 @@ function OrganizerLeagueDetailPage() {
                     </Select>
                     <Select
                       value={String(scheduleForm.day_of_week)}
-                      onValueChange={(v) => setScheduleForm((f) => ({ ...f, day_of_week: Number(v) }))}
+                      onValueChange={(v) =>
+                        setScheduleForm((f) => ({ ...f, day_of_week: Number(v) }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -643,17 +743,21 @@ function OrganizerLeagueDetailPage() {
                     <Input
                       type="time"
                       value={scheduleForm.start_time}
-                      onChange={(e) => setScheduleForm((f) => ({ ...f, start_time: e.target.value }))}
+                      onChange={(e) =>
+                        setScheduleForm((f) => ({ ...f, start_time: e.target.value }))
+                      }
                     />
                   </div>
 
                   {scheduleConflict ? (
-                    <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
-                      <p className="text-amber-200">
-                        Ya tienes un torneo del Circuito Nacional de <strong>{scheduleConflict.game_name}</strong> los{" "}
-                        {WEEKDAYS.find((d) => d.value === scheduleConflict.day_of_week)?.label} a las{" "}
-                        {scheduleConflict.start_time}. ¿Los torneos de tu liga interna <strong>{league.name}</strong> son
-                        los mismos que los torneos del Circuito Nacional?
+                    <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+                      <p className="text-warning">
+                        Ya tienes un torneo del Circuito Nacional de{" "}
+                        <strong>{scheduleConflict.game_name}</strong> los{" "}
+                        {WEEKDAYS.find((d) => d.value === scheduleConflict.day_of_week)?.label} a
+                        las {scheduleConflict.start_time}. ¿Los torneos de tu liga interna{" "}
+                        <strong>{league.name}</strong> son los mismos que los torneos del Circuito
+                        Nacional?
                       </p>
                       <div className="flex gap-2">
                         <Button
@@ -664,17 +768,33 @@ function OrganizerLeagueDetailPage() {
                         >
                           Sí, son el mismo torneo
                         </Button>
-                        <Button size="sm" disabled={scheduleSaving} onClick={() => submitSchedule(false, null)}>
+                        <Button
+                          size="sm"
+                          disabled={scheduleSaving}
+                          onClick={() => submitSchedule(false, null)}
+                        >
                           No, crear torneo aparte
                         </Button>
-                        <button onClick={() => setScheduleConflict(null)} className="ml-auto text-gray-500 hover:text-white">
+                        <button
+                          onClick={() => setScheduleConflict(null)}
+                          className="ml-auto text-foreground-secondary hover:text-foreground"
+                        >
                           <X size={14} />
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <Button size="sm" onClick={handleAddSchedule} disabled={scheduleSaving} className="gap-2">
-                      {scheduleSaving ? <Loader2 className="animate-spin" size={14} /> : <Calendar size={14} />}
+                    <Button
+                      size="sm"
+                      onClick={handleAddSchedule}
+                      disabled={scheduleSaving}
+                      className="gap-2"
+                    >
+                      {scheduleSaving ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Calendar size={14} />
+                      )}
                       Agregar horario
                     </Button>
                   )}
@@ -682,8 +802,12 @@ function OrganizerLeagueDetailPage() {
               )}
 
               {nextStep && (
-                <div className="flex justify-end border-t border-white/10 pt-4">
-                  <Button variant="outline" onClick={() => setStep(nextStep.id)} className="w-full gap-1 sm:w-auto">
+                <div className="flex justify-end border-t border-border pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(nextStep.id)}
+                    className="w-full gap-1 sm:w-auto"
+                  >
                     Siguiente: {nextStep.label} <ChevronRight size={14} />
                   </Button>
                 </div>
@@ -696,20 +820,24 @@ function OrganizerLeagueDetailPage() {
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label>Torneos que cuentan para esta liga</Label>
-                <span className="text-xs text-gray-500">{selectedTournamentIds.size} seleccionados</span>
+                <span className="text-xs text-foreground-secondary">
+                  {selectedTournamentIds.size} seleccionados
+                </span>
               </div>
-              <p className="text-xs text-gray-500">
-                Se preseleccionan automáticamente los torneos dentro de la vigencia y días activos de la liga
-                ({league.start_date} — {league.end_date}). Desmarca las excepciones.
+              <p className="text-xs text-foreground-secondary">
+                Se preseleccionan automáticamente los torneos dentro de la vigencia y días activos
+                de la liga ({league.start_date} — {league.end_date}). Desmarca las excepciones.
               </p>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex rounded-lg border border-white/10 p-0.5 text-xs">
+                <div className="flex rounded-lg border border-border p-0.5 text-xs">
                   <button
                     onClick={() => setTournamentScope("range")}
                     className={cn(
                       "rounded-md px-2.5 py-1.5 font-semibold transition",
-                      tournamentScope === "range" ? "bg-primary/20 text-primary" : "text-gray-400 hover:text-white",
+                      tournamentScope === "range"
+                        ? "bg-primary/20 text-primary"
+                        : "text-foreground-secondary hover:text-foreground",
                     )}
                   >
                     En rango de la liga
@@ -718,7 +846,9 @@ function OrganizerLeagueDetailPage() {
                     onClick={() => setTournamentScope("all")}
                     className={cn(
                       "rounded-md px-2.5 py-1.5 font-semibold transition",
-                      tournamentScope === "all" ? "bg-primary/20 text-primary" : "text-gray-400 hover:text-white",
+                      tournamentScope === "all"
+                        ? "bg-primary/20 text-primary"
+                        : "text-foreground-secondary hover:text-foreground",
                     )}
                   >
                     Todos
@@ -727,14 +857,18 @@ function OrganizerLeagueDetailPage() {
               </div>
 
               {tournaments.length === 0 ? (
-                <p className="text-xs text-gray-500">No hay torneos publicados en tu tienda todavía.</p>
+                <p className="text-xs text-foreground-secondary">
+                  No hay torneos publicados en tu tienda todavía.
+                </p>
               ) : tournamentGroups.length === 0 ? (
-                <p className="text-xs text-gray-500">No hay torneos que coincidan con este filtro.</p>
+                <p className="text-xs text-foreground-secondary">
+                  No hay torneos que coincidan con este filtro.
+                </p>
               ) : (
-                <div className="max-h-[28rem] space-y-2 overflow-y-auto rounded-lg border border-white/10 p-2">
+                <div className="max-h-[28rem] space-y-2 overflow-y-auto rounded-lg border border-border p-2">
                   {tournamentGroups.map(([monthKey, monthTournaments]) => (
                     <details key={monthKey} open className="rounded-lg">
-                      <summary className="cursor-pointer select-none rounded px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400 hover:bg-white/5">
+                      <summary className="cursor-pointer select-none rounded px-2 py-1.5 text-sm font-medium text-foreground-secondary hover:bg-white/5">
                         {monthLabel(monthKey)} · {monthTournaments.length}
                       </summary>
                       <div className="mt-1 space-y-1">
@@ -745,7 +879,7 @@ function OrganizerLeagueDetailPage() {
                               key={t.id}
                               className={cn(
                                 "flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-white/5",
-                                isPast ? "text-gray-500" : "text-gray-200",
+                                isPast ? "text-foreground-secondary" : "text-foreground",
                               )}
                             >
                               <Checkbox
@@ -760,9 +894,14 @@ function OrganizerLeagueDetailPage() {
                                 }
                               />
                               <span className="flex-1">{t.game_name}</span>
-                              <span className="text-xs text-gray-500">{t.tournament_date}</span>
+                              <span className="text-xs text-foreground-secondary">
+                                {t.tournament_date}
+                              </span>
                               {isPast && (
-                                <Badge variant="outline" className="border-white/10 text-[10px] text-gray-500">
+                                <Badge
+                                  variant="outline"
+                                  className="border-border text-xs text-foreground-secondary"
+                                >
                                   pasado
                                 </Badge>
                               )}
@@ -775,13 +914,25 @@ function OrganizerLeagueDetailPage() {
                 </div>
               )}
 
-              <div className="flex flex-col gap-2 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <Button onClick={handleSaveTournaments} disabled={isArchived || tournamentsSaving} className="w-full gap-2 sm:w-auto">
-                  {tournamentsSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <Button
+                  onClick={handleSaveTournaments}
+                  disabled={isArchived || tournamentsSaving}
+                  className="w-full gap-2 sm:w-auto"
+                >
+                  {tournamentsSaving ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Save size={16} />
+                  )}
                   Guardar
                 </Button>
                 {nextStep && (
-                  <Button variant="outline" onClick={() => setStep(nextStep.id)} className="w-full gap-1 sm:w-auto">
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(nextStep.id)}
+                    className="w-full gap-1 sm:w-auto"
+                  >
                     Siguiente: {nextStep.label} <ChevronRight size={14} />
                   </Button>
                 )}
@@ -797,7 +948,9 @@ function OrganizerLeagueDetailPage() {
                 {!isArchived && (
                   <button
                     type="button"
-                    onClick={() => setPrizes((prev) => [...prev, { description: "", image_url: null }])}
+                    onClick={() =>
+                      setPrizes((prev) => [...prev, { description: "", image_url: null }])
+                    }
                     className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                   >
                     <Gift size={12} />
@@ -807,14 +960,19 @@ function OrganizerLeagueDetailPage() {
               </div>
               <div className="space-y-3">
                 {prizes.length === 0 ? (
-                  <p className="text-xs text-gray-500">Aún no hay premios configurados.</p>
+                  <p className="text-xs text-foreground-secondary">
+                    Aún no hay premios configurados.
+                  </p>
                 ) : (
                   prizes.map((p, idx) => (
-                    <div key={idx} className="flex items-start gap-2 rounded-lg border border-white/10 p-3">
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 rounded-lg border border-border p-3"
+                    >
                       {p.image_url ? (
                         <img src={p.image_url} alt="" className="h-14 w-14 rounded object-cover" />
                       ) : (
-                        <label className="flex h-14 w-14 cursor-pointer items-center justify-center rounded border border-dashed border-white/20 text-gray-500 hover:border-primary hover:text-primary">
+                        <label className="flex h-14 w-14 cursor-pointer items-center justify-center rounded border border-dashed border-white/20 text-foreground-secondary hover:border-primary hover:text-primary">
                           {uploadingIdx === idx ? (
                             <Loader2 size={16} className="animate-spin" />
                           ) : (
@@ -836,18 +994,22 @@ function OrganizerLeagueDetailPage() {
                         value={p.description}
                         disabled={isArchived}
                         onChange={(e) =>
-                          setPrizes((prev) => prev.map((x, i) => (i === idx ? { ...x, description: e.target.value } : x)))
+                          setPrizes((prev) =>
+                            prev.map((x, i) =>
+                              i === idx ? { ...x, description: e.target.value } : x,
+                            ),
+                          )
                         }
                         placeholder="Ej. 1er lugar: caja de sobres + playmat"
                         rows={2}
-                        className="w-full flex-1 resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary"
+                        className="w-full flex-1 resize-none rounded-lg border border-border bg-white/5 px-3 py-2 text-sm text-foreground placeholder-gray-600 outline-none focus:border-primary"
                       />
                       {!isArchived && (
                         <button
                           type="button"
                           aria-label="Eliminar premio"
                           onClick={() => setPrizes((prev) => prev.filter((_, i) => i !== idx))}
-                          className="text-gray-500 hover:text-red-400"
+                          className="text-foreground-secondary hover:text-destructive"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -856,9 +1018,17 @@ function OrganizerLeagueDetailPage() {
                   ))
                 )}
               </div>
-              <div className="flex justify-end border-t border-white/10 pt-4">
-                <Button onClick={handleSavePrizes} disabled={isArchived || prizesSaving} className="w-full gap-2 sm:w-auto">
-                  {prizesSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              <div className="flex justify-end border-t border-border pt-4">
+                <Button
+                  onClick={handleSavePrizes}
+                  disabled={isArchived || prizesSaving}
+                  className="w-full gap-2 sm:w-auto"
+                >
+                  {prizesSaving ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Save size={16} />
+                  )}
                   Guardar
                 </Button>
               </div>

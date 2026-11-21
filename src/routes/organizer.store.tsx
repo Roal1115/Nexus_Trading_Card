@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { LocationSelects, OpeningHoursField } from "@/components/stores/StoreFormFields";
 import { StoreTcgsField } from "@/components/stores/StoreTcgsField";
+import { StorePromoManager } from "@/components/organizer/store-promo-manager";
 import { useEffect, useState } from "react";
 import { Store, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -157,35 +158,36 @@ function OrganizerHome() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Mi Tienda</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Información de tu tienda</h1>
-        <p className="mt-1 text-sm text-gray-400">Edita los datos de la tienda que organizas.</p>
+        <h1 className="text-3xl font-bold text-foreground">Información de tu tienda</h1>
+        <p className="mt-1 text-sm text-foreground-secondary">
+          Edita los datos de la tienda que organizas.
+        </p>
       </header>
 
-      <section className="glass space-y-3 rounded-2xl p-6">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
+      <section className="border border-border bg-card space-y-3 rounded-xl p-6">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Store size={16} className="text-primary" />
           Tienda asignada
         </div>
         {homeStore ? (
-          <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white">
+          <div className="rounded-md border border-border bg-white/5 px-3 py-2 text-sm text-foreground">
             {homeStore.name}
             {homeStore.city ? ` — ${homeStore.city}` : ""}
           </div>
         ) : (
-          <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-400">
+          <div className="rounded-md border border-border bg-white/5 px-3 py-2 text-sm text-foreground-secondary">
             Aún no tienes una tienda asignada.
           </div>
         )}
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-foreground-secondary">
           Tu tienda es asignada por el administrador. Si necesitas cambiarla, contacta a soporte.
         </p>
       </section>
 
       {homeStore && (
-        <section className="glass space-y-6 rounded-2xl p-6">
+        <section className="border border-border bg-card space-y-6 rounded-xl p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-white">Información de mi tienda</h2>
+            <h2 className="text-sm font-semibold text-foreground">Información de mi tienda</h2>
             <Button onClick={handleSaveInfo} disabled={saving}>
               {saving ? (
                 <Loader2 size={14} className="animate-spin mr-1" />
@@ -198,12 +200,10 @@ function OrganizerHome() {
 
           {/* SECCIÓN 1 — Información esencial */}
           <div className="space-y-3">
-            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-              Información esencial
-            </h3>
+            <h3 className="text-base font-semibold text-foreground">Información esencial</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Nombre de la tienda *</Label>
+                <Label className="text-xs text-foreground-secondary">Nombre de la tienda *</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -215,7 +215,7 @@ function OrganizerHome() {
                 onChange={(next) => setForm((f) => ({ ...f, ...next }))}
               />
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Dirección física</Label>
+                <Label className="text-xs text-foreground-secondary">Dirección física</Label>
                 <Input
                   value={form.address}
                   onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
@@ -223,7 +223,7 @@ function OrganizerHome() {
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Enlace Google Maps</Label>
+                <Label className="text-xs text-foreground-secondary">Enlace Google Maps</Label>
                 <Input
                   value={form.google_maps_url}
                   onChange={(e) => setForm((f) => ({ ...f, google_maps_url: e.target.value }))}
@@ -231,7 +231,7 @@ function OrganizerHome() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Teléfono de contacto</Label>
+                <Label className="text-xs text-foreground-secondary">Teléfono de contacto</Label>
                 <Input
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -239,7 +239,7 @@ function OrganizerHome() {
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Horarios de atención</Label>
+                <Label className="text-xs text-foreground-secondary">Horarios de atención</Label>
                 <OpeningHoursField
                   key={homeStore.id}
                   value={form.opening_hours}
@@ -250,29 +250,29 @@ function OrganizerHome() {
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Descripción</Label>
+                <Label className="text-xs text-foreground-secondary">Descripción</Label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={3}
                   placeholder="Breve descripción de la tienda..."
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-primary resize-none"
+                  className="w-full rounded-lg border border-border bg-white/5 px-3 py-2 text-sm text-foreground placeholder-gray-600 outline-none focus:border-primary resize-none"
                 />
               </div>
             </div>
           </div>
 
           {/* SECCIÓN 2 — Presencia digital */}
-          <div className="space-y-3 pt-4 border-t border-white/10">
-            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+          <div className="space-y-3 pt-4 border-t border-border">
+            <h3 className="text-base font-semibold text-foreground">
               Presencia digital
-              <span className="ml-2 text-gray-600 normal-case tracking-normal font-normal">
+              <span className="ml-2 text-foreground-secondary normal-case tracking-normal font-normal">
                 — Opcional
               </span>
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Página web</Label>
+                <Label className="text-xs text-foreground-secondary">Página web</Label>
                 <Input
                   value={form.website}
                   onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
@@ -280,9 +280,9 @@ function OrganizerHome() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">Instagram</Label>
+                <Label className="text-xs text-foreground-secondary">Instagram</Label>
                 <div className="flex items-center gap-1">
-                  <span className="text-gray-500 text-sm">@</span>
+                  <span className="text-foreground-secondary text-sm">@</span>
                   <Input
                     value={form.instagram}
                     onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
@@ -291,9 +291,9 @@ function OrganizerHome() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-400">X / Twitter</Label>
+                <Label className="text-xs text-foreground-secondary">X / Twitter</Label>
                 <div className="flex items-center gap-1">
-                  <span className="text-gray-500 text-sm">@</span>
+                  <span className="text-foreground-secondary text-sm">@</span>
                   <Input
                     value={form.twitter}
                     onChange={(e) => setForm((f) => ({ ...f, twitter: e.target.value }))}
@@ -302,9 +302,9 @@ function OrganizerHome() {
                 </div>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-gray-400">Twitch</Label>
+                <Label className="text-xs text-foreground-secondary">Twitch</Label>
                 <div className="flex items-center gap-1">
-                  <span className="text-gray-500 text-sm">twitch.tv/</span>
+                  <span className="text-foreground-secondary text-sm">twitch.tv/</span>
                   <Input
                     value={form.twitch}
                     onChange={(e) => setForm((f) => ({ ...f, twitch: e.target.value }))}
@@ -318,8 +318,14 @@ function OrganizerHome() {
       )}
 
       {homeStore && (
-        <section className="glass rounded-2xl p-6">
+        <section className="border border-border bg-card rounded-xl p-6">
           <StoreTcgsField storeId={homeStore.id} />
+        </section>
+      )}
+
+      {homeStore && (
+        <section className="border border-border bg-card rounded-xl p-6">
+          <StorePromoManager storeId={homeStore.id} />
         </section>
       )}
     </div>

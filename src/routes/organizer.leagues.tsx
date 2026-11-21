@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +24,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getOrganizerOverview, listStoreLeagues, createStoreLeague, archiveStoreLeague } from "@/lib/nexus-organizer.functions";
+import {
+  getOrganizerOverview,
+  listStoreLeagues,
+  createStoreLeague,
+  archiveStoreLeague,
+} from "@/lib/nexus-organizer.functions";
 
 export const Route = createFileRoute("/organizer/leagues")({
   component: OrganizerLeaguesPage,
@@ -47,10 +58,21 @@ type League = {
   winner_player_id: string | null;
   winner_points: number | null;
   store_league_tournaments: { tournament_id: string }[];
-  store_league_prizes: Array<{ id: string; description: string; image_url: string | null; sort_order: number }>;
+  store_league_prizes: Array<{
+    id: string;
+    description: string;
+    image_url: string | null;
+    sort_order: number;
+  }>;
 };
 
-const emptyForm = { name: "", game_id: "", start_date: "", end_date: "", active_weekdays: ALL_WEEKDAYS as number[] };
+const emptyForm = {
+  name: "",
+  game_id: "",
+  start_date: "",
+  end_date: "",
+  active_weekdays: ALL_WEEKDAYS as number[],
+};
 
 function OrganizerLeaguesPage() {
   const navigate = useNavigate();
@@ -150,12 +172,10 @@ function OrganizerLeaguesPage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Ligas Internas
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-white">Ligas de mi tienda</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Corre ligas locales en paralelo al Circuito Nacional. Selecciona qué torneos cuentan y sube los premios.
+          <h1 className="text-3xl font-bold text-foreground">Ligas de mi tienda</h1>
+          <p className="mt-1 text-sm text-foreground-secondary">
+            Corre ligas locales en paralelo al Circuito Nacional. Selecciona qué torneos cuentan y
+            sube los premios.
           </p>
         </div>
         <Dialog
@@ -186,7 +206,10 @@ function OrganizerLeaguesPage() {
               </div>
               <div className="space-y-2">
                 <Label>TCG (juego) *</Label>
-                <Select value={form.game_id} onValueChange={(v) => setForm((f) => ({ ...f, game_id: v }))}>
+                <Select
+                  value={form.game_id}
+                  onValueChange={(v) => setForm((f) => ({ ...f, game_id: v }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un TCG" />
                   </SelectTrigger>
@@ -198,7 +221,7 @@ function OrganizerLeaguesPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-foreground-secondary">
                   Cada liga interna es de un solo TCG — solo podrás agregarle torneos de ese juego.
                 </p>
               </div>
@@ -224,11 +247,17 @@ function OrganizerLeaguesPage() {
                 <Label>Días activos</Label>
                 <div className="flex flex-wrap gap-3">
                   {WEEKDAYS.map((d) => (
-                    <label key={d.value} className="flex items-center gap-1.5 text-sm text-gray-300">
+                    <label
+                      key={d.value}
+                      className="flex items-center gap-1.5 text-sm text-foreground-secondary"
+                    >
                       <Checkbox
                         checked={form.active_weekdays.includes(d.value)}
                         onCheckedChange={() =>
-                          setForm((f) => ({ ...f, active_weekdays: toggleWeekday(f.active_weekdays, d.value) }))
+                          setForm((f) => ({
+                            ...f,
+                            active_weekdays: toggleWeekday(f.active_weekdays, d.value),
+                          }))
                         }
                       />
                       {d.label}
@@ -250,7 +279,7 @@ function OrganizerLeaguesPage() {
       </header>
 
       {loading ? (
-        <div className="glass overflow-hidden rounded-2xl">
+        <div className="border border-border bg-card overflow-hidden rounded-xl">
           <table className="w-full text-sm">
             <tbody>
               {Array.from({ length: 3 }).map((_, i) => (
@@ -260,24 +289,27 @@ function OrganizerLeaguesPage() {
           </table>
         </div>
       ) : !storeId ? (
-        <div className="glass rounded-2xl p-8 text-sm text-gray-400">
+        <div className="border border-border bg-card rounded-xl p-8 text-sm text-foreground-secondary">
           Necesitas tener una tienda asignada para crear ligas internas.
         </div>
       ) : !enabled ? (
-        <div className="glass rounded-2xl p-8 text-sm text-gray-400">
-          Tu tienda no tiene habilitado el plugin de Ligas Internas. Contacta al administrador para activarlo.
+        <div className="border border-border bg-card rounded-xl p-8 text-sm text-foreground-secondary">
+          Tu tienda no tiene habilitado el plugin de Ligas Internas. Contacta al administrador para
+          activarlo.
         </div>
       ) : (
         <>
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-white">Ligas activas</h2>
+            <h2 className="text-sm font-semibold text-foreground">Ligas activas</h2>
             {activeLeagues.length === 0 ? (
-              <div className="glass rounded-2xl p-6 text-sm text-gray-400">No hay ligas activas.</div>
+              <div className="border border-border bg-card rounded-xl p-6 text-sm text-foreground-secondary">
+                No hay ligas activas.
+              </div>
             ) : (
-              <div className="glass overflow-hidden rounded-2xl">
+              <div className="border border-border bg-card overflow-hidden rounded-xl">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
+                    <thead className="bg-white/5 text-left text-sm font-medium text-foreground-secondary">
                       <tr>
                         <th scope="col" className="px-4 py-3">
                           Nombre
@@ -302,7 +334,7 @@ function OrganizerLeaguesPage() {
                     <tbody>
                       {activeLeagues.map((l) => (
                         <tr key={l.id} className="border-t border-white/5">
-                          <td className="px-4 py-3 text-white">
+                          <td className="px-4 py-3 text-foreground">
                             <Link
                               to="/organizer/leagues/$leagueId"
                               params={{ leagueId: l.id }}
@@ -317,24 +349,28 @@ function OrganizerLeaguesPage() {
                               {l.game_name ?? "—"}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-gray-300">
+                          <td className="px-4 py-3 text-foreground-secondary">
                             {l.start_date} — {l.end_date}
                           </td>
-                          <td className="px-4 py-3 text-gray-300">{l.store_league_tournaments.length}</td>
-                          <td className="px-4 py-3 text-gray-300">{l.store_league_prizes.length}</td>
+                          <td className="px-4 py-3 text-foreground-secondary">
+                            {l.store_league_tournaments.length}
+                          </td>
+                          <td className="px-4 py-3 text-foreground-secondary">
+                            {l.store_league_prizes.length}
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-2">
                               <Link
                                 to="/organizer/leagues/$leagueId"
                                 params={{ leagueId: l.id }}
-                                className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs font-semibold text-gray-300 transition hover:bg-white/5"
+                                className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs font-semibold text-foreground-secondary transition hover:bg-white/5"
                               >
                                 <Settings size={12} />
                                 Configurar
                               </Link>
                               <button
                                 onClick={() => handleArchive(l.id)}
-                                className="inline-flex items-center gap-1 rounded-md border border-red-500/50 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                                className="inline-flex items-center gap-1 rounded-md border border-destructive/50 px-3 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10"
                               >
                                 <Archive size={12} />
                                 Archivar
@@ -351,14 +387,18 @@ function OrganizerLeaguesPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-white">Hall of Fame — Ligas archivadas</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              Hall of Fame — Ligas archivadas
+            </h2>
             {archivedLeagues.length === 0 ? (
-              <div className="glass rounded-2xl p-6 text-sm text-gray-400">Aún no hay ligas archivadas.</div>
+              <div className="border border-border bg-card rounded-xl p-6 text-sm text-foreground-secondary">
+                Aún no hay ligas archivadas.
+              </div>
             ) : (
-              <div className="glass overflow-hidden rounded-2xl">
+              <div className="border border-border bg-card overflow-hidden rounded-xl">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
+                    <thead className="bg-white/5 text-left text-sm font-medium text-foreground-secondary">
                       <tr>
                         <th scope="col" className="px-4 py-3">
                           Nombre
@@ -380,29 +420,38 @@ function OrganizerLeaguesPage() {
                     <tbody>
                       {archivedLeagues.map((l) => (
                         <tr key={l.id} className="border-t border-white/5">
-                          <td className="px-4 py-3 text-white">
-                            <Link to="/organizer/leagues/$leagueId" params={{ leagueId: l.id }} className="hover:text-primary">
+                          <td className="px-4 py-3 text-foreground">
+                            <Link
+                              to="/organizer/leagues/$leagueId"
+                              params={{ leagueId: l.id }}
+                              className="hover:text-primary"
+                            >
                               {l.name}
                             </Link>
                           </td>
                           <td className="px-4 py-3">
-                            <Badge variant="outline" className="border-white/20 text-gray-300">
+                            <Badge
+                              variant="outline"
+                              className="border-white/20 text-foreground-secondary"
+                            >
                               {l.game_name ?? "—"}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-gray-300">
+                          <td className="px-4 py-3 text-foreground-secondary">
                             {l.start_date} — {l.end_date}
                           </td>
                           <td className="px-4 py-3">
                             {l.winner_player_id ? (
-                              <Badge variant="outline" className="border-amber-500/40 text-amber-300">
+                              <Badge variant="outline" className="border-warning/40 text-warning">
                                 {l.winner_player_id}
                               </Badge>
                             ) : (
-                              <span className="text-gray-500">Sin resultados</span>
+                              <span className="text-foreground-secondary">Sin resultados</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-gray-300">{l.winner_points ?? "—"}</td>
+                          <td className="px-4 py-3 text-foreground-secondary">
+                            {l.winner_points ?? "—"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
