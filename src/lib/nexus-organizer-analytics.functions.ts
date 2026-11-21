@@ -6,7 +6,7 @@ import { todayInMexicoStr, mondayOfWeek, toLocalDateStr } from "./utils";
 import type { TablesInsert } from "./database.types";
 import type { TournamentStatus } from "./nexus-admin-shared";
 
-import { PLAYER_STATUSES, playerStatus, type PlayerStatus } from "./player-status";
+import { PLAYER_STATUSES, lostDate, playerStatus, type PlayerStatus } from "./player-status";
 
 function getWeekRanges(start: Date, end: Date): Array<{ start: Date; end: Date }> {
   const weeks: Array<{ start: Date; end: Date }> = [];
@@ -49,26 +49,45 @@ export const getStorePageViewAnalytics = createServerFn({ method: "POST" })
 
     const since = new Date();
     since.setDate(since.getDate() - data.days);
+    const sinceIso = since.toISOString();
 
-    const { data: rows, error } = await admin
-      .from("store_page_views")
-      .select("section")
-      .eq("store_id", storeId)
-      .gte("viewed_at", since.toISOString());
-    if (error) failDb(error);
+    // Conteos en la base (head + count), no filas: sin el tope de 1000 de PostgREST.
+    const pageViews = (section: string) =>
+      admin
+        .from("store_page_views")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", storeId)
+        .eq("section", section)
+        .gte("viewed_at", sinceIso);
+    const promoEvents = (kind: "view" | "click") =>
+      admin
+        .from("store_promo_events")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", storeId)
+        .eq("kind", kind)
+        .gte("occurred_at", sinceIso);
 
-    const counts = { profile: 0, calendario: 0, liga_interna: 0 };
-    for (const row of (rows ?? []) as Array<{ section: keyof typeof counts }>) {
-      counts[row.section] = (counts[row.section] ?? 0) + 1;
-    }
+    const results = await Promise.all([
+      pageViews("profile"),
+      pageViews("calendario"),
+      pageViews("liga_interna"),
+      promoEvents("view"),
+      promoEvents("click"),
+    ]);
+    for (const r of results) if (r.error) failDb(r.error);
+    const [profile, calendario, ligaInterna, promoViews, promoClicks] = results.map(
+      (r) => r.count ?? 0,
+    );
 
     return {
       days: data.days,
-      total_views: rows?.length ?? 0,
+      profile_views: profile,
+      promo_views: promoViews,
+      promo_clicks: promoClicks,
       by_section: [
-        { section: "profile", label: "Perfil de tienda", views: counts.profile },
-        { section: "calendario", label: "Calendario", views: counts.calendario },
-        { section: "liga_interna", label: "Liga interna / leaderboard", views: counts.liga_interna },
+        { section: "profile", label: "Perfil de tienda", views: profile },
+        { section: "calendario", label: "Calendario", views: calendario },
+        { section: "liga_interna", label: "Liga interna / leaderboard", views: ligaInterna },
       ],
     };
   });
@@ -117,14 +136,6 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       throw new Error("Tu cuenta no tiene una tienda asignada");
     }
 
-    // Threshold settings (defaults if no row exists)
-    const { data: settings } = await admin
-      .from("store_analytics_settings")
-      .select("inactive_threshold_days")
-      .eq("store_id", storeId)
-      .maybeSingle();
-    const inactiveThresholdDays = settings?.inactive_threshold_days ?? 45;
-
     // Date range: default = first tournament of store -> today
     const today = new Date();
     today.setHours(23, 59, 59, 999);
@@ -167,16 +178,20 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     const { data: tournamentsInStore } = await tournamentsQuery;
 
     const tournamentIds = (tournamentsInStore ?? []).map((t) => t.id);
-    const tournamentMap = new Map(
-      (tournamentsInStore ?? []).map((t) => [t.id, t]),
-    );
+    const tournamentMap = new Map((tournamentsInStore ?? []).map((t) => [t.id, t]));
 
     const { data: allResults } = tournamentIds.length
       ? await admin
           .from("tournament_results")
           .select("player_id, tournament_id, points_earned")
           .in("tournament_id", tournamentIds)
-      : { data: [] as Array<{ player_id: string; tournament_id: string; points_earned: number | null }> };
+      : {
+          data: [] as Array<{
+            player_id: string;
+            tournament_id: string;
+            points_earned: number | null;
+          }>,
+        };
 
     // Build per-player list of tournament dates (all-time, for inactivity calc)
     let playerDatesAll = new Map<string, string[]>();
@@ -218,9 +233,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       .from("store_schedules")
       .select("game_id, games(id, name)")
       .eq("store_id", storeId);
-    const storeGameIds = Array.from(
-      new Set((schedules ?? []).map((s: any) => s.game_id)),
-    );
+    const storeGameIds = Array.from(new Set((schedules ?? []).map((s: any) => s.game_id)));
     const gameNameMap = new Map(
       (schedules ?? []).map((s: any) => [s.game_id, s.games?.name ?? "—"]),
     );
@@ -261,11 +274,12 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
       playersInRange = computePlayersInRange();
     }
 
-
     // Total attendance = suma de inscripciones (no jugadores únicos), respetando
     // el filtro de game_id ya aplicado a allResults/tournamentMap arriba.
     const resultsInGame = data.game_id
-      ? (allResults ?? []).filter((r) => tournamentMap.get(r.tournament_id)?.game_id === data.game_id)
+      ? (allResults ?? []).filter(
+          (r) => tournamentMap.get(r.tournament_id)?.game_id === data.game_id,
+        )
       : (allResults ?? []);
 
     // ---------- 3. Attendance trend (weekly) ----------
@@ -280,15 +294,18 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     const weeks = getWeekRanges(rangeStart, rangeEnd);
 
     // Jugadores "perdidos" por semana (barra negativa): un jugador se cuenta
-    // UNA sola vez, en la semana en que su última visita cumple
-    // inactive_threshold_days — no en cada semana siguiente que sigue inactivo.
+    // UNA sola vez, en la semana del 3.er torneo de la tienda que se pierde tras su
+    // última visita — la misma regla que "por recuperar" (player-status.ts).
+    const todayStr = todayInMexicoStr();
+    const storeDates = (tournamentsInStore ?? [])
+      .filter((t) => !data.game_id || t.game_id === data.game_id)
+      .map((t) => t.tournament_date);
     const churnedCountByWeekIndex = new Array(weeks.length).fill(0);
     for (const dates of playerDatesAll.values()) {
-      const lastDate = dates[dates.length - 1];
-      if (!lastDate) continue;
-      const churnDate = new Date(lastDate + "T12:00:00");
-      churnDate.setDate(churnDate.getDate() + inactiveThresholdDays);
-      const weekIdx = weeks.findIndex((w) => churnDate >= w.start && churnDate <= w.end);
+      const lost = lostDate(dates, storeDates, todayStr);
+      if (!lost) continue;
+      const lostDt = new Date(lost + "T12:00:00");
+      const weekIdx = weeks.findIndex((w) => lostDt >= w.start && lostDt <= w.end);
       if (weekIdx >= 0) churnedCountByWeekIndex[weekIdx]++;
     }
 
@@ -346,7 +363,10 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
         totalAttendance++;
         totalPoints += r.points_earned ?? 0;
         tournamentIdsInRange.add(r.tournament_id);
-        pointsByPlayerInRange.set(r.player_id, (pointsByPlayerInRange.get(r.player_id) ?? 0) + (r.points_earned ?? 0));
+        pointsByPlayerInRange.set(
+          r.player_id,
+          (pointsByPlayerInRange.get(r.player_id) ?? 0) + (r.points_earned ?? 0),
+        );
       }
     }
     // Promedio de jugadores por torneo: asistencia total entre torneos con al
@@ -357,11 +377,6 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
     const avgPointsPerPlayer = playersInRange.size > 0 ? totalPoints / playersInRange.size : 0;
 
     // ---------- 4. Estado de cada jugador (a fecha de hoy, no depende del rango) ----------
-    const todayStr = todayInMexicoStr();
-    const storeDates = (tournamentsInStore ?? [])
-      .filter((t) => !data.game_id || t.game_id === data.game_id)
-      .map((t) => t.tournament_date);
-
     const classification = Array.from(playerDatesAll.entries())
       .map(([pid, dates]) => {
         const { status, missed } = playerStatus(dates, storeDates, todayStr);
@@ -399,9 +414,6 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
         start: rangeStart.toISOString().split("T")[0],
         end: rangeEnd.toISOString().split("T")[0],
       },
-      settings: {
-        inactive_threshold_days: inactiveThresholdDays,
-      },
       total_players: playersInRange.size,
       total_attendance: totalAttendance,
       avg_players_per_tournament: Math.round(avgPlayersPerTournament * 10) / 10,
@@ -418,9 +430,7 @@ export const getStoreAnalytics = createServerFn({ method: "POST" })
 // para quien no jugó aquí, así no sirve para averiguar quién está registrado.
 export const getOrganizerPlayerDetail = createServerFn({ method: "POST" })
   .middleware([requireNexusOrganizer])
-  .inputValidator((d: { player_id: string }) =>
-    z.object({ player_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: { player_id: string }) => z.object({ player_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { admin, player } = context;
     if (!player.home_store_id) throw new Error("Tu cuenta no tiene una tienda asignada");
@@ -462,4 +472,3 @@ export const getOrganizerPlayerDetail = createServerFn({ method: "POST" })
   });
 
 // ---------- Historial de Torneos (organizer scoped) ----------
-

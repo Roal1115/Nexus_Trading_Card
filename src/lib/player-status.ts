@@ -11,6 +11,18 @@ const RECENT_DAYS = 56;
 const MIN_FREQUENT_VISITS = 2;
 const MISSED_TO_RECOVER = 3;
 
+// Fecha en que el jugador pasa a "por recuperar": el 3.er torneo de la tienda que
+// se pierde tras su última visita. null si aún no llega ahí. Misma regla que playerStatus.
+export function lostDate(
+  playerDates: string[],
+  storeDates: string[],
+  today: string,
+): string | null {
+  const lastVisit = playerDates.reduce((a, b) => (b > a ? b : a), "");
+  const missed = storeDates.filter((d) => d > lastVisit && d <= today).sort();
+  return missed[MISSED_TO_RECOVER - 1] ?? null;
+}
+
 export const PLAYER_STATUS_LABELS: Record<PlayerStatus, string> = {
   frecuente: "Frecuente",
   ocasional: "Ocasional",

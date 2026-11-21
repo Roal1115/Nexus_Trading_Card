@@ -1,4 +1,5 @@
 import { Area, type AreaProps } from "recharts";
+import { CHART } from "./chart-theme";
 
 // Área de "jugadores por semana" (inicio y estadísticas). Es una función y no un componente
 // porque recharts 2 solo reconoce sus hijos directos: ni componentes propios ni fragmentos.
@@ -8,9 +9,9 @@ export function attendanceArea(props?: Omit<AreaProps, "ref" | "dataKey">) {
     <Area
       type="monotone"
       dataKey="players"
-      stroke="#8fb4ff"
+      stroke={CHART.primary}
       strokeWidth={2}
-      fill="#8fb4ff"
+      fill={CHART.primary}
       fillOpacity={0.15}
       {...props}
     />

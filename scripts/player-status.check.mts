@@ -1,6 +1,6 @@
 // Run: npx tsx scripts/player-status.check.mts
 import assert from "node:assert/strict";
-import { playerStatus, statusAcrossStores } from "../src/lib/player-status.ts";
+import { lostDate, playerStatus, statusAcrossStores } from "../src/lib/player-status.ts";
 
 const TODAY = "2026-11-05";
 const status = (player: string[], store: string[]) => playerStatus(player, store, TODAY);
@@ -70,5 +70,10 @@ assert.notEqual(
   ).status,
   "por_recuperar",
 );
+
+// lostDate coincide con playerStatus: la baja cae en el 3.er torneo perdido.
+assert.equal(lostDate(["2026-10-08"], weekly, TODAY), "2026-10-29");
+assert.equal(lostDate(["2026-10-15", "2026-10-22"], weekly, TODAY), null);
+assert.equal(lostDate(["2026-10-01"], ["2026-10-01", "2026-10-02", "2026-10-02", "2026-10-03"], TODAY), "2026-10-03");
 
 console.log("player-status: ok");
