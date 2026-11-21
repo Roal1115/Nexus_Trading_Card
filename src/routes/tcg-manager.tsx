@@ -11,7 +11,7 @@ import {
   Trophy,
   Upload,
 } from "lucide-react";
-import { ClipboardCheck, Map as MapIcon, UserPlus } from "lucide-react";
+import { ClipboardCheck, Map as MapIcon, Megaphone, UserPlus } from "lucide-react";
 import { usePendingFichasCount } from "@/components/calendar/occurrence-panel";
 import { useNexusRole } from "@/hooks/use-nexus-role";
 import { PanelSidebar } from "@/components/layout/PanelSidebar";
@@ -79,6 +79,11 @@ function TcgManagerLayout() {
                 label: "Fichas de tienda",
                 icon: <ClipboardCheck size={16} />,
                 badge: pendingFichas,
+              },
+              {
+                to: "/tcg-manager/promos",
+                label: "Promos de tienda",
+                icon: <Megaphone size={16} />,
               },
             ],
           },

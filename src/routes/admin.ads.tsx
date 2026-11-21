@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Plus, Pencil, RotateCcw, Image as ImageIcon, X, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SkeletonLine } from "@/components/ui/skeleton-loader";
+import { PromoReview } from "@/components/admin/promo-review";
 import { nexus } from "@/integrations/nexus/client";
 import {
   listSponsors,
@@ -82,7 +83,7 @@ function AdminAdsPage() {
   const callDelete = useServerFn(deleteSponsor);
   const callGetMetrics = useServerFn(getSponsorMetrics);
 
-  const [tab, setTab] = useState<"sponsors" | "metrics">("sponsors");
+  const [tab, setTab] = useState<"sponsors" | "metrics" | "promos">("sponsors");
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [liveMetrics, setLiveMetrics] = useState<SponsorMetric[]>([]);
@@ -187,8 +188,8 @@ function AdminAdsPage() {
         )}
       </div>
 
-      <div className="flex gap-1 rounded-lg bg-black/40 p-1 max-w-xs">
-        {(["sponsors", "metrics"] as const).map((t) => (
+      <div className="flex gap-1 rounded-lg bg-black/40 p-1 max-w-md">
+        {(["sponsors", "metrics", "promos"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -196,7 +197,7 @@ function AdminAdsPage() {
               tab === t ? "bg-primary text-primary-foreground" : "text-gray-400 hover:text-white"
             }`}
           >
-            {t === "sponsors" ? "Sponsors" : "Métricas"}
+            {t === "sponsors" ? "Sponsors" : t === "metrics" ? "Métricas" : "Promos de tienda"}
           </button>
         ))}
       </div>
@@ -351,6 +352,8 @@ function AdminAdsPage() {
           </div>
         </>
       )}
+
+      {tab === "promos" && <PromoReview />}
 
       {tab === "metrics" && (
         <>

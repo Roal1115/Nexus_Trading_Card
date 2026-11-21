@@ -9,6 +9,7 @@ import { AdVertical } from "@/components/ads/AdVertical";
 import { AdHorizontal } from "@/components/ads/AdHorizontal";
 import { storeProfileQuery } from "@/lib/stores-queries";
 import { StoreHero } from "@/components/stores/store-hero";
+import { StorePromo } from "@/components/stores/store-promo";
 import { BTN_OUTLINE, FOCUS_RING, InlineError, SECTION } from "@/components/stores/store-ui";
 import { SkeletonLine, SkeletonBlock } from "@/components/ui/skeleton-loader";
 
@@ -179,6 +180,8 @@ function StoreLayout() {
         <AdHorizontal sponsor={sponsor} />
 
         <StoreHero store={store} />
+
+        <StorePromo storeId={store.id} />
 
         <nav aria-label="Secciones de la tienda" className="flex gap-1 border-b border-border">
           {TABS.map((tab) => {

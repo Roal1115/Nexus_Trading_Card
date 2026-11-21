@@ -67,6 +67,7 @@ import { Route as TcgManagerHistoryRouteImport } from './routes/tcg-manager.hist
 import { Route as TcgManagerMyHistoryRouteImport } from './routes/tcg-manager.my-history'
 import { Route as TcgManagerPlayersRouteImport } from './routes/tcg-manager.players'
 import { Route as TcgManagerPlayoffsRouteImport } from './routes/tcg-manager.playoffs'
+import { Route as TcgManagerPromosRouteImport } from './routes/tcg-manager.promos'
 import { Route as TcgManagerStoresRouteImport } from './routes/tcg-manager.stores'
 import { Route as TcgManagerTournamentsPanelRouteImport } from './routes/tcg-manager.tournaments-panel'
 import { Route as TcgManagerUploadRouteImport } from './routes/tcg-manager.upload'
@@ -380,6 +381,11 @@ const TcgManagerPlayoffsRoute = TcgManagerPlayoffsRouteImport.update({
   path: '/playoffs',
   getParentRoute: () => TcgManagerRoute,
 } as any)
+const TcgManagerPromosRoute = TcgManagerPromosRouteImport.update({
+  id: '/promos',
+  path: '/promos',
+  getParentRoute: () => TcgManagerRoute,
+} as any)
 const TcgManagerStoresRoute = TcgManagerStoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -554,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
   '/tcg-manager/playoffs': typeof TcgManagerPlayoffsRoute
+  '/tcg-manager/promos': typeof TcgManagerPromosRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
@@ -630,6 +637,7 @@ export interface FileRoutesByTo {
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
   '/tcg-manager/playoffs': typeof TcgManagerPlayoffsRoute
+  '/tcg-manager/promos': typeof TcgManagerPromosRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
@@ -713,6 +721,7 @@ export interface FileRoutesById {
   '/tcg-manager/my-history': typeof TcgManagerMyHistoryRoute
   '/tcg-manager/players': typeof TcgManagerPlayersRoute
   '/tcg-manager/playoffs': typeof TcgManagerPlayoffsRoute
+  '/tcg-manager/promos': typeof TcgManagerPromosRoute
   '/tcg-manager/stores': typeof TcgManagerStoresRoute
   '/tcg-manager/tournaments-panel': typeof TcgManagerTournamentsPanelRoute
   '/tcg-manager/upload': typeof TcgManagerUploadRoute
@@ -797,6 +806,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
     | '/tcg-manager/playoffs'
+    | '/tcg-manager/promos'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
@@ -873,6 +883,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
     | '/tcg-manager/playoffs'
+    | '/tcg-manager/promos'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
@@ -955,6 +966,7 @@ export interface FileRouteTypes {
     | '/tcg-manager/my-history'
     | '/tcg-manager/players'
     | '/tcg-manager/playoffs'
+    | '/tcg-manager/promos'
     | '/tcg-manager/stores'
     | '/tcg-manager/tournaments-panel'
     | '/tcg-manager/upload'
@@ -1419,6 +1431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TcgManagerPlayoffsRouteImport
       parentRoute: typeof TcgManagerRoute
     }
+    '/tcg-manager/promos': {
+      id: '/tcg-manager/promos'
+      path: '/promos'
+      fullPath: '/tcg-manager/promos'
+      preLoaderRoute: typeof TcgManagerPromosRouteImport
+      parentRoute: typeof TcgManagerRoute
+    }
     '/tcg-manager/stores': {
       id: '/tcg-manager/stores'
       path: '/stores'
@@ -1710,6 +1729,7 @@ interface TcgManagerRouteChildren {
   TcgManagerMyHistoryRoute: typeof TcgManagerMyHistoryRoute
   TcgManagerPlayersRoute: typeof TcgManagerPlayersRoute
   TcgManagerPlayoffsRoute: typeof TcgManagerPlayoffsRoute
+  TcgManagerPromosRoute: typeof TcgManagerPromosRoute
   TcgManagerStoresRoute: typeof TcgManagerStoresRoute
   TcgManagerTournamentsPanelRoute: typeof TcgManagerTournamentsPanelRoute
   TcgManagerUploadRoute: typeof TcgManagerUploadRoute
@@ -1730,6 +1750,7 @@ const TcgManagerRouteChildren: TcgManagerRouteChildren = {
   TcgManagerMyHistoryRoute: TcgManagerMyHistoryRoute,
   TcgManagerPlayersRoute: TcgManagerPlayersRoute,
   TcgManagerPlayoffsRoute: TcgManagerPlayoffsRoute,
+  TcgManagerPromosRoute: TcgManagerPromosRoute,
   TcgManagerStoresRoute: TcgManagerStoresRoute,
   TcgManagerTournamentsPanelRoute: TcgManagerTournamentsPanelRoute,
   TcgManagerUploadRoute: TcgManagerUploadRoute,

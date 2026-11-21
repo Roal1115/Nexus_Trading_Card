@@ -47,6 +47,54 @@ export const logStorePageView = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+// Promo vigente de una tienda: aprobada por Admin/Manager, activa y dentro de su ventana de fechas.
+// ponytail: una sola promo visible por tienda (la más reciente); varias = carrusel, si lo piden.
+async function findLivePromo(promoFilter: { store_id: string } | { id: string }) {
+  const now = new Date().toISOString();
+  let q = getNexusAdmin()
+    .from("store_promos")
+    .select("id, store_id, title, image_url, link_url")
+    .eq("status", "approved")
+    .eq("is_active", true)
+    .or(`starts_at.is.null,starts_at.lte.${now}`)
+    .or(`ends_at.is.null,ends_at.gt.${now}`);
+  for (const [col, val] of Object.entries(promoFilter)) q = q.eq(col, val);
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (error) failDb(error);
+  return data;
+}
+
+export const getStorePromo = createServerFn({ method: "POST" })
+  .inputValidator((d: { store_id: string }) => z.object({ store_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const promo = await findLivePromo({ store_id: data.store_id });
+    if (!promo) return null;
+    return {
+      id: promo.id,
+      title: promo.title,
+      image_url: promo.image_url,
+      link_url: promo.link_url,
+    };
+  });
+
+// Visualización o clic en una promo. El store_id sale de la promo en el servidor, no del cliente,
+// y solo cuenta si la promo está vigente.
+export const logPromoEvent = createServerFn({ method: "POST" })
+  .inputValidator((d: { promo_id: string; kind: "view" | "click" }) =>
+    z.object({ promo_id: z.string().uuid(), kind: z.enum(["view", "click"]) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    if (isDuplicatePageView(`promo_${getClientIp()}_${data.promo_id}_${data.kind}`)) {
+      return { success: true };
+    }
+    const promo = await findLivePromo({ id: data.promo_id });
+    if (!promo) return { success: true };
+    await getNexusAdmin()
+      .from("store_promo_events")
+      .insert({ promo_id: promo.id, store_id: promo.store_id, kind: data.kind });
+    return { success: true };
+  });
+
 export const getPublicStoresList = createServerFn({ method: "POST" }).handler(async () => {
   const admin = getNexusAdmin();
   const { data: stores, error } = await admin
