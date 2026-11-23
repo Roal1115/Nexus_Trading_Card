@@ -45,6 +45,7 @@ type TournamentRow = {
 type CalendarEntry = {
   id: string;
   date: string;
+  game_id: string;
   start_time: string;
   game_name: string;
   league_name: string | null;
@@ -189,7 +190,11 @@ function AttentionSection({
         <ul className="divide-y divide-border">
           {overdue.map((e) => (
             <li key={e.id + e.date}>
-              <Link to="/organizer/new" className={rowLink}>
+              <Link
+                to="/organizer/new"
+                search={{ game: e.game_id, date: e.date }}
+                className={rowLink}
+              >
                 <AlertTriangle size={16} className="shrink-0 text-warning" aria-hidden />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-foreground">

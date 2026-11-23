@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import readXlsxFile from "read-excel-file/browser";
 import {
-  AlertCircle,
   ArrowLeft,
   CheckCircle2,
   FileSpreadsheet,
@@ -27,7 +26,6 @@ import {
 } from "@/lib/nexus-organizer.functions";
 
 import { getManagerResponsibleStores } from "@/lib/nexus-manager.functions";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -49,7 +47,26 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { SURFACE } from "@/components/stores/store-ui";
+import {
+  BTN_OUTLINE,
+  BTN_PRIMARY,
+  FOCUS_RING,
+  INPUT,
+  InlineError,
+  LABEL,
+  SURFACE,
+} from "@/components/stores/store-ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Game = { id: string; slug: string; name: string };
 type Store = { id: string; name: string; city: string | null };
@@ -111,6 +128,13 @@ const TCG_COLUMN_MAP: Record<string, ColumnMap> = {
     record: "V/D/E",
   },
 };
+
+// Campo de fecha del sistema (44px en móvil, borde del sistema) con el selector nativo en oscuro.
+const DATE_INPUT =
+  "min-h-11 border-border sm:min-h-9 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer";
+
+// Un TCG sin formato de importación no se puede elegir para subir resultados.
+const isImportable = (g: Game) => (TCG_COLUMN_MAP[g.slug]?.platform ?? "unknown") !== "unknown";
 
 // "Copy Paste Magic" exporta V/D/E (Victorias/Derrotas/Empates) como texto "2/1/0".
 // Excel lo interpreta como una fecha mes/día/año y lo corrompe (ej. "2/1/0" -> 01/02/2000).
@@ -360,11 +384,16 @@ export function TournamentUploadForm({
   successTo = "/organizer/tournaments",
   successSearch,
   gamesOverride,
+  initialGameId,
+  initialDate,
 }: {
   cancelTo?: string;
   successTo?: string;
   successSearch?: Record<string, string>;
   gamesOverride?: Game[];
+  // Vienen del torneo atrasado del inicio: el organizador no vuelve a escribirlos.
+  initialGameId?: string;
+  initialDate?: string;
 } = {}) {
   const navigate = useNavigate();
   const { player, loading: roleLoading } = useNexusRole();
@@ -389,13 +418,18 @@ export function TournamentUploadForm({
 
   const [storeId, setStoreId] = useState<string>("");
   const [gameId, setGameId] = useState<string>("");
-  const [date, setDate] = useState<string>("");
+  const [date, setDate] = useState<string>(initialDate ?? "");
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
-  const [registeredTags, setRegisteredTags] = useState<Set<string>>(new Set());
+  // null = todavía no se sabe (sin verificar o la búsqueda falló): a nadie se le marca como nuevo.
+  const [registeredTags, setRegisteredTags] = useState<Set<string> | null>(null);
+  const [lookupFailed, setLookupFailed] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  // TCG con calendario en la tienda del organizador (el servidor lo exige); null = sin filtro (admin, manager).
+  const [storeGameIds, setStoreGameIds] = useState<string[] | null>(null);
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -413,6 +447,7 @@ export function TournamentUploadForm({
         const ov = await fetchOverview();
         setGames(gamesOverride !== undefined ? gamesOverride : (ov.games as Game[]));
         setHomeStore((ov.homeStore as Store) ?? null);
+        setStoreGameIds(isAdmin || isManager ? null : ov.homeStoreGameIds);
         if (isAdmin) {
           const s = await fetchStores();
           setStores(s.stores as Store[]);
@@ -434,6 +469,25 @@ export function TournamentUploadForm({
   const selectedGame = games.find((g) => g.id === gameId) ?? null;
   const colMap = selectedGame ? TCG_COLUMN_MAP[selectedGame.slug] : undefined;
   const tcgSupported = colMap && colMap.platform !== "unknown";
+  const platformName =
+    colMap?.platform === "bandai"
+      ? "Bandai TCG+"
+      : colMap?.platform === "magic"
+        ? "Copy Paste Magic"
+        : "Limitless";
+  const storeGames = useMemo(
+    () => (storeGameIds ? games.filter((g) => storeGameIds.includes(g.id)) : games),
+    [games, storeGameIds],
+  );
+
+  // El TCG del torneo atrasado, o el único que se puede elegir: nada que volver a escribir.
+  useEffect(() => {
+    if (gameId) return;
+    const options = storeGames.filter(isImportable);
+    const pick =
+      options.find((g) => g.id === initialGameId) ?? (options.length === 1 ? options[0] : null);
+    if (pick) setGameId(pick.id);
+  }, [storeGames, initialGameId, gameId]);
 
   const availableStoresForGame = useMemo(() => {
     if (!isManager) return stores;
@@ -487,7 +541,23 @@ export function TournamentUploadForm({
     : { counts_for_circuit: countsForCircuit, league_ids: leagueIds };
   const assigned = assignLeagues(leagueInput);
   const leagueError = "error" in assigned ? assigned.error : null;
-  const canContinue = Boolean(storeId && gameId && date && tcgSupported && !leagueError);
+  // Solo ligas: el servidor lo publica sin cola de aprobación (Épica 4), así que no es un borrador.
+  const publishesDirect = !isManager && !countsForCircuit;
+  const scopeLabel = [
+    countsForCircuit && "Circuito Nacional",
+    ...leagueIds.map((id) => activeLeagues.find((l) => l.id === id)?.name),
+  ]
+    .filter(Boolean)
+    .join(" + ");
+  // Fuera de la semana el servidor lo rechaza, pero hasta después de leer el archivo: se dice aquí.
+  const { min: weekMin, max: weekMax } = getWeekDateRange();
+  const dateError =
+    date && !isAdmin && (date < weekMin || date > weekMax)
+      ? `Elige una fecha entre el ${fmtShortDay(weekMin)} y el ${fmtShortDay(weekMax)}.`
+      : null;
+  const canContinue = Boolean(
+    storeId && gameId && date && tcgSupported && !leagueError && !dateError,
+  );
   // Por qué "Continuar" está deshabilitado: lo que falta por elegir (los demás bloqueos ya tienen su aviso).
   const missing = [
     (isAdmin || isManager) && !storeId && "tienda",
@@ -495,60 +565,85 @@ export function TournamentUploadForm({
     !date && "fecha",
   ].filter(Boolean) as string[];
   const totalErrors = rows.filter((r) => r.error).length;
-  const newPlayers = rows.filter((r) => !r.error && !registeredTags.has(r.geek_tag)).length;
+  const newPlayers = registeredTags
+    ? rows.filter((r) => !r.error && !registeredTags.has(r.geek_tag)).length
+    : 0;
+  const winner = rows.find((r) => r.rank === 1);
   const canSubmit = rows.length > 0 && totalErrors === 0 && !saving;
-
-  const handleFile = async (file: File | null) => {
-    if (!file || !colMap || colMap.platform === "unknown") return;
-
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-    if (!ALLOWED_EXTENSIONS.includes(ext) || !ALLOWED_TYPES.has(file.type)) {
-      toast.error("Formato no válido. Solo se aceptan archivos .csv, .xls o .xlsx");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error("El archivo no puede pesar más de 5 MB");
-      return;
-    }
-
-    setFileName(file.name);
-    setSelectedFile(file);
-    setParsing(true);
-    setRows([]);
-    setRegisteredTags(new Set());
-    toast.message("Analizando archivo...");
-    try {
-      const tableRows = await readFileToRows(file);
-      const rawParsed = parseTable(tableRows, colMap);
-      const parsed = normalizarPuntos(rawParsed);
-      if (parsed.length === 0) {
-        toast.error("No se encontraron filas válidas. Verifica las columnas requeridas.");
-        setParsing(false);
-        return;
-      }
-      setRows(parsed);
-      toast.message("Verificando jugadores en el sistema...");
-      const tags = Array.from(new Set(parsed.map((r) => r.geek_tag)));
-      try {
-        const res = await lookupTags({ data: { tags } });
-        setRegisteredTags(new Set(res.existing));
-      } catch (err) {
-        toast.error("Error al verificar jugadores: " + String((err as Error).message ?? err));
-      }
-    } catch (err) {
-      toast.error(String((err as Error).message ?? err));
-    } finally {
-      setParsing(false);
-    }
-  };
 
   const clearFile = () => {
     setFileName(null);
     setSelectedFile(null);
     setRows([]);
-    setRegisteredTags(new Set());
+    setRegisteredTags(null);
+    setLookupFailed(false);
+    setFileError(null);
     setParsing(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Un problema del archivo se queda en pantalla (no es un toast) y deja elegir otro.
+  const rejectFile = (message: string) => {
+    clearFile();
+    setFileError(message);
+  };
+
+  const verifyTags = async (list: ParsedRow[]) => {
+    setRegisteredTags(null);
+    setLookupFailed(false);
+    try {
+      const tags = Array.from(new Set(list.map((r) => r.geek_tag)));
+      const res = await lookupTags({ data: { tags } });
+      setRegisteredTags(new Set(res.existing));
+    } catch {
+      setLookupFailed(true);
+    }
+  };
+
+  const handleFile = async (file: File | null) => {
+    if (!file || !colMap || colMap.platform === "unknown") return;
+    setFileError(null);
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ALLOWED_EXTENSIONS.includes(ext) || !ALLOWED_TYPES.has(file.type)) {
+      return rejectFile("Formato no válido. Solo se aceptan archivos .csv, .xls o .xlsx.");
+    }
+    if (file.size > MAX_FILE_SIZE) return rejectFile("El archivo no puede pesar más de 5 MB.");
+
+    setFileName(file.name);
+    setSelectedFile(file);
+    setParsing(true);
+    setRows([]);
+    setRegisteredTags(null);
+    setLookupFailed(false);
+    try {
+      const tableRows = await readFileToRows(file);
+      const headers = (tableRows[0] ?? []).map((h) =>
+        String(h ?? "")
+          .trim()
+          .toLowerCase(),
+      );
+      const missingCols = [colMap.nexusTag, colMap.rank, colMap.matchPoints].filter(
+        (c) => c && !headers.includes(c.toLowerCase()),
+      );
+      if (missingCols.length) {
+        return rejectFile(
+          `Al archivo le faltan las columnas: ${missingCols.join(", ")}. Revisa que sea la exportación de ${platformName}.`,
+        );
+      }
+      const parsed = normalizarPuntos(parseTable(tableRows, colMap));
+      if (parsed.length === 0) {
+        return rejectFile(
+          `No encontramos jugadores en el archivo: la columna ${colMap.nexusTag} está vacía.`,
+        );
+      }
+      setRows(parsed);
+      await verifyTags(parsed);
+    } catch (err) {
+      rejectFile(String((err as Error).message ?? err));
+    } finally {
+      setParsing(false);
+    }
   };
 
   const updateRow = <K extends keyof ParsedRow>(i: number, key: K, value: ParsedRow[K]) => {
@@ -589,11 +684,22 @@ export function TournamentUploadForm({
         toast.error((result as { message?: string }).message ?? "No se pudo subir el torneo.");
         return;
       }
-      toast.success("Torneo enviado correctamente. Un administrador lo revisará pronto.");
+      toast.success(
+        publishesDirect
+          ? "Torneo publicado."
+          : "Torneo enviado correctamente. Un administrador lo revisará pronto.",
+      );
       if ((result as { was_cancelled?: boolean }).was_cancelled) {
         toast.warning("Esta fecha estaba marcada como cancelada. Avisa a quien revise el torneo.");
       }
-      navigate({ to: successTo, search: successSearch });
+      // Publicado directo no queda en "Por revisar": se aterriza donde se ve.
+      navigate({
+        to: successTo,
+        search:
+          publishesDirect && successSearch?.tab === "pending"
+            ? { ...successSearch, tab: "published" }
+            : successSearch,
+      });
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
       if (msg.toLowerCase().includes("ya existe")) toast.error(msg);
@@ -604,6 +710,19 @@ export function TournamentUploadForm({
       setSaving(false);
     }
   };
+
+  const submitContent = (
+    <>
+      <Upload size={14} className="mr-1" aria-hidden />
+      {saving
+        ? publishesDirect
+          ? "Publicando torneo..."
+          : "Subiendo torneo..."
+        : publishesDirect
+          ? "Publicar torneo"
+          : "Enviar para aprobación"}
+    </>
+  );
 
   if (roleLoading || loading) {
     return (
@@ -629,59 +748,87 @@ export function TournamentUploadForm({
         </h1>
         <p className="mt-1 text-sm text-foreground-secondary">
           Paso {step} de 2
-          {step === 1 && " · Se creará como Borrador hasta que un administrador lo apruebe."}
+          {step === 1 &&
+            (publishesDirect
+              ? " · Se publica directo, sin revisión del administrador."
+              : " · Se creará como Borrador hasta que un administrador lo apruebe.")}
         </p>
       </header>
 
       {step === 1 && (
         <section className={`${SURFACE} space-y-5 p-4 sm:p-6`}>
           <div className="space-y-2">
-            <Label className="text-xs text-foreground-secondary">
-              {isAdmin || isManager ? "Seleccionar tienda *" : "Tienda"}
-            </Label>
             {isAdmin || isManager ? (
-              <StoreCombobox
-                stores={isManager ? availableStoresForGame : stores}
-                value={storeId}
-                onChange={setStoreId}
-              />
+              <>
+                <Label htmlFor="upload-store" className={LABEL}>
+                  Tienda
+                </Label>
+                <StoreCombobox
+                  id="upload-store"
+                  stores={isManager ? availableStoresForGame : stores}
+                  value={storeId}
+                  onChange={setStoreId}
+                />
+              </>
             ) : (
-              <div className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground">
-                {homeStore?.name} — {homeStore?.city ?? "—"}
-              </div>
-            )}
-            {(isAdmin || isManager) && !storeId && (
-              <p className="text-xs text-warning">Debes seleccionar una tienda para continuar</p>
+              <>
+                <p className={LABEL}>Tienda</p>
+                <p className="text-sm text-foreground">
+                  {homeStore?.name} — {homeStore?.city ?? "—"}
+                </p>
+              </>
             )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-xs text-foreground-secondary">TCG (juego) *</Label>
+              <Label htmlFor="upload-game" className={LABEL}>
+                TCG
+              </Label>
               <Select value={gameId} onValueChange={setGameId}>
-                <SelectTrigger>
+                <SelectTrigger
+                  id="upload-game"
+                  className="min-h-11 border-border data-[placeholder]:text-foreground-subtle sm:min-h-9"
+                >
                   <SelectValue placeholder="Selecciona un TCG" />
                 </SelectTrigger>
                 <SelectContent>
-                  {games.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>
+                  {storeGames.map((g) => (
+                    <SelectItem
+                      key={g.id}
+                      value={g.id}
+                      disabled={!isImportable(g)}
+                      className="focus:bg-white/10 focus:text-foreground"
+                    >
                       {g.name}
+                      {!isImportable(g) && " — sin formato de importación"}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {storeGames.length === 0 && (
+                <p className="text-xs text-foreground-secondary">
+                  {isManager
+                    ? "No tienes ningún TCG asignado."
+                    : "Tu tienda no tiene ningún TCG en su calendario de torneos."}{" "}
+                  Contacta al administrador.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-foreground-secondary">Fecha del torneo *</Label>
+              <Label htmlFor="upload-date" className={LABEL}>
+                Fecha del torneo
+              </Label>
               {(() => {
                 if (isAdmin) {
                   return (
                     <>
                       <Input
+                        id="upload-date"
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                        className={DATE_INPUT}
                       />
                       <p className="mt-1 text-xs text-foreground-secondary">
                         Como administrador, puedes subir torneos de cualquier fecha.
@@ -693,38 +840,37 @@ export function TournamentUploadForm({
                 return (
                   <>
                     <Input
+                      id="upload-date"
                       type="date"
                       min={min}
                       max={max}
                       value={date}
+                      aria-invalid={dateError ? true : undefined}
                       onChange={(e) => setDate(e.target.value)}
-                      className="[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      className={DATE_INPUT}
                     />
                     <p className="mt-1 text-xs text-foreground-secondary">
                       Solo se permiten torneos de la semana actual ({fmtShortDay(min)} al{" "}
                       {fmtShortDay(max)}). ¿Es de otra semana? Contacta al administrador para
                       subirlo.
                     </p>
+                    {dateError && (
+                      <p role="alert" className="mt-1 text-xs text-destructive">
+                        {dateError}
+                      </p>
+                    )}
                   </>
                 );
               })()}
             </div>
           </div>
 
-          {selectedGame && !tcgSupported && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-warning">
-              <AlertCircle size={14} className="mt-0.5 shrink-0" />
-              Este TCG aún no tiene un formato de importación configurado. Contacta al
-              administrador.
-            </div>
-          )}
-
           {qualifying && (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-foreground-secondary">
+            <p className="text-xs text-foreground-secondary">
               Calificación: mes <strong className="text-foreground">{qualifying.month}</strong> ·
               semestre <strong className="text-foreground">{qualifying.semester}</strong> · año{" "}
               <strong className="text-foreground">{qualifying.year}</strong>
-            </div>
+            </p>
           )}
 
           {!isManager && (
@@ -773,49 +919,68 @@ export function TournamentUploadForm({
 
           <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             {missing.length > 0 && (
-              <p id="continue-hint" className="mr-auto text-sm text-foreground-secondary">
+              <p
+                id="continue-hint"
+                className="w-full text-sm text-foreground-secondary sm:mr-auto sm:w-auto"
+              >
                 Falta: {missing.join(", ")}.
               </p>
             )}
-            <Button variant="ghost" onClick={() => navigate({ to: cancelTo })}>
+            <button
+              type="button"
+              className={BTN_OUTLINE}
+              onClick={() => navigate({ to: cancelTo })}
+            >
               Cancelar
-            </Button>
-            <Button
+            </button>
+            <button
+              type="button"
+              className={BTN_PRIMARY}
               onClick={() => setStep(2)}
               disabled={!canContinue}
               aria-describedby={missing.length > 0 ? "continue-hint" : undefined}
             >
               Continuar
-            </Button>
+            </button>
           </div>
         </section>
       )}
 
       {step === 2 && (
         <section className={`${SURFACE} space-y-5 p-4 sm:p-6`}>
-          <div className="border-b border-white/10 pb-4 mb-4">
+          <div className="mb-4 border-b border-border pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs">
                 <span>
                   <span className="text-foreground-secondary">Tienda: </span>
                   <span className="text-foreground font-semibold">{selectedStore?.name}</span>
                 </span>
-                <span className="hidden sm:inline text-gray-600">·</span>
+                <span className="hidden text-foreground-subtle sm:inline">·</span>
                 <span>
                   <span className="text-foreground-secondary">TCG: </span>
                   <span className="text-foreground font-semibold">{selectedGame?.name}</span>
                 </span>
-                <span className="hidden sm:inline text-gray-600">·</span>
+                <span className="hidden text-foreground-subtle sm:inline">·</span>
                 <span>
                   <span className="text-foreground-secondary">Fecha: </span>
                   <span className="text-foreground font-semibold">{fmtShortDay(date)}</span>
                 </span>
+                {!isManager && (
+                  <>
+                    <span className="hidden text-foreground-subtle sm:inline">·</span>
+                    <span>
+                      <span className="text-foreground-secondary">Cuenta para: </span>
+                      <span className="text-foreground font-semibold">{scopeLabel}</span>
+                    </span>
+                  </>
+                )}
               </div>
               <button
+                type="button"
                 onClick={() => setStep(1)}
-                className="flex items-center gap-1.5 text-xs text-foreground-secondary hover:text-foreground transition self-start sm:self-auto"
+                className={`-ml-2 inline-flex min-h-11 items-center gap-1.5 self-start rounded px-2 text-sm text-foreground-secondary transition hover:text-foreground sm:ml-0 sm:min-h-9 sm:self-auto ${FOCUS_RING}`}
               >
-                <ArrowLeft size={12} />
+                <ArrowLeft size={12} aria-hidden />
                 Editar
               </button>
             </div>
@@ -825,6 +990,9 @@ export function TournamentUploadForm({
             <Label className="text-sm font-medium text-foreground-secondary">
               Archivo de resultados
             </Label>
+            {fileError && (
+              <InlineError onRetry={() => fileInputRef.current?.click()}>{fileError}</InlineError>
+            )}
             {!fileName ? (
               <>
                 <label
@@ -838,33 +1006,27 @@ export function TournamentUploadForm({
                     setDragging(false);
                     handleFile(e.dataTransfer.files?.[0] ?? null);
                   }}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition ${
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/50 ${
                     dragging
                       ? "border-primary bg-primary/10"
-                      : "border-white/20 bg-white/[0.03] hover:border-primary/60 hover:bg-white/[0.05]"
+                      : "border-border hover:border-primary/60 hover:bg-white/5"
                   }`}
                 >
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    className="hidden"
+                    className="sr-only"
                     onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
                   />
                   <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/30">
                     <UploadCloud size={28} className="text-primary" />
                   </div>
                   <p className="text-sm font-semibold text-foreground">
-                    Arrastra tu archivo aquí, o haz clic para buscar
+                    Elige tu archivo, o arrástralo aquí
                   </p>
                   <p className="mt-1 text-xs text-foreground-secondary">
-                    Exportado desde{" "}
-                    {colMap?.platform === "bandai"
-                      ? "Bandai TCG+"
-                      : colMap?.platform === "magic"
-                        ? "Copy Paste Magic"
-                        : "Limitless"}
-                    · CSV, XLS o XLSX · máx. 5 MB
+                    Exportado desde {platformName} · CSV, XLS o XLSX · máx. 5 MB
                   </p>
                 </label>
                 {colMap && colMap.platform !== "unknown" && (
@@ -883,25 +1045,30 @@ export function TournamentUploadForm({
                 )}
               </>
             ) : (
-              <div className="border-y border-white/10">
-                <div className="flex items-start justify-between gap-3 border-b border-white/10 p-3">
-                  <div className="flex items-start gap-2 flex-1 min-w-0">
+              <div className="border-y border-border">
+                <div className="flex items-start justify-between gap-3 border-b border-border p-3">
+                  <div className="flex min-w-0 flex-1 items-start gap-2">
                     {parsing ? (
                       <Loader2
                         size={16}
-                        className="animate-spin text-primary flex-shrink-0 mt-0.5"
+                        className="mt-0.5 flex-shrink-0 animate-spin text-primary"
+                        aria-hidden
                       />
                     ) : (
-                      <FileText size={16} className="text-primary flex-shrink-0 mt-0.5" />
+                      <FileText
+                        size={16}
+                        className="mt-0.5 flex-shrink-0 text-primary"
+                        aria-hidden
+                      />
                     )}
-                    <div className="flex flex-col min-w-0">
+                    <div className="flex min-w-0 flex-col">
                       <span
-                        className="text-sm text-foreground font-medium truncate max-w-[180px] sm:max-w-none"
+                        className="max-w-[180px] truncate text-sm font-medium text-foreground sm:max-w-none"
                         title={fileName}
                       >
                         {fileName}
                       </span>
-                      <span className="text-xs text-foreground-secondary mt-0.5">
+                      <span className="mt-0.5 text-xs text-foreground-secondary">
                         {parsing ? "Procesando…" : `${rows.length} participantes`}
                         {!parsing && newPlayers > 0 && (
                           <>
@@ -915,75 +1082,116 @@ export function TournamentUploadForm({
                   <button
                     type="button"
                     onClick={clearFile}
-                    className="flex-shrink-0 flex items-center gap-1 text-xs text-foreground-secondary hover:text-red-400 border border-white/10 hover:border-red-400/40 rounded px-2 py-1 transition"
+                    aria-label={`Quitar archivo ${fileName}`}
+                    className={`flex min-h-11 flex-shrink-0 items-center gap-1 rounded border border-border px-3 text-xs text-foreground-secondary transition hover:border-destructive/40 hover:text-destructive sm:min-h-9 ${FOCUS_RING}`}
                   >
-                    <X size={10} />
+                    <X size={10} aria-hidden />
                     Quitar
                   </button>
                 </div>
 
+                {lookupFailed && (
+                  <div className="border-b border-border px-4 py-3">
+                    <InlineError onRetry={() => verifyTags(rows)}>
+                      No pudimos verificar qué jugadores ya existen, así que ninguno se marca como
+                      nuevo.
+                    </InlineError>
+                  </div>
+                )}
+
                 {!parsing && rows.length > 0 && (
                   <div className="max-h-[480px] overflow-auto">
                     <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-black/60 text-xs uppercase tracking-wider text-foreground-secondary backdrop-blur">
+                      <caption className="sr-only">
+                        Resultados del archivo: {rows.length} participantes
+                      </caption>
+                      <thead className="sticky top-0 bg-card text-xs text-foreground-subtle">
                         <tr>
-                          <th className="w-10 px-3 py-2 text-left">#</th>
-                          <th className="px-3 py-2 text-left">Nexus Tag</th>
-                          <th className="px-3 py-2 text-left">Membership ID</th>
-                          <th className="px-3 py-2 text-right">Match Pts</th>
-                          <th className="px-3 py-2 text-right">OMW%</th>
-                          <th className="px-3 py-2 text-right">Puntos</th>
-                          <th className="px-3 py-2 text-left">Estado</th>
+                          <th scope="col" className="w-10 px-2 py-2 text-left font-medium sm:px-3">
+                            #
+                          </th>
+                          <th scope="col" className="px-2 py-2 text-left font-medium sm:px-3">
+                            Nexus Tag
+                          </th>
+                          <th
+                            scope="col"
+                            className="hidden px-3 py-2 text-left font-medium sm:table-cell"
+                          >
+                            Estado
+                          </th>
+                          <th
+                            scope="col"
+                            className="hidden px-3 py-2 text-right font-medium sm:table-cell"
+                          >
+                            Match Pts
+                          </th>
+                          <th scope="col" className="px-2 py-2 text-right font-medium sm:px-3">
+                            Puntos
+                          </th>
+                          <th
+                            scope="col"
+                            className="hidden px-3 py-2 text-left font-medium sm:table-cell"
+                          >
+                            Membership ID
+                          </th>
+                          <th
+                            scope="col"
+                            className="hidden px-3 py-2 text-right font-medium sm:table-cell"
+                          >
+                            OMW%
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {rows.map((r, i) => {
-                          const isNew = !registeredTags.has(r.geek_tag);
+                          const isNew = registeredTags ? !registeredTags.has(r.geek_tag) : null;
+                          const status = r.error ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-destructive/50 px-2 py-0.5 text-xs font-medium text-destructive">
+                              {r.error}
+                            </span>
+                          ) : r.dropped ? (
+                            <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-foreground-secondary">
+                              Retirado
+                            </span>
+                          ) : isNew === null ? (
+                            <span className="text-xs text-foreground-subtle">Sin verificar</span>
+                          ) : isNew ? (
+                            <span className="rounded-full border border-foreground-subtle px-2 py-0.5 text-xs font-medium text-foreground">
+                              Nuevo
+                            </span>
+                          ) : (
+                            <span className="text-xs text-foreground-secondary">Registrado</span>
+                          );
                           return (
                             <tr
                               key={i}
-                              className={`border-t border-white/5 ${r.error ? "bg-red-500/10" : "hover:bg-white/5"}`}
+                              className={`border-t border-border ${r.error ? "bg-destructive/10" : "hover:bg-white/5"}`}
                             >
-                              <td className="px-3 py-2 font-mono text-xs text-primary">
+                              <td className="px-2 py-2 font-mono text-xs text-primary sm:px-3">
                                 {String(r.rank).padStart(2, "0")}
                               </td>
-                              <td className="px-2 py-1.5">
+                              <td className="px-1 py-1 sm:px-2">
                                 <input
+                                  type="text"
+                                  aria-label={`Nexus Tag, puesto ${r.rank}`}
                                   value={r.geek_tag}
                                   onChange={(e) => updateRow(i, "geek_tag", e.target.value)}
-                                  className="w-full rounded bg-transparent px-2 py-1 font-medium text-foreground outline-none ring-inset focus:bg-white/10 focus:ring-1 focus:ring-primary"
+                                  className="min-h-11 w-full rounded bg-transparent px-2 py-1 font-medium text-foreground outline-none ring-inset focus:bg-white/10 focus:ring-1 focus:ring-primary sm:min-h-0"
                                 />
+                                <div className="px-2 pb-1 sm:hidden">{status}</div>
                               </td>
-                              <td className="px-3 py-2.5 text-xs text-foreground-secondary font-mono">
-                                {r.membership_id ?? "—"}
-                              </td>
-                              <td className="px-3 py-2 text-right font-mono text-foreground">
+                              <td className="hidden px-3 py-2 sm:table-cell">{status}</td>
+                              <td className="hidden px-3 py-2 text-right font-mono text-foreground sm:table-cell">
                                 {r.match_points ?? "—"}
                               </td>
-                              <td className="px-3 py-2 text-right font-mono text-xs text-foreground-secondary">
-                                {r.omw_percentage != null ? `${r.omw_percentage}%` : "—"}
-                              </td>
-                              <td className="px-3 py-2 text-right font-mono font-semibold text-primary">
+                              <td className="px-2 py-2 text-right font-mono font-semibold text-primary sm:px-3">
                                 {Number(r.points_earned).toFixed(2)}
                               </td>
-                              <td className="px-3 py-2">
-                                {r.error ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-destructive/50 px-2 py-0.5 text-xs font-medium text-destructive">
-                                    {r.error}
-                                  </span>
-                                ) : r.dropped ? (
-                                  <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs font-medium text-foreground-secondary">
-                                    Retirado
-                                  </span>
-                                ) : isNew ? (
-                                  <span className="rounded-full border border-white/25 px-2 py-0.5 text-xs font-medium text-foreground">
-                                    Nuevo
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-foreground-secondary">
-                                    Registrado
-                                  </span>
-                                )}
+                              <td className="hidden px-3 py-2 font-mono text-xs text-foreground-secondary sm:table-cell">
+                                {r.membership_id ?? "—"}
+                              </td>
+                              <td className="hidden px-3 py-2 text-right font-mono text-xs text-foreground-secondary sm:table-cell">
+                                {r.omw_percentage != null ? `${r.omw_percentage}%` : "—"}
                               </td>
                             </tr>
                           );
@@ -992,12 +1200,15 @@ export function TournamentUploadForm({
                     </table>
                   </div>
                 )}
-                <p className="border-t border-white/5 px-4 py-2 text-xs text-foreground-secondary">
+                <p className="border-t border-border px-4 py-2 text-xs text-foreground-secondary">
                   Los Puntos se calculan como: (tus puntos / puntos del 1er lugar) × 100
                 </p>
                 {totalErrors > 0 && (
-                  <p className="border-t border-white/5 px-4 py-2 text-xs text-destructive">
-                    Hay {totalErrors} fila(s) con errores. Corrige el CSV antes de continuar.
+                  <p
+                    role="alert"
+                    className="border-t border-border px-4 py-2 text-xs text-destructive"
+                  >
+                    Hay {totalErrors} fila(s) con errores. Corrige el archivo antes de continuar.
                   </p>
                 )}
               </div>
@@ -1005,13 +1216,56 @@ export function TournamentUploadForm({
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setStep(1)} disabled={saving}>
+            <button
+              type="button"
+              className={BTN_OUTLINE}
+              onClick={() => setStep(1)}
+              disabled={saving}
+            >
               Atrás
-            </Button>
-            <Button onClick={handleSubmit} disabled={!canSubmit}>
-              <Upload size={14} className="mr-1" />
-              {saving ? "Subiendo torneo..." : "Enviar para aprobación"}
-            </Button>
+            </button>
+            {publishesDirect ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button type="button" className={BTN_PRIMARY} disabled={!canSubmit}>
+                    {submitContent}
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-xl border-border bg-card">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-foreground">
+                      ¿Publicar este torneo?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-foreground-secondary">
+                      Cuenta solo para {scopeLabel} y se publica ahora, sin revisión del
+                      administrador.
+                    </AlertDialogDescription>
+                    <ul className="space-y-1 text-left text-sm text-foreground">
+                      <li>
+                        {selectedGame?.name} · {fmtShortDay(date)}
+                      </li>
+                      <li>
+                        {rows.length} jugadores{registeredTags ? `, ${newPlayers} nuevos` : ""}
+                      </li>
+                      {winner && <li>Primer lugar: {winner.geek_tag}</li>}
+                    </ul>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSubmit}>Publicar torneo</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <button
+                type="button"
+                className={BTN_PRIMARY}
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+              >
+                {submitContent}
+              </button>
+            )}
           </div>
         </section>
       )}
@@ -1020,10 +1274,12 @@ export function TournamentUploadForm({
 }
 
 function StoreCombobox({
+  id,
   stores,
   value,
   onChange,
 }: {
+  id?: string;
   stores: Store[];
   value: string;
   onChange: (id: string) => void;
@@ -1034,10 +1290,11 @@ function StoreCombobox({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          id={id}
           type="button"
           role="combobox"
           aria-expanded={open}
-          className="flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm text-foreground transition hover:border-primary/40"
+          className={`${INPUT} flex items-center justify-between text-left transition hover:border-primary/40`}
         >
           <span className={selected ? "text-foreground" : "text-foreground-secondary"}>
             {selected
@@ -1063,6 +1320,7 @@ function StoreCombobox({
                   <CommandItem
                     key={s.id}
                     value={label}
+                    className="data-[selected=true]:bg-white/10 data-[selected=true]:text-foreground"
                     onSelect={() => {
                       onChange(s.id);
                       setOpen(false);

@@ -27,7 +27,7 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { admin, player } = context;
 
-    const [storesRes, gamesRes, homeStoreRes] = await Promise.all([
+    const [storesRes, gamesRes, homeStoreRes, schedulesRes] = await Promise.all([
       admin
         .from("stores")
         .select("id, slug, name, city, state, country, is_active")
@@ -48,17 +48,23 @@ export const getOrganizerOverview = createServerFn({ method: "POST" })
             .eq("id", player.home_store_id)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null } as const),
+      // Los TCG con calendario en la tienda: subir resultados exige uno (uploadTournamentResults).
+      player.home_store_id
+        ? admin.from("store_schedules").select("game_id").eq("store_id", player.home_store_id)
+        : Promise.resolve({ data: [], error: null } as const),
     ]);
 
     if (storesRes.error) failDb(storesRes.error);
     if (gamesRes.error) failDb(gamesRes.error);
     if (homeStoreRes.error) failDb(homeStoreRes.error);
+    if (schedulesRes.error) failDb(schedulesRes.error);
 
     return {
       player,
       stores: storesRes.data ?? [],
       games: gamesRes.data ?? [],
       homeStore: homeStoreRes.data ?? null,
+      homeStoreGameIds: [...new Set((schedulesRes.data ?? []).map((s) => s.game_id))],
     };
   });
 
