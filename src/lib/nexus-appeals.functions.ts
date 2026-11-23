@@ -128,7 +128,7 @@ export const getStoreAppeals = createServerFn({ method: "POST" })
 
     if (!player.home_store_id) return { appeals: [] };
 
-    const { data: appeals } = await admin
+    const { data: appeals, error: appealsError } = await admin
       .from("round_appeals")
       .select(
         "id, tournament_id, original_round_id, appellant_player_id, round_number, original_player_leader_id, original_opponent_leader_id, original_won_match, original_won_die_roll, original_turn_order, proposed_player_leader_id, proposed_opponent_leader_id, proposed_won_match, proposed_won_die_roll, proposed_turn_order, created_at",
@@ -136,6 +136,8 @@ export const getStoreAppeals = createServerFn({ method: "POST" })
       .eq("store_id", player.home_store_id)
       .eq("status", "pending")
       .order("created_at", { ascending: true });
+    // Un fallo no es "sin apelaciones": que la página lo muestre como error.
+    if (appealsError) failDb(appealsError);
 
     if (!appeals || appeals.length === 0) return { appeals: [] };
 
@@ -173,15 +175,21 @@ export const getStoreAppeals = createServerFn({ method: "POST" })
       ),
     );
     const { data: leaders } = leaderIds.length
-      ? await admin.from("deck_identifiers").select("id, base_name, card_image").in("id", leaderIds)
+      ? await admin
+          .from("deck_identifiers")
+          .select("id, base_name, card_image, colors, card_set_id, card_image_id")
+          .in("id", leaderIds)
       : { data: [] as any[] };
     const leaderMap = new Map((leaders ?? []).map((l: any) => [l.id, l]));
 
     const tournamentIds = Array.from(new Set(appeals.map((a: any) => a.tournament_id)));
     const { data: tournaments } = tournamentIds.length
-      ? await admin.from("tournaments").select("id, tournament_date").in("id", tournamentIds)
+      ? await admin
+          .from("tournaments")
+          .select("id, tournament_date, games(name)")
+          .in("id", tournamentIds)
       : { data: [] as any[] };
-    const tournamentMap = new Map((tournaments ?? []).map((t: any) => [t.id, t.tournament_date]));
+    const tournamentMap = new Map((tournaments ?? []).map((t: any) => [t.id, t]));
 
     const shaped = appeals.map((a: any) => {
       const r = roundMap.get(a.original_round_id);
@@ -191,7 +199,8 @@ export const getStoreAppeals = createServerFn({ method: "POST" })
       return {
         id: a.id,
         tournament_id: a.tournament_id,
-        tournament_date: tournamentMap.get(a.tournament_id) ?? null,
+        tournament_date: tournamentMap.get(a.tournament_id)?.tournament_date ?? null,
+        game_name: tournamentMap.get(a.tournament_id)?.games?.name ?? null,
         round_number: a.round_number,
         appellant_tag: appellantTag,
         reporter_tag: reporterTag,
@@ -273,6 +282,16 @@ export const resolveAppeal = createServerFn({ method: "POST" })
       })
       .eq("id", data.appeal_id);
     if (resolveError) failDb(resolveError);
+
+    await logAction(
+      admin,
+      player,
+      "APPEAL_RESOLVED",
+      "tournament",
+      appeal.tournament_id,
+      await tournamentAuditLabel(admin, appeal.tournament_id),
+      { round_number: appeal.round_number, resolution: data.resolution },
+    );
 
     return { success: true };
   });
